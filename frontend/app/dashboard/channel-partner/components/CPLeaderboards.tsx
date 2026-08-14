@@ -61,14 +61,14 @@ export function CPLeaderboards({ leaderboards }: { leaderboards: any }) {
                     transition: "background 150ms ease, border-color 150ms ease",
                     cursor: "default"
                   }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.background = "var(--bg-subtle)";
-                    (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)";
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.background = "transparent";
-                    (e.currentTarget as HTMLElement).style.borderColor = "transparent";
-                  }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.background = "var(--bg-subtle)";
+                      (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)";
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.background = "transparent";
+                      (e.currentTarget as HTMLElement).style.borderColor = "transparent";
+                    }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                       <div style={{
