@@ -1,6 +1,6 @@
 <div align="center">
 
-# Backend — OpenEstate
+# Backend — BrokerOS
 
 **NestJS 11 REST API + Socket.IO real-time server**
 

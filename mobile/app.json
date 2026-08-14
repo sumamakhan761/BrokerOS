@@ -34,12 +34,7 @@
         "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyAg-OR55R1qgjSlJfuVuEZtoCSsdMrkNLk"
-        }
-      }
+      ]
     },
     "web": {
       "output": "static",

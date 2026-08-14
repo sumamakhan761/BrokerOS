@@ -1,4 +1,4 @@
-# Contributing to OpenEstate
+# Contributing to BrokerOS
 
 Thank you for your interest in contributing! This guide will help you get started.
 
@@ -29,8 +29,8 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 1. **Fork** the repository on GitHub
 2. **Clone** your fork locally:
    ```bash
-   git clone https://github.com/<your-username>/OpenEstate.git
-   cd OpenEstate
+   git clone https://github.com/<your-username>/BrokerOS.git
+   cd BrokerOS
    ```
 3. **Create a branch** for your work:
    ```bash
@@ -105,7 +105,7 @@ See the [Backend README](backend/README.md), [Frontend README](frontend/README.m
 ## Project Structure
 
 ```
-OpenEstate/
+BrokerOS/
 ├── backend/       NestJS 11 API + Socket.IO (TypeScript ESM)
 ├── frontend/      Next.js 16 App Router web dashboard
 ├── mobile/        Expo 54 React Native Android app
@@ -216,5 +216,5 @@ Open an issue with:
 
 ## Questions?
 
-If you have questions about contributing, open a [Discussion](https://github.com/sumamakhan761/OpenEstate/discussions) on GitHub.
+If you have questions about contributing, open a [Discussion](https://github.com/sumamakhan761/BrokerOS/discussions) on GitHub.
 

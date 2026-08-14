@@ -1,5 +1,5 @@
 # =============================================================
-# OpenEstate — Root Docker Compose
+# BrokerOS — Root Docker Compose
 # Runs: PostgreSQL + NestJS Backend + Next.js Frontend
 # Mobile is NOT here — run with: npx expo start (from mobile/)
 #
