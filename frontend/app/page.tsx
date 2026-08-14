@@ -141,7 +141,7 @@ export default function LandingPage() {
             letterSpacing: "-0.02em",
             color: "var(--text-primary)",
           }}>
-            OpenEstate
+            BrokerOS
           </span>
         </div>
 

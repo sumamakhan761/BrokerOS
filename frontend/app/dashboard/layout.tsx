@@ -292,7 +292,7 @@ export default function DashboardLayout({
                 color: "var(--text-primary)",
                 lineHeight: 1.2,
               }}>
-                OpenEstate
+                BrokerOS
               </div>
               <div style={{
                 fontSize: 11,

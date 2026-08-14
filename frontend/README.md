@@ -1,6 +1,6 @@
 <div align="center">
 
-# Frontend — OpenEstate
+# Frontend — BrokerOS
 
 **Next.js 16 web dashboard with role-based views**
 

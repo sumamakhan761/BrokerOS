@@ -6,7 +6,7 @@ Telegraph style. Root rules only. Read scoped `AGENTS.md` inside `backend/`, `fr
 
 ## Project
 
-OpenEstate is an Enterprise Real Estate CRM for a brokerage business. Two completely separate business lines run under one roof:
+BrokerOS is an Enterprise Real Estate CRM for a brokerage business. Two completely separate business lines run under one roof:
 
 - **Brokerage** — Internal sales team sells properties to clients. Projects flagged `isCpProject = false`.
 - **Channel Partner (CP)** — External broker network. Projects flagged `isCpProject = true`.
@@ -19,7 +19,7 @@ Stack: NestJS 11 backend · PostgreSQL + Prisma 7 · Next.js 16 frontend (App Ro
 
 ## Start
 
-- Repo root: `OpenEstate/`
+- Repo root: `BrokerOS/`
 - Three subtrees: `backend/` (NestJS API), `frontend/` (Next.js web), `mobile/` (Expo RN app).
 - Read the scoped `AGENTS.md` in the subtree you are working in before writing code.
 - Before proposing any custom system, check if an existing service/module/hook already handles it.
