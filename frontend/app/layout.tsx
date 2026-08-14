@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OpenEstate — Real Estate Platform",
+  title: "BrokerOS — Real Estate Platform",
   description:
-    "Role-based OpenEstate CRM for real estate teams. 12 departmental dashboards — Pre-Sales, Sales, Finance, Director, and more — secured with RBAC.",
+    "Role-based BrokerOS CRM for real estate teams. 12 departmental dashboards — Pre-Sales, Sales, Finance, Director, and more — secured with RBAC.",
 };
 
 export default function RootLayout({

@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏢 OpenEstate
+# 🏢 BrokerOS
 
 **The open-source, AI-powered CRM built for real estate brokerages.**
 
@@ -20,7 +20,7 @@ Manage your entire brokerage and channel partner operation — agentic call proc
 
 ## Why This Exists
 
-Most real estate CRMs are either overpriced SaaS tools or half-baked spreadsheets. OpenEstate is a **production-grade, self-hostable CRM** purpose-built for the way real estate brokerages actually work — with two distinct business lines under one roof:
+Most real estate CRMs are either overpriced SaaS tools or half-baked spreadsheets. BrokerOS is a **production-grade, self-hostable CRM** purpose-built for the way real estate brokerages actually work — with two distinct business lines under one roof:
 
 - **Brokerage** — Your internal sales team sells properties to clients.
 - **Channel Partner (CP)** — You manage an external broker network that brings leads to builder projects.
@@ -111,7 +111,7 @@ Every role gets a dedicated dashboard with relevant KPIs, charts, and action ite
 ## 🏗️ Architecture
 
 ```
-OpenEstate/
+BrokerOS/
 ├── backend/          NestJS 11 REST API + Socket.IO
 │   ├── src/
 │   │   ├── auth/           Better Auth + RBAC guards
@@ -178,8 +178,8 @@ OpenEstate/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/sumamakhan761/OpenEstate.git
-cd OpenEstate
+git clone https://github.com/sumamakhan761/BrokerOS.git
+cd BrokerOS
 
 # 2. Copy the environment files
 cp backend/.env.example backend/.env
@@ -298,6 +298,6 @@ MIT License · Copyright (c) 2026 Sumama Khan
 
 **Built with ❤️ for the real estate industry**
 
-[⬆ Back to top](#-OpenEstate)
+[⬆ Back to top](#-BrokerOS)
 
 </div>

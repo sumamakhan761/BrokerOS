@@ -2,7 +2,7 @@
 
 **Do not file public issues for private security reports**
 
-If you believe you've found a security issue in OpenEstate, report it privately first.
+If you believe you've found a security issue in BrokerOS, report it privately first.
 
 ## Reporting a Vulnerability
 

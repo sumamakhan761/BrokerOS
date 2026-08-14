@@ -2,7 +2,7 @@ import { prismaClient as prisma } from '../src/lib/database/prisma-client.js';
 import { auth } from '../src/lib/auth.js';
 
 // ============================================================
-// DEMO SEED — OpenEstate
+// DEMO SEED — BrokerOS
 // ============================================================
 //
 // Creates a fully functional demo environment:
