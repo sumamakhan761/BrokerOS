@@ -1,0 +1,9 @@
+{
+  "name": "auto-dialer",
+  "version": "1.0.0",
+  "description": "Auto Dialer local module",
+  "main": "index.ts",
+  "peerDependencies": {
+    "expo": "*"
+  }
+}

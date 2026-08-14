@@ -1,0 +1,15 @@
+/node_modules
+/dist
+/generated/prisma
+.env
+.env*.local
+/prisma/migrations
+/src/generated/
+/src/generated/*
+
+# Binary test files — never commit these
+*.mp3
+*.mp4
+
+# Dev artifacts
+tsc-errors.txt

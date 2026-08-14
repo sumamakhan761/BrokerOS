@@ -1,0 +1,156 @@
+<div align="center">
+
+# Frontend — OpenEstate
+
+**Next.js 16 web dashboard with role-based views**
+
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
+</div>
+
+---
+
+## Overview
+
+The frontend is a Next.js 16 App Router application that serves as the web dashboard for the CRM. It provides 12 role-specific views — each role sees a tailored sidebar, dashboard, and feature set based on their `session.user.role`.
+
+## Directory Structure
+
+```
+frontend/
+├── app/
+│   ├── layout.tsx              Root HTML shell, fonts, providers
+│   ├── globals.css             Global CSS + Tailwind v4 imports
+│   ├── page.tsx                Root redirect → /dashboard or /login
+│   ├── login/                  Public login page (no auth guard)
+│   └── dashboard/
+│       ├── layout.tsx          THE MAIN SHELL — role-based sidebar,
+│       │                       NotificationBell, ChatWidget
+│       ├── page.tsx            Dashboard home (redirects to role view)
+│       ├── business-manager/   Business Manager screens
+│       ├── channel-partner/    Channel Partner screens
+│       ├── closing-manager/    Closing Manager screens
+│       ├── director/           Director screens
+│       ├── finance/            Finance screens
+│       ├── post-sales/         Post-Sales screens
+│       ├── pre-sales/          Pre-Sales screens
+│       ├── pre-sales-manager/  Pre-Sales Manager screens
+│       ├── sales/              Sales screens
+│       ├── sales-executive/    Sales Executive screens
+│       ├── sales-manager/      Sales Manager screens
+│       └── sourcing-manager/   Sourcing Manager screens
+│
+├── features/                   Domain feature UI
+│   ├── leads/                  Lead list, detail, follow-ups, call history
+│   ├── inventory/              Project/unit browser
+│   ├── brokers/                Broker management
+│   └── approvals/              Approval request UI
+│
+├── components/                 Shared components
+│   ├── analytics/              Recharts-based chart components
+│   ├── chat/                   ChatWidget (Socket.IO driven)
+│   ├── commissions/            Commission display components
+│   ├── dashboard/              Dashboard card/widget components
+│   ├── leads/                  Lead-specific shared components
+│   ├── notifications/          NotificationBell component
+│   ├── payments/               Payment display components
+│   └── ui/                     Primitive UI elements
+│
+├── lib/
+│   ├── auth-client.ts          Better Auth client (createAuthClient)
+│   └── utils.ts                Shared utility functions
+│
+└── middleware.ts               Route protection (cookie-based session check)
+```
+
+## Development
+
+### Prerequisites
+
+- Node.js ≥ 22
+- pnpm ≥ 10
+- Running backend (for API calls)
+
+### 1. Installation
+
+```bash
+cd frontend
+pnpm install
+```
+
+### 2. Environment Setup
+
+You must configure your `frontend/.env` file properly before starting the dev server.
+```bash
+cp .env.example .env
+```
+
+#### A. API Configuration
+The frontend uses a proxy pattern. In local development, client-side requests go through Next.js to avoid CORS issues.
+*   `NEXT_PUBLIC_API_URL="/api/proxy"` *(Keep this default for local dev)*
+*   `BACKEND_URL="http://localhost:3333"` *(This is the direct server-side connection to your NestJS backend)*
+
+#### B. App URL
+Used for authentication callbacks and Next.js internal redirects.
+*   `NEXT_PUBLIC_APP_URL="http://localhost:3000"`
+
+#### C. Mapbox (Required for CP & Sales)
+The CRM relies on Mapbox for GPS-verified field meetings (Sourcing Managers) and site visits (Sales Executives).
+1. Go to [Mapbox Account](https://account.mapbox.com/).
+2. Create an account and generate an access token.
+3. Set it in your `.env` file:
+   `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="your-mapbox-access-token-here"`
+
+### 3. Run & Build
+
+#### Development
+```bash
+pnpm dev                      # Dev server → http://localhost:3000
+
+```
+#### Production
+```bash
+pnpm build                    # Production build
+pnpm start                    # Serve production build
+```
+
+---
+
+## API Communication
+
+The frontend uses a proxy pattern to communicate with the backend:
+
+- **Client-side:** Requests go to `/api/proxy/*` which Next.js proxies to the backend.
+- **Server-side:** Uses the `BACKEND_URL` environment variable directly.
+- **Real-time:** Socket.IO client connects directly to the backend for chat and notifications.
+
+---
+
+## Docker
+
+The frontend has a multi-stage Dockerfile that produces a standalone Next.js build:
+
+1. **Stage 1 (deps):** Installs pnpm, runs `pnpm install --frozen-lockfile`
+2. **Stage 2 (build):** Bakes `NEXT_PUBLIC_*` env vars at build time, runs `pnpm build`
+3. **Stage 3 (runner):** Copies standalone output, runs as non-root `nextjs` user
+
+```bash
+# Via docker compose from repo root (recommended):
+docker compose up frontend
+
+# Or standalone:
+docker build -t crm-frontend .
+```
+
+The frontend runs on port **3000** by default.
+
+---
+
+<div align="center">
+
+**[← Back to main README](../README.md)**
+
+</div>

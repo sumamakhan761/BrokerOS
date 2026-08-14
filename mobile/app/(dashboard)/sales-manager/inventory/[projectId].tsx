@@ -1,0 +1,192 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { UnitGrid } from '../../../../components/inventory/grid/UnitGrid';
+import { UnitDetailsModal } from '../../../../components/inventory/modals/UnitDetailsModal';
+import { AiTowerGenerator } from '../../../../components/inventory/misc/AiTowerGenerator';
+import PossessionModal from '../../../../components/inventory/modals/PossessionModal';
+import AssignmentModal from '../../../../components/inventory/modals/AssignmentModal';
+import { authClient } from '../../../../lib/auth-client';
+
+export default function SalesManagerProjectInventory() {
+  const { projectId } = useLocalSearchParams();
+  const router = useRouter();
+  
+  const [towers, setTowers] = useState<any[]>([]);
+  const [activeTower, setActiveTower] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  
+  const [selectedUnit, setSelectedUnit] = useState<any>(null);
+  const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
+  const [isPossessionModalOpen, setIsPossessionModalOpen] = useState(false);
+  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
+
+  const loadTowers = async () => {
+    try {
+      setLoading(true);
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
+      const res = await authClient.$fetch(`/api/inventory/projects/${projectId}/towers`, { baseURL: baseUrl });
+      if (res.error) throw new Error(res.error.message || "Failed to fetch towers");
+      const data = res.data as any;
+      setTowers(data);
+      if (data.length > 0 && !activeTower) {
+        setActiveTower(data[0]);
+      } else if (data.length > 0 && activeTower) {
+        const updated = data.find((t: any) => t.id === activeTower.id);
+        setActiveTower(updated || data[0]);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (projectId) loadTowers();
+  }, [projectId]);
+
+  const handleUnitUpdate = async (unitId: string, updates: any) => {
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
+    const res = await authClient.$fetch(`/api/inventory/units/${unitId}/status`, {
+      baseURL: baseUrl,
+      method: 'PATCH',
+      body: { 
+        status: updates.status, 
+        clearBooking: updates.status === 'AVAILABLE',
+        ...updates 
+      }
+    });
+    if (res.error) throw new Error(res.error.message || "Failed to update unit");
+    await loadTowers();
+    setSelectedUnit(null);
+  };
+
+  if (loading && towers.length === 0) {
+    return (
+      <View className="flex-1 items-center justify-center bg-slate-50">
+        <ActivityIndicator size="large" color="#4f46e5" />
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-1 bg-slate-50">
+      {/* Header */}
+      <View className="p-4 pt-12 bg-white border-b border-slate-200">
+        <View className="flex-row justify-between items-center">
+          <TouchableOpacity onPress={() => router.back()} className="p-2">
+            <Feather name="arrow-left" size={24} color="#0f172a" />
+          </TouchableOpacity>
+          <Text className="text-xl font-bold text-slate-900 flex-1 ml-2">Towers</Text>
+          
+          <View className="flex-row items-center gap-2">
+            {activeTower && (
+              <>
+                <TouchableOpacity onPress={() => setIsPossessionModalOpen(true)} className="bg-amber-100 rounded-full px-3 py-2 flex-row items-center gap-1 border border-amber-200">
+                  <Feather name="clock" size={14} color="#b45309" />
+                  <Text className="text-amber-700 font-bold text-xs">Timeline</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setIsAssignmentModalOpen(true)} className="bg-indigo-100 rounded-full px-3 py-2 flex-row items-center gap-1 border border-indigo-200">
+                  <Feather name="user-plus" size={14} color="#4f46e5" />
+                  <Text className="text-indigo-700 font-bold text-xs">Assign</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            <TouchableOpacity onPress={() => setIsAiGeneratorOpen(true)} className="w-10 h-10 bg-indigo-100 rounded-full items-center justify-center">
+              <Feather name="cpu" size={20} color="#4f46e5" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Tower Tabs */}
+        {towers.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-4">
+            <View className="flex-row gap-2 px-2 pb-2">
+              {towers.map(tower => (
+                <TouchableOpacity
+                  key={tower.id}
+                  onPress={() => setActiveTower(tower)}
+                  className={`px-5 py-2.5 rounded-full ${
+                    activeTower?.id === tower.id ? 'bg-slate-900' : 'bg-slate-100'
+                  }`}
+                >
+                  <Text className={`font-bold ${
+                    activeTower?.id === tower.id ? 'text-white' : 'text-slate-600'
+                  }`}>
+                    {tower.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        )}
+      </View>
+
+      {/* Grid Area */}
+      <View className="flex-1 p-4">
+        {towers.length === 0 ? (
+          <View className="flex-1 items-center justify-center">
+            <Feather name="layers" size={48} color="#cbd5e1" />
+            <Text className="text-lg font-bold text-slate-900 mt-4">No Towers Yet</Text>
+            <Text className="text-slate-500 text-center mt-2 px-8 mb-6">Use the AI Generator to quickly build your first tower structure.</Text>
+            <TouchableOpacity 
+              onPress={() => setIsAiGeneratorOpen(true)}
+              className="px-6 py-3 bg-indigo-600 rounded-xl flex-row items-center gap-2 shadow-sm"
+            >
+              <Feather name="cpu" size={18} color="white" />
+              <Text className="text-white font-bold">Generate Tower</Text>
+            </TouchableOpacity>
+          </View>
+        ) : activeTower ? (
+          <UnitGrid 
+            tower={activeTower}
+            onUnitClick={(unit) => setSelectedUnit({ ...unit, floor: activeTower.floors.find((f: any) => f.id === unit.floorId) })}
+          />
+        ) : null}
+      </View>
+
+      <UnitDetailsModal 
+        unit={selectedUnit}
+        visible={!!selectedUnit}
+        onClose={() => setSelectedUnit(null)}
+        onSave={handleUnitUpdate}
+      />
+
+      <PossessionModal
+        isOpen={isPossessionModalOpen}
+        onClose={() => setIsPossessionModalOpen(false)}
+        entityId={activeTower?.id}
+        entityType="tower"
+        entityName={activeTower?.name || ''}
+        onSuccess={() => {
+          loadTowers();
+        }}
+      />
+
+      <AiTowerGenerator 
+        projectId={projectId as string}
+        visible={isAiGeneratorOpen}
+        onClose={() => setIsAiGeneratorOpen(false)}
+        onSuccess={() => {
+          setIsAiGeneratorOpen(false);
+          loadTowers();
+        }}
+      />
+
+      {isAssignmentModalOpen && activeTower && (
+        <AssignmentModal
+          isOpen={isAssignmentModalOpen}
+          onClose={() => setIsAssignmentModalOpen(false)}
+          entityId={activeTower.id}
+          entityType="tower"
+          entityName={activeTower.name}
+          onSuccess={() => {
+            loadTowers();
+          }}
+        />
+      )}
+    </View>
+  );
+}

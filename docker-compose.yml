@@ -1,0 +1,77 @@
+# =============================================================
+# OpenEstate — Root Docker Compose
+# Runs: PostgreSQL + NestJS Backend + Next.js Frontend
+# Mobile is NOT here — run with: npx expo start (from mobile/)
+#
+# Usage:
+#   docker compose up              # start everything
+#   docker compose up --build      # rebuild images first
+#   docker compose down -v         # stop + wipe volumes
+# =============================================================
+
+services:
+
+  # ── PostgreSQL ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: crm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-crm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm}
+      POSTGRES_DB: ${POSTGRES_DB:-crm}
+    ports:
+      - "5432:5432"           # exposed so you can connect from Prisma Studio
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-crm} -d ${POSTGRES_DB:-crm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── NestJS Backend ──────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crm-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env          # copy backend/.env.example → backend/.env and fill in
+    environment:
+      # Override DATABASE_URL to point at the postgres service (not localhost)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-crm}:${POSTGRES_PASSWORD:-crm}@postgres:5432/${POSTGRES_DB:-crm}
+      PORT: 3333
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "3333:3333"
+
+  # ── Next.js Frontend ────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* vars must be baked in at build time
+        NEXT_PUBLIC_API_URL: /api/proxy
+        NEXT_PUBLIC_APP_URL: http://localhost:3000
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
+        BACKEND_URL: http://backend:3333
+    container_name: crm-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    env_file:
+      - ./frontend/.env         # copy frontend/.env.example → frontend/.env and fill in
+    environment:
+      # Server-side: hits the backend service by its docker-compose name
+      BACKEND_URL: http://backend:3333
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
