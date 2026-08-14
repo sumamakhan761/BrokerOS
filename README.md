@@ -2,9 +2,9 @@
 
 # 🏢 OpenEstate
 
-**The open-source CRM built for real estate brokerages.**
+**The open-source, AI-powered CRM built for real estate brokerages.**
 
-Manage your entire brokerage and channel partner operation — leads, inventory, bookings, commissions, post-sales — from one platform with web and mobile apps.
+Manage your entire brokerage and channel partner operation — agentic call processing, leads, inventory, bookings, commissions, post-sales, finance — from one platform with web and mobile apps.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![NestJS](https://img.shields.io/badge/Backend-NestJS%2011-E0234E?logo=nestjs)](backend/)
