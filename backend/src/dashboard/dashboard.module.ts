@@ -17,6 +17,17 @@ import { SalesManagerDashboardModule } from './sales-manager/sales-manager.modul
 import { SourcingManagerDashboardModule } from './sourcing-manager/sourcing-manager.module.js';
 import { ManagerDashboardModule } from './manager/manager.module.js';
 
+import {
+  DashboardController,
+  DashboardManagerController,
+  SalesManagerDashboardController,
+  SalesExecDashboardController,
+  PostSalesDashboardController,
+  EmployeesController,
+  SalesManagerEmployeesController,
+  ChannelPartnerEmployeesController,
+} from './core/dashboard.controller.js';
+
 @Module({
   imports: [
     PrismaModule,
@@ -31,7 +42,16 @@ import { ManagerDashboardModule } from './manager/manager.module.js';
     SourcingManagerDashboardModule,
     ManagerDashboardModule,
   ],
-  controllers: [],
+  controllers: [
+    DashboardController,
+    DashboardManagerController,
+    SalesManagerDashboardController,
+    SalesExecDashboardController,
+    PostSalesDashboardController,
+    EmployeesController,
+    SalesManagerEmployeesController,
+    ChannelPartnerEmployeesController,
+  ],
   providers: [
     DashboardService,
     LeaderboardService,

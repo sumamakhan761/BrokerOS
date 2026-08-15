@@ -8,6 +8,10 @@ import { ProjectsModule } from './projects/projects.module.js';
 import { TowersModule } from './towers/towers.module.js';
 import { UnitsModule } from './units/units.module.js';
 
+import { ProjectsController } from './projects/projects.controller.js';
+import { TowerGenController } from './towers/tower-gen.controller.js';
+import { UnitsController } from './units/units.controller.js';
+
 @Module({
   imports: [
     PrismaModule,
@@ -17,7 +21,11 @@ import { UnitsModule } from './units/units.module.js';
     TowersModule,
     UnitsModule,
   ],
-  controllers: [],
+  controllers: [
+    ProjectsController,
+    TowerGenController,
+    UnitsController,
+  ],
   providers: [
     InventoryService,
   ],

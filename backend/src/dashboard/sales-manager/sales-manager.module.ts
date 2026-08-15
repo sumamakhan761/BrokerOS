@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { SalesManagerDashboardController, SalesManagerEmployeesController } from '../core/dashboard.controller.js';
 import { SalesManagerDashboardService } from './sales-manager-dashboard.service.js';
 import { SalesManagerWidgetsService } from './sales-manager-widgets.service.js';
 import { SalesManagerDailyTasksService } from './sales-manager-daily-tasks.service.js';
@@ -9,7 +8,7 @@ import { PrismaModule } from '../../lib/database/prisma.module.js';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [SalesManagerDashboardController, SalesManagerEmployeesController],
+  controllers: [],
   providers: [
     SalesManagerDashboardService,
     SalesManagerWidgetsService,

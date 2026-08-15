@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { DashboardController } from '../core/dashboard.controller.js';
 import { PreSalesDashboardService } from './pre-sales-dashboard.service.js';
 import { PreSalesWidgetsService } from './pre-sales-widgets.service.js';
 import { PreSalesPipelineService } from './pre-sales-pipeline.service.js';
@@ -10,7 +9,7 @@ import { PrismaModule } from '../../lib/database/prisma.module.js';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [DashboardController],
+  controllers: [],
   providers: [
     PreSalesDashboardService,
     PreSalesWidgetsService,
@@ -28,4 +27,4 @@ import { PrismaModule } from '../../lib/database/prisma.module.js';
     PreSalesLeaderboardService,
   ],
 })
-export class PreSalesDashboardModule {}
+export class PreSalesDashboardModule { }
