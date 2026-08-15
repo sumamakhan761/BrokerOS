@@ -88,9 +88,14 @@ describe('SiteVisitsService', () => {
   describe('createSiteVisit', () => {
     it('should throw error if lead not found', async () => {
       mockPrismaService.lead.findUnique.mockResolvedValue(null);
+      
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      
       await expect(
         service.createSiteVisit('lead-1', { userId: 'u-1', projectId: 'p-1', scheduledDate: '2026-01-01' })
       ).rejects.toThrow('Lead not found');
+      
+      consoleSpy.mockRestore();
     });
 
     it('should create site visit and assign default user when no project assignments exist', async () => {
