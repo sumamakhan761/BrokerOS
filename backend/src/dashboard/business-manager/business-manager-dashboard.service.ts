@@ -4,7 +4,9 @@ import { getStartDate } from '../core/dashboard.utils.js';
 
 @Injectable()
 export class BusinessManagerDashboardService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+  ) { }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
 
