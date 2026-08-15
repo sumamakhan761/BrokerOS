@@ -28,4 +28,4 @@ import { PrismaModule } from '../../lib/database/prisma.module.js';
     BusinessManagerLeadsService,
   ],
 })
-export class BusinessManagerDashboardModule {}
+export class BusinessManagerDashboardModule { }
