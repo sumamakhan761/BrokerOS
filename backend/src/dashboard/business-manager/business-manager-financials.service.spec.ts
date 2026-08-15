@@ -2,10 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 jest.mock('../../lib/database/prisma-client.js', () => ({
   prismaClient: {}
 }));
-jest.mock('../../generated/prisma/client.js', () => ({
-  NotificationType: {}
+jest.mock('../../lib/database/prisma.service.js', () => ({
+  PrismaService: class {}
 }));
-
+jest.mock('../../generated/prisma/client.js', () => ({
+  NotificationType: {},
+  PrismaClient: class {}
+}));
+import { PrismaService } from '../../lib/database/prisma.service.js';
 import { BusinessManagerFinancialsService } from './business-manager-financials.service.js';
 
 describe('BusinessManagerFinancialsService', () => {
@@ -13,7 +17,10 @@ describe('BusinessManagerFinancialsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BusinessManagerFinancialsService],
+      providers: [
+        BusinessManagerFinancialsService,
+        { provide: PrismaService, useValue: {} },
+      ],
     }).compile();
 
     service = module.get<BusinessManagerFinancialsService>(BusinessManagerFinancialsService);
