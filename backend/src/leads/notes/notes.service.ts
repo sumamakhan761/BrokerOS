@@ -1,19 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { LeadStatus } from '../../generated/prisma/client.js';
-import { LeadsService } from '../core/leads.service.js';
 import { TranscriptionService } from '../call-records/transcription.service.js';
 
 @Injectable()
 export class NotesService {
   constructor(
     private prisma: PrismaService,
-    private leadsService: LeadsService,
     private transcriptionService: TranscriptionService,
   ) {}
 
   async getNotes(leadId: string) {
-    await this.leadsService.findOne(leadId); // Ensure lead exists
+    const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
+    if (!lead) throw new Error('Lead not found');
+    
     return this.prisma.note.findMany({
       where: { leadId },
       orderBy: { createdAt: 'desc' },
@@ -24,7 +24,8 @@ export class NotesService {
   }
 
   async createNote(leadId: string, data: { content: string; userId: string; statusAtTimeOfNote?: LeadStatus; noteType?: string }) {
-    await this.leadsService.findOne(leadId); // Ensure lead exists
+    const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
+    if (!lead) throw new Error('Lead not found');
 
     if (data.statusAtTimeOfNote) {
       // Fetch current lead to compare status

@@ -1,18 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
-import { LeadsService } from '../core/leads.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 
 @Injectable()
 export class SiteVisitsService {
   constructor(
     private prisma: PrismaService,
-    private leadsService: LeadsService,
     private notificationsService: NotificationsService,
-  ) {}
+  ) { }
 
   async getSiteVisits(leadId: string) {
-    await this.leadsService.findOne(leadId); // Ensure lead exists
+    const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
+    if (!lead) throw new Error('Lead not found');
     return this.prisma.siteVisit.findMany({
       where: { leadId },
       orderBy: { scheduledDate: 'desc' },
@@ -25,7 +24,8 @@ export class SiteVisitsService {
 
   async createSiteVisit(leadId: string, data: { userId: string; projectId: string; scheduledDate: string; meetingNotes?: string; destinationUrl?: string }) {
     try {
-      await this.leadsService.findOne(leadId); // Ensure lead exists
+      const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
+      if (!lead) throw new Error('Lead not found');
 
       let assignedExecId = data.userId; // Default
 
@@ -70,15 +70,15 @@ export class SiteVisitsService {
       // Move lead status forward and re-assign lead to the Sales Exec handling the SV
       await this.prisma.lead.update({
         where: { id: leadId },
-        data: { 
+        data: {
           status: 'SITE_VISIT_SCHEDULED',
           assignedUserId: assignedExecId,
         },
       });
 
-      const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
-      if (lead) {
-        const customerName = lead.lastName ? `${lead.firstName} ${lead.lastName}` : lead.firstName;
+      const updatedLead = await this.prisma.lead.findUnique({ where: { id: leadId } });
+      if (updatedLead) {
+        const customerName = updatedLead.lastName ? `${updatedLead.firstName} ${updatedLead.lastName}` : updatedLead.firstName;
         const projectName = siteVisit.project.name;
         const formattedDate = new Date(data.scheduledDate).toLocaleString('en-IN', {
           day: 'numeric',
