@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
-import { LeadsService } from '../core/leads.service.js';
 
 import { NotificationsService } from '../../notifications/notifications.service.js';
 
@@ -8,12 +7,12 @@ import { NotificationsService } from '../../notifications/notifications.service.
 export class FollowUpsService {
   constructor(
     private prisma: PrismaService,
-    private leadsService: LeadsService,
     private notificationsService: NotificationsService,
   ) {}
 
   async getFollowUps(leadId: string) {
-    await this.leadsService.findOne(leadId); // Ensure lead exists
+    const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
+    if (!lead) throw new Error('Lead not found');
     return this.prisma.followUp.findMany({
       where: { leadId },
       orderBy: { scheduledDate: 'desc' },
@@ -24,7 +23,8 @@ export class FollowUpsService {
   }
 
   async createFollowUp(leadId: string, data: { userId: string; scheduledDate: string; type?: string; remarks?: string }) {
-    await this.leadsService.findOne(leadId); // Ensure lead exists
+    const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
+    if (!lead) throw new Error('Lead not found');
 
     const followUp = await this.prisma.followUp.create({
       data: {
