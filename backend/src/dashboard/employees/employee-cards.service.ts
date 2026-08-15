@@ -4,7 +4,7 @@ import { getMonthRange } from '../core/dashboard.utils.js';
 
 @Injectable()
 export class EmployeeCardsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * Returns a grid of cards for each subordinate of the given manager,
