@@ -1,0 +1,34 @@
+import { Test, TestingModule } from '@nestjs/testing';
+jest.mock('../../lib/database/prisma-client.js', () => ({
+  prismaClient: {}
+}));
+jest.mock('../../lib/database/prisma.service.js', () => ({
+  PrismaService: class {}
+}));
+jest.mock('../../generated/prisma/client.js', () => ({
+  NotificationType: {},
+  PrismaClient: class {}
+}));
+import { PrismaService } from '../../lib/database/prisma.service.js';
+import { SourcingManagerDashboardService } from './sourcing-manager-dashboard.service.js';
+
+describe('SourcingManagerDashboardService', () => {
+  let service: SourcingManagerDashboardService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        SourcingManagerDashboardService,
+        { provide: PrismaService, useValue: {} },
+      ],
+    }).compile();
+
+    service = module.get<SourcingManagerDashboardService>(SourcingManagerDashboardService);
+  });
+
+  afterEach(() => jest.clearAllMocks());
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
