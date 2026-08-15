@@ -1,4 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
+jest.mock('../generated/prisma/client.js', () => ({
+  NotificationType: {
+    BOOKING_REQUEST: 'BOOKING_REQUEST',
+    REQUEST_APPROVED: 'REQUEST_APPROVED',
+    CHAT_MESSAGE: 'CHAT_MESSAGE',
+  },
+  PrismaClient: class { }
+}));
+
+jest.mock('expo-server-sdk', () => ({
+  Expo: class { }
+}));
+
+jest.mock('../notifications/notifications.service.js');
+
 import { ApprovalsService } from './approvals.service.js';
 import { PrismaService } from '../lib/database/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
