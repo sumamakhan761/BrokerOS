@@ -2,15 +2,15 @@ import React from 'react';
 import { Search, SlidersHorizontal, X, Calendar } from 'lucide-react';
 
 const STATUS_GROUPS: { label: string; value: string; color: string }[] = [
-  { label: 'All',           value: '',                    color: 'var(--text-secondary)' },
-  { label: 'New',           value: 'NEW',                 color: '#1d4ed8' },
-  { label: 'Contacted',     value: 'CONTACTED',           color: '#0369a1' },
-  { label: 'Interested',    value: 'INTERESTED',          color: '#15803d' },
-  { label: 'SV Scheduled',  value: 'SITE_VISIT_SCHEDULED',color: '#b45309' },
-  { label: 'SV Done',       value: 'SITE_VISIT_COMPLETED',color: '#7c3aed' },
-  { label: 'Negotiation',   value: 'NEGOTIATION',         color: '#c2410c' },
-  { label: 'Booking',       value: 'BOOKING',             color: '#15803d' },
-  { label: 'Lost',          value: 'LOST',                color: '#be123c' },
+  { label: 'All', value: '', color: 'var(--text-secondary)' },
+  { label: 'New', value: 'NEW', color: '#1d4ed8' },
+  { label: 'Contacted', value: 'CONTACTED', color: '#0369a1' },
+  { label: 'Interested', value: 'INTERESTED', color: '#15803d' },
+  { label: 'SV Scheduled', value: 'SITE_VISIT_SCHEDULED', color: '#b45309' },
+  { label: 'SV Done', value: 'SITE_VISIT_COMPLETED', color: '#7c3aed' },
+  { label: 'Negotiation', value: 'NEGOTIATION', color: '#c2410c' },
+  { label: 'Booking', value: 'BOOKING', color: '#15803d' },
+  { label: 'Lost', value: 'LOST', color: '#be123c' },
 ];
 
 interface LeadTableFiltersProps {

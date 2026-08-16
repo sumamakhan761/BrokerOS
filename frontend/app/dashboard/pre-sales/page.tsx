@@ -15,20 +15,20 @@ import {
 } from "lucide-react";
 
 const PIPELINE_STAGES = [
-  { key: "new",           label: "New",             color: "#8b5cf6" },
-  { key: "contacted",     label: "Contacted",       color: "#6366f1" },
-  { key: "siteVisit",     label: "Site Visit",      color: "#3b82f6" },
-  { key: "negotiation",   label: "Negotiation",     color: "#0ea5e9" },
-  { key: "booked",        label: "Booked",          color: "#10b981" },
+  { key: "new", label: "New", color: "#8b5cf6" },
+  { key: "contacted", label: "Contacted", color: "#6366f1" },
+  { key: "siteVisit", label: "Site Visit", color: "#3b82f6" },
+  { key: "negotiation", label: "Negotiation", color: "#0ea5e9" },
+  { key: "booked", label: "Booked", color: "#10b981" },
 ];
 
 export default function PreSalesDashboard() {
   const { data: session } = authClient.useSession();
-  const [dashData, setDashData]       = useState<any>(null);
+  const [dashData, setDashData] = useState<any>(null);
   const [leaderboard, setLeaderboard] = useState<any>(null);
   const [announcements, setAnnouncements] = useState<any[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const userName = (session?.user as any)?.name || "Agent";
 
@@ -43,8 +43,8 @@ export default function PreSalesDashboard() {
           authClient.$fetch<any[]>("/api/dashboard/pre-sales/my-announcements", { baseURL: baseUrl }),
         ]);
         if (dashRes.data) setDashData(dashRes.data);
-        if (lbRes.data)   setLeaderboard(lbRes.data);
-        if (annRes.data)  setAnnouncements(annRes.data);
+        if (lbRes.data) setLeaderboard(lbRes.data);
+        if (annRes.data) setAnnouncements(annRes.data);
         if (dashRes.error) throw new Error(dashRes.error.message || "Failed to load dashboard");
       } catch (e: any) {
         setError(e?.message || "Failed to load dashboard");
@@ -68,11 +68,11 @@ export default function PreSalesDashboard() {
 
   const widgets = dashData?.widgets;
   const statItems = widgets ? [
-    { label: "New Leads",          value: widgets.newLeads,            icon: Sparkles,       accent: "#7c3aed" },
-    { label: "Today's Follow-ups", value: widgets.todayFollowUps,      icon: ClipboardList,  accent: "#10b981" },
-    { label: "Missed Follow-ups",  value: widgets.missedFollowUps,     icon: AlertCircle,    accent: "#f59e0b" },
-    { label: "Site Visits",        value: widgets.siteVisitsScheduled, icon: MapPin,         accent: "#7c3aed" },
-    { label: "Bookings",           value: widgets.bookingsGenerated,   icon: Trophy,         accent: "#ec4899" },
+    { label: "New Leads", value: widgets.newLeads, icon: Sparkles, accent: "#7c3aed" },
+    { label: "Today's Follow-ups", value: widgets.todayFollowUps, icon: ClipboardList, accent: "#10b981" },
+    { label: "Missed Follow-ups", value: widgets.missedFollowUps, icon: AlertCircle, accent: "#f59e0b" },
+    { label: "Site Visits", value: widgets.siteVisitsScheduled, icon: MapPin, accent: "#7c3aed" },
+    { label: "Bookings", value: widgets.bookingsGenerated, icon: Trophy, accent: "#ec4899" },
   ] : [];
 
   const lbEntries = (leaderboard?.leaderboard ?? []).map((e: any, i: number) => ({ ...e, rank: e.rank ?? i + 1 }));
@@ -150,10 +150,10 @@ export default function PreSalesDashboard() {
             entries={lbEntries}
             currentUserId={leaderboard?.currentUserId}
             columns={[
-              { key: "coldCalls",  label: "Calls" },
-              { key: "followUps",  label: "F-ups" },
+              { key: "coldCalls", label: "Calls" },
+              { key: "followUps", label: "F-ups" },
               { key: "siteVisits", label: "Visits" },
-              { key: "score",      label: "Score" },
+              { key: "score", label: "Score" },
             ]}
           />
         </div>
