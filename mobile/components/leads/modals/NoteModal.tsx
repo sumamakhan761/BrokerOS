@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Modal, TextInput } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 interface NoteModalProps {
@@ -7,10 +7,22 @@ interface NoteModalProps {
   onClose: () => void;
   newNoteContent: string;
   setNewNoteContent: (text: string) => void;
-  saveNote: () => void;
+  saveNote: () => Promise<void>;
 }
 
 export default function NoteModal({ isVisible, onClose, newNoteContent, setNewNoteContent, saveNote }: NoteModalProps) {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (isSaving || !newNoteContent.trim()) return;
+    setIsSaving(true);
+    try {
+      await saveNote();
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Modal visible={isVisible} animationType="slide" transparent={true}>
       <View className="flex-1 bg-black/50 justify-end">
@@ -26,9 +38,18 @@ export default function NoteModal({ isVisible, onClose, newNoteContent, setNewNo
             textAlignVertical="top"
             value={newNoteContent}
             onChangeText={setNewNoteContent}
+            editable={!isSaving}
           />
-          <TouchableOpacity onPress={saveNote} className="bg-blue-600 p-4 rounded-xl items-center mb-6">
-            <Text className="text-white font-bold">Save Note</Text>
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={isSaving}
+            className={`p-4 rounded-xl items-center mb-6 flex-row justify-center ${isSaving ? 'bg-blue-400' : 'bg-blue-600'}`}
+          >
+            {isSaving ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text className="text-white font-bold text-lg">Save Note</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
