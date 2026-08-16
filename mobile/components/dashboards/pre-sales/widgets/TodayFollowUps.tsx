@@ -59,7 +59,7 @@ export default function TodayFollowUps({ todayFollowUpList, confirmFollowUp }: T
           </View>
         )}
         <TouchableOpacity onPress={() => router.push({ pathname: '/(dashboard)/pre-sales/lead-management', params: { followUpDate: new Date().toLocaleDateString('en-CA') } })} className="mt-4 bg-indigo-50 p-3.5 rounded-2xl">
-          <Text className="text-center text-sm font-bold text-indigo-600 tracking-tight">See all follow-ups →</Text>
+          <Text className="text-center text-sm font-bold text-indigo-600 tracking-tight">See all follow-ups </Text>
         </TouchableOpacity>
       </View>
     </View>
