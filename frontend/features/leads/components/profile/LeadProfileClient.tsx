@@ -293,7 +293,7 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
             agreedPrice={booking.agreedPrice || 0}
             bookingAmount={booking.bookingAmount || 0}
           />
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <BookingCard
               booking={booking}

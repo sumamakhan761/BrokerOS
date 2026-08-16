@@ -26,15 +26,15 @@ export function StatCards({
 }) {
   const gridStyle: React.CSSProperties = cols
     ? {
-        display: "grid",
-        gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gap: 16,
-      }
+      display: "grid",
+      gridTemplateColumns: `repeat(${cols}, 1fr)`,
+      gap: 16,
+    }
     : {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-        gap: 16,
-      };
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+      gap: 16,
+    };
 
   return (
     <div style={gridStyle}>
