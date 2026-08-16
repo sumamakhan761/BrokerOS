@@ -40,6 +40,8 @@ export class BrokersService {
         finalProjectIds = cmProjectIds.filter(id => id === projectId);
       }
       whereClause = {
+        status: 'DEAL',
+        subStatus: 'DONE',
         projectAssignments: {
           some: {
             projectId: { in: finalProjectIds }
@@ -89,6 +91,8 @@ export class BrokersService {
       ];
       whereClause = {
         id,
+        status: 'DEAL',
+        subStatus: 'DONE',
         projectAssignments: {
           some: {
             projectId: { in: cmProjectIds }
