@@ -32,11 +32,11 @@ export default function LeadDetails({
   const handleEditOpen = () => {
     setIsEditingLeadInfo(true);
     setLeadInfoData({
-      budget: lead.budget ? lead.budget.toString() : '',
+      budget: lead.budget != null ? String(lead.budget) : '',
       lastContactDate: lead.lastContactDate ? new Date(lead.lastContactDate).toISOString().split('T')[0] : '',
       nextFollowUpDate: lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toISOString().split('T')[0] : '',
-      sourceId: lead.sourceId || '',
-      interestedProjectId: lead.interestedProjectId || '',
+      sourceId: lead.source?.id || lead.sourceId || '',
+      interestedProjectId: lead.interestedProject?.id || lead.interestedProjectId || '',
       preferredLocation: lead.preferredLocation || '',
       requirements: lead.requirements || '',
     });
