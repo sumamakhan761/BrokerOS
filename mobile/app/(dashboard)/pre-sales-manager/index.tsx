@@ -2,11 +2,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { authClient } from '../../../lib/auth-client';
-import { WidgetsGrid } from '../../../components/dashboards/pre-sales-manager/widgets/WidgetsGrid';
+import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid';
 import { TeamBacklogs } from '../../../components/dashboards/pre-sales-manager/widgets/TeamBacklogs';
 import { TeamPipeline } from '../../../components/dashboards/pre-sales-manager/widgets/TeamPipeline';
 import { TodayFollowUps } from '../../../components/dashboards/pre-sales-manager/widgets/TodayFollowUps';
 import { MonthlyLeaderboard } from '../../../components/dashboards/pre-sales-manager/widgets/MonthlyLeaderboard';
+import { Users, FileText, CheckCircle, PhoneMissed, Briefcase, TrendingUp, Activity, AlertCircle } from 'lucide-react-native';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -117,7 +118,16 @@ export default function PreSalesManagerDashboard() {
 
       {dashData && (
         <>
-          <WidgetsGrid dashData={dashData} />
+          <SharedWidgetsGrid widgets={[
+            { label: 'Total Leads', value: dashData.widgets.totalLeads, icon: Users, accent: 'slate' },
+            { label: 'New Leads', value: dashData.widgets.newLeads, icon: FileText, accent: 'indigo' },
+            { label: 'Active Leads', value: dashData.widgets.activeLeads, icon: Activity, accent: 'emerald' },
+            { label: 'Lost Leads', value: dashData.widgets.lostLeads, icon: AlertCircle, accent: 'rose' },
+            { label: 'Follow-ups', value: dashData.widgets.todayFollowUps, icon: CheckCircle, accent: 'teal' },
+            { label: 'Missed F-ups', value: dashData.widgets.missedFollowUps, icon: PhoneMissed, accent: 'rose' },
+            { label: 'Site Visits', value: dashData.widgets.siteVisitsScheduled, icon: Briefcase, accent: 'violet' },
+            { label: 'Conv. Rate', value: dashData.widgets.conversionRate + '%', icon: TrendingUp, accent: 'amber' },
+          ]} />
           <TeamBacklogs backlogs={dashData.backlogs} />
           <TeamPipeline pipeline={dashData.pipeline} />
           <TodayFollowUps followUps={dashData.todayFollowUpList} />

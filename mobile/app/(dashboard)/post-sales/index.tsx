@@ -3,9 +3,10 @@ import { View, Text, ScrollView, ActivityIndicator, RefreshControl, Alert } from
 import { authClient } from '../../../lib/auth-client';
 import { PostSalesDashboardData } from '../../../components/dashboards/post-sales/misc/types';
 
-import PostSalesOverviewWidgets from '../../../components/dashboards/post-sales/widgets/PostSalesOverviewWidgets';
+import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid';
 import PendingListWidget from '../../../components/dashboards/post-sales/widgets/PendingListWidget';
 import PostSalesFollowUps from '../../../components/dashboards/post-sales/widgets/PostSalesFollowUps';
+import { Users, FileText, CircleDollarSign, Edit, Key, CheckCircle } from 'lucide-react-native';
 
 export default function PostSalesDashboard() {
   const { data: session } = authClient.useSession();
@@ -80,7 +81,14 @@ export default function PostSalesDashboard() {
 
       {dashData && (
         <>
-          <PostSalesOverviewWidgets widgets={dashData.widgets} />
+          <SharedWidgetsGrid title="Overview" widgets={[
+            { label: 'Total Booked', value: dashData.widgets.totalBooked, icon: Users, accent: 'indigo' },
+            { label: 'Documents Pending', value: dashData.widgets.documentsPending, icon: FileText, accent: 'amber' },
+            { label: 'Loan Cases', value: dashData.widgets.loanCases, icon: CircleDollarSign, accent: 'blue' },
+            { label: 'Agreement Pending', value: dashData.widgets.agreementPending, icon: Edit, accent: 'purple' },
+            { label: 'Possession Pending', value: dashData.widgets.possessionPending, icon: Key, accent: 'rose' },
+            { label: 'Handover Completed', value: dashData.widgets.handoverCompleted, icon: CheckCircle, accent: 'emerald' },
+          ]} />
           <View style={{ marginTop: 10 }} />
           <PendingListWidget title="Documents Pending" list={dashData.documentsList} statusFilter="DOCUMENT" emptyMessage="No documents pending." />
           <PendingListWidget title="Loan Cases in Progress" list={dashData.loanList} statusFilter="LOAN" emptyMessage="No loan cases in progress." />

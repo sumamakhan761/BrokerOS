@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { authClient } from '../../../lib/auth-client';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid';
+import { CheckCircle, Home, Users, Briefcase, TrendingUp, DollarSign } from 'lucide-react-native';
 
 export default function ClosingManagerScreen() {
   const router = useRouter();
@@ -148,75 +150,14 @@ export default function ClosingManagerScreen() {
         </View>
 
         {/* Stats Grid */}
-        <View className="flex-row flex-wrap justify-between">
-
-          {/* Total Bookings */}
-          <View className="w-[48%] bg-white rounded-3xl p-5 mb-4 border border-slate-200 shadow-sm">
-            <View className="w-10 h-10 bg-emerald-100 rounded-xl items-center justify-center mb-4">
-              <Feather name="check-circle" size={20} color="#059669" />
-            </View>
-            <Text className="text-xs font-bold text-slate-500 mb-1">Total Bookings</Text>
-            <Text className="text-2xl font-black text-slate-900">{widgets?.totalBookings || 0}</Text>
-          </View>
-
-          {/* Total Units Sold */}
-          <View className="w-[48%] bg-white rounded-3xl p-5 mb-4 border border-slate-200 shadow-sm">
-            <View className="w-10 h-10 bg-blue-100 rounded-xl items-center justify-center mb-4">
-              <Feather name="home" size={20} color="#2563eb" />
-            </View>
-            <Text className="text-xs font-bold text-slate-500 mb-1">Units Sold</Text>
-            <Text className="text-2xl font-black text-slate-900">{widgets?.totalUnitsSold || 0}</Text>
-          </View>
-
-          {/* Total Brokers */}
-          <View className="w-[48%] bg-white rounded-3xl p-5 mb-4 border border-slate-200 shadow-sm">
-            <View className="w-10 h-10 bg-purple-100 rounded-xl items-center justify-center mb-4">
-              <Feather name="users" size={20} color="#7c3aed" />
-            </View>
-            <Text className="text-xs font-bold text-slate-500 mb-1">Brokers</Text>
-            <Text className="text-2xl font-black text-slate-900">{widgets?.totalBrokers || 0}</Text>
-          </View>
-        </View>
-
-        {/* Revenue Cards - Full Width */}
-        <Text className="text-lg font-bold text-slate-900 mt-2 mb-4 px-1">Revenue Metrics</Text>
-
-        {/* Booking Revenue */}
-        <View className="bg-white rounded-3xl p-5 mb-4 border border-slate-200 shadow-sm">
-          <View className="w-12 h-12 bg-emerald-100 rounded-2xl items-center justify-center mb-4">
-            <Feather name="briefcase" size={24} color="#059669" />
-          </View>
-          <Text className="text-sm font-bold text-slate-500 mb-1">Total Booking Revenue</Text>
-          <Text className="text-3xl font-black text-slate-900">
-            ₹{(widgets?.totalBookingRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </Text>
-          <Text className="text-xs text-slate-400 font-medium mt-2">Tokens collected at booking</Text>
-        </View>
-
-        {/* Total Revenue Generated */}
-        <View className="bg-blue-50 rounded-3xl p-5 mb-4 border border-blue-100 shadow-sm">
-          <View className="w-12 h-12 bg-blue-600 rounded-2xl items-center justify-center mb-4 shadow-sm shadow-blue-500">
-            <Feather name="trending-up" size={24} color="#ffffff" />
-          </View>
-          <Text className="text-sm font-bold text-blue-900/60 mb-1">Total Revenue Generated</Text>
-          <Text className="text-3xl font-black text-blue-950">
-            ₹{(widgets?.totalRevenueGenerated || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </Text>
-          <Text className="text-xs text-blue-900/50 font-medium mt-2">Overall agreed price on closed deals</Text>
-        </View>
-
-        {/* Broker Commission */}
-        <View className="bg-slate-900 rounded-3xl p-5 mb-10 shadow-lg">
-          <View className="w-12 h-12 bg-white/10 rounded-2xl items-center justify-center mb-4">
-            <Feather name="dollar-sign" size={24} color="#818cf8" />
-          </View>
-          <Text className="text-sm font-medium text-slate-400 mb-1">Total Broker Commission</Text>
-          <Text className="text-3xl font-black text-white">
-            ₹{(widgets?.totalBrokerCommission || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-          </Text>
-          <Text className="text-xs text-slate-400 font-medium mt-2">Commission generated for brokers</Text>
-        </View>
-
+        <SharedWidgetsGrid widgets={[
+          { label: 'Total Bookings', value: widgets?.totalBookings || 0, icon: CheckCircle, accent: 'emerald' },
+          { label: 'Units Sold', value: widgets?.totalUnitsSold || 0, icon: Home, accent: 'blue' },
+          { label: 'Brokers', value: widgets?.totalBrokers || 0, icon: Users, accent: 'purple' },
+          { label: 'Booking Revenue', value: '₹' + (widgets?.totalBookingRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }), icon: Briefcase, accent: 'emerald' },
+          { label: 'Total Revenue', value: '₹' + (widgets?.totalRevenueGenerated || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }), icon: TrendingUp, accent: 'blue' },
+          { label: 'Broker Commission', value: '₹' + (widgets?.totalBrokerCommission || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }), icon: DollarSign, accent: 'slate' },
+        ]} />
         {/* Pending Tasks Section */}
         <View className="mb-12">
           <Text className="text-lg font-bold text-slate-900 mb-4 px-1">Pending Tasks & Follow-ups</Text>
