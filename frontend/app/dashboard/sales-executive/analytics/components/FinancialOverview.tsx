@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatCard } from '@/components/analytics/StatCard';
-import { IndianRupee, Wallet, TrendingUp } from 'lucide-react';
+import { DollarSign, Wallet, TrendingUp } from 'lucide-react';
 
 export function FinancialOverview({ financialData }: { financialData: any }) {
   if (!financialData) return null;
@@ -17,7 +17,7 @@ export function FinancialOverview({ financialData }: { financialData: any }) {
         title="Total Revenue (Sold)"
         value={formatter.format(financialData.totalRevenue)}
         subtitle="Locked-in Revenue"
-        icon={IndianRupee}
+        icon={DollarSign}
         delay={0.1}
       />
       <StatCard
@@ -37,3 +37,4 @@ export function FinancialOverview({ financialData }: { financialData: any }) {
     </div>
   );
 }
+
