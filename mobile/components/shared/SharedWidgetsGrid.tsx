@@ -57,10 +57,10 @@ export function SharedWidgetsGrid({ widgets, title }: SharedWidgetsGridProps) {
           return (
             <View key={i} className="w-[48%] bg-white border border-slate-100 shadow-sm rounded-2xl p-4">
               <View className={`w-8 h-8 rounded-full items-center justify-center mb-3 ${color.bg}`}>
-                {typeof Icon === 'function' ? (
-                  <Icon size={16} color={getHexColor(w.accent)} strokeWidth={2.5} className={color.text} />
-                ) : (
+                {React.isValidElement(Icon) ? (
                   Icon
+                ) : (
+                  <Icon size={16} color={getHexColor(w.accent)} strokeWidth={2.5} className={color.text} />
                 )}
               </View>
               <Text className="text-2xl font-extrabold text-slate-900">{w.value}</Text>
