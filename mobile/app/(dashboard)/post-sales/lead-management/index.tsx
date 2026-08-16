@@ -24,6 +24,10 @@ export default function PostSalesLeadManagementList() {
   const [status, setStatus] = useState('');
   const [scoreRange, setScoreRange] = useState('');
   const [filterFollowUpDate, setFilterFollowUpDate] = useState((followUpDate as string) || '');
+
+  useEffect(() => {
+    setFilterFollowUpDate((followUpDate as string) || '');
+  }, [followUpDate]);
   const [siteVisitDate, setSiteVisitDate] = useState('');
 
   // Auto Dialer Selection State

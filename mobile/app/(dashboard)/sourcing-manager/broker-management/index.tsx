@@ -19,6 +19,10 @@ export default function BrokerManagementIndex() {
   const [filterFollowUpDate, setFilterFollowUpDate] = useState((followUpDate as string) || '');
 
   useEffect(() => {
+    setFilterFollowUpDate((followUpDate as string) || '');
+  }, [followUpDate]);
+
+  useEffect(() => {
     loadBrokers();
   }, [status, filterFollowUpDate]);
 
