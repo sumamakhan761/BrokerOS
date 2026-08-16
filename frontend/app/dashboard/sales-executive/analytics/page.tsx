@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { Loader2, TrendingUp } from "lucide-react";
+import { Loader2, TrendingUp, Download } from "lucide-react";
 import { FinancialOverview } from "./components/FinancialOverview";
 import { ConversionFunnelChart } from "./components/ConversionFunnelChart";
 import { TowerHeatmap } from "./components/TowerHeatmap";
@@ -19,6 +19,7 @@ export default function SalesExecAnalyticsPage() {
   
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [leaderboardData, setLeaderboardData] = useState<any>(null);
+  const [timeRange, setTimeRange] = useState('monthly');
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -29,7 +30,7 @@ export default function SalesExecAnalyticsPage() {
     if (session) {
       loadData();
     }
-  }, [session, isPending, router]);
+  }, [session, isPending, router, timeRange]);
 
   const loadData = async () => {
     try {
@@ -37,7 +38,7 @@ export default function SalesExecAnalyticsPage() {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       
       const [analyticsRes, lbRes] = await Promise.all([
-        authClient.$fetch<any>("/api/dashboard/sales-executive/analytics", { baseURL: baseUrl }),
+        authClient.$fetch<any>(`/api/dashboard/sales-executive/analytics?timeRange=${timeRange}`, { baseURL: baseUrl }),
         authClient.$fetch<any>("/api/dashboard/sales-executive/leaderboard", { baseURL: baseUrl })
       ]);
       
@@ -49,6 +50,23 @@ export default function SalesExecAnalyticsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const exportToCSV = () => {
+    if (!analyticsData) return;
+    const rows: any[][] = [
+      ['Metric', 'Value'],
+      ['Total Revenue', analyticsData.financial?.totalRevenue],
+      ['Realized Commission', analyticsData.financial?.realizedCommission],
+      ['Projected Commission', analyticsData.financial?.projectedCommission],
+    ];
+    const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+    const link = document.createElement("a");
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", `sales_exec_analytics_${timeRange}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {
@@ -88,6 +106,34 @@ export default function SalesExecAnalyticsPage() {
           <p className="text-sm font-medium text-slate-500">
             Track your revenue, pipeline conversion, and tower inventory in real-time.
           </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-white shadow-sm border border-slate-100 rounded-lg p-1">
+            {[
+              { id: 'weekly', label: 'Weekly' },
+              { id: 'monthly', label: 'Monthly' },
+              { id: 'yearly', label: 'Yearly' },
+              { id: 'all-time', label: 'All Time' }
+            ].map(r => (
+              <button
+                key={r.id}
+                onClick={() => setTimeRange(r.id)}
+                className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${timeRange === r.id
+                  ? 'bg-slate-100 text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                  }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={exportToCSV}
+            className="px-5 py-1.5 rounded-lg text-sm font-semibold bg-indigo-500 text-white hover:bg-indigo-600 transition-colors shadow-sm flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
         </div>
       </div>
 
