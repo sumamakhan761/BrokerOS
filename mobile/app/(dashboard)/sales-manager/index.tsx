@@ -150,34 +150,6 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontSize: 13,
   },
-  widgetsScroll: {
-    flexDirection: 'row',
-    marginBottom: 20,
-    marginHorizontal: -20,
-    paddingLeft: 20,
-  },
-  widgetCard: {
-    width: 120,
-    padding: 16,
-    borderRadius: 16,
-    marginRight: 12,
-    alignItems: 'flex-start',
-  },
-  widgetIcon: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  widgetVal: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  widgetLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#64748b',
-    marginTop: 4,
-  },
   navGrid: {
     marginBottom: 24,
   },
