@@ -52,7 +52,7 @@ export default function PostSalesFollowUps({ todayFollowUpList, confirmFollowUp 
           </View>
         )}
         <TouchableOpacity onPress={() => router.push({ pathname: '/(dashboard)/post-sales/lead-management', params: { followUpDate: new Date().toLocaleDateString('en-CA') } })} style={{ marginTop: 16, backgroundColor: '#eef2ff', padding: 12, borderRadius: 12 }}>
-          <Text style={{ textAlign: 'center', fontSize: 13, fontWeight: '700', color: '#4f46e5' }}>See all follow-ups →</Text>
+          <Text style={{ textAlign: 'center', fontSize: 13, fontWeight: '700', color: '#4f46e5' }}>See all follow-ups </Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -42,9 +42,7 @@ export default function DashboardLayout() {
 
   useEffect(() => {
     const user = session?.user as any;
-    if (!isPending && !session) {
-      router.replace('/(auth)/sign-in');
-    } else if (user?.roleId) {
+    if (user?.roleId) {
       const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
       fetch(`${baseUrl}/roles`)
         .then(res => res.json())
@@ -403,69 +401,69 @@ export default function DashboardLayout() {
 
   return (
     <SocketContext.Provider value={{ socket }}>
-    <Tabs screenOptions={{
-      headerStyle: { backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.05, elevation: 2 },
-      headerTintColor: '#0f172a',
-      tabBarActiveTintColor: '#2563eb',
-      tabBarInactiveTintColor: '#64748b',
-      tabBarStyle: { backgroundColor: '#ffffff', borderTopColor: '#e2e8f0', elevation: 10, paddingBottom: 5, height: 60 },
-      tabBarLabelStyle: { fontSize: 10, paddingBottom: 4 },
-      tabBarIconStyle: { marginTop: 4 },
-      tabBarItemStyle: { display: 'none' }, // hide all implicitly generated tabs by default
-      headerRight: () => (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
-          <Feather
-            name="message-circle"
-            size={22}
-            color="#0f172a"
-            style={{ marginRight: 20 }}
-            onPress={() => {
-              router.push('/(dashboard)/chat' as any);
-            }}
-          />
-          <Feather
-            name="bell"
-            size={22}
-            color="#0f172a"
-            style={{ marginRight: 20 }}
-            onPress={() => {
-              setUnreadCount(0); // optimistic reset
-              router.push('/(dashboard)/notifications');
-            }}
-          />
-          {unreadCount > 0 && (
-            <View style={{ position: 'absolute', right: 38, top: -5, backgroundColor: 'red', borderRadius: 10, width: 18, height: 18, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{unreadCount}</Text>
-            </View>
-          )}
-          <Feather
-            name="log-out"
-            size={22}
-            color="#ef4444"
-            onPress={handleSignOut}
-          />
-        </View>
-      ),
-    }}>
-      {allPossibleScreens.map(link => {
-        const isVisible = navLinks.some(nl => nl.name === link.name);
-        return (
-          <Tabs.Screen
-            key={link.name}
-            name={link.name}
-            options={{
-              title: link.title,
-              tabBarLabel: link.title,
-              href: isVisible ? undefined : null, // dynamically hides the tab from the bottom bar
-              tabBarItemStyle: { display: isVisible ? 'flex' : 'none' }, // explicitly show the tab if visible
-              tabBarIcon: ({ color, size }) => (
-                <Feather name={link.icon as any} size={size} color={color} />
-              )
-            }}
-          />
-        );
-      })}
-    </Tabs>
+      <Tabs screenOptions={{
+        headerStyle: { backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.05, elevation: 2 },
+        headerTintColor: '#0f172a',
+        tabBarActiveTintColor: '#2563eb',
+        tabBarInactiveTintColor: '#64748b',
+        tabBarStyle: { backgroundColor: '#ffffff', borderTopColor: '#e2e8f0', elevation: 10, paddingBottom: 5, height: 60 },
+        tabBarLabelStyle: { fontSize: 10, paddingBottom: 4 },
+        tabBarIconStyle: { marginTop: 4 },
+        tabBarItemStyle: { display: 'none' }, // hide all implicitly generated tabs by default
+        headerRight: () => (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16 }}>
+            <Feather
+              name="message-circle"
+              size={22}
+              color="#0f172a"
+              style={{ marginRight: 20 }}
+              onPress={() => {
+                router.push('/(dashboard)/chat' as any);
+              }}
+            />
+            <Feather
+              name="bell"
+              size={22}
+              color="#0f172a"
+              style={{ marginRight: 20 }}
+              onPress={() => {
+                setUnreadCount(0); // optimistic reset
+                router.push('/(dashboard)/notifications');
+              }}
+            />
+            {unreadCount > 0 && (
+              <View style={{ position: 'absolute', right: 38, top: -5, backgroundColor: 'red', borderRadius: 10, width: 18, height: 18, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{unreadCount}</Text>
+              </View>
+            )}
+            <Feather
+              name="log-out"
+              size={22}
+              color="#ef4444"
+              onPress={handleSignOut}
+            />
+          </View>
+        ),
+      }}>
+        {allPossibleScreens.map(link => {
+          const isVisible = navLinks.some(nl => nl.name === link.name);
+          return (
+            <Tabs.Screen
+              key={link.name}
+              name={link.name}
+              options={{
+                title: link.title,
+                tabBarLabel: link.title,
+                href: isVisible ? undefined : null, // dynamically hides the tab from the bottom bar
+                tabBarItemStyle: { display: isVisible ? 'flex' : 'none' }, // explicitly show the tab if visible
+                tabBarIcon: ({ color, size }) => (
+                  <Feather name={link.icon as any} size={size} color={color} />
+                )
+              }}
+            />
+          );
+        })}
+      </Tabs>
     </SocketContext.Provider>
   );
 }

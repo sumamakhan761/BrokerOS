@@ -28,7 +28,7 @@ export interface FollowUpItem {
 }
 
 const TEMP_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  HOT:  { bg: "#fee2e2", text: "#b91c1c", label: "Hot" },
+  HOT: { bg: "#fee2e2", text: "#b91c1c", label: "Hot" },
   WARM: { bg: "#fef3c7", text: "#b45309", label: "Warm" },
   COLD: { bg: "#dbeafe", text: "#1e40af", label: "Cold" },
 };
@@ -104,8 +104,8 @@ export function FollowUpList({
             const name = fu.lead
               ? `${fu.lead.firstName ?? ""} ${fu.lead.lastName ?? ""}`.trim()
               : fu.customer
-              ? `${fu.customer.firstName ?? ""} ${fu.customer.lastName ?? ""}`.trim()
-              : "Unknown";
+                ? `${fu.customer.firstName ?? ""} ${fu.customer.lastName ?? ""}`.trim()
+                : "Unknown";
             const temp = fu.lead?.temperature;
             const tempStyle = temp ? TEMP_COLORS[temp] : null;
             const isActionable = ["SCHEDULED", "RESCHEDULED", "MISSED"].includes(fu.status);
@@ -221,7 +221,7 @@ export function FollowUpList({
               border: "1px solid var(--brand-100)",
             }}
           >
-            See all follow-ups →
+            See all follow-ups
           </Link>
         </div>
       )}

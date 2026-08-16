@@ -5,6 +5,8 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import SalesManagerTasks from '../../../components/dashboards/sales-manager/widgets/SalesManagerTasks';
 import SalesManagerLeaderboard from '../../../components/dashboards/sales-manager/widgets/SalesManagerLeaderboard';
+import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid';
+import { Calendar, CheckCircle, MessageSquare, Award } from 'lucide-react-native';
 
 export default function SalesManagerDashboard() {
   const { data: session } = authClient.useSession();
@@ -21,7 +23,7 @@ export default function SalesManagerDashboard() {
     try {
       const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000';
       const res = await authClient.$fetch<any>('/api/dashboard/sales-manager', { baseURL: baseUrl });
-      
+
       if (res.data) setDashData(res.data);
       if (res.error) throw new Error(res.error.message);
     } catch (e: any) {
@@ -54,7 +56,7 @@ export default function SalesManagerDashboard() {
   const widgets = dashData?.widgets;
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
@@ -71,31 +73,17 @@ export default function SalesManagerDashboard() {
 
       {/* Widgets (Grid) */}
       {widgets && (
-        <View className="mb-6 mt-1">
-          <Text className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">Overview</Text>
-          <View className="flex-row flex-wrap justify-between" style={{ gap: 12 }}>
-            {[
-              { label: 'SVs Scheduled', value: widgets.siteVisitsScheduled, icon: 'calendar', accent: '#3b82f6', bgClass: 'bg-blue-50', lineClass: 'bg-blue-500' },
-              { label: 'SVs Completed', value: widgets.siteVisitsCompleted, icon: 'check-circle', accent: '#10b981', bgClass: 'bg-emerald-50', lineClass: 'bg-emerald-500' },
-              { label: 'Negotiations', value: widgets.negotiations, icon: 'message-square', accent: '#f59e0b', bgClass: 'bg-amber-50', lineClass: 'bg-amber-500' },
-              { label: 'Bookings', value: widgets.bookingsGenerated, icon: 'award', accent: '#e11d48', bgClass: 'bg-rose-50', lineClass: 'bg-rose-500' },
-            ].map((w) => (
-              <View key={w.label} className="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm shadow-slate-200/50" style={{ width: '48%' }}>
-                <View className={`w-9 h-9 rounded-xl justify-center items-center mb-3 ${w.bgClass}`}>
-                  <Feather name={w.icon as any} size={18} color={w.accent} />
-                </View>
-                <Text className="text-3xl font-extrabold text-slate-900 tracking-tight">{w.value}</Text>
-                <Text className="text-xs font-medium text-slate-500 mt-1">{w.label}</Text>
-                <View className={`h-1 rounded-full mt-3 opacity-60 ${w.lineClass}`} />
-              </View>
-            ))}
-          </View>
-        </View>
+        <SharedWidgetsGrid title="Overview" widgets={[
+          { label: 'SVs Scheduled', value: widgets.siteVisitsScheduled, icon: Calendar, accent: 'blue' },
+          { label: 'SVs Completed', value: widgets.siteVisitsCompleted, icon: CheckCircle, accent: 'emerald' },
+          { label: 'Negotiations', value: widgets.negotiations, icon: MessageSquare, accent: 'amber' },
+          { label: 'Bookings', value: widgets.bookingsGenerated, icon: Award, accent: 'rose' },
+        ]} />
       )}
 
       {/* Navigation Cards */}
       <View style={styles.navGrid}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.navCard}
           onPress={() => router.push('/(dashboard)/sales-manager/lead-management' as any)}
         >
@@ -108,7 +96,7 @@ export default function SalesManagerDashboard() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.navCard, { marginTop: 12 }]}
           onPress={() => router.push('/(dashboard)/sales-manager/approval' as any)}
         >
@@ -125,7 +113,7 @@ export default function SalesManagerDashboard() {
       {/* Team Tasks & Leaderboard */}
       {dashData && <SalesManagerTasks dashData={dashData} />}
       {dashData && <SalesManagerLeaderboard leaderboardData={dashData.teamLeaderboard} />}
-      
+
       <View style={{ height: 40 }} />
     </ScrollView>
   );
@@ -161,34 +149,6 @@ const styles = StyleSheet.create({
   errorBannerText: {
     color: '#ef4444',
     fontSize: 13,
-  },
-  widgetsScroll: {
-    flexDirection: 'row',
-    marginBottom: 20,
-    marginHorizontal: -20,
-    paddingLeft: 20,
-  },
-  widgetCard: {
-    width: 120,
-    padding: 16,
-    borderRadius: 16,
-    marginRight: 12,
-    alignItems: 'flex-start',
-  },
-  widgetIcon: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  widgetVal: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0f172a',
-  },
-  widgetLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#64748b',
-    marginTop: 4,
   },
   navGrid: {
     marginBottom: 24,

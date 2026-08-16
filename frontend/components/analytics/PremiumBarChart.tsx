@@ -62,7 +62,7 @@ export default function PremiumBarChart({
                                         );
                                     }
                                     return null;
-                                } }
+                                }}
                             />
                             <Bar
                                 dataKey={dataKey}

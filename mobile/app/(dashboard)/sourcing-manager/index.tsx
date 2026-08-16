@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { authClient } from '../../../lib/auth-client';
 import { useLocationTracking } from '../../../hooks/useLocationTracking';
 import LiveTrackingMap from '../../../components/maps/LiveTrackingMap';
+import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid';
+import { UserCheck, UserPlus, Calendar, Clock, Briefcase, Building, IndianRupee, TrendingUp } from 'lucide-react-native';
 
 export default function SourcingManagerScreen() {
   const { data: session } = authClient.useSession();
@@ -50,11 +52,11 @@ export default function SourcingManagerScreen() {
     );
   }
 
-  const { 
-    activeBrokers, 
-    newBrokers, 
-    todayMeetings, 
-    todayFollowUps, 
+  const {
+    activeBrokers,
+    newBrokers,
+    todayMeetings,
+    todayFollowUps,
     revenueStats,
     todayFollowUpList,
     todayMeetingList,
@@ -69,101 +71,24 @@ export default function SourcingManagerScreen() {
       </View>
 
       {/* Grid for Activities */}
-      <View className="flex-row flex-wrap justify-between gap-y-4 mb-8">
-        {/* Active Brokers */}
-        <View className="w-[48%] bg-white rounded-3xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-          <View className="absolute -right-4 -top-4 w-16 h-16 bg-emerald-50 rounded-full" />
-          <View className="w-10 h-10 bg-emerald-100 rounded-xl items-center justify-center mb-4">
-            <Feather name="user-check" size={20} color="#10b981" />
-          </View>
-          <Text className="text-xs font-bold text-slate-500 mb-1">Active Brokers</Text>
-          <Text className="text-2xl font-black text-slate-900">{activeBrokers}</Text>
-        </View>
+      <SharedWidgetsGrid widgets={[
+        { label: 'Active Brokers', value: activeBrokers, icon: UserCheck, accent: 'emerald' },
+        { label: 'New Brokers', value: newBrokers, icon: UserPlus, accent: 'blue' },
+        { label: 'Meetings Today', value: todayMeetings, icon: Calendar, accent: 'purple' },
+        { label: 'Follow-ups Today', value: todayFollowUps, icon: Clock, accent: 'orange' },
+      ]} />
 
-        {/* New Brokers */}
-        <View className="w-[48%] bg-white rounded-3xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-          <View className="absolute -right-4 -top-4 w-16 h-16 bg-blue-50 rounded-full" />
-          <View className="w-10 h-10 bg-blue-100 rounded-xl items-center justify-center mb-4">
-            <Feather name="user-plus" size={20} color="#3b82f6" />
-          </View>
-          <Text className="text-xs font-bold text-slate-500 mb-1">New Brokers</Text>
-          <Text className="text-2xl font-black text-slate-900">{newBrokers}</Text>
-        </View>
-
-        {/* Today's Meetings */}
-        <View className="w-[48%] bg-white rounded-3xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-          <View className="absolute -right-4 -top-4 w-16 h-16 bg-purple-50 rounded-full" />
-          <View className="w-10 h-10 bg-purple-100 rounded-xl items-center justify-center mb-4">
-            <Feather name="calendar" size={20} color="#9333ea" />
-          </View>
-          <Text className="text-xs font-bold text-slate-500 mb-1">Meetings Today</Text>
-          <Text className="text-2xl font-black text-slate-900">{todayMeetings}</Text>
-        </View>
-
-        {/* Today's Follow ups */}
-        <View className="w-[48%] bg-white rounded-3xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-          <View className="absolute -right-4 -top-4 w-16 h-16 bg-orange-50 rounded-full" />
-          <View className="w-10 h-10 bg-orange-100 rounded-xl items-center justify-center mb-4">
-            <Feather name="clock" size={20} color="#f97316" />
-          </View>
-          <Text className="text-xs font-bold text-slate-500 mb-1">Follow-ups Today</Text>
-          <Text className="text-2xl font-black text-slate-900">{todayFollowUps}</Text>
-        </View>
-      </View>
-
-      <Text className="text-xl font-bold text-slate-900 mb-4 px-1">Revenue & Performance</Text>
-
-      {/* Bookings Generated */}
-      <View className="bg-slate-900 rounded-3xl p-6 shadow-xl mb-4 relative overflow-hidden">
-        <View className="absolute -right-10 -bottom-10 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl" />
-        <View className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6">
-          <Feather name="briefcase" size={24} color="#818cf8" />
-        </View>
-        <Text className="text-sm font-medium text-slate-400 mb-1">Bookings Generated</Text>
-        <Text className="text-4xl font-black tracking-tight text-white">{revenueStats.bookingsGenerated || 0}</Text>
-      </View>
-
-      {/* Booking Revenue */}
-      <View className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm mb-4 relative overflow-hidden">
-        <View className="absolute -right-8 -top-8 w-24 h-24 bg-emerald-50 rounded-full" />
-        <View className="w-10 h-10 bg-emerald-100 rounded-xl items-center justify-center mb-4">
-          <FontAwesome5 name="building" size={16} color="#10b981" />
-        </View>
-        <Text className="text-xs font-bold text-slate-500 mb-1">Booking Revenue Generated</Text>
-        <Text className="text-3xl font-black text-slate-900">
-          ₹{(revenueStats.bookingRevenueGenerated || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-        </Text>
-      </View>
-
-      {/* Broker Commission */}
-      <View className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm mb-4 relative overflow-hidden">
-        <View className="absolute -right-8 -top-8 w-24 h-24 bg-blue-50 rounded-full" />
-        <View className="w-10 h-10 bg-blue-100 rounded-xl items-center justify-center mb-4">
-          <FontAwesome5 name="rupee-sign" size={16} color="#3b82f6" />
-        </View>
-        <Text className="text-xs font-bold text-slate-500 mb-1">Broker Commission Paid</Text>
-        <Text className="text-3xl font-black text-slate-900">
-          ₹{(revenueStats.brokerCommissionPaid || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-        </Text>
-      </View>
-
-      {/* Broker Revenue Generated (Handover) */}
-      <View className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-3xl p-6 shadow-sm relative overflow-hidden mb-4">
-        <View className="absolute -right-8 -bottom-8 w-24 h-24 bg-indigo-200/50 rounded-full blur-xl" />
-        <View className="w-10 h-10 bg-indigo-600 rounded-xl items-center justify-center mb-4 shadow-md shadow-indigo-600/30">
-          <Feather name="trending-up" size={18} color="#ffffff" />
-        </View>
-        <Text className="text-xs font-bold text-indigo-900/60 mb-1">Revenue from handover part</Text>
-        <Text className="text-3xl font-black text-indigo-950">
-          ₹{(revenueStats.brokerRevenueGenerated || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-        </Text>
-        <Text className="text-[10px] text-indigo-900/50 font-medium mt-2">Agreed price from completed handovers</Text>
-      </View>
+      <SharedWidgetsGrid title="Revenue & Performance" widgets={[
+        { label: 'Bookings Gen.', value: revenueStats.bookingsGenerated || 0, icon: Briefcase, accent: 'indigo' },
+        { label: 'Booking Rev.', value: '₹' + (revenueStats.bookingRevenueGenerated || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }), icon: Building, accent: 'emerald' },
+        { label: 'Commission Paid', value: '₹' + (revenueStats.brokerCommissionPaid || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }), icon: IndianRupee, accent: 'blue' },
+        { label: 'Handover Rev.', value: '₹' + (revenueStats.brokerRevenueGenerated || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }), icon: TrendingUp, accent: 'indigo' },
+      ]} />
 
       {/* Today's Tasks */}
       <View className="mt-8 mb-4">
         <Text className="text-xl font-bold text-slate-900 mb-4 px-1">Today's Tasks</Text>
-        
+
         {(!todayMeetingList?.length && !todayFollowUpList?.length) ? (
           <View className="bg-white rounded-2xl p-6 border border-slate-200 items-center justify-center">
             <Feather name="check-circle" size={32} color="#cbd5e1" />
@@ -184,7 +109,7 @@ export default function SourcingManagerScreen() {
                 </View>
               </View>
             ))}
-            
+
             {todayFollowUpList?.map((followUp: any) => (
               <View key={followUp.id} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex-row items-center mt-3">
                 <View className="w-10 h-10 bg-orange-100 rounded-xl items-center justify-center mr-4">
@@ -205,7 +130,7 @@ export default function SourcingManagerScreen() {
       {/* Broker Leaderboard */}
       <View className="mt-8 mb-4">
         <Text className="text-xl font-bold text-slate-900 mb-4 px-1">Team Performance</Text>
-        
+
         {(!topPerformingBrokers || topPerformingBrokers.length === 0) ? (
           <View className="bg-white rounded-2xl p-6 border border-slate-200 items-center justify-center">
             <Feather name="award" size={32} color="#cbd5e1" />

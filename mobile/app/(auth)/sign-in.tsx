@@ -50,12 +50,13 @@ export default function SignIn() {
 
       if (authError) {
         setError(authError.message || "Invalid credentials.");
+        setLoading(false);
       } else if (data) {
-        router.replace("/(dashboard)" as any);
+        // State-driven navigation will take over, redirecting to dashboard.
+        // Keep loading=true so the spinner shows until the layout switches.
       }
     } catch (err: any) {
       setError(err?.message || "An unexpected error occurred.");
-    } finally {
       setLoading(false);
     }
   };

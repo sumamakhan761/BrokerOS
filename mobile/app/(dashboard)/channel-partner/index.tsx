@@ -2,9 +2,18 @@ import { View, Text, Platform, ActivityIndicator, ScrollView } from 'react-nativ
 import { Feather } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { authClient } from '../../../lib/auth-client';
-import { CPDashboardWidgets } from '../../../components/dashboards/channel-partner/CPDashboardWidgets';
+import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid';
 import { CPActionTasks } from '../../../components/dashboards/channel-partner/CPActionTasks';
 import { CPLeaderboards } from '../../../components/dashboards/channel-partner/CPLeaderboards';
+import { BookOpen, Hash, DollarSign, TrendingUp, Activity, Users, Clock, MapPin } from 'lucide-react-native';
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(amount || 0);
+};
 
 export default function ChannelPartnerScreen() {
   const [data, setData] = useState<any>(null);
@@ -49,7 +58,16 @@ export default function ChannelPartnerScreen() {
           </View>
         ) : data ? (
           <>
-            <CPDashboardWidgets kpis={data.kpis} />
+            <SharedWidgetsGrid title="Performance Overview" widgets={[
+              { label: 'Total Bookings', value: data.kpis.totalBookings, icon: BookOpen, accent: 'blue' },
+              { label: 'Units Sold', value: data.kpis.totalUnitsSold, icon: Hash, accent: 'indigo' },
+              { label: 'Booking Revenue', value: formatCurrency(data.kpis.totalBookingRevenue), icon: DollarSign, accent: 'emerald' },
+              { label: 'Total Revenue', value: formatCurrency(data.kpis.totalRevenueGenerated), icon: TrendingUp, accent: 'teal' },
+              { label: 'Broker Commission', value: formatCurrency(data.kpis.totalBrokerCommission), icon: Activity, accent: 'purple' },
+              { label: 'Total Brokers', value: data.kpis.totalBrokers, icon: Users, accent: 'orange' },
+              { label: 'Follow-ups', value: data.kpis.totalFollowsPending, icon: Clock, accent: 'rose' },
+              { label: 'Total Leads', value: data.kpis.totalLeads, icon: MapPin, accent: 'slate' },
+            ]} />
             <CPActionTasks tasks={data.actionTasks} />
             <CPLeaderboards leaderboards={data.leaderboards} />
           </>

@@ -65,7 +65,15 @@ export class LeadsQueryService {
           some: { projectId: { in: projectIds } },
         };
       } else if (role?.code === 'CLOSING_MANAGER') {
-        where.createdById = filters.userId;
+        where.OR = [
+          { createdById: filters.userId },
+          { assignedUserId: filters.userId }
+        ];
+      } else if (role?.code === 'SOURCING_MANAGER') {
+        where.OR = [
+          { createdById: filters.userId },
+          { broker: { sourcingManagerId: filters.userId } }
+        ];
       } else if (role?.code === 'CHANNEL_PARTNER') {
         const subordinates = await this.prisma.user.findMany({
           where: { managerId: filters.userId },
@@ -74,7 +82,8 @@ export class LeadsQueryService {
         const subordinateIds = subordinates.map((s) => s.id);
         where.OR = [
           { createdById: { in: subordinateIds } },
-          { assignedUserId: { in: subordinateIds } }
+          { assignedUserId: { in: subordinateIds } },
+          { broker: { sourcingManagerId: { in: subordinateIds } } }
         ];
       }
     }
@@ -212,7 +221,26 @@ export class LeadsQueryService {
           some: { salesExecId: { in: subordinateIds } }
         };
       } else if (role?.code === 'CLOSING_MANAGER') {
-        where.createdById = userId;
+        where.OR = [
+          { createdById: userId },
+          { assignedUserId: userId }
+        ];
+      } else if (role?.code === 'SOURCING_MANAGER') {
+        where.OR = [
+          { createdById: userId },
+          { broker: { sourcingManagerId: userId } }
+        ];
+      } else if (role?.code === 'CHANNEL_PARTNER') {
+        const subordinates = await this.prisma.user.findMany({
+          where: { managerId: userId },
+          select: { id: true },
+        });
+        const subordinateIds = subordinates.map((s) => s.id);
+        where.OR = [
+          { createdById: { in: subordinateIds } },
+          { assignedUserId: { in: subordinateIds } },
+          { broker: { sourcingManagerId: { in: subordinateIds } } }
+        ];
       }
     }
 

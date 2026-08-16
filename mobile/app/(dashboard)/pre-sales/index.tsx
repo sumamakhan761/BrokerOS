@@ -5,12 +5,13 @@ import { DashboardData, Announcement, LeaderboardEntry } from '../../../componen
 
 // UI Components
 import AnnouncementsList from '../../../components/dashboards/pre-sales/sections/AnnouncementsList';
-import OverviewWidgets from '../../../components/dashboards/pre-sales/widgets/OverviewWidgets';
+import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid';
 import PipelineStages from '../../../components/dashboards/pre-sales/widgets/PipelineStages';
 import DailyTasks from '../../../components/dashboards/pre-sales/widgets/DailyTasks';
 import BacklogsSection from '../../../components/dashboards/pre-sales/widgets/BacklogsSection';
 import TodayFollowUps from '../../../components/dashboards/pre-sales/widgets/TodayFollowUps';
 import MonthlyLeaderboard from '../../../components/dashboards/pre-sales/widgets/MonthlyLeaderboard';
+import { Star, List, AlertTriangle, MapPin, Award } from 'lucide-react-native';
 
 export default function PreSalesDashboard() {
   const { data: session } = authClient.useSession();
@@ -97,7 +98,13 @@ export default function PreSalesDashboard() {
 
       {dashData && (
         <>
-          <OverviewWidgets widgets={dashData.widgets} />
+          <SharedWidgetsGrid title="Overview" widgets={[
+            { label: 'New Leads', value: dashData.widgets.newLeads, icon: Star, accent: 'indigo' },
+            { label: 'Today\'s Follow-ups', value: dashData.widgets.todayFollowUps, icon: List, accent: 'emerald' },
+            { label: 'Missed Follow-ups', value: dashData.widgets.missedFollowUps, icon: AlertTriangle, accent: 'amber' },
+            { label: 'Site Visits', value: dashData.widgets.siteVisitsScheduled, icon: MapPin, accent: 'violet' },
+            { label: 'Bookings', value: dashData.widgets.bookingsGenerated, icon: Award, accent: 'rose' },
+          ]} />
           <PipelineStages pipeline={dashData.pipeline} maxPipeline={maxPipeline} />
           <DailyTasks dailyTasks={dashData.dailyTasks} hasBacklog={hasBacklog} />
           <BacklogsSection backlogs={dashData.backlogs} hasBacklog={hasBacklog} />

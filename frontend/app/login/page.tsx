@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [roleId, setRoleId] = useState("");
-  
+
   const [roles, setRoles] = useState<Role[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,7 +39,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+
     if (!roleId) {
       setError("Please select your role identity.");
       return;
@@ -74,10 +74,10 @@ export default function LoginPage() {
       {/* Dynamic Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-200/40 blur-[120px] pointer-events-none animate-pulse" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-cyan-200/40 blur-[120px] pointer-events-none animate-pulse delay-1000" />
-      
+
       {/* Glassmorphism Container */}
       <div className="relative w-full max-w-md p-8 md:p-12 mx-4 rounded-3xl bg-white/70 border border-slate-200/50 backdrop-blur-xl shadow-xl shadow-slate-200/50 overflow-hidden my-8">
-        
+
         {/* Shine effect */}
         <div className="absolute inset-0 bg-gradient-to-tr from-white/40 to-transparent pointer-events-none" />
 

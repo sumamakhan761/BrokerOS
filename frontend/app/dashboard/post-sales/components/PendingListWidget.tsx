@@ -131,7 +131,7 @@ export function PendingListWidget({ title, list, statusFilter, emptyMessage = "N
           transition: "background 150ms ease",
           border: "1px solid var(--brand-100)",
         }}>
-          See all {title.toLowerCase()} →
+          See all {title.toLowerCase()}
         </Link>
       </div>
     </div>

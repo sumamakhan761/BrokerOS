@@ -60,7 +60,7 @@ export default function PendingListWidget({ title, list, statusFilter, emptyMess
         )}
         <TouchableOpacity
           onPress={() => router.push({ pathname: '/(dashboard)/post-sales/lead-management' as any, params: { status: statusFilter } })} style={{ marginTop: 16, backgroundColor: '#eef2ff', padding: 12, borderRadius: 12 }}>
-          <Text style={{ textAlign: 'center', fontSize: 13, fontWeight: '700', color: '#4f46e5' }}>See all {title.toLowerCase()} →</Text>
+          <Text style={{ textAlign: 'center', fontSize: 13, fontWeight: '700', color: '#4f46e5' }}>See all {title.toLowerCase()} </Text>
         </TouchableOpacity>
       </View>
     </View>
