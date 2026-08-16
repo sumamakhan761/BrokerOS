@@ -15,12 +15,12 @@ export interface LeadProfileData {
     unit: string;
   };
   aiNextStepSuggestion?: string;
-  source?: { name: string };
+  source?: { id?: string; name: string };
   sourceId?: string;
   assignedUser?: { name?: string; username: string };
   salesExecutive?: { name?: string; username: string };
   budget?: number;
-  interestedProject?: { name: string };
+  interestedProject?: { id?: string; name: string };
   interestedProjectId?: string;
   preferredLocation?: string;
   requirements?: string;
