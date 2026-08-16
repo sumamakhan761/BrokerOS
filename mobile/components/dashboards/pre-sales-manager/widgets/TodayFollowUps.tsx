@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Avatar } from '@/components/ui/Avatar';
@@ -52,8 +52,8 @@ export function TodayFollowUps({ followUps }: { followUps: any[] }) {
           })}
         </View>
       )}
-      <TouchableOpacity 
-        onPress={() => router.push({ pathname: '/(dashboard)/pre-sales-manager/lead-management' as any, params: { followUpDate: new Date().toLocaleDateString('en-CA') } })} 
+      <TouchableOpacity
+        onPress={() => router.push({ pathname: '/(dashboard)/pre-sales-manager/lead-management' as any, params: { followUpDate: new Date().toLocaleDateString('en-CA') } })}
         className="mt-2 bg-indigo-50 py-3 rounded-xl flex-row justify-center items-center gap-1"
       >
         <Text className="text-xs font-bold text-indigo-600">See all follow-ups</Text>

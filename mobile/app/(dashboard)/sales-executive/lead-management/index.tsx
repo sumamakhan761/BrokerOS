@@ -20,6 +20,10 @@ export default function SalesExecLeadList() {
   const [status, setStatus] = useState((querySiteVisitDate as string) ? 'SITE_VISIT_SCHEDULED' : '');
   const [scoreRange, setScoreRange] = useState('');
   const [filterFollowUpDate, setFilterFollowUpDate] = useState((followUpDate as string) || '');
+
+  useEffect(() => {
+    setFilterFollowUpDate((followUpDate as string) || '');
+  }, [followUpDate]);
   const [siteVisitDate, setSiteVisitDate] = useState((querySiteVisitDate as string) || '');
 
   useEffect(() => {

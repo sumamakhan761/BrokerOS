@@ -27,6 +27,10 @@ export default function LeadManagementList() {
   const [filterFollowUpDate, setFilterFollowUpDate] = useState((followUpDate as string) || '');
   const [siteVisitDate, setSiteVisitDate] = useState('');
 
+  useEffect(() => {
+    setFilterFollowUpDate((followUpDate as string) || '');
+  }, [followUpDate]);
+
   // Auto Dialer Selection State
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);

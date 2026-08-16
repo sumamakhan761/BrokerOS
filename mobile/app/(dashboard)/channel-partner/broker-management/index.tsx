@@ -22,6 +22,10 @@ export default function ChannelPartnerBrokerManagement() {
   const [status, setStatus] = useState('');
   const [filterFollowUpDate, setFilterFollowUpDate] = useState((followUpDate as string) || '');
 
+  useEffect(() => {
+    setFilterFollowUpDate((followUpDate as string) || '');
+  }, [followUpDate]);
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [assignModalData, setAssignModalData] = useState<{
     isOpen: boolean;
