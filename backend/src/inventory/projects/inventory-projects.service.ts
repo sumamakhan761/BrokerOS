@@ -117,10 +117,16 @@ export class InventoryProjectsService {
         include: { role: true }
       });
       if (user?.role?.code === 'SOURCING_MANAGER' || user?.role?.code === 'CLOSING_MANAGER') {
-        const assignments = await this.prisma.towerAssignment.findMany({
-          where: { userId }
+        const projectAssignment = await this.prisma.projectAssignment.findUnique({
+          where: { projectId_userId: { projectId, userId } }
         });
-        sourcingManagerTowerIds = assignments.map(a => a.towerId);
+
+        if (!projectAssignment) {
+          const assignments = await this.prisma.towerAssignment.findMany({
+            where: { userId }
+          });
+          sourcingManagerTowerIds = assignments.map(a => a.towerId);
+        }
       }
     }
 
