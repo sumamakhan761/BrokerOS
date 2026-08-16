@@ -47,8 +47,8 @@ export default function DashboardOverview() {
       <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-6">
         <Building className="w-10 h-10 text-blue-600 animate-pulse" />
       </div>
-      <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-4">Authenticating...</h1>
-      <p className="text-xl text-gray-600 max-w-2xl">
+      <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-4">Authenticating...</h1>
+      <p className="text-lg text-gray-600 max-w-2xl">
         Redirecting you to your workspace...
       </p>
 
