@@ -8,6 +8,8 @@ import { DashboardData, LeaderboardEntry } from '../../../components/dashboards/
 import SalesExecTasks from '../../../components/dashboards/sales-executive/widgets/SalesExecTasks';
 import SalesExecLeaderboard from '../../../components/dashboards/sales-executive/widgets/SalesExecLeaderboard';
 import LiveTrackingMap from '../../../components/maps/LiveTrackingMap';
+import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid';
+import { Calendar, Activity, CheckCircle, MessageSquare, Award } from 'lucide-react-native';
 
 export default function SalesExecDashboard() {
   const { data: session } = authClient.useSession();
@@ -80,27 +82,13 @@ export default function SalesExecDashboard() {
 
       {/* Widgets (Grid) */}
       {widgets && (
-        <View className="mb-6 mt-1">
-          <Text className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">Overview</Text>
-          <View className="flex-row flex-wrap justify-between" style={{ gap: 12 }}>
-            {[
-              { label: 'Total SVs', value: widgets.siteVisitsScheduled, icon: 'calendar', accent: '#3b82f6', bgClass: 'bg-blue-50', lineClass: 'bg-blue-500' },
-              { label: "Today's SVs", value: widgets.todaySiteVisitsDone, icon: 'activity', accent: '#8b5cf6', bgClass: 'bg-violet-50', lineClass: 'bg-violet-500' },
-              { label: 'SV Completed', value: widgets.siteVisitsCompleted, icon: 'check-circle', accent: '#10b981', bgClass: 'bg-emerald-50', lineClass: 'bg-emerald-500' },
-              { label: 'Negotiations', value: widgets.negotiations, icon: 'message-square', accent: '#f59e0b', bgClass: 'bg-amber-50', lineClass: 'bg-amber-500' },
-              { label: 'Bookings', value: widgets.bookingsGenerated, icon: 'award', accent: '#e11d48', bgClass: 'bg-rose-50', lineClass: 'bg-rose-500' },
-            ].map((w) => (
-              <View key={w.label} className="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm shadow-slate-200/50" style={{ width: '48%' }}>
-                <View className={`w-9 h-9 rounded-xl justify-center items-center mb-3 ${w.bgClass}`}>
-                  <Feather name={w.icon as any} size={18} color={w.accent} />
-                </View>
-                <Text className="text-3xl font-extrabold text-slate-900 tracking-tight">{w.value}</Text>
-                <Text className="text-xs font-medium text-slate-500 mt-1">{w.label}</Text>
-                <View className={`h-1 rounded-full mt-3 opacity-60 ${w.lineClass}`} />
-              </View>
-            ))}
-          </View>
-        </View>
+        <SharedWidgetsGrid title="Overview" widgets={[
+          { label: 'Total SVs', value: widgets.siteVisitsScheduled, icon: Calendar, accent: 'blue' },
+          { label: "Today's SVs", value: widgets.todaySiteVisitsDone, icon: Activity, accent: 'violet' },
+          { label: 'SV Completed', value: widgets.siteVisitsCompleted, icon: CheckCircle, accent: 'emerald' },
+          { label: 'Negotiations', value: widgets.negotiations, icon: MessageSquare, accent: 'amber' },
+          { label: 'Bookings', value: widgets.bookingsGenerated, icon: Award, accent: 'rose' },
+        ]} />
       )}
 
       {/* Navigation Cards */}

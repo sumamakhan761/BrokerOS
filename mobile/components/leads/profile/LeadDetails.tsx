@@ -19,10 +19,10 @@ interface LeadDetailsProps {
 export default function LeadDetails({
   lead,
   isEditingLeadInfo = false,
-  setIsEditingLeadInfo = () => {},
+  setIsEditingLeadInfo = () => { },
   leadInfoData = {},
-  setLeadInfoData = () => {},
-  handleLeadInfoSave = () => {},
+  setLeadInfoData = () => { },
+  handleLeadInfoSave = () => { },
   availableSources = [],
   availableProjects = [],
 }: LeadDetailsProps) {
@@ -183,7 +183,7 @@ export default function LeadDetails({
 
           <View>
             <Text className="text-xs font-semibold text-gray-500 mb-1 flex-row items-center"><Feather name="calendar" size={12} /> Last Contacted</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               className="border border-gray-300 rounded-lg p-3 bg-white"
               onPress={() => setShowLastContactPicker(true)}
             >
@@ -208,7 +208,7 @@ export default function LeadDetails({
 
           <View>
             <Text className="text-xs font-semibold text-gray-500 mb-1 flex-row items-center"><Feather name="calendar" size={12} /> Next Follow-up</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               className="border border-gray-300 rounded-lg p-3 bg-white"
               onPress={() => setShowNextFollowUpPicker(true)}
             >
