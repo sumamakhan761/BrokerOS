@@ -4,7 +4,7 @@ import { authClient } from '../../../lib/auth-client';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import SalesManagerTasks from '../../../components/dashboards/sales-manager/widgets/SalesManagerTasks';
-import SalesManagerLeaderboard from '../../../components/dashboards/sales-manager/widgets/SalesManagerLeaderboard';
+import { SharedLeaderboard } from '../../../components/shared/SharedLeaderboard';
 import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid';
 import { Calendar, CheckCircle, MessageSquare, Award } from 'lucide-react-native';
 
@@ -112,7 +112,19 @@ export default function SalesManagerDashboard() {
 
       {/* Team Tasks & Leaderboard */}
       {dashData && <SalesManagerTasks dashData={dashData} />}
-      {dashData && <SalesManagerLeaderboard leaderboardData={dashData.teamLeaderboard} />}
+      {dashData && (
+        <SharedLeaderboard
+          title="Team Leaderboard"
+          icon={<Award size={20} className="text-amber-500" />}
+          data={dashData.teamLeaderboard || []}
+          currentUserId={userId}
+          columns={[
+            { key: 'svCompleted', label: 'SVs', width: 'w-10', align: 'right' },
+            { key: 'bookings', label: 'Book', width: 'w-12', align: 'right' },
+            { key: 'score', label: 'Score', width: 'w-12', align: 'right', isPrimary: true },
+          ]}
+        />
+      )}
 
       <View style={{ height: 40 }} />
     </ScrollView>

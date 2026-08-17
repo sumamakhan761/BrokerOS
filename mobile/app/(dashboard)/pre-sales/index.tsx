@@ -10,8 +10,8 @@ import PipelineStages from '../../../components/dashboards/pre-sales/widgets/Pip
 import DailyTasks from '../../../components/dashboards/pre-sales/widgets/DailyTasks';
 import BacklogsSection from '../../../components/dashboards/pre-sales/widgets/BacklogsSection';
 import TodayFollowUps from '../../../components/dashboards/pre-sales/widgets/TodayFollowUps';
-import MonthlyLeaderboard from '../../../components/dashboards/pre-sales/widgets/MonthlyLeaderboard';
-import { Star, List, AlertTriangle, MapPin, Award } from 'lucide-react-native';
+import { SharedLeaderboard } from '../../../components/shared/SharedLeaderboard';
+import { Star, List, AlertTriangle, MapPin, Award, Trophy } from 'lucide-react-native';
 
 export default function PreSalesDashboard() {
   const { data: session } = authClient.useSession();
@@ -109,7 +109,18 @@ export default function PreSalesDashboard() {
           <DailyTasks dailyTasks={dashData.dailyTasks} hasBacklog={hasBacklog} />
           <BacklogsSection backlogs={dashData.backlogs} hasBacklog={hasBacklog} />
           <TodayFollowUps todayFollowUpList={dashData.todayFollowUpList} confirmFollowUp={confirmFollowUp} />
-          <MonthlyLeaderboard leaderboard={leaderboard} />
+          <SharedLeaderboard
+            title="Monthly Leaderboard"
+            icon={<Trophy size={20} className="text-amber-500" />}
+            data={leaderboard?.leaderboard || []}
+            currentUserId={leaderboard?.currentUserId}
+            columns={[
+              { key: 'coldCalls', label: 'Calls', width: 'w-11', align: 'right' },
+              { key: 'followUps', label: 'F-ups', width: 'w-11', align: 'right' },
+              { key: 'siteVisits', label: 'Visits', width: 'w-11', align: 'right' },
+              { key: 'score', label: 'Score', width: 'w-12', align: 'right', isPrimary: true },
+            ]}
+          />
         </>
       )}
     </ScrollView>

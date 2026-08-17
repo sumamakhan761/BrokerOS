@@ -6,8 +6,8 @@ import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid'
 import { TeamBacklogs } from '../../../components/dashboards/pre-sales-manager/widgets/TeamBacklogs';
 import { TeamPipeline } from '../../../components/dashboards/pre-sales-manager/widgets/TeamPipeline';
 import { TodayFollowUps } from '../../../components/dashboards/pre-sales-manager/widgets/TodayFollowUps';
-import { MonthlyLeaderboard } from '../../../components/dashboards/pre-sales-manager/widgets/MonthlyLeaderboard';
-import { Users, FileText, CheckCircle, PhoneMissed, Briefcase, TrendingUp, Activity, AlertCircle } from 'lucide-react-native';
+import { SharedLeaderboard } from '../../../components/shared/SharedLeaderboard';
+import { Users, FileText, CheckCircle, PhoneMissed, Briefcase, TrendingUp, Activity, AlertCircle, Trophy } from 'lucide-react-native';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -131,7 +131,17 @@ export default function PreSalesManagerDashboard() {
           <TeamBacklogs backlogs={dashData.backlogs} />
           <TeamPipeline pipeline={dashData.pipeline} />
           <TodayFollowUps followUps={dashData.todayFollowUpList} />
-          <MonthlyLeaderboard leaderboard={leaderboard?.leaderboard || []} />
+          <SharedLeaderboard
+            title="Team Monthly Leaderboard"
+            icon={<Trophy size={20} className="text-amber-500" />}
+            data={leaderboard?.leaderboard || []}
+            columns={[
+              { key: 'coldCalls', label: 'Calls', width: 'w-12', align: 'right' },
+              { key: 'followUps', label: 'F-ups', width: 'w-12', align: 'right' },
+              { key: 'siteVisits', label: 'Visits', width: 'w-12', align: 'right' },
+              { key: 'score', label: 'Score', width: 'w-12', align: 'right', isPrimary: true },
+            ]}
+          />
         </>
       )}
     </ScrollView>
