@@ -99,7 +99,7 @@ export default function ChannelPartnerProjectInventory() {
       {/* Header */}
       <View className="p-4 pt-12 bg-white border-b border-slate-200">
         <View className="flex-row justify-between items-center">
-          <TouchableOpacity onPress={() => router.back()} className="p-2">
+          <TouchableOpacity onPress={() => router.push('/channel-partner/inventory')} className="p-2">
             <Feather name="arrow-left" size={24} color="#0f172a" />
           </TouchableOpacity>
           <Text className="text-xl font-bold text-slate-900 flex-1 ml-2">Project Towers</Text>
