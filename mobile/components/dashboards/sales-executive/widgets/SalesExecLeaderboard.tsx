@@ -17,7 +17,7 @@ export default function SalesExecLeaderboard({ leaderboard }: SalesExecLeaderboa
           <Text style={[styles.lbHeader, { width: 70, textAlign: 'right' }]}>Bookings</Text>
           <Text style={[styles.lbHeader, { width: 55, textAlign: 'right' }]}>Score</Text>
         </View>
-        {leaderboard?.leaderboard.map((agent) => {
+        {leaderboard?.leaderboard.map((agent, index) => {
           const isMe = agent.userId === leaderboard.currentUserId;
           const rankEmoji = agent.rank === 1 ? '🥇' : agent.rank === 2 ? '🥈' : agent.rank === 3 ? '🥉' : `${agent.rank}`;
           const rowBg =
@@ -25,7 +25,7 @@ export default function SalesExecLeaderboard({ leaderboard }: SalesExecLeaderboa
               agent.rank === 2 ? '#f8fafc' :
                 agent.rank === 3 ? '#fff7ed' : 'transparent';
           return (
-            <View key={agent.userId} style={[styles.row, {
+            <View key={agent.userId || `lb-agent-${index}`} style={[styles.row, {
               backgroundColor: isMe ? '#f0f9ff' : rowBg,
               borderWidth: isMe ? 1 : 0,
               borderColor: '#bae6fd',
