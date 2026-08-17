@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { authClient } from '../../../lib/auth-client';
 import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid';
 import { CPActionTasks } from '../../../components/dashboards/channel-partner/CPActionTasks';
-import { CPLeaderboards } from '../../../components/dashboards/channel-partner/CPLeaderboards';
-import { BookOpen, Hash, DollarSign, TrendingUp, Activity, Users, Clock, MapPin } from 'lucide-react-native';
+import { SharedLeaderboard } from '../../../components/shared/SharedLeaderboard';
+import { BookOpen, Hash, DollarSign, TrendingUp, Activity, Users, Clock, MapPin, Building2, UserCheck, UserPlus, Briefcase } from 'lucide-react-native';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -69,7 +69,38 @@ export default function ChannelPartnerScreen() {
               { label: 'Total Leads', value: data.kpis.totalLeads, icon: MapPin, accent: 'slate' },
             ]} />
             <CPActionTasks tasks={data.actionTasks} />
-            <CPLeaderboards leaderboards={data.leaderboards} />
+            <SharedLeaderboard
+              title="Top Projects"
+              icon={<Building2 size={20} className="text-amber-500" />}
+              data={data.leaderboards?.topProjects || []}
+              columns={[
+                { key: 'bookings', label: 'Bookings', width: 'w-16', align: 'right', isPrimary: true },
+              ]}
+            />
+            <SharedLeaderboard
+              title="Top Brokers"
+              icon={<Users size={20} className="text-amber-500" />}
+              data={data.leaderboards?.topBrokers || []}
+              columns={[
+                { key: 'bookings', label: 'Deals', width: 'w-16', align: 'right', isPrimary: true },
+              ]}
+            />
+            <SharedLeaderboard
+              title="Top Sourcing Managers"
+              icon={<UserPlus size={20} className="text-amber-500" />}
+              data={data.leaderboards?.topSourcingManagers || []}
+              columns={[
+                { key: 'bookings', label: 'Broker Deals', width: 'w-24', align: 'right', isPrimary: true },
+              ]}
+            />
+            <SharedLeaderboard
+              title="Top Closing Managers"
+              icon={<UserCheck size={20} className="text-amber-500" />}
+              data={data.leaderboards?.topClosingManagers || []}
+              columns={[
+                { key: 'bookings', label: 'Units Sold', width: 'w-20', align: 'right', isPrimary: true },
+              ]}
+            />
           </>
         ) : null}
       </View>

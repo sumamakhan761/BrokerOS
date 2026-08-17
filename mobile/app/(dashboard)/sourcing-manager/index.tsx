@@ -5,7 +5,8 @@ import { authClient } from '../../../lib/auth-client';
 import { useLocationTracking } from '../../../hooks/useLocationTracking';
 import LiveTrackingMap from '../../../components/maps/LiveTrackingMap';
 import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid';
-import { UserCheck, UserPlus, Calendar, Clock, Briefcase, Building, IndianRupee, TrendingUp } from 'lucide-react-native';
+import { SharedLeaderboard } from '../../../components/shared/SharedLeaderboard';
+import { UserCheck, UserPlus, Calendar, Clock, Briefcase, Building, IndianRupee, TrendingUp, Award } from 'lucide-react-native';
 
 export default function SourcingManagerScreen() {
   const { data: session } = authClient.useSession();
@@ -128,37 +129,16 @@ export default function SourcingManagerScreen() {
       </View>
 
       {/* Broker Leaderboard */}
-      <View className="mt-8 mb-4">
-        <Text className="text-xl font-bold text-slate-900 mb-4 px-1">Team Performance</Text>
-
-        {(!topPerformingBrokers || topPerformingBrokers.length === 0) ? (
-          <View className="bg-white rounded-2xl p-6 border border-slate-200 items-center justify-center">
-            <Feather name="award" size={32} color="#cbd5e1" />
-            <Text className="text-slate-500 font-medium mt-3">No performance data available yet.</Text>
-          </View>
-        ) : (
-          <View className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            {topPerformingBrokers.map((broker: any, idx: number) => (
-              <View key={broker.id} className={`p-4 flex-row items-center ${idx !== topPerformingBrokers.length - 1 ? 'border-b border-slate-100' : ''}`}>
-                <View className="w-8 items-center justify-center">
-                  <Text className="font-bold text-slate-400">#{idx + 1}</Text>
-                </View>
-                <View className="w-10 h-10 bg-indigo-100 rounded-full mx-3 items-center justify-center">
-                  <Text className="text-indigo-700 font-bold">{broker.name ? broker.name.charAt(0).toUpperCase() : 'B'}</Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-slate-900 font-bold">{broker.name}</Text>
-                  <Text className="text-slate-500 text-xs mt-0.5">Score: {broker.score}</Text>
-                </View>
-                <View className="items-end">
-                  <Text className="text-emerald-600 font-bold">{broker.bookingsGenerated} Bookings</Text>
-                  <Text className="text-slate-500 text-xs mt-0.5">{broker.unitsSold} Units</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
+      <SharedLeaderboard
+        title="Team Performance"
+        icon={<Award size={20} className="text-amber-500" />}
+        data={topPerformingBrokers || []}
+        columns={[
+          { key: 'unitsSold', label: 'Units', width: 'w-12', align: 'right' },
+          { key: 'bookingsGenerated', label: 'Bookings', width: 'w-16', align: 'right' },
+          { key: 'score', label: 'Score', width: 'w-12', align: 'right', isPrimary: true },
+        ]}
+      />
 
       {/* Live Location Tracking */}
       <View className="bg-white rounded-3xl p-5 shadow-sm shadow-slate-200 border border-slate-100 mb-4 mt-4">

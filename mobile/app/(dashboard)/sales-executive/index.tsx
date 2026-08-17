@@ -6,7 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { DashboardData, LeaderboardEntry } from '../../../components/dashboards/sales-executive/misc/types';
 import SalesExecTasks from '../../../components/dashboards/sales-executive/widgets/SalesExecTasks';
-import SalesExecLeaderboard from '../../../components/dashboards/sales-executive/widgets/SalesExecLeaderboard';
+import { SharedLeaderboard } from '../../../components/shared/SharedLeaderboard';
 import LiveTrackingMap from '../../../components/maps/LiveTrackingMap';
 import { SharedWidgetsGrid } from '../../../components/shared/SharedWidgetsGrid';
 import { Calendar, Activity, CheckCircle, MessageSquare, Award } from 'lucide-react-native';
@@ -110,7 +110,17 @@ export default function SalesExecDashboard() {
 
       {/* Tasks & Leaderboard */}
       {dashData && <SalesExecTasks dashData={dashData} />}
-      <SalesExecLeaderboard leaderboard={leaderboard} />
+      <SharedLeaderboard
+        title="Monthly Leaderboard"
+        icon={<Award size={20} className="text-amber-500" />}
+        data={leaderboard?.leaderboard || []}
+        currentUserId={leaderboard?.currentUserId}
+        columns={[
+          { key: 'siteVisits', label: 'SVs', width: 'w-10', align: 'right' },
+          { key: 'bookings', label: 'Bookings', width: 'w-16', align: 'right' },
+          { key: 'score', label: 'Score', width: 'w-12', align: 'right', isPrimary: true },
+        ]}
+      />
 
       {/* Live Location Tracking */}
       <View style={styles.card}>
