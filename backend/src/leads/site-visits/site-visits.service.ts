@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 
@@ -27,27 +27,29 @@ export class SiteVisitsService {
       const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
       if (!lead) throw new Error('Lead not found');
 
-      let assignedExecId = data.userId; // Default
-
       // Fetch Sales Executives mapped to the project
       const projectExecs = await this.prisma.projectAssignment.findMany({
         where: { projectId: data.projectId, isActive: true, user: { role: { code: 'SALES_EXECUTIVE' } } },
         orderBy: { assignedAt: 'asc' }, // Keep order deterministic
       });
 
-      if (projectExecs.length > 0) {
-        // Find last assigned SV for this project among these execs
-        const lastSV = await this.prisma.siteVisit.findFirst({
-          where: { projectId: data.projectId, salesExecId: { in: projectExecs.map(pe => pe.userId) } },
-          orderBy: { createdAt: 'desc' },
-        });
+      if (projectExecs.length === 0) {
+        throw new BadRequestException('No Sales Executives are assigned to this project. Please contact a manager.');
+      }
 
-        if (lastSV) {
-          const lastIdx = projectExecs.findIndex(pe => pe.userId === lastSV.salesExecId);
-          assignedExecId = projectExecs[(lastIdx + 1) % projectExecs.length].userId;
-        } else {
-          assignedExecId = projectExecs[0].userId;
-        }
+      let assignedExecId;
+
+      // Find last assigned SV for this project among these execs
+      const lastSV = await this.prisma.siteVisit.findFirst({
+        where: { projectId: data.projectId, salesExecId: { in: projectExecs.map(pe => pe.userId) } },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (lastSV) {
+        const lastIdx = projectExecs.findIndex(pe => pe.userId === lastSV.salesExecId);
+        assignedExecId = projectExecs[(lastIdx + 1) % projectExecs.length].userId;
+      } else {
+        assignedExecId = projectExecs[0].userId;
       }
 
       const siteVisit = await this.prisma.siteVisit.create({
