@@ -121,7 +121,7 @@ export default function EmployeeDashboardViewScreen() {
 
       {/* Header */}
       <View style={{ padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0' }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+        <TouchableOpacity onPress={() => router.navigate('/(dashboard)/pre-sales-manager/employees')} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
           <Feather name="arrow-left" size={16} color="#64748b" />
           <Text style={{ color: '#64748b', fontWeight: 'bold', marginLeft: 4 }}>Back</Text>
         </TouchableOpacity>

@@ -1,209 +1,93 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { authClient } from '../../../../lib/auth-client';
+import { FinancialOverview } from '../../../../app/(dashboard)/sales-executive/analytics/components/FinancialOverview';
+import { ConversionFunnel } from '../../../../app/(dashboard)/sales-executive/analytics/components/ConversionFunnel';
+import { TowerHeatmap } from '../../../../app/(dashboard)/sales-executive/analytics/components/TowerHeatmap';
+import { ProjectAnalytics } from '../../../../app/(dashboard)/sales-executive/analytics/components/ProjectAnalytics';
+
+const ranges = [
+  { id: 'weekly', label: 'Weekly' },
+  { id: 'monthly', label: 'Monthly' },
+  { id: 'yearly', label: 'Yearly' },
+  { id: 'all-time', label: 'All Time' },
+];
 
 export default function MobileEmployeeAnalytics({ employeeId }: { employeeId: string }) {
-  const [analytics, setAnalytics] = useState<any>(null);
+  const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [timeRange, setTimeRange] = useState('monthly');
+
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await authClient.$fetch<any>(`/api/dashboard/sales-manager/employees/${employeeId}/analytics?timeRange=${timeRange}`, { baseURL: baseUrl });
+      if (res.data) setAnalyticsData(res.data);
+      if (res.error) throw new Error(res.error.message || 'Failed to load analytics');
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load analytics');
+    } finally {
+      setLoading(false);
+    }
+  }, [employeeId, timeRange, baseUrl]);
 
   useEffect(() => {
-    async function loadAnalytics() {
-      try {
-        const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000';
-        const res = await authClient.$fetch<any>(`/api/dashboard/sales-manager/employees/${employeeId}/analytics`, { baseURL: baseUrl });
-        if (res.data) setAnalytics(res.data);
-      } catch (e) {
-        console.error('Failed to load analytics', e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadAnalytics();
-  }, [employeeId]);
+    const timer = setTimeout(() => { load(); }, 300);
+    return () => clearTimeout(timer);
+  }, [load]);
 
-  if (loading) {
+  if (loading && !analyticsData) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="small" color="#4f46e5" />
+      <View className="items-center justify-center py-20">
+        <ActivityIndicator size="large" color="#4f46e5" />
+        <Text className="text-slate-500 font-medium mt-4">Loading detailed analytics...</Text>
       </View>
     );
   }
 
-  if (!analytics) {
+  if (error && !analyticsData) {
     return (
-      <View style={styles.emptyCard}>
-        <Feather name="bar-chart-2" size={32} color="#cbd5e1" style={{ marginBottom: 12 }} />
-        <Text style={styles.emptyText}>Analytics data not available.</Text>
+      <View className="p-4 justify-center">
+        <View className="bg-red-50 p-6 rounded-2xl border border-red-100">
+          <Text className="text-red-700 font-medium text-center">{error}</Text>
+        </View>
       </View>
     );
   }
-
-  const { financial, funnel } = analytics;
 
   return (
-    <ScrollView style={styles.container}>
-
-      {/* Financial Overview */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Financial Performance</Text>
-        <View style={styles.card}>
-          <View style={styles.statRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Revenue</Text>
-              <Text style={styles.statValue}>₹{financial?.revenue || 0}</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Total Sales</Text>
-              <Text style={styles.statValue}>{financial?.totalSales || 0}</Text>
-            </View>
-          </View>
+    <View className="flex-1 pb-8 mt-4 px-4">
+      {/* Time Range Segmented Control */}
+      <View className="mb-6 items-center">
+        <View className="flex-row bg-slate-200 border-0 p-1.5 rounded-full self-start">
+          {ranges.map(r => (
+            <TouchableOpacity
+              key={r.id}
+              onPress={() => setTimeRange(r.id)}
+            >
+              <View 
+                key={timeRange === r.id ? 'active' : 'inactive'}
+                className={`px-4 py-1.5 rounded-full ${timeRange === r.id ? 'bg-white shadow-sm' : ''}`}
+              >
+                <Text className={`text-sm font-bold ${timeRange === r.id ? 'text-slate-900' : 'text-slate-500'}`}>
+                  {r.label}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
-      {/* Funnel Overview */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Conversion Funnel</Text>
-        <View style={styles.card}>
-          <View style={styles.funnelItem}>
-            <View style={styles.funnelIconCont}>
-              <Feather name="users" size={16} color="#4f46e5" />
-            </View>
-            <View style={styles.funnelTextCont}>
-              <Text style={styles.funnelLabel}>Leads</Text>
-            </View>
-            <Text style={styles.funnelValue}>{funnel?.leads || 0}</Text>
-          </View>
-
-          <View style={styles.funnelItem}>
-            <View style={[styles.funnelIconCont, { backgroundColor: '#fef3c7' }]}>
-              <Feather name="map-pin" size={16} color="#d97706" />
-            </View>
-            <View style={styles.funnelTextCont}>
-              <Text style={styles.funnelLabel}>Site Visits</Text>
-            </View>
-            <Text style={styles.funnelValue}>{funnel?.siteVisits || 0}</Text>
-          </View>
-
-          <View style={styles.funnelItem}>
-            <View style={[styles.funnelIconCont, { backgroundColor: '#dcfce7' }]}>
-              <Feather name="dollar-sign" size={16} color="#15803d" />
-            </View>
-            <View style={styles.funnelTextCont}>
-              <Text style={styles.funnelLabel}>Sold</Text>
-            </View>
-            <Text style={styles.funnelValue}>{funnel?.sold || 0}</Text>
-          </View>
-
-          <View style={[styles.funnelItem, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-            <View style={[styles.funnelIconCont, { backgroundColor: '#f3e8ff' }]}>
-              <Feather name="percent" size={16} color="#7e22ce" />
-            </View>
-            <View style={styles.funnelTextCont}>
-              <Text style={styles.funnelLabel}>Conversion Rate</Text>
-            </View>
-            <Text style={styles.funnelValue}>{funnel?.conversionRate || '0.0'}%</Text>
-          </View>
+      {analyticsData && (
+        <View className="pb-12">
+          {analyticsData.financial && <FinancialOverview financialData={analyticsData.financial} />}
+          {analyticsData.funnel && <ConversionFunnel funnelData={analyticsData.funnel} />}
+          {analyticsData.inventory && <TowerHeatmap inventoryData={analyticsData.inventory} />}
+          {analyticsData.project && <ProjectAnalytics projectData={analyticsData.project} />}
         </View>
-      </View>
-
-      <View style={{ height: 40 }} />
-    </ScrollView>
+      )}
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  center: {
-    padding: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-    marginTop: 16,
-  },
-  emptyText: {
-    color: '#94a3b8',
-    fontSize: 14,
-  },
-  container: {
-    flex: 1,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-  },
-  statRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statItem: {
-    flex: 1,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#0f172a',
-  },
-  divider: {
-    width: 1,
-    height: 40,
-    backgroundColor: '#e2e8f0',
-    marginHorizontal: 16,
-  },
-  funnelItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  funnelIconCont: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: '#e0e7ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  funnelTextCont: {
-    flex: 1,
-  },
-  funnelLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#334155',
-  },
-  funnelValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#0f172a',
-  },
-});
