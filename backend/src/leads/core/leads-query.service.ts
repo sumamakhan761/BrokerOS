@@ -50,9 +50,10 @@ export class LeadsQueryService {
           select: { id: true },
         });
         const subordinateIds = subordinates.map((s) => s.id);
-        where.siteVisits = {
-          some: { salesExecId: { in: subordinateIds } }
-        };
+        where.OR = [
+          { siteVisits: { some: { salesExecId: { in: subordinateIds } } } },
+          { customer: { bookings: { some: { salesExecId: { in: subordinateIds } } } } }
+        ];
       } else if (role?.code === 'SALES_EXECUTIVE') {
         const assignments = await this.prisma.projectAssignment.findMany({
           where: { userId: filters.userId, isActive: true },
@@ -60,10 +61,13 @@ export class LeadsQueryService {
         });
         const projectIds = assignments.map((a) => a.projectId);
 
-        where.status = { in: SE_VISIBLE_STATUSES };
-        where.siteVisits = {
-          some: { projectId: { in: projectIds } },
-        };
+        where.OR = [
+          {
+            status: { in: SE_VISIBLE_STATUSES },
+            siteVisits: { some: { projectId: { in: projectIds } } },
+          },
+          { customer: { bookings: { some: { salesExecId: filters.userId } } } }
+        ];
       } else if (role?.code === 'CLOSING_MANAGER') {
         where.OR = [
           { createdById: filters.userId },
@@ -211,15 +215,22 @@ export class LeadsQueryService {
         });
         const subordinateIds = subordinates.map((s) => s.id);
         where.assignedUserId = { in: subordinateIds };
+      } else if (role?.code === 'SALES_EXECUTIVE') {
+        where.OR = [
+          { assignedUserId: userId },
+          { siteVisits: { some: { salesExecId: userId } } },
+          { customer: { bookings: { some: { salesExecId: userId } } } }
+        ];
       } else if (role?.code === 'SALES_MANAGER') {
         const subordinates = await this.prisma.user.findMany({
           where: { managerId: userId },
           select: { id: true },
         });
         const subordinateIds = subordinates.map((s) => s.id);
-        where.siteVisits = {
-          some: { salesExecId: { in: subordinateIds } }
-        };
+        where.OR = [
+          { siteVisits: { some: { salesExecId: { in: subordinateIds } } } },
+          { customer: { bookings: { some: { salesExecId: { in: subordinateIds } } } } }
+        ];
       } else if (role?.code === 'CLOSING_MANAGER') {
         where.OR = [
           { createdById: userId },
