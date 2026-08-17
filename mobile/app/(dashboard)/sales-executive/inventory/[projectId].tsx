@@ -7,6 +7,7 @@ import { UnitGrid } from '../../../../components/inventory/grid/UnitGrid';
 import { BookingModal } from '../../../../components/inventory/modals/BookingModal';
 import { UnitInfoModal } from '../../../../components/inventory/modals/UnitInfoModal';
 import { ProjectDocuments } from '../../../../components/inventory/misc/ProjectDocuments';
+import InventoryFilters from '../../../../components/shared/InventoryFilters';
 import { authClient } from '../../../../lib/auth-client';
 
 export default function SalesExecutiveProjectInventory() {
@@ -172,44 +173,14 @@ export default function SalesExecutiveProjectInventory() {
               </View>
             ) : activeTower ? (
           <>
-            <View className="mb-4 space-y-2">
-              <TextInput 
-                placeholder="Search Unit # (e.g. 101)"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                className="bg-white border border-slate-300 rounded-xl p-3"
-              />
-              <View className="flex-row gap-2 mt-2">
-                <View className="flex-1 bg-white border border-slate-300 rounded-xl overflow-hidden">
-                  <Picker
-                    selectedValue={filterStatus}
-                    onValueChange={setFilterStatus}
-                    style={{ height: 50 }}
-                  >
-                    <Picker.Item label="All Status" value="ALL" />
-                    <Picker.Item label="Available" value="AVAILABLE" />
-                    <Picker.Item label="Reserved" value="RESERVED" />
-                    <Picker.Item label="Sold" value="SOLD" />
-                    <Picker.Item label="Blocked" value="BLOCKED" />
-                  </Picker>
-                </View>
-                <View className="flex-1 bg-white border border-slate-300 rounded-xl overflow-hidden">
-                  <Picker
-                    selectedValue={filterType}
-                    onValueChange={setFilterType}
-                    style={{ height: 50 }}
-                  >
-                    <Picker.Item label="All Types" value="ALL" />
-                    <Picker.Item label="Shop" value="SHOP" />
-                    <Picker.Item label="Office" value="OFFICE" />
-                    <Picker.Item label="Studio" value="STUDIO" />
-                    <Picker.Item label="1 BHK" value="ONE_BHK" />
-                    <Picker.Item label="2 BHK" value="TWO_BHK" />
-                    <Picker.Item label="3 BHK" value="THREE_BHK" />
-                  </Picker>
-                </View>
-              </View>
-            </View>
+            <InventoryFilters
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              filterType={filterType}
+              setFilterType={setFilterType}
+            />
 
             {filteredTower && filteredTower.floors.length > 0 ? (
               <UnitGrid 
