@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 import { authClient } from '../../../../lib/auth-client';
 
 export default function MobileEmployeeLeads({ employeeId }: { employeeId: string }) {
@@ -22,116 +21,36 @@ export default function MobileEmployeeLeads({ employeeId }: { employeeId: string
     loadLeads();
   }, [employeeId]);
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="small" color="#4f46e5" />
-      </View>
-    );
-  }
-
-  if (leads.length === 0) {
-    return (
-      <View style={styles.emptyCard}>
-        <Feather name="inbox" size={32} color="#cbd5e1" style={{ marginBottom: 12 }} />
-        <Text style={styles.emptyText}>No leads assigned to this employee.</Text>
-      </View>
-    );
-  }
+  if (loading) return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+      <ActivityIndicator size="small" color="#6366f1" />
+    </View>
+  );
 
   return (
-    <ScrollView style={styles.container}>
-      {leads.map((lead) => (
-        <View key={lead.id} style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.leadName}>{lead.firstName} {lead.lastName}</Text>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>{lead.status}</Text>
-            </View>
-          </View>
-          <View style={styles.cardBody}>
-            <View style={styles.infoRow}>
-              <Feather name="star" size={14} color="#64748b" />
-              <Text style={styles.infoText}>Score: {lead.score || 0}/100</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Feather name="calendar" size={14} color="#64748b" />
-              <Text style={styles.infoText}>
-                Next Follow-up: {lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : 'None'}
-              </Text>
-            </View>
-          </View>
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+      {leads.length === 0 ? (
+        <View style={{ padding: 20, alignItems: 'center' }}>
+          <Text style={{ color: '#94a3b8' }}>No leads found.</Text>
         </View>
-      ))}
-      <View style={{ height: 20 }} />
+      ) : (
+        leads.map(lead => (
+          <View key={lead.id} style={[styles.card, { padding: 16, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+            <View>
+              <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#0f172a', marginBottom: 4 }}>{lead.firstName} {lead.lastName}</Text>
+              <Text style={{ color: '#64748b', fontSize: 12 }}>Score: {lead.score || 0}</Text>
+              <Text style={{ color: '#64748b', fontSize: 12 }}>Follow-up: {lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : 'None'}</Text>
+            </View>
+            <View style={{ backgroundColor: '#f1f5f9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+              <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#475569' }}>{lead.status}</Text>
+            </View>
+          </View>
+        ))
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  center: {
-    padding: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-    marginTop: 16,
-  },
-  emptyText: {
-    color: '#94a3b8',
-    fontSize: 14,
-  },
-  container: {
-    flex: 1,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  leadName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#0f172a',
-  },
-  statusBadge: {
-    backgroundColor: '#f1f5f9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#475569',
-    textTransform: 'uppercase',
-  },
-  cardBody: {
-    gap: 8,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  infoText: {
-    fontSize: 13,
-    color: '#64748b',
-  },
+  card: { backgroundColor: '#fff', borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
 });

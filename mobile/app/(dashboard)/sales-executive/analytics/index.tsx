@@ -5,8 +5,8 @@ import { FinancialOverview } from './components/FinancialOverview';
 import { ConversionFunnel } from './components/ConversionFunnel';
 import { TowerHeatmap } from './components/TowerHeatmap';
 import { ProjectAnalytics } from './components/ProjectAnalytics';
-import SalesManagerLeaderboard from '@/components/dashboards/sales-manager/widgets/SalesManagerLeaderboard';
-import { TrendingUp } from 'lucide-react-native';
+import { SharedLeaderboard } from '@/components/shared/SharedLeaderboard';
+import { TrendingUp, Award } from 'lucide-react-native';
 
 const ranges = [
   { id: 'weekly', label: 'Weekly' },
@@ -114,10 +114,19 @@ export default function AnalyticsScreen() {
           <ConversionFunnel funnelData={analyticsData.funnel} />
 
           {leaderboardData && (
-            <View className="mb-8">
-              <SalesManagerLeaderboard
-                leaderboardData={leaderboardData.leaderboard}
+            <View className="px-6 mb-8">
+              <SharedLeaderboard
+                title="Monthly Leaderboard"
+                icon={<Award size={20} className="text-amber-500" />}
+                data={leaderboardData.leaderboard || []}
                 currentUserId={leaderboardData.currentUserId}
+                idKey="id"
+                columns={[
+                  { key: 'svCompleted', label: 'SVs', width: 'w-10', align: 'right' },
+                  { key: 'activeNegotiations', label: 'Neg', width: 'w-10', align: 'right' },
+                  { key: 'bookings', label: 'Books', width: 'w-12', align: 'right' },
+                  { key: 'score', label: 'Score', width: 'w-12', align: 'right', isPrimary: true },
+                ]}
               />
             </View>
           )}

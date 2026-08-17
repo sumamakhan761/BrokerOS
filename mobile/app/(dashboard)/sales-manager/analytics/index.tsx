@@ -4,9 +4,9 @@ import { authClient } from '@/lib/auth-client';
 import { FinancialOverview } from '../../sales-executive/analytics/components/FinancialOverview';
 import { ConversionFunnel } from '../../sales-executive/analytics/components/ConversionFunnel';
 import { TowerHeatmap } from '../../sales-executive/analytics/components/TowerHeatmap';
-import SalesManagerLeaderboard from '@/components/dashboards/sales-manager/widgets/SalesManagerLeaderboard';
+import { SharedLeaderboard } from '@/components/shared/SharedLeaderboard';
 import { DetailedMetricsGrid } from './components/DetailedMetricsGrid';
-import { Users } from 'lucide-react-native';
+import { Users, Award } from 'lucide-react-native';
 
 const ranges = [
   { id: 'weekly', label: 'Weekly' },
@@ -114,7 +114,18 @@ export default function SalesManagerAnalyticsScreen() {
           <ConversionFunnel funnelData={analyticsData.funnel} />
 
           <View className="mt-6 mb-6 px-6">
-            <SalesManagerLeaderboard leaderboardData={analyticsData.leaderboard || []} />
+            <SharedLeaderboard
+              title="Team Leaderboard"
+              icon={<Award size={20} className="text-amber-500" />}
+              data={analyticsData.leaderboard || []}
+              idKey="id"
+              columns={[
+                { key: 'svCompleted', label: 'SVs', width: 'w-10', align: 'right' },
+                { key: 'activeNegotiations', label: 'Neg', width: 'w-10', align: 'right' },
+                { key: 'bookings', label: 'Books', width: 'w-12', align: 'right' },
+                { key: 'score', label: 'Score', width: 'w-12', align: 'right', isPrimary: true },
+              ]}
+            />
           </View>
 
           <View className="mt-6">
