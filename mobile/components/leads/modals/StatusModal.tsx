@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { ALL_LEAD_STATUSES } from '../../../lib/status-utils';
 
 interface StatusModalProps {
   isVisible: boolean;
@@ -10,7 +11,7 @@ interface StatusModalProps {
   availableStatuses?: string[];
 }
 
-export default function StatusModal({ isVisible, onClose, currentStatus, onStatusChange, availableStatuses = ['NEW', 'CONTACTED', 'INTERESTED', 'QUALIFIED', 'SITE_VISIT_SCHEDULED', 'LOST'] }: StatusModalProps) {
+export default function StatusModal({ isVisible, onClose, currentStatus, onStatusChange, availableStatuses = ALL_LEAD_STATUSES }: StatusModalProps) {
   return (
     <Modal visible={isVisible} animationType="slide" transparent={true}>
       <View className="flex-1 bg-black/50 justify-end">

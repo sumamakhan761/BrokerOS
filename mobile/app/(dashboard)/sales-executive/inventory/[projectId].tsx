@@ -13,14 +13,14 @@ import { authClient } from '../../../../lib/auth-client';
 export default function SalesExecutiveProjectInventory() {
   const { projectId } = useLocalSearchParams();
   const router = useRouter();
-  
+
   const [towers, setTowers] = useState<any[]>([]);
   const [activeTower, setActiveTower] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [selectedAvailableUnit, setSelectedAvailableUnit] = useState<any>(null);
   const [selectedReservedUnit, setSelectedReservedUnit] = useState<any>(null);
-  
+
   const [activeTab, setActiveTab] = useState<'GRID' | 'DOCUMENTS'>('GRID');
 
   // Filter States
@@ -65,7 +65,7 @@ export default function SalesExecutiveProjectInventory() {
   const filteredTower = useMemo(() => {
     if (!activeTower) return null;
     const clonedTower = JSON.parse(JSON.stringify(activeTower));
-    
+
     clonedTower.floors = clonedTower.floors.map((floor: any) => {
       floor.units = floor.units.filter((unit: any) => {
         const matchSearch = unit.unitNumber.toLowerCase().includes(searchQuery.toLowerCase());
@@ -75,9 +75,9 @@ export default function SalesExecutiveProjectInventory() {
       });
       return floor;
     });
-    
+
     clonedTower.floors = clonedTower.floors.filter((floor: any) => floor.units.length > 0);
-    
+
     return clonedTower;
   }, [activeTower, searchQuery, filterStatus, filterType]);
 
@@ -121,13 +121,13 @@ export default function SalesExecutiveProjectInventory() {
 
         {/* Main Navigation Tabs */}
         <View className="flex-row mt-4 px-2">
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setActiveTab('GRID')}
             className={`flex-1 py-3 border-b-2 items-center ${activeTab === 'GRID' ? 'border-indigo-600' : 'border-transparent'}`}
           >
             <Text className={`font-bold ${activeTab === 'GRID' ? 'text-indigo-600' : 'text-slate-500'}`}>Unit Grid</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setActiveTab('DOCUMENTS')}
             className={`flex-1 py-3 border-b-2 items-center ${activeTab === 'DOCUMENTS' ? 'border-indigo-600' : 'border-transparent'}`}
           >
@@ -143,13 +143,11 @@ export default function SalesExecutiveProjectInventory() {
                 <TouchableOpacity
                   key={tower.id}
                   onPress={() => setActiveTower(tower)}
-                  className={`px-5 py-2.5 rounded-full ${
-                    activeTower?.id === tower.id ? 'bg-slate-900' : 'bg-slate-100'
-                  }`}
+                  className={`px-5 py-2.5 rounded-full ${activeTower?.id === tower.id ? 'bg-slate-900' : 'bg-slate-100'
+                    }`}
                 >
-                  <Text className={`font-bold ${
-                    activeTower?.id === tower.id ? 'text-white' : 'text-slate-600'
-                  }`}>
+                  <Text className={`font-bold ${activeTower?.id === tower.id ? 'text-white' : 'text-slate-600'
+                    }`}>
                     {tower.name}
                   </Text>
                 </TouchableOpacity>
@@ -172,33 +170,33 @@ export default function SalesExecutiveProjectInventory() {
                 <Text className="text-slate-500 text-center mt-2 px-8 mb-6">There are no units available to book in this project yet.</Text>
               </View>
             ) : activeTower ? (
-          <>
-            <InventoryFilters
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              filterStatus={filterStatus}
-              setFilterStatus={setFilterStatus}
-              filterType={filterType}
-              setFilterType={setFilterType}
-            />
+              <>
+                <InventoryFilters
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  filterStatus={filterStatus}
+                  setFilterStatus={setFilterStatus}
+                  filterType={filterType}
+                  setFilterType={setFilterType}
+                />
 
-            {filteredTower && filteredTower.floors.length > 0 ? (
-              <UnitGrid 
-                tower={filteredTower}
-                onUnitClick={handleUnitClick}
-              />
-            ) : (
-              <View className="flex-1 items-center justify-center mt-10">
-                <Text className="text-slate-500 font-bold">No units match your filters.</Text>
-              </View>
-              )}
-            </>
-          ) : null}
+                {filteredTower && filteredTower.floors.length > 0 ? (
+                  <UnitGrid
+                    tower={filteredTower}
+                    onUnitClick={handleUnitClick}
+                  />
+                ) : (
+                  <View className="flex-1 items-center justify-center mt-10">
+                    <Text className="text-slate-500 font-bold">No units match your filters.</Text>
+                  </View>
+                )}
+              </>
+            ) : null}
           </View>
         )}
       </View>
 
-      <BookingModal 
+      <BookingModal
         unit={selectedAvailableUnit}
         visible={!!selectedAvailableUnit}
         onClose={() => setSelectedAvailableUnit(null)}
@@ -208,7 +206,7 @@ export default function SalesExecutiveProjectInventory() {
         }}
       />
 
-      <UnitInfoModal 
+      <UnitInfoModal
         unit={selectedReservedUnit}
         visible={!!selectedReservedUnit}
         onClose={() => setSelectedReservedUnit(null)}

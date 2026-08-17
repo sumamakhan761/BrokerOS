@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { usePathname } from 'expo-router';
+import { getAvailableStatusesForRole, STATUS_LABELS } from '../../../lib/status-utils';
 
 interface LeadFiltersProps {
   status: string;
@@ -31,47 +32,21 @@ export default function LeadFilters({
   const [showSiteVisitPicker, setShowSiteVisitPicker] = useState(false);
 
   const pathname = usePathname() || '';
-  const isPreSales = pathname.includes('/pre-sales');
-  const isPostSales = pathname.includes('/post-sales');
-  const isClosingManager = pathname.includes('/closing-manager');
+  const availableStatusStrings = getAvailableStatusesForRole(pathname);
 
-  const allStatuses = [
-    { label: 'New', value: 'NEW' },
-    { label: 'Contacted', value: 'CONTACTED' },
-    { label: 'Interested', value: 'INTERESTED' },
-    { label: 'Qualified', value: 'QUALIFIED' },
-    { label: 'Site Visit Scheduled', value: 'SITE_VISIT_SCHEDULED' },
-    { label: 'Site Visit Completed', value: 'SITE_VISIT_COMPLETED' },
-    { label: 'Booking', value: 'BOOKING' },
-    { label: 'Document', value: 'DOCUMENT' },
-    { label: 'Loan', value: 'LOAN' },
-    { label: 'Agreement', value: 'AGREEMENT' },
-    { label: 'Handover', value: 'HANDOVER' },
-    { label: 'Lost', value: 'LOST' },
-  ];
-
-  let availableStatuses = allStatuses;
-
-  if (isPreSales) {
-    availableStatuses = allStatuses.filter(s => s.value !== 'SITE_VISIT_COMPLETED' && s.value !== 'BOOKING' && !['DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'].includes(s.value));
-  } else if (isPostSales || isClosingManager) {
-    availableStatuses = allStatuses.filter(s => ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'].includes(s.value));
-  } else {
-    // Sales Exec / Manager
-    availableStatuses = allStatuses.filter(s => !['DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'].includes(s.value));
-  }
+  let availableStatuses = availableStatusStrings.map(s => ({
+    label: STATUS_LABELS[s] || s,
+    value: s
+  }));
 
   // Ensure current status is included if it's somehow selected
-  if (status && !availableStatuses.some(s => s.value === status)) {
-    const current = allStatuses.find(s => s.value === status);
-    if (current) {
-      availableStatuses = [current, ...availableStatuses];
-    }
+  if (status && !availableStatuses.some((s: { value: string }) => s.value === status)) {
+    availableStatuses = [{ label: STATUS_LABELS[status] || status, value: status }, ...availableStatuses];
   }
 
   return (
     <View className="px-4 pb-2 z-10">
-      <TouchableOpacity 
+      <TouchableOpacity
         className="flex-row items-center gap-2 mb-2 p-2"
         onPress={() => setIsExpanded(!isExpanded)}
       >
@@ -122,7 +97,7 @@ export default function LeadFilters({
             <View className="flex-1">
               <Text className="text-sm font-semibold text-gray-600 uppercase mb-2">Follow-Up Date</Text>
               <TouchableOpacity onPress={() => setShowFollowUpPicker(true)} activeOpacity={0.7}>
-                <TextInput 
+                <TextInput
                   value={followUpDate}
                   editable={false}
                   pointerEvents="none"
@@ -146,11 +121,11 @@ export default function LeadFilters({
                 />
               )}
             </View>
-            
+
             <View className="flex-1">
               <Text className="text-sm font-semibold text-gray-600 uppercase mb-2">Site Visit Date</Text>
               <TouchableOpacity onPress={() => setShowSiteVisitPicker(true)} activeOpacity={0.7}>
-                <TextInput 
+                <TextInput
                   value={siteVisitDate}
                   editable={false}
                   pointerEvents="none"
@@ -176,7 +151,7 @@ export default function LeadFilters({
             </View>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             className="bg-gray-100 py-3.5 rounded-xl items-center mt-4 border border-gray-200"
             onPress={() => {
               setStatus('');

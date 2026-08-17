@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { authClient } from '../../../lib/auth-client';
+import { getAvailableStatusesForRole } from '../../../lib/status-utils';
 
 import { LeadProfileData } from '../misc/lead-profile-types';
 import ProfileHeader from './ProfileHeader';
@@ -580,7 +581,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
         onClose={() => setIsStatusModalOpen(false)}
         currentStatus={lead.status}
         onStatusChange={handleStatusChange}
-        availableStatuses={isPostSales ? (role === 'closing-manager' ? ['NEW', 'BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'] : ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER']) : undefined}
+        availableStatuses={getAvailableStatusesForRole(role)}
       />
 
       <TemperatureModal
