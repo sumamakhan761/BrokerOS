@@ -81,8 +81,8 @@ Current Date & Time for reference: ${new Date().toISOString()}
 4. "extractedProjectId": We offer the following projects: ${availableProjects.map(p => `"${p.name}" (ID: ${p.id})`).join(', ')}. If the lead explicitly expresses interest in one of these projects, return its EXACT ID string. Otherwise, return null.
 5. "extractedLocation": The preferred location or area the lead is looking to buy in (e.g., "Kharghar", "Andheri"). Return null if not mentioned.
 6. "extractedRequirements": A brief string of their requirements (e.g., "2BHK with parking", "Looking for ready to move"). Return null if not mentioned.
-7. "scheduleFollowUp": boolean. This should ALWAYS be true, as every lead needs a follow-up after a call. 
-8. "followUpIsoDate": ISO 8601 Date string for the follow-up. Calculate this based on the transcript and the Current Date & Time. Rule: The follow up MUST be scheduled within the next 1 to 3 days (e.g. tomorrow, the next day, or max 3 days from now). Choose the most appropriate time within 3 days based on how interested they sound. NEVER schedule it for more than 7 days later.
+7. "scheduleFollowUp": boolean. Set to true UNLESS the lead explicitly says they are not interested, asks not to be called again, or if it's a wrong number. In those negative cases, set to false.
+8. "followUpIsoDate": ISO 8601 Date string for the follow-up. Calculate this based on the transcript and the Current Date & Time. Rule: If the lead specifically asks to be called on a certain date or time (e.g. "next week", "next month"), respect their request and calculate the date accordingly. Otherwise, default to scheduling it within the next 1 to 3 days based on how interested they sound. IMPORTANT: Schedule the follow-up during normal daytime working hours (10:00 AM to 6:00 PM local time). Do NOT schedule on Sundays; if the calculated date falls on a Sunday, move it to Monday.
 9. "followUpTitle": A short 3-4 word title for the follow-up (e.g., "Call regarding budget", "Follow up on location").
 10. "followUpRemarks": A detailed description of exactly why this follow-up is needed based on the conversation.
 
