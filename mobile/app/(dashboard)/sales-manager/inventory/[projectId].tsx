@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { UnitDetailsModal } from '../../../../components/inventory/modals/UnitDe
 import { AiTowerGenerator } from '../../../../components/inventory/misc/AiTowerGenerator';
 import PossessionModal from '../../../../components/inventory/modals/PossessionModal';
 import AssignmentModal from '../../../../components/inventory/modals/AssignmentModal';
+import InventoryFilters from '../../../../components/shared/InventoryFilters';
 import { authClient } from '../../../../lib/auth-client';
 
 export default function SalesManagerProjectInventory() {
@@ -21,6 +22,25 @@ export default function SalesManagerProjectInventory() {
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
   const [isPossessionModalOpen, setIsPossessionModalOpen] = useState(false);
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterType, setFilterType] = useState('ALL');
+
+  const filteredTower = useMemo(() => {
+    if (!activeTower) return null;
+    const cloned = JSON.parse(JSON.stringify(activeTower));
+    cloned.floors = cloned.floors.map((floor: any) => {
+      floor.units = floor.units.filter((unit: any) => {
+        const matchesSearch = searchQuery === '' || unit.unitNumber.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = filterStatus === 'ALL' || unit.status === filterStatus;
+        const matchesType = filterType === 'ALL' || unit.type === filterType;
+        return matchesSearch && matchesStatus && matchesType;
+      });
+      return floor;
+    }).filter((floor: any) => floor.units.length > 0);
+    return cloned;
+  }, [activeTower, searchQuery, filterStatus, filterType]);
 
   const loadTowers = async () => {
     try {
@@ -140,10 +160,27 @@ export default function SalesManagerProjectInventory() {
             </TouchableOpacity>
           </View>
         ) : activeTower ? (
-          <UnitGrid 
-            tower={activeTower}
-            onUnitClick={(unit) => setSelectedUnit({ ...unit, floor: activeTower.floors.find((f: any) => f.id === unit.floorId) })}
-          />
+          <>
+            <InventoryFilters
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              filterType={filterType}
+              setFilterType={setFilterType}
+            />
+
+            {filteredTower && filteredTower.floors.length > 0 ? (
+              <UnitGrid 
+                tower={filteredTower}
+                onUnitClick={(unit) => setSelectedUnit({ ...unit, floor: activeTower.floors.find((f: any) => f.id === unit.floorId) })}
+              />
+            ) : (
+              <View className="flex-1 items-center justify-center mt-10">
+                <Text className="text-slate-500 font-bold">No units match your filters.</Text>
+              </View>
+            )}
+          </>
         ) : null}
       </View>
 
