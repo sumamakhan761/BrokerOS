@@ -77,22 +77,22 @@ export default function SalesExecutiveApprovalScreen() {
     try {
       setSubmitting(true);
       const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
-      
+
       let uploadedUrl = '';
       if (file) {
         const formData = new FormData();
         const filename = file.name || file.uri.split('/').pop() || 'upload.file';
         const type = file.mimeType || 'application/octet-stream';
         formData.append('file', { uri: file.uri, name: filename, type } as any);
-        
-        const uploadRes = await fetch(`${baseURL}/api/approvals/upload`, {
+
+        const uploadRes = await authClient.$fetch('/api/approvals/upload', {
+          baseURL,
           method: 'POST',
-          body: formData,
+          body: formData as any,
         });
-        
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          uploadedUrl = uploadData.url || '';
+
+        if (!uploadRes.error && uploadRes.data) {
+          uploadedUrl = (uploadRes.data as any).url || '';
         } else {
           Alert.alert('Error', 'Failed to upload file');
           setSubmitting(false);
@@ -250,9 +250,9 @@ export default function SalesExecutiveApprovalScreen() {
               <TouchableOpacity onPress={handleSelectFile} className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex-row items-center justify-between">
                 <Text className="text-slate-600 flex-1 mr-2" numberOfLines={1}>{file ? file.name : 'Select a file...'}</Text>
                 {file && (
-                   <TouchableOpacity onPress={() => setFile(null)}>
-                     <Feather name="x-circle" size={16} color="#94a3b8" />
-                   </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setFile(null)}>
+                    <Feather name="x-circle" size={16} color="#94a3b8" />
+                  </TouchableOpacity>
                 )}
               </TouchableOpacity>
             </View>
