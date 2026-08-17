@@ -42,14 +42,14 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
         const type = replyFile.mimeType || 'application/octet-stream';
         formData.append('file', { uri: replyFile.uri, name: filename, type } as any);
         
-        const uploadRes = await fetch(`${baseURL}/api/approvals/upload`, {
+        const uploadRes = await authClient.$fetch('/api/approvals/upload', {
+          baseURL,
           method: 'POST',
-          body: formData,
+          body: formData as any,
         });
         
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          uploadedUrl = uploadData.url || '';
+        if (!uploadRes.error && uploadRes.data) {
+          uploadedUrl = (uploadRes.data as any).url || '';
         } else {
           Alert.alert('Error', 'Failed to upload file');
           setLoading(false);
