@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { authClient } from '../../../../lib/auth-client';
 import AssignmentModal from '../../../../components/inventory/modals/AssignmentModal';
+import NewProjectModal from '../../../../components/inventory/modals/NewProjectModal';
 
 export default function SalesManagerInventoryIndex() {
   const router = useRouter();
@@ -17,6 +18,8 @@ export default function SalesManagerInventoryIndex() {
     projectId: string;
     projectName: string;
   }>({ isOpen: false, projectId: '', projectName: '' });
+
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
 
   useEffect(() => {
     loadProjects();
@@ -55,6 +58,7 @@ export default function SalesManagerInventoryIndex() {
             <Text className="text-sm text-slate-500 mt-1">Manage towers and units.</Text>
           </View>
           <TouchableOpacity
+            onPress={() => setIsNewProjectModalOpen(true)}
             className="w-10 h-10 bg-indigo-600 rounded-full items-center justify-center shadow-sm"
           >
             <Feather name="plus" size={20} color="white" />
@@ -140,6 +144,12 @@ export default function SalesManagerInventoryIndex() {
           }}
         />
       )}
+
+      <NewProjectModal
+        isVisible={isNewProjectModalOpen}
+        onClose={() => setIsNewProjectModalOpen(false)}
+        onSuccess={() => loadProjects()}
+      />
     </View>
   );
 }
