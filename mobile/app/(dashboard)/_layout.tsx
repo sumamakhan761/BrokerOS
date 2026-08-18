@@ -315,18 +315,6 @@ export default function DashboardLayout() {
     { name: "channel-partner/analytics/index", title: "Analytics", icon: "pie-chart", roles: ['CHANNEL_PARTNER'] },
     { name: "channel-partner/settings/index", title: "Settings", icon: "settings", roles: ['CHANNEL_PARTNER'] },
     { name: "index", title: "Dashboard", icon: "layout", roles: [] }, // implicitly created by expo router, must be explicitly hidden
-    { name: "pre-sales", title: "Pre-Sales", icon: "layout", roles: [] },
-    { name: "pre-sales-manager", title: "Pre-Sales Manager", icon: "layout", roles: [] },
-    { name: "sales-executive", title: "Sales Executive", icon: "layout", roles: [] },
-    { name: "sales", title: "Sales", icon: "layout", roles: [] },
-    { name: "post-sales", title: "Post-Sales", icon: "layout", roles: [] },
-    { name: "finance", title: "Finance", icon: "layout", roles: [] },
-    { name: "business-manager", title: "Business Manager", icon: "layout", roles: [] },
-    { name: "director", title: "Director", icon: "layout", roles: [] },
-    { name: "admin", title: "Admin", icon: "layout", roles: [] },
-    { name: "sourcing-manager", title: "Sourcing Manager", icon: "layout", roles: [] },
-    { name: "closing-manager", title: "Closing Manager", icon: "layout", roles: [] },
-    { name: "channel-partner", title: "Channel Partner", icon: "layout", roles: [] },
     { name: "notifications", title: "Notifications", icon: "bell", roles: [] },
     { name: "chat/index", title: "Messages", icon: "message-circle", roles: [] },
     { name: "chat/[id]", title: "Chat Room", icon: "message-circle", roles: [] }
