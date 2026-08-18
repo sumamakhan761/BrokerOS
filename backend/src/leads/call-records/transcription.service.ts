@@ -108,7 +108,7 @@ Output your response ONLY as a JSON object with this exact format:
 
       const completion = await groq.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         response_format: { type: "json_object" },
       });
 
@@ -162,7 +162,7 @@ Reply ONLY with the valid JSON object.
 
       const completion = await groq.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         response_format: { type: "json_object" },
       });
 
@@ -242,7 +242,7 @@ Output your response ONLY as a JSON object with this exact format:
 
       const completion = await groq.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         response_format: { type: "json_object" },
       });
 
