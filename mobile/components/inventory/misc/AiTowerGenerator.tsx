@@ -3,6 +3,7 @@ import { View, Text, Modal, TouchableOpacity, TextInput, ActivityIndicator, Scro
 import { Feather } from '@expo/vector-icons';
 import { UnitGrid } from '../grid/UnitGrid';
 import { UnitDetailsModal } from '../modals/UnitDetailsModal';
+import { authClient } from '../../../lib/auth-client';
 
 interface AiTowerGeneratorProps {
   projectId: string;
@@ -23,16 +24,15 @@ export function AiTowerGenerator({ projectId, visible, onClose, onSuccess }: AiT
 
     try {
       setIsGenerating(true);
-      const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
-      const res = await fetch(`${baseUrl}/api/inventory/projects/${projectId}/towers/ai-generate`, {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
+      const res = await authClient.$fetch(`/api/inventory/projects/${projectId}/towers/ai-generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
+        baseURL: baseUrl,
+        body: { prompt }
       });
-      
-      if (!res.ok) throw new Error("AI Generation failed");
-      const data = await res.json();
-      setGeneratedData(data);
+
+      if (res.error) throw new Error(res.error.message || "AI Generation failed");
+      setGeneratedData(res.data);
     } catch (err: any) {
       alert(err?.message || "Failed to generate tower");
     } finally {
@@ -44,14 +44,14 @@ export function AiTowerGenerator({ projectId, visible, onClose, onSuccess }: AiT
     if (!generatedData) return;
     try {
       setIsSaving(true);
-      const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
-      const res = await fetch(`${baseUrl}/api/inventory/projects/${projectId}/towers`, {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
+      const res = await authClient.$fetch(`/api/inventory/projects/${projectId}/towers`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(generatedData)
+        baseURL: baseUrl,
+        body: generatedData
       });
-      
-      if (!res.ok) throw new Error("Failed to save generated tower");
+
+      if (res.error) throw new Error(res.error.message || "Failed to save generated tower");
       onSuccess();
     } catch (err: any) {
       alert(err?.message || "Failed to save tower");
@@ -104,11 +104,11 @@ export function AiTowerGenerator({ projectId, visible, onClose, onSuccess }: AiT
                 </View>
               </View>
               <Text className="text-slate-500 mb-4">Tap any unit below to manually edit its properties.</Text>
-              
+
               <View className="h-[400px]">
-                <UnitGrid 
-                  tower={generatedData} 
-                  onUnitClick={(unit: any) => setSelectedUnit(unit)} 
+                <UnitGrid
+                  tower={generatedData}
+                  onUnitClick={(unit: any) => setSelectedUnit(unit)}
                 />
               </View>
             </View>
@@ -119,15 +119,15 @@ export function AiTowerGenerator({ projectId, visible, onClose, onSuccess }: AiT
         <View className="p-4 bg-white border-t border-slate-200">
           {generatedData && (
             <View className="flex-row gap-3 mb-4">
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setGeneratedData(null)}
                 className="flex-1 py-3 bg-slate-100 rounded-xl items-center justify-center flex-row gap-2"
               >
                 <Feather name="refresh-cw" size={16} color="#475569" />
                 <Text className="font-bold text-slate-700">Clear</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 onPress={handleSave}
                 disabled={isSaving}
                 className="flex-[2] py-3 bg-emerald-600 rounded-xl items-center justify-center flex-row gap-2"
@@ -148,7 +148,7 @@ export function AiTowerGenerator({ projectId, visible, onClose, onSuccess }: AiT
               multiline
               maxLength={300}
             />
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleGenerate}
               disabled={!prompt.trim() || isGenerating || isSaving}
               className={`w-12 h-12 rounded-xl items-center justify-center ${!prompt.trim() ? 'bg-slate-300' : 'bg-indigo-600'}`}
@@ -160,7 +160,7 @@ export function AiTowerGenerator({ projectId, visible, onClose, onSuccess }: AiT
       </View>
 
       {/* Unit Edit Modal for Drafts */}
-      <UnitDetailsModal 
+      <UnitDetailsModal
         unit={selectedUnit}
         visible={!!selectedUnit}
         onClose={() => setSelectedUnit(null)}
