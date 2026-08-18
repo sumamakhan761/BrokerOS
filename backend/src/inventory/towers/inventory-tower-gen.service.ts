@@ -4,7 +4,7 @@ import Groq from 'groq-sdk';
 
 @Injectable()
 export class InventoryTowerGenService {
-  private groq: Groq;
+  private groq: Groq | null = null;
 
   constructor(private prisma: PrismaService) {
     const apiKey = process.env.GROQ_API_KEY;
@@ -44,7 +44,7 @@ Respond ONLY with JSON, no other text.`;
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt }
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-120b',
       response_format: { type: 'json_object' }
     });
 
