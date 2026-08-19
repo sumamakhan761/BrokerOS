@@ -440,11 +440,13 @@ enum ApprovalType {
   EXPENSE
   REFUND
   BOOKING_CANCELLATION
+  BOOKING
 }
 
 enum ApprovalRequestStatus {
   REQUESTED
   APPROVED
+  REJECTED
   CLOSED
 }
 
@@ -1787,6 +1789,7 @@ model Booking {
   inboundCommissions InboundCommission[]
 
   invoices Invoice[]
+  approvalRequests ApprovalRequest[]
 
   @@index([customerId])
   @@index([unitId])
@@ -2095,6 +2098,10 @@ model ApprovalRequest {
   managerId   String
   manager     User                  @relation("ApprovalRequestManager", fields: [managerId], references: [id])
   status      ApprovalRequestStatus @default(REQUESTED)
+  type        ApprovalType          @default(DISCOUNT)
+  redoCount   Int                   @default(0)
+  bookingId   String?
+  booking     Booking?              @relation(fields: [bookingId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2104,6 +2111,7 @@ model ApprovalRequest {
   @@index([salesExecId])
   @@index([managerId])
   @@index([status])
+  @@index([bookingId])
   @@map("approval_request")
 }
 
