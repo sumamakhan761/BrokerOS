@@ -11,7 +11,7 @@ export class LeadsMediaService {
     if (!lead) throw new NotFoundException(`Lead with ID ${id} not found`);
 
     const blob = await put(`avatars/${id}-${file.originalname}`, file.buffer, {
-      access: 'private',
+      access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN,
     });
 

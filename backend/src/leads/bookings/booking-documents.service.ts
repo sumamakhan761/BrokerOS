@@ -11,7 +11,7 @@ export class BookingDocumentsService {
     if (!booking) throw new NotFoundException('Booking not found');
 
     const blob = await put(`bookings/${bookingId}/${docType}-${file.originalname}`, file.buffer, {
-      access: 'private',
+      access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN,
     });
 

@@ -191,7 +191,7 @@ export class BookingPostSalesService {
 
   async uploadPostSalesFile(bookingId: string, type: 'loan' | 'agreement' | 'handover', fieldName: string, file: any) {
     const blob = await put(`bookings/${bookingId}/${type}/${fieldName}-${file.originalname}`, file.buffer, {
-      access: 'private',
+      access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN,
     });
 
