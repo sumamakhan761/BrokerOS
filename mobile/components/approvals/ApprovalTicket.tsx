@@ -28,6 +28,7 @@ export default function ApprovalTicket({ ticket, role, onBack, onUpdate }: Appro
     handleSelectFile,
     handleReply,
     handleCloseTicket,
+    handleRedo,
   } = useApprovalTicket(ticket, onUpdate);
 
   return (
@@ -61,6 +62,8 @@ export default function ApprovalTicket({ ticket, role, onBack, onUpdate }: Appro
         handleSelectFile={handleSelectFile}
         handleReply={handleReply}
         loading={loading}
+        handleRedo={handleRedo}
+        ticket={ticket}
       />
     </View>
   );

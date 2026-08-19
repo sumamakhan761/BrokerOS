@@ -15,6 +15,7 @@ export function ApprovalTicketHeader({ ticket, role, onBack, loading, onCloseTic
     switch (status) {
       case 'REQUESTED': return 'bg-yellow-100 text-yellow-800';
       case 'APPROVED': return 'bg-green-100 text-green-800';
+      case 'REJECTED': return 'bg-red-100 text-red-800';
       case 'CLOSED': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -27,9 +28,16 @@ export function ApprovalTicketHeader({ ticket, role, onBack, loading, onCloseTic
           <Feather name="arrow-left" size={20} color="#334155" />
         </TouchableOpacity>
         <View className="flex-1">
-          <Text className="font-bold text-lg text-slate-800">
-            Ticket #{ticket.id.slice(0, 8).toUpperCase()}
-          </Text>
+          <View className="flex-row items-center">
+            <Text className="font-bold text-lg text-slate-800 mr-2">
+              Ticket #{ticket.id.slice(0, 8).toUpperCase()}
+            </Text>
+            {ticket.type === 'BOOKING' && (
+              <View className="bg-indigo-100 px-2 py-0.5 rounded">
+                <Text className="text-[10px] font-bold text-indigo-700">{ticket.type}</Text>
+              </View>
+            )}
+          </View>
           <Text className="text-xs text-slate-500 mt-0.5">
             {role === 'SALES_MANAGER' ? `Requested by ${ticket.salesExec?.name}` : `Sent to ${ticket.manager?.name}`}
           </Text>

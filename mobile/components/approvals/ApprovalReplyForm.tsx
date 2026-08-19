@@ -7,8 +7,8 @@ interface ApprovalReplyFormProps {
   role: 'SALES_EXECUTIVE' | 'SALES_MANAGER';
   showReplyForm: boolean;
   setShowReplyForm: (show: boolean) => void;
-  actionType: 'APPROVE' | 'REPLY';
-  setActionType: (type: 'APPROVE' | 'REPLY') => void;
+  actionType: 'APPROVE' | 'REJECT' | 'REPLY';
+  setActionType: (type: 'APPROVE' | 'REJECT' | 'REPLY') => void;
   replyTitle: string;
   setReplyTitle: (title: string) => void;
   replyDesc: string;
@@ -18,6 +18,8 @@ interface ApprovalReplyFormProps {
   handleSelectFile: () => void;
   handleReply: () => void;
   loading: boolean;
+  handleRedo: () => void;
+  ticket: any;
 }
 
 export function ApprovalReplyForm({
@@ -36,6 +38,8 @@ export function ApprovalReplyForm({
   handleSelectFile,
   handleReply,
   loading,
+  handleRedo,
+  ticket,
 }: ApprovalReplyFormProps) {
   if (ticketStatus === 'CLOSED') return null;
 
@@ -43,7 +47,7 @@ export function ApprovalReplyForm({
     <View className="p-4 bg-white border-t border-slate-200 pb-8">
       {!showReplyForm ? (
         <View className="flex-row justify-center gap-2">
-          {role === 'SALES_MANAGER' && ticketStatus !== 'APPROVED' ? (
+          {role === 'SALES_MANAGER' && ticketStatus === 'REQUESTED' ? (
             <>
               <TouchableOpacity
                 className="flex-1 bg-green-600 p-3 rounded-xl flex-row justify-center items-center"
@@ -53,30 +57,39 @@ export function ApprovalReplyForm({
                 <Text className="text-white font-bold ml-2">Approve</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 bg-blue-50 border border-blue-200 p-3 rounded-xl flex-row justify-center items-center"
-                onPress={() => { setActionType('REPLY'); setShowReplyForm(true); }}
+                className="flex-1 bg-red-600 p-3 rounded-xl flex-row justify-center items-center"
+                onPress={() => { setActionType('REJECT'); setShowReplyForm(true); }}
               >
-                <Feather name="message-circle" size={18} color="#2563eb" />
-                <Text className="text-blue-600 font-bold ml-2">Reply</Text>
+                <Feather name="x-circle" size={18} color="white" />
+                <Text className="text-white font-bold ml-2">Reject</Text>
               </TouchableOpacity>
             </>
-          ) : (
+          ) : role === 'SALES_MANAGER' && (ticketStatus === 'APPROVED' || ticketStatus === 'REJECTED') && ticket.redoCount < 2 ? (
+            <TouchableOpacity
+              className="flex-1 bg-yellow-500 p-3 rounded-xl flex-row justify-center items-center"
+              onPress={handleRedo}
+              disabled={loading}
+            >
+              <Feather name="rotate-ccw" size={18} color="white" />
+              <Text className="text-white font-bold ml-2">Redo Decision ({2 - ticket.redoCount} left)</Text>
+            </TouchableOpacity>
+          ) : ticketStatus === 'REQUESTED' ? (
             <TouchableOpacity
               className="flex-1 bg-[#2563eb] p-3 rounded-xl flex-row justify-center items-center"
               onPress={() => setShowReplyForm(true)}
             >
               <Feather name="message-circle" size={18} color="white" />
               <Text className="text-white font-bold ml-2">
-                {ticketStatus === 'APPROVED' ? 'Push Back / Reply' : 'Send Message'}
+                Send Message
               </Text>
             </TouchableOpacity>
-          )}
+          ) : null}
         </View>
       ) : (
         <View className="space-y-3">
           <View className="flex-row justify-between items-center mb-2">
             <Text className="font-bold text-slate-800">
-              {actionType === 'APPROVE' ? 'Approve & Respond' : 'Write a Message'}
+              {actionType === 'APPROVE' ? 'Approve' : actionType === 'REJECT' ? 'Reject' : 'Write a Message'}
             </Text>
             <TouchableOpacity onPress={() => setShowReplyForm(false)}>
               <Feather name="x" size={20} color="#64748b" />
@@ -111,7 +124,7 @@ export function ApprovalReplyForm({
           </View>
 
           <TouchableOpacity
-            className={`p-3 rounded-xl flex-row justify-center items-center mt-2 ${actionType === 'APPROVE' ? 'bg-green-600' : 'bg-[#2563eb]'}`}
+            className={`p-3 rounded-xl flex-row justify-center items-center mt-2 ${actionType === 'APPROVE' ? 'bg-green-600' : actionType === 'REJECT' ? 'bg-red-600' : 'bg-[#2563eb]'}`}
             onPress={handleReply}
             disabled={loading}
           >
@@ -119,7 +132,7 @@ export function ApprovalReplyForm({
               <ActivityIndicator color="white" size="small" />
             ) : (
               <Text className="text-white font-bold text-center">
-                {actionType === 'APPROVE' ? 'Approve Now' : 'Send Message'}
+                {actionType === 'APPROVE' ? 'Approve Now' : actionType === 'REJECT' ? 'Reject Now' : 'Send Message'}
               </Text>
             )}
           </TouchableOpacity>
