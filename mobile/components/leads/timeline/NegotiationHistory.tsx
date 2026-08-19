@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { FontAwesome5, Feather } from '@expo/vector-icons';
 import NegotiationAddForm from './NegotiationAddForm';
 import NegotiationTimeline from './NegotiationTimeline';
@@ -31,7 +32,7 @@ export default function NegotiationHistory({ notes, leadId, onRefresh }: Negotia
       const { data: sessionData } = await authClient.getSession();
       const userId = sessionData?.user?.id;
       if (!userId) {
-        Alert.alert('Error', 'You must be logged in.');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'You must be logged in.' });
         setSaving(false);
         return;
       }
@@ -69,11 +70,11 @@ export default function NegotiationHistory({ notes, leadId, onRefresh }: Negotia
         });
         if (onRefresh) onRefresh();
       } else {
-        Alert.alert('Error', 'Failed to add negotiation round.');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to add negotiation round.' });
       }
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'An error occurred while saving.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'An error occurred while saving.' });
     } finally {
       setSaving(false);
     }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { authClient } from '../../../lib/auth-client';
 import { PostSalesDashboardData } from '../../../components/dashboards/post-sales/misc/types';
 
@@ -22,7 +23,7 @@ export default function PostSalesDashboard() {
       if (res.data) setDashData(res.data);
     } catch (e: any) {
       console.error(e);
-      Alert.alert('Error', 'Failed to load post-sales dashboard');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to load post-sales dashboard' });
     }
   };
 
@@ -42,13 +43,13 @@ export default function PostSalesDashboard() {
         baseURL,
       });
       if (res.data?.success) {
-        Alert.alert('Success', 'Follow-up confirmed successfully.');
+        Toast.show({ type: 'success', text1: 'Success', text2: 'Follow-up confirmed successfully.' });
         fetchData();
       } else {
-        Alert.alert('Error', res.data?.message || 'Failed to confirm follow-up.');
+        Toast.show({ type: 'error', text1: 'Error', text2: res.data?.message || 'Failed to confirm follow-up.' });
       }
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to confirm follow-up.');
+      Toast.show({ type: 'error', text1: 'Error', text2: e?.message || 'Failed to confirm follow-up.' });
     }
   };
 

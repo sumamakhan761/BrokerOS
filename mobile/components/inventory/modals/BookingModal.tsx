@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Feather } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 
@@ -44,7 +45,7 @@ export function BookingModal({ unit, visible, onClose, onSuccess }: BookingModal
 
   const handleSubmit = async () => {
     if (!selectedLeadId) {
-      Alert.alert("Required", "Please select a customer for this booking.");
+      Toast.show({ type: 'info', text1: 'Required', text2: 'Please select a customer for this booking.' });
       return;
     }
 
@@ -72,10 +73,10 @@ export function BookingModal({ unit, visible, onClose, onSuccess }: BookingModal
         throw new Error(errorData?.message || "Unit is no longer available. Another executive just booked this unit.");
       }
 
-      Alert.alert("Success", "Unit booked successfully!");
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Unit booked successfully!' });
       onSuccess();
     } catch (e: any) {
-      Alert.alert("Booking Failed", e.message);
+      Toast.show({ type: 'error', text1: 'Booking Failed', text2: e.message });
     } finally {
       setIsSubmitting(false);
     }

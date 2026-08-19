@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, ActivityIndicator, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, ActivityIndicator, ScrollView } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Feather } from '@expo/vector-icons';
 import { authClient } from '@/lib/auth-client';
 
@@ -47,7 +48,7 @@ export function AssignSourcingManagerModal({
         setManagers(res.data as SourcingManager[]);
       }
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to load sourcing managers');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to load sourcing managers' });
     } finally {
       setFetching(false);
     }
@@ -69,7 +70,7 @@ export function AssignSourcingManagerModal({
         throw new Error(res.error.message || 'Failed to assign');
       }
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Something went wrong');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Something went wrong' });
     } finally {
       setLoading(false);
     }

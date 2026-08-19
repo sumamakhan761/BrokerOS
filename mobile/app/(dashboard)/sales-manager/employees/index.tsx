@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { authClient } from '../../../../lib/auth-client';
 import { AnnouncementsSection } from '../../../../components/dashboards/sales-manager/sections/AnnouncementsSection';
 import { TeamMembersList } from '../../../../components/dashboards/sales-manager/lists/TeamMembersList';
@@ -66,7 +67,7 @@ export default function EmployeesScreen() {
 
   const handleSaveAnn = async () => {
     if (!annModal.title.trim() || !annModal.desc.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Please fill in all fields' });
       return;
     }
 
@@ -89,32 +90,23 @@ export default function EmployeesScreen() {
       setAnnModal({ show: false, mode: 'create', title: '', desc: '' });
       await loadData();
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to save announcement');
+      Toast.show({ type: 'error', text1: 'Error', text2: e?.message || 'Failed to save announcement' });
     } finally {
       setIsSavingAnn(false);
     }
   };
 
-  const handleDeleteAnn = (id: string) => {
-    Alert.alert('Delete Announcement', 'Are you sure you want to delete this announcement?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000';
-            await authClient.$fetch(`/api/dashboard/sales-manager/employees/announcements/${id}`, {
-              method: 'DELETE',
-              baseURL: baseUrl
-            });
-            await loadData();
-          } catch (e: any) {
-            Alert.alert('Error', 'Failed to delete announcement');
-          }
-        }
-      }
-    ]);
+  const handleDeleteAnn = async (id: string) => {
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000';
+      await authClient.$fetch(`/api/dashboard/sales-manager/employees/announcements/${id}`, {
+        method: 'DELETE',
+        baseURL: baseUrl
+      });
+      await loadData();
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to delete announcement' });
+    }
   };
 
   if (loading) {

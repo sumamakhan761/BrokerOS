@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Linking } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Feather } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { authClient } from '@/lib/auth-client';
@@ -76,12 +77,12 @@ export default function BookingDocumentList({
         if (res.ok) {
           onRefresh();
         } else {
-          Alert.alert('Error', 'Failed to upload document');
+          Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to upload document' });
         }
       }
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'Upload failed');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Upload failed' });
     } finally {
       setUploadingType(null);
     }
@@ -101,7 +102,7 @@ export default function BookingDocumentList({
       if (!error) {
         onRefresh();
       } else {
-        Alert.alert('Error', 'Failed to mark as done');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to mark as done' });
       }
     } finally {
       setSaving(false);

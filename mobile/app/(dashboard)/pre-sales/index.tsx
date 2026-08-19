@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { authClient } from '../../../lib/auth-client';
 import { DashboardData, Announcement, LeaderboardEntry } from '../../../components/dashboards/pre-sales/misc/types';
 
@@ -55,13 +56,13 @@ export default function PreSalesDashboard() {
         { baseURL, method: 'POST' }
       );
       if (data?.success) {
-        Alert.alert('✅ Done!', 'Follow-up confirmed successfully.');
+        Toast.show({ type: 'success', text1: '✅ Done!', text2: 'Follow-up confirmed successfully.' });
         load();
       } else {
-        Alert.alert('⚠️ Cannot Confirm', data?.message || 'No call record found for today.');
+        Toast.show({ type: 'info', text1: '⚠️ Cannot Confirm', text2: data?.message || 'No call record found for today.' });
       }
     } catch (e) {
-      Alert.alert('Error', 'Failed to confirm follow-up.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to confirm follow-up.' });
     }
   };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Alert } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { authClient } from '../../../lib/auth-client';
 
 export function useBookingForm(leadId: string, onRefresh: () => void, lead?: any) {
@@ -119,7 +119,7 @@ export function useBookingForm(leadId: string, onRefresh: () => void, lead?: any
       const { data: sessionData } = await authClient.getSession();
       const userId = (sessionData?.user as any)?.id;
       if (!userId) {
-        Alert.alert('Error', 'You must be logged in.');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'You must be logged in.' });
         return;
       }
 
@@ -146,7 +146,7 @@ export function useBookingForm(leadId: string, onRefresh: () => void, lead?: any
         setShowForm(false);
         onRefresh();
       } else {
-        Alert.alert('Error', 'Failed to create booking');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to create booking' });
       }
     } finally {
       setSaving(false);

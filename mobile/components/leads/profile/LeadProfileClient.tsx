@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import Toast from 'react-native-toast-message';
 import * as ImagePicker from 'expo-image-picker';
 import { authClient } from '../../../lib/auth-client';
 import { getAvailableStatusesForRole } from '../../../lib/status-utils';
@@ -164,7 +165,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
       const { data: sessionData } = await authClient.getSession();
       const userId = sessionData?.user?.id;
       if (!userId) {
-        Alert.alert('Error', 'You must be logged in to auto-advance.');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'You must be logged in to auto-advance.' });
         setIsAiAdvancing(false);
         return;
       }
@@ -186,7 +187,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
       await fetchLead();
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Could not generate AI transition note. Please try again.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Could not generate AI transition note. Please try again.' });
     } finally {
       setIsAiAdvancing(false);
     }
@@ -239,12 +240,12 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
           const updatedLead = await res.json();
           setLead(updatedLead);
         } else {
-          Alert.alert('Error', 'Failed to upload image');
+          Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to upload image' });
         }
       }
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'An error occurred during upload');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'An error occurred during upload' });
     } finally {
       setUploading(false);
     }
@@ -295,7 +296,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
       const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
       const { data: sessionData } = await authClient.getSession();
       const userId = sessionData?.user?.id;
-      if (!userId) return Alert.alert('Error', 'You must be logged in.');
+      if (!userId) { Toast.show({ type: 'error', text1: 'Error', text2: 'You must be logged in.' }); return; }
 
       const { error } = await authClient.$fetch(`${baseURL}/api/leads/${leadId}/notes`, {
         method: 'POST',
@@ -322,7 +323,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
       const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
       const { data: sessionData } = await authClient.getSession();
       const userId = sessionData?.user?.id;
-      if (!userId) return Alert.alert('Error', 'You must be logged in.');
+      if (!userId) { Toast.show({ type: 'error', text1: 'Error', text2: 'You must be logged in.' }); return; }
 
       const isEditing = !!editingFollowUpId;
       const url = isEditing
@@ -370,7 +371,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
 
   const handleOpenSiteVisitModal = () => {
     if (lead?.status !== 'SITE_VISIT_SCHEDULED') {
-      Alert.alert('Cannot Schedule', 'Please change the lead status to SITE VISIT SCHEDULED first.');
+      Toast.show({ type: 'info', text1: 'Cannot Schedule', text2: 'Please change the lead status to SITE VISIT SCHEDULED first.' });
       return;
     }
     setIsSiteVisitModalOpen(true);
@@ -381,7 +382,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
       const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
       const { data: sessionData } = await authClient.getSession();
       const userId = sessionData?.user?.id;
-      if (!userId) return Alert.alert('Error', 'You must be logged in.');
+      if (!userId) { Toast.show({ type: 'error', text1: 'Error', text2: 'You must be logged in.' }); return; }
 
       const isEditing = !!editingSiteVisitId;
       const url = isEditing
@@ -435,7 +436,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
       const Location = await import('expo-location');
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission to access location was denied');
+        Toast.show({ type: 'info', text1: 'Permission Denied', text2: 'Permission to access location was denied' });
         return;
       }
       const location = await Location.getCurrentPositionAsync({});
@@ -450,13 +451,13 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
         }
       });
       if (!error) {
-        Alert.alert('Success', 'Arrival confirmed!');
+        Toast.show({ type: 'success', text1: 'Success', text2: 'Arrival confirmed!' });
         fetchLead();
       } else {
-        Alert.alert('Error', error.message || 'Failed to confirm arrival');
+        Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Failed to confirm arrival' });
       }
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Could not fetch location');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Could not fetch location' });
     }
   };
 
@@ -478,13 +479,13 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
       });
 
       if (!error) {
-        Alert.alert('Success', 'Site visit completed successfully!');
+        Toast.show({ type: 'success', text1: 'Success', text2: 'Site visit completed successfully!' });
         fetchLead();
       } else {
-        Alert.alert('Error', error.message || 'Failed to complete site visit');
+        Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Failed to complete site visit' });
       }
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'An error occurred while saving.');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'An error occurred while saving.' });
     }
   };
 
@@ -500,18 +501,18 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
       // authClient returns 'error' object on non-2xx responses. But dashboard controller sends {success, message} often.
       // We check both forms of errors.
       if (error) {
-        Alert.alert('Error', error.message || 'Cannot confirm follow-up.');
+        Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Cannot confirm follow-up.' });
         return;
       }
       
       if (data && data.success === false) {
-        Alert.alert('Error', data.message || 'Cannot confirm follow-up.');
+        Toast.show({ type: 'error', text1: 'Error', text2: data.message || 'Cannot confirm follow-up.' });
         return;
       }
 
       fetchLead();
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to confirm follow-up.');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to confirm follow-up.' });
     }
   };
 

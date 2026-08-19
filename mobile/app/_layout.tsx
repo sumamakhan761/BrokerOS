@@ -6,6 +6,8 @@ import * as TaskManager from 'expo-task-manager';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { authClient } from '../lib/auth-client';
+import Toast from 'react-native-toast-message';
+import { toastConfig } from '../components/ui/ToastConfig';
 
 const BACKGROUND_NOTIFICATION_TASK = 'BACKGROUND-NOTIFICATION-TASK';
 
@@ -77,6 +79,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <RootLayoutNav />
+      <Toast config={toastConfig} />
     </GestureHandlerRootView>
   );
 }

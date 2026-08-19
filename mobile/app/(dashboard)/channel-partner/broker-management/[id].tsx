@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, ActivityIndicator, Text, Alert } from 'react-native';
+import { View, ScrollView, ActivityIndicator, Text } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useLocalSearchParams } from 'expo-router';
 import { authClient } from '@/lib/auth-client';
 import { BrokerHeader } from '@/components/brokers/profile/BrokerHeader';
@@ -70,7 +71,7 @@ export default function CPBrokerProfileScreen() {
       const baseUrl = process.env.EXPO_PUBLIC_API_URL || '';
       const { data: sessionData } = await authClient.getSession();
       const userId = sessionData?.user?.id;
-      if (!userId) return Alert.alert('Error', 'You must be logged in.');
+      if (!userId) { Toast.show({ type: 'error', text1: 'Error', text2: 'You must be logged in.' }); return; }
 
       const { error } = await authClient.$fetch(`${baseUrl}/api/brokers/${id}/notes`, {
         method: 'POST',
@@ -93,7 +94,7 @@ export default function CPBrokerProfileScreen() {
       const baseUrl = process.env.EXPO_PUBLIC_API_URL || '';
       const { data: sessionData } = await authClient.getSession();
       const userId = sessionData?.user?.id;
-      if (!userId) return Alert.alert('Error', 'You must be logged in.');
+      if (!userId) { Toast.show({ type: 'error', text1: 'Error', text2: 'You must be logged in.' }); return; }
 
       const isEditing = !!editingFollowUpId;
       // We don't have a PATCH endpoint for broker follow-ups typically (in web we just POST new or we don't edit), 
@@ -127,7 +128,7 @@ export default function CPBrokerProfileScreen() {
       const baseUrl = process.env.EXPO_PUBLIC_API_URL || '';
       const { data: sessionData } = await authClient.getSession();
       const userId = sessionData?.user?.id;
-      if (!userId) return Alert.alert('Error', 'You must be logged in.');
+      if (!userId) { Toast.show({ type: 'error', text1: 'Error', text2: 'You must be logged in.' }); return; }
 
       const payload: any = {
         scheduledAt: siteVisitData.date,

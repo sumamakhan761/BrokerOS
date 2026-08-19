@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, Modal, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Feather } from '@expo/vector-icons';
 import { authClient } from '../../../lib/auth-client';
 import { Picker } from '@react-native-picker/picker';
@@ -97,7 +98,7 @@ export default function ClosingManagerNewLeadModal({ isVisible, onClose, onSucce
 
   const handleSubmit = async () => {
     if (!formData.firstName || !formData.phone || !formData.interestedProjectId || !formData.brokerId) {
-      Alert.alert('Error', 'Please fill in all required fields (First Name, Phone, Project, Broker).');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Please fill in all required fields (First Name, Phone, Project, Broker).' });
       return;
     }
 
@@ -124,7 +125,7 @@ export default function ClosingManagerNewLeadModal({ isVisible, onClose, onSucce
       onSuccess();
     } catch (error) {
       console.error('Failed to create lead:', error);
-      Alert.alert('Error', 'Failed to create lead');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to create lead' });
     } finally {
       setLoading(false);
     }

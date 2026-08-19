@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
 import { authClient } from '../../../lib/auth-client';
 import { AnnouncementsSection } from '../../../components/dashboards/pre-sales-manager/sections/AnnouncementsSection';
@@ -101,22 +102,15 @@ export default function PreSalesManagerEmployeesScreen() {
       setTaskModal({ show: false, mode: 'create', target: '100' });
       load();
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to save task');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to save task' });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteTask = (id: string) => {
-    Alert.alert('Confirm Delete', 'Delete this task?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          await authClient.$fetch(`/api/dashboard/pre-sales-manager/employees/tasks/${id}`, { baseURL, method: 'DELETE' });
-          load();
-        }
-      }
-    ]);
+  const handleDeleteTask = async (id: string) => {
+    await authClient.$fetch(`/api/dashboard/pre-sales-manager/employees/tasks/${id}`, { baseURL, method: 'DELETE' });
+    load();
   };
 
   // Ann Actions
@@ -136,22 +130,15 @@ export default function PreSalesManagerEmployeesScreen() {
       setAnnModal({ show: false, mode: 'create', title: '', desc: '' });
       load();
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to save announcement');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to save announcement' });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteAnn = (id: string) => {
-    Alert.alert('Confirm Delete', 'Delete this announcement? It will disappear immediately.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          await authClient.$fetch(`/api/dashboard/pre-sales-manager/employees/announcements/${id}`, { baseURL, method: 'DELETE' });
-          load();
-        }
-      }
-    ]);
+  const handleDeleteAnn = async (id: string) => {
+    await authClient.$fetch(`/api/dashboard/pre-sales-manager/employees/announcements/${id}`, { baseURL, method: 'DELETE' });
+    load();
   };
 
   if (loading) {

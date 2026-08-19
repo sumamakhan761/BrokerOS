@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import Toast from 'react-native-toast-message';
 import * as DocumentPicker from 'expo-document-picker';
 import { authClient } from '../../../lib/auth-client';
 
@@ -18,11 +18,11 @@ export function usePostSalesPipeline(leadId: string, bookingId: string, onRefres
       if (!error) {
         onRefresh();
       } else {
-        Alert.alert('Error', 'Failed to mark stage as done');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to mark stage as done' });
       }
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'An error occurred');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'An error occurred' });
     } finally {
       setSaving(false);
     }
@@ -50,12 +50,12 @@ export function usePostSalesPipeline(leadId: string, bookingId: string, onRefres
         if (res.ok) {
           onRefresh();
         } else {
-          Alert.alert('Error', 'Failed to upload file');
+          Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to upload file' });
         }
       }
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'Upload failed');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Upload failed' });
     } finally {
       setSaving(false);
     }
@@ -85,12 +85,12 @@ export function usePostSalesPipeline(leadId: string, bookingId: string, onRefres
         if (res.ok) {
           onRefresh();
         } else {
-          Alert.alert('Error', 'Failed to upload document');
+          Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to upload document' });
         }
       }
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'Upload failed');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Upload failed' });
     } finally {
       setSaving(false);
     }
@@ -108,11 +108,11 @@ export function usePostSalesPipeline(leadId: string, bookingId: string, onRefres
       if (res.ok) {
         onRefresh();
       } else {
-        Alert.alert('Error', 'Failed to save details');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to save details' });
       }
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'Save failed');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Save failed' });
     } finally {
       setSaving(false);
     }
