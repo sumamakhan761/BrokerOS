@@ -42,15 +42,15 @@ export function usePostSalesPipeline(leadId: string, bookingId: string, onRefres
         formData.append('fieldName', fieldName);
         
         const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
-        const res = await fetch(`${baseURL}/api/leads/${leadId}/booking/post-sales-file`, {
+        const { error, data } = await authClient.$fetch(`${baseURL}/api/leads/${leadId}/booking/post-sales-file`, {
           method: 'POST',
-          body: formData,
+          body: formData as any,
         });
         
-        if (res.ok) {
+        if (!error) {
           onRefresh();
         } else {
-          Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to upload file' });
+          Toast.show({ type: 'error', text1: 'Error', text2: error?.message || 'Failed to upload file' });
         }
       }
     } catch (e) {
@@ -77,15 +77,15 @@ export function usePostSalesPipeline(leadId: string, bookingId: string, onRefres
         }
 
         const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
-        const res = await fetch(`${baseURL}/api/leads/${leadId}/booking/documents`, {
+        const { error, data } = await authClient.$fetch(`${baseURL}/api/leads/${leadId}/booking/documents`, {
           method: 'POST',
-          body: formData,
+          body: formData as any,
         });
 
-        if (res.ok) {
+        if (!error) {
           onRefresh();
         } else {
-          Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to upload document' });
+          Toast.show({ type: 'error', text1: 'Error', text2: error?.message || 'Failed to upload document' });
         }
       }
     } catch (e) {
@@ -100,15 +100,15 @@ export function usePostSalesPipeline(leadId: string, bookingId: string, onRefres
     setSaving(true);
     try {
       const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
-      const res = await fetch(`${baseURL}/api/leads/${leadId}/booking/${endpoint}`, {
+      const { error, data: responseData } = await authClient.$fetch(`${baseURL}/api/leads/${leadId}/booking/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookingId: bookingId, data }),
+        body: { bookingId: bookingId, data },
       });
-      if (res.ok) {
+      if (!error) {
         onRefresh();
       } else {
-        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to save details' });
+        Toast.show({ type: 'error', text1: 'Error', text2: error?.message || 'Failed to save details' });
       }
     } catch (e) {
       console.error(e);
