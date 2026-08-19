@@ -2,8 +2,10 @@ import { Controller, Get, Patch, Post, Param, Body, Query, UseInterceptors, Uplo
 import { FileInterceptor } from '@nestjs/platform-express';
 import { LeadsService } from './leads.service.js';
 import { LeadStatus } from '../../generated/prisma/client.js';
+import { Public } from '@thallesp/nestjs-better-auth';
 
 @Controller('api/leads')
+
 export class LeadsController {
   constructor(
     private readonly leadsService: LeadsService,
@@ -97,6 +99,7 @@ export class LeadsController {
     return this.leadsService.uploadAvatar(id, file);
   }
 
+  @Public()
   @Get(':id/avatar-image')
   async getAvatarImage(@Param('id') id: string, @Res() res: any) {
     const lead = await this.leadsService.findOne(id);
