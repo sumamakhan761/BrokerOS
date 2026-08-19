@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import SiteVisitEditMode from '../misc/SiteVisitEditMode';
 import { LeadProfileData } from '../misc/lead-profile-types';
 
 interface SchedulesTimelineProps {
@@ -9,9 +10,48 @@ interface SchedulesTimelineProps {
   onEditSiteVisit?: (siteVisit: NonNullable<LeadProfileData['siteVisits']>[0]) => void;
   onEditFollowUp?: (followUp: NonNullable<LeadProfileData['followUps']>[0]) => void;
   onArriveAtSiteVisit?: (siteVisitId: string) => void;
+  onCompleteSiteVisit?: (siteVisitId: string, formData: any) => Promise<void>;
 }
 
-export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVisit, onEditFollowUp, onArriveAtSiteVisit }: SchedulesTimelineProps) {
+export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVisit, onEditFollowUp, onArriveAtSiteVisit, onCompleteSiteVisit }: SchedulesTimelineProps) {
+  const [completingId, setCompletingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState<any>({
+    interestLevel: '',
+    budgetConfirmed: '',
+    configInterest: '',
+    customerReaction: '',
+    closingProbability: '',
+    nextAction: '',
+    customerObjections: '',
+    meetingNotes: ''
+  });
+
+  const startComplete = (sv: any) => {
+    setEditForm({
+      interestLevel: sv.interestLevel || '',
+      budgetConfirmed: sv.budgetConfirmed?.toString() || '',
+      configInterest: sv.configInterest || '',
+      customerReaction: sv.customerReaction || '',
+      closingProbability: sv.closingProbability || '',
+      nextAction: sv.nextAction || '',
+      customerObjections: sv.customerObjections || '',
+      meetingNotes: sv.meetingNotes || ''
+    });
+    setCompletingId(sv.id);
+  };
+
+  const handleSaveComplete = async (svId: string) => {
+    if (!onCompleteSiteVisit) return;
+    setSaving(true);
+    try {
+      await onCompleteSiteVisit(svId, editForm);
+      setCompletingId(null);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openMapUrl = (url: string) => {
     import('react-native').then(({ Linking }) => {
       Linking.openURL(url).catch(err => console.error("Couldn't load page", err));
@@ -71,6 +111,22 @@ export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVis
                       <Feather name="navigation" size={14} color="white" />
                       <Text className="text-white font-bold text-xs ml-1">Arrive</Text>
                     </TouchableOpacity>
+                  )}
+                  {onCompleteSiteVisit && sv.arrivedAt && !sv.completedAt && completingId !== sv.id && (
+                    <TouchableOpacity onPress={() => startComplete(sv)} className="mt-3 bg-blue-500 p-2 rounded-lg items-center flex-row justify-center">
+                      <Feather name="check-square" size={14} color="white" />
+                      <Text className="text-white font-bold text-xs ml-1">Complete</Text>
+                    </TouchableOpacity>
+                  )}
+                  {completingId === sv.id && (
+                    <SiteVisitEditMode
+                      svId={sv.id}
+                      editForm={editForm}
+                      setEditForm={setEditForm}
+                      saving={saving}
+                      saveEdit={handleSaveComplete}
+                      onCancel={() => setCompletingId(null)}
+                    />
                   )}
                 </TouchableOpacity>
               ))

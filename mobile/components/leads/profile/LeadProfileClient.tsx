@@ -460,6 +460,34 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
     }
   };
 
+  const handleCompleteSiteVisit = async (svId: string, formData: any) => {
+    try {
+      const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
+      const payload = {
+        ...formData,
+        budgetConfirmed: formData.budgetConfirmed ? Number(formData.budgetConfirmed) : undefined,
+        status: 'COMPLETED',
+        completedAt: new Date().toISOString(),
+      };
+
+      const { error } = await authClient.$fetch(`/api/leads/site-visits/${svId}`, {
+        baseURL,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload
+      });
+
+      if (!error) {
+        Alert.alert('Success', 'Site visit completed successfully!');
+        fetchLead();
+      } else {
+        Alert.alert('Error', error.message || 'Failed to complete site visit');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'An error occurred while saving.');
+    }
+  };
+
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center bg-[#f8fafc]">
@@ -525,6 +553,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
           onEditSiteVisit={handleEditSiteVisit}
           onEditFollowUp={handleEditFollowUp}
           onArriveAtSiteVisit={handleArriveAtSiteVisit}
+          onCompleteSiteVisit={handleCompleteSiteVisit}
         />
 
         {(isSalesExecOrManager) && (
