@@ -38,7 +38,7 @@ export function ApprovalTicketReplyForm({
     <div className="p-4 border-t border-slate-100 bg-white rounded-b-2xl flex flex-col gap-3">
       {/* Action Buttons for Manager */}
       {role === 'SALES_MANAGER' && ticket.status === 'REQUESTED' && (
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center justify-center gap-2 mb-2">
           <Button
             size="sm"
             className="bg-emerald-600 hover:bg-emerald-700 font-bold rounded-lg shadow-sm transition-all text-xs"
@@ -61,7 +61,7 @@ export function ApprovalTicketReplyForm({
       )}
       
       {role === 'SALES_MANAGER' && (ticket.status === 'APPROVED' || ticket.status === 'REJECTED') && ticket.redoCount < 2 && (
-        <div className="flex mb-2">
+        <div className="flex justify-center mb-2">
           <Button
             size="sm"
             className="bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg shadow-sm transition-all text-xs"

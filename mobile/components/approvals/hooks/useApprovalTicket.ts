@@ -58,6 +58,7 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
         baseURL,
         method: 'POST',
         body: {
+          title: 'Message',
           description: replyDesc,
           fileUrl: uploadedUrl,
           action: 'REPLY',

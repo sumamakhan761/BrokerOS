@@ -25,7 +25,6 @@ export function ApprovalTicketMessages({ ticket, role }: ApprovalTicketMessagesP
                 : 'bg-white border border-slate-100 text-slate-800 rounded-tl-sm'
                 }`}
             >
-              <div className="font-extrabold text-sm mb-1">{msg.title}</div>
               <div className={`text-sm whitespace-pre-wrap font-medium ${alignRight ? 'text-indigo-50' : 'text-slate-600'}`}>
                 {msg.description}
               </div>
