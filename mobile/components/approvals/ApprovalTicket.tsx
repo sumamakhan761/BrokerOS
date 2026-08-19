@@ -15,20 +15,15 @@ interface ApprovalTicketProps {
 export default function ApprovalTicket({ ticket, role, onBack, onUpdate }: ApprovalTicketProps) {
   const {
     loading,
-    showReplyForm,
-    setShowReplyForm,
-    replyTitle,
-    setReplyTitle,
     replyDesc,
     setReplyDesc,
     replyFile,
     setReplyFile,
-    actionType,
-    setActionType,
     handleSelectFile,
     handleReply,
     handleCloseTicket,
     handleRedo,
+    handleInstantAction,
   } = useApprovalTicket(ticket, onUpdate);
 
   return (
@@ -49,12 +44,6 @@ export default function ApprovalTicket({ ticket, role, onBack, onUpdate }: Appro
       <ApprovalReplyForm
         ticketStatus={ticket.status}
         role={role}
-        showReplyForm={showReplyForm}
-        setShowReplyForm={setShowReplyForm}
-        actionType={actionType}
-        setActionType={setActionType}
-        replyTitle={replyTitle}
-        setReplyTitle={setReplyTitle}
         replyDesc={replyDesc}
         setReplyDesc={setReplyDesc}
         replyFile={replyFile}
@@ -63,6 +52,7 @@ export default function ApprovalTicket({ ticket, role, onBack, onUpdate }: Appro
         handleReply={handleReply}
         loading={loading}
         handleRedo={handleRedo}
+        handleInstantAction={handleInstantAction}
         ticket={ticket}
       />
     </View>

@@ -17,8 +17,6 @@ export default function ApprovalTicket({
   onUpdate: () => void;
 }) {
   const [loading, setLoading] = useState(false);
-  const [showReplyForm, setShowReplyForm] = useState(false);
-  const [replyTitle, setReplyTitle] = useState('');
   const [replyDesc, setReplyDesc] = useState('');
   const [replyFile, setReplyFile] = useState<File | null>(null);
 
@@ -26,8 +24,8 @@ export default function ApprovalTicket({
   const [actionType, setActionType] = useState<'APPROVE' | 'REJECT' | 'REPLY'>('REPLY');
 
   const handleReply = async () => {
-    if (!replyTitle || !replyDesc) {
-      toast.error('Title and description are required.');
+    if (!replyDesc.trim() && !replyFile) {
+      toast.error('Message or file is required.');
       return;
     }
 
@@ -59,10 +57,10 @@ export default function ApprovalTicket({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: replyTitle,
+          title: 'Message',
           description: replyDesc,
           fileUrl: uploadedUrl,
-          action: actionType,
+          action: 'REPLY',
         }),
       });
 
@@ -72,9 +70,7 @@ export default function ApprovalTicket({
         return;
       }
 
-      toast.success(actionType === 'APPROVE' ? 'Request Approved!' : actionType === 'REJECT' ? 'Request Rejected!' : 'Message Sent!');
-      setShowReplyForm(false);
-      setReplyTitle('');
+      toast.success('Message Sent!');
       setReplyDesc('');
       setReplyFile(null);
       onUpdate();
@@ -100,6 +96,35 @@ export default function ApprovalTicket({
       }
     } catch (e) {
       toast.error('Error closing ticket');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInstantAction = async (action: 'APPROVE' | 'REJECT') => {
+    try {
+      setLoading(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const res = await fetch(`${apiUrl}/api/approvals/${ticket.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: action === 'APPROVE' ? 'Approval' : 'Rejection',
+          description: action === 'APPROVE' ? 'Request Approved.' : 'Request Rejected.',
+          action,
+        }),
+      });
+
+      if (!res.ok) {
+        toast.error(`Failed to ${action.toLowerCase()} request`);
+        setLoading(false);
+        return;
+      }
+
+      toast.success(action === 'APPROVE' ? 'Request Approved!' : 'Request Rejected!');
+      onUpdate();
+    } catch (e) {
+      toast.error('An error occurred');
     } finally {
       setLoading(false);
     }
@@ -144,17 +169,13 @@ export default function ApprovalTicket({
       <ApprovalTicketReplyForm
         ticket={ticket}
         role={role}
-        showReplyForm={showReplyForm}
-        setShowReplyForm={setShowReplyForm}
-        actionType={actionType}
-        setActionType={setActionType}
-        replyTitle={replyTitle}
-        setReplyTitle={setReplyTitle}
         replyDesc={replyDesc}
         setReplyDesc={setReplyDesc}
+        replyFile={replyFile}
         setReplyFile={setReplyFile}
         handleReply={handleReply}
         handleRedo={handleRedo}
+        handleInstantAction={handleInstantAction}
         loading={loading}
       />
     </div>
