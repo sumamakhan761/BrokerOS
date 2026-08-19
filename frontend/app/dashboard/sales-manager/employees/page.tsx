@@ -6,6 +6,7 @@ import { Announcement } from "../../pre-sales-manager/_components/types";
 import { AnnouncementList } from "../../pre-sales-manager/_components/AnnouncementList";
 import { SalesEmployeeGrid, SalesEmployee } from "./_components/SalesEmployeeGrid";
 import { EmployeePageModals } from "../../pre-sales-manager/_components/EmployeePageModals";
+import { toast } from 'sonner';
 
 export default function SalesManagerEmployees() {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
@@ -63,7 +64,7 @@ export default function SalesManagerEmployees() {
       setAnnDesc("");
       await load();
     } catch (e: any) {
-      alert(e?.message || "Failed to save announcement");
+      toast.error(e?.message || "Failed to save announcement");
     } finally {
       setAnnSaving(false);
     }

@@ -7,6 +7,7 @@ import { AnnouncementList } from "../_components/AnnouncementList";
 import { TaskList } from "../_components/TaskList";
 import { EmployeeGrid } from "../_components/EmployeeGrid";
 import { EmployeePageModals } from "../_components/EmployeePageModals";
+import { toast } from 'sonner';
 
 export default function PreSalesManagerEmployees() {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
@@ -78,7 +79,7 @@ export default function PreSalesManagerEmployees() {
       setTaskSelectedUsers([]);
       await load();
     } catch (e: any) {
-      alert(e?.message || "Failed to create task");
+      toast.error(e?.message || "Failed to create task");
     } finally {
       setTaskSaving(false);
     }
@@ -96,7 +97,7 @@ export default function PreSalesManagerEmployees() {
       setEditTask(null);
       await load();
     } catch (e: any) {
-      alert(e?.message || "Failed to update task");
+      toast.error(e?.message || "Failed to update task");
     } finally {
       setTaskSaving(false);
     }
@@ -129,7 +130,7 @@ export default function PreSalesManagerEmployees() {
       setAnnDesc("");
       await load();
     } catch (e: any) {
-      alert(e?.message || "Failed to save announcement");
+      toast.error(e?.message || "Failed to save announcement");
     } finally {
       setAnnSaving(false);
     }

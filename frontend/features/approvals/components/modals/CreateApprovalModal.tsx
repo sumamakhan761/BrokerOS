@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -27,7 +28,7 @@ export default function CreateApprovalModal({
 
   const handleSubmit = async () => {
     if (!title || !description) {
-      alert('Title and description are required.');
+      toast.error('Title and description are required.');
       return;
     }
 
@@ -49,7 +50,7 @@ export default function CreateApprovalModal({
           const uploadData = await uploadRes.json();
           uploadedUrl = uploadData.url || '';
         } else {
-          alert('Failed to upload file');
+          toast.error('Failed to upload file');
           setLoading(false);
           return;
         }
@@ -62,16 +63,16 @@ export default function CreateApprovalModal({
       });
 
       if (!res.ok) {
-        alert('Failed to create request');
+        toast.error('Failed to create request');
         setLoading(false);
         return;
       }
 
-      alert('Approval request created!');
+      toast.success('Approval request created!');
       onSuccess();
       onClose();
     } catch (e) {
-      alert('An error occurred');
+      toast.error('An error occurred');
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export function useBrokerSchedules(brokerId: string, userId: string | undefined, broker: any) {
   const [followUps, setFollowUps] = useState<any[]>([]);
@@ -19,7 +20,7 @@ export function useBrokerSchedules(brokerId: string, userId: string | undefined,
 
   const handleSaveFollowUp = async (loadBroker: () => void) => {
     try {
-      if (!userId) return alert('You must be logged in.');
+      if (!userId) { toast.error('You must be logged in.'); return; }
 
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
       const res = await fetch(`${baseUrl}/api/brokers/${brokerId}/follow-ups`, {
@@ -37,7 +38,7 @@ export function useBrokerSchedules(brokerId: string, userId: string | undefined,
 
   const handleSaveMeeting = async (loadBroker: () => void) => {
     try {
-      if (!userId) return alert('You must be logged in.');
+      if (!userId) { toast.error('You must be logged in.'); return; }
 
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
       const res = await fetch(`${baseUrl}/api/brokers/${brokerId}/meetings`, {

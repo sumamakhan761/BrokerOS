@@ -7,6 +7,7 @@ import { Loader2, Handshake, CheckCircle2, Clock, Filter, Search, Building } fro
 import { Input } from '@/components/ui/Input';
 import { authClient } from '@/lib/auth-client';
 import { InboundCommissionReceiveDialog } from '@/components/commissions/InboundCommissionReceiveDialog';
+import { toast } from 'sonner';
 
 export default function PostSalesCommissionsPage() {
   const [commissions, setCommissions] = useState<any[]>([]);
@@ -27,7 +28,7 @@ export default function PostSalesCommissionsPage() {
       setCommissions(res.data as any[]);
     } catch (err: any) {
       console.error(err);
-      alert('Failed to load commissions: ' + (err.message || ''));
+      toast.error('Failed to load commissions: ' + (err.message || ''));
     } finally {
       setLoading(false);
     }
@@ -48,11 +49,11 @@ export default function PostSalesCommissionsPage() {
         body: { remarks: data.remarks }
       });
       if (res.error) throw res.error;
-      alert('Commission marked as received.');
+      toast.success('Commission marked as received.');
       setIsModalOpen(false);
       fetchCommissions();
     } catch (err: any) {
-      alert(err.message || 'Failed to update');
+      toast.error(err.message || 'Failed to update');
     } finally {
       setIsSaving(false);
     }

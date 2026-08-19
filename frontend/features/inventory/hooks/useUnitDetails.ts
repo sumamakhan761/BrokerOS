@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 export function useUnitDetails(
   unit: any,
@@ -67,7 +68,7 @@ export function useUnitDetails(
       setIsEditing(false);
     } catch (e) {
       console.error(e);
-      alert('Failed to save unit details');
+      toast.error('Failed to save unit details');
     } finally {
       setIsSaving(false);
     }
@@ -91,11 +92,11 @@ export function useUnitDetails(
         await onSave(unit.id, { ...formData, status: 'AVAILABLE', clearBooking: true });
         onClose();
       } else {
-        alert("Failed to cancel booking.");
+        toast.error("Failed to cancel booking.");
       }
     } catch (e) {
       console.error(e);
-      alert('Error cancelling booking');
+      toast.error('Error cancelling booking');
     } finally {
       setIsSaving(false);
     }

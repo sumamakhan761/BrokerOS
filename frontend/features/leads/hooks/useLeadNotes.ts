@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export function useLeadNotes(leadId: string, userId: string | undefined, lead: any, setLead: (lead: any) => void) {
   const [notes, setNotes] = useState<any[]>([]);
@@ -32,7 +33,7 @@ export function useLeadNotes(leadId: string, userId: string | undefined, lead: a
     setIsSavingNote(true);
     try {
       if (!userId) {
-        alert('You must be logged in to create a note.');
+        toast.error('You must be logged in to create a note.');
         setIsSavingNote(false);
         return;
       }

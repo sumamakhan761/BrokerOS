@@ -8,6 +8,7 @@ import { Modal } from "../../_components/Modal";
 import { EmployeeLeadsView } from "../../_components/EmployeeLeadsView";
 import { EmployeeWidgets } from "../../_components/EmployeeWidgets";
 import { PipelineBar } from "@/components/dashboard/PipelineBar";
+import { toast } from 'sonner';
 
 const PIPELINE_STAGES = [
   { key: "new",         label: "New",          color: "#8b5cf6" },
@@ -61,7 +62,7 @@ export default function EmployeeDashboardView() {
 
   const handleSaveTask = async () => {
     const taskId = dashData?.dailyTasks.coldCall.taskId;
-    if (!taskId) return alert("Employee has no active task assigned.");
+    if (!taskId) { toast.error("Employee has no active task assigned."); return; }
     setIsSaving(true);
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
@@ -77,7 +78,7 @@ export default function EmployeeDashboardView() {
       setShowEditTask(false);
       load();
     } catch (e: any) {
-      alert(e?.message || "Failed to update task.");
+      toast.error(e?.message || "Failed to update task.");
     } finally {
       setIsSaving(false);
     }

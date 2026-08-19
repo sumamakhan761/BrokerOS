@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { ApprovalTicketHeader } from '@/features/approvals/components/ticket/ApprovalTicketHeader';
 import { ApprovalTicketMessages } from '@/features/approvals/components/ticket/ApprovalTicketMessages';
 import { ApprovalTicketReplyForm } from '@/features/approvals/components/ticket/ApprovalTicketReplyForm';
+import { toast } from 'sonner';
 
 export default function ApprovalTicket({
   ticket,
@@ -26,7 +27,7 @@ export default function ApprovalTicket({
 
   const handleReply = async () => {
     if (!replyTitle || !replyDesc) {
-      alert('Title and description are required.');
+      toast.error('Title and description are required.');
       return;
     }
 
@@ -48,7 +49,7 @@ export default function ApprovalTicket({
           const uploadData = await uploadRes.json();
           uploadedUrl = uploadData.url || '';
         } else {
-          alert('Failed to upload file');
+          toast.error('Failed to upload file');
           setLoading(false);
           return;
         }
@@ -66,19 +67,19 @@ export default function ApprovalTicket({
       });
 
       if (!res.ok) {
-        alert('Failed to submit message');
+        toast.error('Failed to submit message');
         setLoading(false);
         return;
       }
 
-      alert(actionType === 'APPROVE' ? 'Request Approved!' : 'Message Sent!');
+      toast.success(actionType === 'APPROVE' ? 'Request Approved!' : 'Message Sent!');
       setShowReplyForm(false);
       setReplyTitle('');
       setReplyDesc('');
       setReplyFile(null);
       onUpdate();
     } catch (e) {
-      alert('An error occurred');
+      toast.error('An error occurred');
     } finally {
       setLoading(false);
     }
@@ -92,13 +93,13 @@ export default function ApprovalTicket({
         method: 'PATCH',
       });
       if (res.ok) {
-        alert('Ticket closed');
+        toast.success('Ticket closed');
         onUpdate();
       } else {
-        alert('Failed to close ticket');
+        toast.error('Failed to close ticket');
       }
     } catch (e) {
-      alert('Error closing ticket');
+      toast.error('Error closing ticket');
     } finally {
       setLoading(false);
     }

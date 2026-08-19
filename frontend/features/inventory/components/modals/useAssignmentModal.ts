@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from 'sonner';
 
 export interface Subordinate {
   id: string;
@@ -126,11 +127,11 @@ export function useAssignmentModal({
         onSuccess?.();
         onClose();
       } else {
-        alert("Failed to assign");
+        toast.error("Failed to assign");
       }
     } catch (e) {
       console.error(e);
-      alert("Error assigning");
+      toast.error("Error assigning");
     } finally {
       setLoading(false);
     }

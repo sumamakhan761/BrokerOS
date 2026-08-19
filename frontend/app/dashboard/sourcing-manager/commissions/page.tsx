@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, Search, Filter, Handshake, Building, MapPin, CheckCircle2, Clock, UploadCloud, FileText } from 'lucide-react';
 import { CommissionCompleteDialog } from '@/components/commissions/CommissionCompleteDialog';
+import { toast } from 'sonner';
 
 export default function CommissionsPage() {
   const [commissions, setCommissions] = useState<any[]>([]);
@@ -60,11 +61,11 @@ export default function CommissionsPage() {
         setDialogOpen(false);
         setSelectedRecord(null);
       } else {
-        alert('Failed to mark commission as paid.');
+        toast.error('Failed to mark commission as paid.');
       }
     } catch (e) {
       console.error(e);
-      alert('Error saving commission payment.');
+      toast.error('Error saving commission payment.');
     } finally {
       setIsSaving(false);
     }
