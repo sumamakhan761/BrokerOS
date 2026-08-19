@@ -60,6 +60,37 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
 
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [docSaving, setDocSaving] = useState(false);
+  const [requestingApproval, setRequestingApproval] = useState(false);
+  const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
+  const { authClient } = require('../../../lib/auth-client'); // or import at top
+  const Toast = require('react-native-toast-message').default;
+
+  const handleRequestApproval = async () => {
+    if (!booking) return;
+    try {
+      setRequestingApproval(true);
+      const { error } = await authClient.$fetch('/api/approvals', {
+        baseURL,
+        method: 'POST',
+        body: {
+          title: `Booking Approval: ${lead?.firstName || 'Lead'}`,
+          description: `Please approve the booking for ${lead?.firstName || 'Customer'}. Agreed Price: ₹${booking.agreedPrice}, Booking Amount: ₹${booking.bookingAmount}`,
+          type: 'BOOKING',
+          bookingId: booking.id,
+        },
+      });
+
+      if (error) {
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to send approval request' });
+      } else {
+        Toast.show({ type: 'success', text1: 'Sent', text2: 'Booking approval request sent to manager.' });
+      }
+    } catch (e) {
+      Toast.show({ type: 'error', text1: 'Error', text2: 'An error occurred' });
+    } finally {
+      setRequestingApproval(false);
+    }
+  };
 
   if (!booking) {
     return (
@@ -300,6 +331,23 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
           uploadingType={uploadingType}
           setUploadingType={setUploadingType}
         />
+
+        {booking.status !== 'CONFIRMED' && (
+          <TouchableOpacity
+            className="mt-4 bg-[#2563eb] p-3 rounded-xl flex-row justify-center items-center shadow-sm"
+            onPress={handleRequestApproval}
+            disabled={requestingApproval}
+          >
+            {requestingApproval ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <>
+                <Feather name="send" size={18} color="white" />
+                <Text className="text-white font-bold ml-2">Send for Approval</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
 
       </View>
     </View>

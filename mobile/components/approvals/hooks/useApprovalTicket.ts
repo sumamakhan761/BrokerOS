@@ -9,7 +9,7 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
   const [replyTitle, setReplyTitle] = useState('');
   const [replyDesc, setReplyDesc] = useState('');
   const [replyFile, setReplyFile] = useState<any>(null);
-  const [actionType, setActionType] = useState<'APPROVE' | 'REPLY'>('REPLY');
+  const [actionType, setActionType] = useState<'APPROVE' | 'REJECT' | 'REPLY'>('REPLY');
 
   const handleSelectFile = async () => {
     try {
@@ -73,7 +73,7 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
         return;
       }
 
-      Toast.show({ type: 'success', text1: actionType === 'APPROVE' ? 'Request Approved!' : 'Message Sent!' });
+      Toast.show({ type: 'success', text1: actionType === 'APPROVE' ? 'Request Approved!' : actionType === 'REJECT' ? 'Request Rejected!' : 'Message Sent!' });
       setShowReplyForm(false);
       setReplyTitle('');
       setReplyDesc('');
@@ -105,6 +105,27 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
     }
   };
 
+  const handleRedo = async () => {
+    try {
+      setLoading(true);
+      const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
+      const { error, data } = await authClient.$fetch(`/api/approvals/${ticket.id}/redo`, {
+        baseURL,
+        method: 'POST',
+      });
+      if (!error) {
+        Toast.show({ type: 'success', text1: 'Action Undone' });
+        onUpdate();
+      } else {
+        Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Cannot redo' });
+      }
+    } catch (e) {
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Error undoing action' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     showReplyForm,
@@ -120,5 +141,6 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
     handleSelectFile,
     handleReply,
     handleCloseTicket,
+    handleRedo,
   };
 }

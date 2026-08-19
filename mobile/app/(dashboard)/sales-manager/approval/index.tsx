@@ -50,6 +50,7 @@ export default function SalesManagerApprovalScreen() {
     switch (status) {
       case 'REQUESTED': return 'bg-yellow-100 text-yellow-800';
       case 'APPROVED': return 'bg-green-100 text-green-800';
+      case 'REJECTED': return 'bg-red-100 text-red-800';
       case 'CLOSED': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -111,10 +112,17 @@ export default function SalesManagerApprovalScreen() {
                     ID: #{item.id.slice(0, 8).toUpperCase()}
                   </Text>
                 </View>
-                <View className={`px-2 py-1 rounded-full ${getStatusColor(item.status).split(' ')[0]}`}>
-                  <Text className={`text-[10px] font-bold ${getStatusColor(item.status).split(' ')[1]}`}>
-                    {item.status}
-                  </Text>
+                <View className="flex-row items-center">
+                  {item.type === 'BOOKING' && (
+                    <View className="bg-indigo-100 px-2 py-1 rounded mr-2">
+                      <Text className="text-[10px] font-bold text-indigo-700">{item.type}</Text>
+                    </View>
+                  )}
+                  <View className={`px-2 py-1 rounded-full ${getStatusColor(item.status).split(' ')[0]}`}>
+                    <Text className={`text-[10px] font-bold ${getStatusColor(item.status).split(' ')[1]}`}>
+                      {item.status}
+                    </Text>
+                  </View>
                 </View>
               </View>
               <View className="flex-row justify-between items-center pt-2 border-t border-slate-50">
