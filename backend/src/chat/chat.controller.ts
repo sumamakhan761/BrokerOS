@@ -21,7 +21,7 @@ export class ChatController {
   async uploadFile(@UploadedFile() file: any) {
     if (!file) return { success: false, url: null };
     const blob = await put(`chat/${Date.now()}-${file.originalname}`, file.buffer, {
-      access: 'private',
+      access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN,
     });
     return { success: true, data: { url: blob.url, name: file.originalname, type: file.mimetype } };

@@ -153,7 +153,7 @@ export class PaymentsService {
     // Upload receipt to Vercel Blob with private access
     if (file) {
       const blob = await put(`receipts/${schedule.bookingId}-${Date.now()}-${file.originalname}`, file.buffer, {
-        access: 'private',
+        access: 'public',
         token: process.env.BLOB_READ_WRITE_TOKEN,
       });
       receiptUrl = blob.url;

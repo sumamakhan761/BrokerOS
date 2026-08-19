@@ -37,7 +37,7 @@ export class BrokerCommissionsService {
 
     if (file) {
       const blob = await put(`commissions/${recordId}/${file.originalname}`, file.buffer, {
-        access: 'private',
+        access: 'public',
         token: process.env.BLOB_READ_WRITE_TOKEN,
       });
       paymentReference = blob.url;

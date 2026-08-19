@@ -34,7 +34,7 @@ export class CallRecordsService {
     }
 
     const blob = await put(`calls/${lead.id}-${Date.now()}-${file.originalname}`, file.buffer, {
-      access: 'private',
+      access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN,
     });
 

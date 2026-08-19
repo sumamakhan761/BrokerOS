@@ -46,14 +46,14 @@ export class ApprovalsService {
       });
 
       if (booking) {
-        finalDescription = `**Booking Details**
-- **Lead Name:** ${booking.customer.firstName} ${booking.customer.lastName || ''}
-- **Project:** ${booking.unit.floor.tower.project.name}
-- **Tower / Floor / Unit:** ${booking.unit.floor.tower.name} / ${booking.unit.floor.floorNumber} / ${booking.unit.unitNumber}
-- **Agreed Price:** ₹${booking.agreedPrice.toString()}
-- **Booking Amount:** ₹${booking.tokenAmount?.toString() || booking.totalPayable.toString()}
-- **Loan Required:** ${booking.loanCase ? 'Yes' : 'No'}
-- **Remarks:** System generated booking request.`;
+        finalDescription = `Booking Details
+Lead Name: ${booking.customer.firstName} ${booking.customer.lastName || ''}
+Project: ${booking.unit.floor.tower.project.name}
+Tower / Floor / Unit: ${booking.unit.floor.tower.name} / ${booking.unit.floor.floorNumber} / ${booking.unit.unitNumber}
+Agreed Price: ₹${booking.agreedPrice.toString()}
+Booking Amount: ₹${booking.tokenAmount?.toString() || booking.totalPayable.toString()}
+Loan Required: ${booking.loanCase ? 'Yes' : 'No'}
+Remarks: System generated booking request.`;
 
         if (booking.documents && booking.documents.length > 0) {
           finalMetadata = {
@@ -185,7 +185,7 @@ export class ApprovalsService {
     if (roleCode === 'SALES_MANAGER' && data.action === 'APPROVE') {
       newStatus = 'APPROVED';
     } else if (roleCode === 'SALES_MANAGER' && data.action === 'REJECT') {
-      newStatus = 'REJECTED'; 
+      newStatus = 'REJECTED';
     } else if (roleCode === 'SALES_EXECUTIVE') {
       newStatus = 'REQUESTED'; // SE pushing back
     }

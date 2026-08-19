@@ -13,7 +13,7 @@ export class ApprovalsController {
   async uploadFile(@UploadedFile() file: any) {
     if (!file) return { url: null };
     const blob = await put(`approvals/${Date.now()}-${file.originalname}`, file.buffer, {
-      access: 'private',
+      access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN,
     });
     return { url: blob.url };

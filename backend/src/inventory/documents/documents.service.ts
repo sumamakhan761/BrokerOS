@@ -11,7 +11,7 @@ export class DocumentsService {
 
     // Upload to Vercel Blob with project prefix to keep it organized (like bookings)
     const blob = await put(`projects/${projectId}/${category}-${file.originalname}`, file.buffer, {
-      access: 'private',
+      access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN
     });
 
