@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import SiteVisitEditMode from '../misc/SiteVisitEditMode';
 import { LeadProfileData } from '../misc/lead-profile-types';
@@ -112,21 +112,11 @@ export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVis
                       <Text className="text-white font-bold text-xs ml-1">Arrive</Text>
                     </TouchableOpacity>
                   )}
-                  {onCompleteSiteVisit && sv.arrivedAt && !sv.completedAt && completingId !== sv.id && (
+                  {onCompleteSiteVisit && sv.arrivedAt && !sv.completedAt && (
                     <TouchableOpacity onPress={() => startComplete(sv)} className="mt-3 bg-blue-500 p-2 rounded-lg items-center flex-row justify-center">
                       <Feather name="check-square" size={14} color="white" />
                       <Text className="text-white font-bold text-xs ml-1">Complete</Text>
                     </TouchableOpacity>
-                  )}
-                  {completingId === sv.id && (
-                    <SiteVisitEditMode
-                      svId={sv.id}
-                      editForm={editForm}
-                      setEditForm={setEditForm}
-                      saving={saving}
-                      saveEdit={handleSaveComplete}
-                      onCancel={() => setCompletingId(null)}
-                    />
                   )}
                 </TouchableOpacity>
               ))
@@ -164,6 +154,30 @@ export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVis
           </ScrollView>
         </View>
       </View>
+      <Modal visible={!!completingId} transparent animationType="fade">
+        <View className="flex-1 bg-black/50 justify-center p-4">
+          <View className="bg-white rounded-2xl overflow-hidden max-h-[85%] shadow-xl">
+            <View className="p-4 border-b border-gray-100 flex-row justify-between items-center">
+              <Text className="text-lg font-bold text-gray-900">Complete Site Visit</Text>
+              <TouchableOpacity onPress={() => setCompletingId(null)} className="p-1">
+                <Feather name="x" size={20} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView className="px-2 pb-2">
+              {completingId && (
+                <SiteVisitEditMode
+                  svId={completingId}
+                  editForm={editForm}
+                  setEditForm={setEditForm}
+                  saving={saving}
+                  saveEdit={handleSaveComplete}
+                  onCancel={() => setCompletingId(null)}
+                />
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
