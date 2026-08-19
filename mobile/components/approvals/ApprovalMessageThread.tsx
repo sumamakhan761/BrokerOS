@@ -32,7 +32,22 @@ export function ApprovalMessageThread({ messages, role }: ApprovalMessageThreadP
               <Text className={`text-sm ${alignRight ? 'text-blue-50' : 'text-slate-600'}`}>
                 {msg.description}
               </Text>
-              {msg.fileUrl ? (
+              {msg.metadata?.documents && msg.metadata.documents.length > 0 ? (
+                <View className={`mt-3 pt-3 border-t ${alignRight ? 'border-blue-500' : 'border-slate-100'}`}>
+                  {msg.metadata.documents.map((doc: any, i: number) => (
+                    <TouchableOpacity
+                      key={i}
+                      onPress={() => Linking.openURL(doc.url)}
+                      className="flex-row items-center mb-2"
+                    >
+                      <Feather name="file-text" size={14} color={alignRight ? '#dbeafe' : '#2563eb'} />
+                      <Text className={`text-xs font-medium ml-2 ${alignRight ? 'text-blue-100' : 'text-blue-600'}`}>
+                        View {doc.name || 'Attachment'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : msg.fileUrl ? (
                 <TouchableOpacity
                   onPress={() => Linking.openURL(msg.fileUrl)}
                   className={`mt-3 pt-3 border-t flex-row items-center ${alignRight ? 'border-blue-500' : 'border-slate-100'}`}
