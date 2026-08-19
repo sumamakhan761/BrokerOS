@@ -21,6 +21,51 @@ export class ApprovalsService {
       throw new BadRequestException('Sales Executive does not have an assigned manager.');
     }
 
+    let finalDescription = description;
+    let finalMetadata: any = undefined;
+
+    if (type === 'BOOKING' && bookingId) {
+      const booking = await this.prisma.booking.findUnique({
+        where: { id: bookingId },
+        include: {
+          customer: true,
+          unit: {
+            include: {
+              floor: {
+                include: {
+                  tower: {
+                    include: { project: true }
+                  }
+                }
+              }
+            }
+          },
+          documents: true,
+          loanCase: true,
+        }
+      });
+
+      if (booking) {
+        finalDescription = `**Booking Details**
+- **Lead Name:** ${booking.customer.firstName} ${booking.customer.lastName || ''}
+- **Project:** ${booking.unit.floor.tower.project.name}
+- **Tower / Floor / Unit:** ${booking.unit.floor.tower.name} / ${booking.unit.floor.floorNumber} / ${booking.unit.unitNumber}
+- **Agreed Price:** ₹${booking.agreedPrice.toString()}
+- **Booking Amount:** ₹${booking.tokenAmount?.toString() || booking.totalPayable.toString()}
+- **Loan Required:** ${booking.loanCase ? 'Yes' : 'No'}
+- **Remarks:** System generated booking request.`;
+
+        if (booking.documents && booking.documents.length > 0) {
+          finalMetadata = {
+            documents: booking.documents.map(doc => ({
+              name: doc.title || doc.type || 'Document',
+              url: doc.fileUrl
+            }))
+          };
+        }
+      }
+    }
+
     // Create Request and Initial Message
     const request = await this.prisma.approvalRequest.create({
       data: {
@@ -33,8 +78,9 @@ export class ApprovalsService {
           create: {
             senderId: salesExecId,
             title,
-            description,
+            description: finalDescription,
             fileUrl,
+            metadata: finalMetadata ? finalMetadata : undefined,
           },
         },
       },

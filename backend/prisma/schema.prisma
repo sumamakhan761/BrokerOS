@@ -2125,6 +2125,7 @@ model ApprovalMessage {
   title       String
   description String  @db.Text
   fileUrl     String? // URL for the uploaded file/blob
+  metadata    Json?   // Structured data for rich payloads (e.g. { documents: {name, url}[] })
 
   createdAt DateTime @default(now())
 
