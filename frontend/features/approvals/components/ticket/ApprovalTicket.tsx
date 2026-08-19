@@ -160,7 +160,7 @@ export default function ApprovalTicket({
         handleCloseTicket={handleCloseTicket}
         loading={loading}
       />
-      
+
       <ApprovalTicketMessages
         ticket={ticket}
         role={role}
