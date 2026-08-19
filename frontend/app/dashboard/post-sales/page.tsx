@@ -7,6 +7,7 @@ import { StatCards } from "@/components/dashboard/StatCards";
 import { FollowUpList } from "@/components/dashboard/FollowUpList";
 import { PendingListWidget } from "./components/PendingListWidget";
 import { Handshake, FileText, Building, Key, CheckCircle, Clock } from "lucide-react";
+import { toast } from 'sonner';
 
 export default function PostSalesDashboard() {
   const { data: session } = authClient.useSession();
@@ -40,8 +41,8 @@ export default function PostSalesDashboard() {
         method: "POST", baseURL: baseUrl,
       });
       if (res.data?.success) window.location.reload();
-      else alert(res.data?.message || "Failed");
-    } catch (e: any) { alert(e?.message || "Failed"); }
+      else toast.error(res.data?.message || "Failed");
+    } catch (e: any) { toast.error(e?.message || "Failed"); }
   };
 
   const w = dashData?.widgets;

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { usePathname } from 'next/navigation';
+import { toast } from 'sonner';
 
 import { BrokerInformationCard } from '@/features/brokers/components/profile/BrokerInformationCard';
 import { CallRecordingsCard } from '@/features/leads/components/profile/CallRecordingsCard';
@@ -150,7 +151,7 @@ export function BrokerProfileClient({ brokerId }: { brokerId: string }) {
     setIsAiAdvancing(true);
     try {
       if (!userId) {
-        alert('You must be logged in to auto-advance.');
+        toast.error('You must be logged in to auto-advance.');
         setIsAiAdvancing(false);
         return;
       }
@@ -170,7 +171,7 @@ export function BrokerProfileClient({ brokerId }: { brokerId: string }) {
       updateSchedulesFromBroker(brokerData);
     } catch (error) {
       console.error(error);
-      alert('Could not generate AI transition note. Please try again.');
+      toast.error('Could not generate AI transition note. Please try again.');
     } finally {
       setIsAiAdvancing(false);
     }

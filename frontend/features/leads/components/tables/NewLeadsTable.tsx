@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
+import { toast } from 'sonner';
 import { NewLeadsToolbar } from '@/features/leads/components/tables/NewLeadsToolbar';
 import { NewLeadsGrid } from '@/features/leads/components/tables/NewLeadsGrid';
 
@@ -39,8 +40,8 @@ function NewLeadsContent() {
   };
 
   const handleAssign = async (leadIds: string[], targetUserId?: string, roundRobin = false) => {
-    if (!leadIds.length) return alert('Select leads to assign');
-    if (!roundRobin && !targetUserId) return alert('Select an employee to assign to');
+    if (!leadIds.length) { toast.error('Select leads to assign'); return; }
+    if (!roundRobin && !targetUserId) { toast.error('Select an employee to assign to'); return; }
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
       const res = await fetch(`${baseUrl}/api/leads/assign`, {
@@ -52,11 +53,11 @@ function NewLeadsContent() {
         setSelectedLeadIds(new Set());
         fetchLeadsAndSubordinates();
       } else {
-        alert('Failed to assign leads.');
+        toast.error('Failed to assign leads.');
       }
     } catch (e) {
       console.error(e);
-      alert('Error assigning leads');
+      toast.error('Error assigning leads');
     }
   };
 

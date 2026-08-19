@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export function useLeadSchedules(leadId: string, userId: string | undefined, lead: any) {
   const [followUps, setFollowUps] = useState<any[]>([]);
@@ -36,7 +37,7 @@ export function useLeadSchedules(leadId: string, userId: string | undefined, lea
 
   const handleSaveFollowUp = async () => {
     try {
-      if (!userId) return alert('You must be logged in.');
+      if (!userId) { toast.error('You must be logged in.'); return; }
       setIsSavingFollowUp(true);
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
@@ -68,7 +69,7 @@ export function useLeadSchedules(leadId: string, userId: string | undefined, lea
 
   const handleDeleteFollowUp = async () => {
     if (!editingFollowUpId) return;
-    if (!confirm('Are you sure you want to delete this follow-up?')) return;
+    if (!window.confirm('Are you sure you want to delete this follow-up?')) return;
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
       const res = await fetch(`${apiUrl}/api/leads/follow-ups/${editingFollowUpId}`, { method: 'DELETE' });
@@ -106,7 +107,7 @@ export function useLeadSchedules(leadId: string, userId: string | undefined, lea
       if (data.success) {
         fetchFollowUps();
       } else {
-        alert(data.message || 'Cannot confirm follow-up.');
+        toast.error(data.message || 'Cannot confirm follow-up.');
       }
     } catch (e) {
       console.error('Failed to confirm follow-up:', e);
@@ -115,7 +116,7 @@ export function useLeadSchedules(leadId: string, userId: string | undefined, lea
 
   const handleSaveSiteVisit = async () => {
     try {
-      if (!userId) return alert('You must be logged in.');
+      if (!userId) { toast.error('You must be logged in.'); return; }
       setIsSavingSiteVisit(true);
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
@@ -147,7 +148,7 @@ export function useLeadSchedules(leadId: string, userId: string | undefined, lea
 
   const handleDeleteSiteVisit = async () => {
     if (!editingSiteVisitId) return;
-    if (!confirm('Are you sure you want to delete this site visit?')) return;
+    if (!window.confirm('Are you sure you want to delete this site visit?')) return;
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
       const res = await fetch(`${apiUrl}/api/leads/site-visits/${editingSiteVisitId}`, { method: 'DELETE' });
@@ -164,12 +165,12 @@ export function useLeadSchedules(leadId: string, userId: string | undefined, lea
     const isPreSales = typeof window !== 'undefined' && window.location.pathname.includes('/pre-sales');
     if (isPreSales) {
       if (lead.status !== 'SITE_VISIT_SCHEDULED') {
-        alert('Cannot schedule: Please change the lead status to SITE VISIT SCHEDULED first.');
+        toast.error('Cannot schedule: Please change the lead status to SITE VISIT SCHEDULED first.');
         return;
       }
     } else {
       if (!['SITE_VISIT_SCHEDULED', 'SITE_VISIT_COMPLETED', 'BOOKING'].includes(lead.status)) {
-        alert('Cannot schedule: Lead status must be SITE VISIT SCHEDULED, COMPLETED, or BOOKING.');
+        toast.error('Cannot schedule: Lead status must be SITE VISIT SCHEDULED, COMPLETED, or BOOKING.');
         return;
       }
     }

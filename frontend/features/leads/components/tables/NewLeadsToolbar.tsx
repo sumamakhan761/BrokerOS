@@ -2,6 +2,7 @@ import React from 'react';
 import { Upload, Users, Shuffle, CheckSquare } from 'lucide-react';
 import Papa from 'papaparse';
 import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 interface NewLeadsToolbarProps {
   selectedLeadIds: Set<string>;
@@ -50,11 +51,11 @@ export function NewLeadsToolbar({
           if (res.ok) {
             onUploadSuccess();
           } else {
-            alert('Failed to upload leads.');
+            toast.error('Failed to upload leads.');
           }
         } catch (err) {
           console.error(err);
-          alert('Error uploading leads.');
+          toast.error('Error uploading leads.');
         } finally {
           setUploading(false);
           if (fileInputRef.current) fileInputRef.current.value = '';

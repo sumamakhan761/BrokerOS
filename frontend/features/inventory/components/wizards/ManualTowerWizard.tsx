@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Save, Plus, Trash2, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ManualTowerWizardProps {
   projectId: string;
@@ -57,7 +58,7 @@ export function ManualTowerWizard({ projectId, onSuccess, onCancel }: ManualTowe
       if (!res.ok) throw new Error("Failed to save tower");
       onSuccess();
     } catch (err: any) {
-      alert(err?.message || "Failed to save tower");
+      toast.error(err?.message || "Failed to save tower");
     } finally {
       setIsSaving(false);
     }

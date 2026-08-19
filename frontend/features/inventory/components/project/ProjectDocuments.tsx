@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { UploadCloud, FileText, Trash2, ExternalLink, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { authClient } from "@/lib/auth-client";
+import { toast } from 'sonner';
 
 export function ProjectDocuments({ projectId, towerId, towers, readOnly = false }: { projectId: string; towerId?: string; towers: any[], readOnly?: boolean }) {
   const [documents, setDocuments] = useState<any[]>([]);
@@ -59,11 +60,11 @@ export function ProjectDocuments({ projectId, towerId, towers, readOnly = false 
         setTitle("");
         fetchDocs();
       } else {
-        alert("Upload failed.");
+        toast.error("Upload failed.");
       }
     } catch (e) {
       console.error(e);
-      alert("Error uploading file.");
+      toast.error("Error uploading file.");
     } finally {
       setUploading(false);
     }

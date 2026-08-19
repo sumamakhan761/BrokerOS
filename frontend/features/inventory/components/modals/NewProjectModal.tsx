@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Save, X, Building, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface NewProjectModalProps {
   isOpen: boolean;
@@ -36,7 +37,7 @@ export default function NewProjectModal({ isOpen, onClose, onSuccess, isCpProjec
       onSuccess();
       onClose();
     } catch (err: any) {
-      alert(err.message || "Failed to create project");
+      toast.error(err.message || "Failed to create project");
     } finally {
       setIsSaving(false);
     }

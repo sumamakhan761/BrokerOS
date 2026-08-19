@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { authClient } from '@/lib/auth-client';
+import { toast } from 'sonner';
 
 interface ClosingManagerNewLeadModalProps {
   isOpen: boolean;
@@ -112,7 +113,7 @@ export function ClosingManagerNewLeadModal({ isOpen, onClose, onSuccess }: Closi
       onSuccess();
     } catch (error) {
       console.error('Failed to create lead:', error);
-      alert('Failed to create lead');
+      toast.error('Failed to create lead');
     } finally {
       setLoading(false);
     }

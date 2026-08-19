@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export function useBrokerNotes(brokerId: string, userId: string | undefined, broker: any, setBroker: (broker: any) => void) {
   const [notes, setNotes] = useState<any[]>([]);
@@ -27,7 +28,7 @@ export function useBrokerNotes(brokerId: string, userId: string | undefined, bro
     setIsSavingNote(true);
     try {
       if (!userId) {
-        alert('You must be logged in to create a note.');
+        toast.error('You must be logged in to create a note.');
         setIsSavingNote(false);
         return;
       }

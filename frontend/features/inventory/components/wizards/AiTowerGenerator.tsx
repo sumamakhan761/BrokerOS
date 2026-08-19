@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Bot, Send, Loader2, RefreshCcw, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import { UnitGrid } from '@/features/inventory/components/units/UnitGrid';
 import { UnitDetailsDrawer } from '@/features/inventory/components/units/UnitDetailsDrawer';
 
@@ -37,7 +38,7 @@ export function AiTowerGenerator({ projectId, onSuccess, onCancel }: AiTowerGene
       const data = await res.json();
       setGeneratedData(data);
     } catch (err: any) {
-      alert(err?.message || "Failed to generate tower");
+      toast.error(err?.message || "Failed to generate tower");
     } finally {
       setIsGenerating(false);
     }
@@ -57,7 +58,7 @@ export function AiTowerGenerator({ projectId, onSuccess, onCancel }: AiTowerGene
       if (!res.ok) throw new Error("Failed to save generated tower");
       onSuccess();
     } catch (err: any) {
-      alert(err?.message || "Failed to save tower");
+      toast.error(err?.message || "Failed to save tower");
     } finally {
       setIsSaving(false);
     }

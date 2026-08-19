@@ -18,6 +18,7 @@ import { SiteVisitModal } from '@/features/leads/components/modals/SiteVisitModa
 import { SiteVisitCompleteModal } from '@/features/leads/components/modals/SiteVisitCompleteModal';
 import { PostSalesPipelineCards } from '@/features/leads/components/post-sales/PostSalesPipelineCards';
 import { PaymentHistoryCard } from '@/components/leads/PaymentHistoryCard';
+import { toast } from 'sonner';
 
 // Hooks
 import { useLeadDetails } from '@/features/leads/hooks/useLeadDetails';
@@ -109,7 +110,7 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
     setIsAiAdvancing(true);
     try {
       if (!userId) {
-        alert('You must be logged in to auto-advance.');
+        toast.error('You must be logged in to auto-advance.');
         setIsAiAdvancing(false);
         return;
       }
@@ -132,7 +133,7 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
       await fetchNotes();
     } catch (error) {
       console.error(error);
-      alert('Could not generate AI transition note. Please try again.');
+      toast.error('Could not generate AI transition note. Please try again.');
     } finally {
       setIsAiAdvancing(false);
     }

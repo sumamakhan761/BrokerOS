@@ -3,6 +3,7 @@
 import { authClient } from "@/lib/auth-client";
 import { useEffect, useState } from "react";
 import { DashboardPageWrapper } from "@/components/dashboard/DashboardPageWrapper";
+import { toast } from 'sonner';
 import { Announcements } from "@/components/dashboard/Announcements";
 import { StatCards } from "@/components/dashboard/StatCards";
 import { PipelineBar } from "@/components/dashboard/PipelineBar";
@@ -62,8 +63,8 @@ export default function PreSalesDashboard() {
         method: "POST", baseURL: baseUrl,
       });
       if (res.data?.success) window.location.reload();
-      else alert(res.data?.message || res.error?.message || "Failed");
-    } catch (e: any) { alert(e?.message || "Failed"); }
+      else toast.error(res.data?.message || res.error?.message || "Failed");
+    } catch (e: any) { toast.error(e?.message || "Failed"); }
   };
 
   const widgets = dashData?.widgets;
