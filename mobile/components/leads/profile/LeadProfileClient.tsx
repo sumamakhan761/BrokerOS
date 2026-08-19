@@ -231,16 +231,15 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
         formData.append('file', { uri: localUri, name: filename, type } as any);
 
         const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
-        const res = await fetch(`${baseURL}/api/leads/${leadId}/avatar`, {
+        const { data, error } = await authClient.$fetch<LeadProfileData>(`${baseURL}/api/leads/${leadId}/avatar`, {
           method: 'POST',
-          body: formData,
+          body: formData as any,
         });
 
-        if (res.ok) {
-          const updatedLead = await res.json();
-          setLead(updatedLead);
+        if (!error && data) {
+          setLead(data);
         } else {
-          Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to upload image' });
+          Toast.show({ type: 'error', text1: 'Error', text2: error?.message || 'Failed to upload image' });
         }
       }
     } catch (e) {
