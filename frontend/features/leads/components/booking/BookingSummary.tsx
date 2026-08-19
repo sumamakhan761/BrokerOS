@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { FileText, Download, Upload, CheckCircle, Landmark, XCircle, FileCheck } from 'lucide-react';
+import { FileText, Download, Upload, CheckCircle, Landmark, XCircle, FileCheck, Send } from 'lucide-react';
+import { toast } from 'sonner';
 
 const DOC_TYPES = [
   { key: 'AADHAAR', label: 'Aadhaar Card' },
@@ -58,17 +59,31 @@ export function BookingSummary({ booking, leadId, onRefresh }: BookingSummaryPro
     }
   };
 
-  const handleMarkDone = async () => {
+  const handleRequestApproval = async () => {
     if (!booking) return;
     setSaving(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
-      await fetch(`${apiUrl}/api/leads/${leadId}/booking/done`, {
+      const res = await fetch(`${apiUrl}/api/approvals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookingId: booking.id }),
+        body: JSON.stringify({
+          title: `Booking Approval: Lead`,
+          description: `Please approve the booking. Agreed Price: ₹${booking.agreedPrice}, Booking Amount: ₹${booking.bookingAmount}`,
+          type: 'BOOKING',
+          bookingId: booking.id,
+        }),
       });
+      
+      if (!res.ok) {
+        toast.error('Failed to send approval request');
+        return;
+      }
+      
+      toast.success('Booking approval request sent to manager.');
       onRefresh();
+    } catch (e) {
+      toast.error('An error occurred');
     } finally {
       setSaving(false);
     }
@@ -100,11 +115,11 @@ export function BookingSummary({ booking, leadId, onRefresh }: BookingSummaryPro
         </div>
         {booking.status !== 'CONFIRMED' && (
           <button
-            onClick={handleMarkDone}
+            onClick={handleRequestApproval}
             disabled={saving}
-            className="text-xs bg-emerald-600 text-white px-2 py-2 rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-sm"
+            className="text-xs bg-indigo-600 text-white px-3 py-2 rounded-xl font-medium hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5"
           >
-            {saving ? 'Saving...' : 'Mark as Done'}
+            {saving ? 'Sending...' : <><Send className="w-3.5 h-3.5" /> Send for Approval</>}
           </button>
         )}
       </div>

@@ -2,21 +2,22 @@ import React from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
-import { CheckCircle2, MessageCircle } from 'lucide-react';
+import { CheckCircle2, MessageCircle, XCircle, RotateCcw } from 'lucide-react';
 
 interface ApprovalTicketReplyFormProps {
   ticket: any;
   role: string;
   showReplyForm: boolean;
   setShowReplyForm: (val: boolean) => void;
-  actionType: 'APPROVE' | 'REPLY';
-  setActionType: (val: 'APPROVE' | 'REPLY') => void;
+  actionType: 'APPROVE' | 'REJECT' | 'REPLY';
+  setActionType: (val: 'APPROVE' | 'REJECT' | 'REPLY') => void;
   replyTitle: string;
   setReplyTitle: (val: string) => void;
   replyDesc: string;
   setReplyDesc: (val: string) => void;
   setReplyFile: (val: File | null) => void;
   handleReply: () => void;
+  handleRedo: () => void;
   loading: boolean;
 }
 
@@ -33,6 +34,7 @@ export function ApprovalTicketReplyForm({
   setReplyDesc,
   setReplyFile,
   handleReply,
+  handleRedo,
   loading,
 }: ApprovalTicketReplyFormProps) {
   if (ticket.status === 'CLOSED') {
@@ -43,7 +45,7 @@ export function ApprovalTicketReplyForm({
     <div className="p-4 sm:p-6 border-t border-slate-100 bg-white rounded-b-2xl">
       {!showReplyForm ? (
         <div className="flex items-center justify-center gap-4">
-          {role === 'SALES_MANAGER' && ticket.status !== 'APPROVED' ? (
+          {role === 'SALES_MANAGER' && ticket.status === 'REQUESTED' ? (
             <>
               <Button
                 className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 font-bold rounded-xl shadow-sm transition-all"
@@ -53,15 +55,23 @@ export function ApprovalTicketReplyForm({
                 Approve Request
               </Button>
               <Button
-                variant="outline"
-                className="w-full sm:w-auto font-bold rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
-                onClick={() => { setActionType('REPLY'); setShowReplyForm(true); }}
+                className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 font-bold rounded-xl shadow-sm transition-all"
+                onClick={() => { setActionType('REJECT'); setShowReplyForm(true); }}
               >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Reply
+                <XCircle className="w-4 h-4 mr-2" />
+                Reject
               </Button>
             </>
-          ) : (
+          ) : role === 'SALES_MANAGER' && (ticket.status === 'APPROVED' || ticket.status === 'REJECTED') && ticket.redoCount < 2 ? (
+            <Button
+              className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-sm transition-all"
+              onClick={handleRedo}
+              disabled={loading}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Redo Decision ({2 - ticket.redoCount} left)
+            </Button>
+          ) : ticket.status === 'REQUESTED' ? (
             <Button
               className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 font-bold rounded-xl shadow-sm transition-all"
               onClick={() => setShowReplyForm(true)}
@@ -69,12 +79,12 @@ export function ApprovalTicketReplyForm({
               <MessageCircle className="w-4 h-4 mr-2" />
               {ticket.status === 'APPROVED' ? 'Push Back / Reply' : 'Send Message'}
             </Button>
-          )}
+          ) : null}
         </div>
       ) : (
         <div className="space-y-4 max-w-2xl mx-auto animate-[fadeUp_0.3s_ease_forwards]">
           <h3 className="font-extrabold text-slate-900 text-lg">
-            {actionType === 'APPROVE' ? 'Approve & Respond' : 'Write a Message'}
+            {actionType === 'APPROVE' ? 'Approve & Respond' : actionType === 'REJECT' ? 'Reject & Respond' : 'Write a Message'}
           </h3>
           <Input
             placeholder="Title (e.g., Approved with conditions)"
@@ -104,9 +114,9 @@ export function ApprovalTicketReplyForm({
             <Button
               onClick={handleReply}
               disabled={loading}
-              className={`font-bold rounded-xl shadow-sm transition-all ${actionType === 'APPROVE' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+              className={`font-bold rounded-xl shadow-sm transition-all ${actionType === 'APPROVE' ? 'bg-emerald-600 hover:bg-emerald-700' : actionType === 'REJECT' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
             >
-              {loading ? 'Sending...' : actionType === 'APPROVE' ? 'Approve Now' : 'Send Message'}
+              {loading ? 'Sending...' : actionType === 'APPROVE' ? 'Approve Now' : actionType === 'REJECT' ? 'Reject Now' : 'Send Message'}
             </Button>
           </div>
         </div>

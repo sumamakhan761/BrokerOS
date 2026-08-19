@@ -56,9 +56,10 @@ export default function SalesManagerApprovalPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'REQUESTED': return 'bg-yellow-100 text-yellow-800';
-      case 'APPROVED': return 'bg-green-100 text-green-800';
-      case 'CLOSED': return 'bg-gray-100 text-gray-800';
+      case 'REQUESTED': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'APPROVED': return 'bg-green-100 text-green-800 border-green-200';
+      case 'REJECTED': return 'bg-red-100 text-red-800 border-red-200';
+      case 'CLOSED': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -87,6 +88,7 @@ export default function SalesManagerApprovalPage() {
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
                       <th className="px-6 py-4 font-medium text-slate-500">ID</th>
+                      <th className="px-6 py-4 font-medium text-slate-500">Type</th>
                       <th className="px-6 py-4 font-medium text-slate-500">Sales Executive</th>
                       <th className="px-6 py-4 font-medium text-slate-500">Latest Request Title</th>
                       <th className="px-6 py-4 font-medium text-slate-500">Updated At</th>
@@ -101,11 +103,18 @@ export default function SalesManagerApprovalPage() {
                         onClick={() => handleOpenTicket(req.id)}
                       >
                         <td className="px-6 py-4 font-medium text-blue-600">#{req.id.slice(0, 8).toUpperCase()}</td>
+                        <td className="px-6 py-4">
+                          {req.type === 'BOOKING' && (
+                            <Badge variant="default" className="bg-indigo-50 text-indigo-600 border-indigo-200 font-bold px-2 py-0.5 border">
+                              {req.type}
+                            </Badge>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-slate-800 font-semibold">{req.salesExec?.name || '-'}</td>
                         <td className="px-6 py-4 text-slate-600">{req.messages[0]?.title || 'No Title'}</td>
                         <td className="px-6 py-4 text-slate-500">{new Date(req.updatedAt).toLocaleDateString()}</td>
                         <td className="px-6 py-4">
-                          <Badge variant="default" className={getStatusColor(req.status)}>{req.status}</Badge>
+                          <Badge variant="default" className={`${getStatusColor(req.status)} px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider shadow-sm border`}>{req.status}</Badge>
                         </td>
                       </tr>
                     ))}
