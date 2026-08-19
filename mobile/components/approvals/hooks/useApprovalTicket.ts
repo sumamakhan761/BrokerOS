@@ -5,11 +5,8 @@ import { authClient } from '../../../lib/auth-client';
 
 export function useApprovalTicket(ticket: any, onUpdate: () => void) {
   const [loading, setLoading] = useState(false);
-  const [showReplyForm, setShowReplyForm] = useState(false);
-  const [replyTitle, setReplyTitle] = useState('');
   const [replyDesc, setReplyDesc] = useState('');
   const [replyFile, setReplyFile] = useState<any>(null);
-  const [actionType, setActionType] = useState<'APPROVE' | 'REJECT' | 'REPLY'>('REPLY');
 
   const handleSelectFile = async () => {
     try {
@@ -26,28 +23,28 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
   };
 
   const handleReply = async () => {
-    if (!replyTitle || !replyDesc) {
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Title and description are required.' });
+    if (!replyDesc.trim() && !replyFile) {
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Message or file is required.' });
       return;
     }
 
     try {
       setLoading(true);
       const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
-      
+
       let uploadedUrl = '';
       if (replyFile) {
         const formData = new FormData();
         const filename = replyFile.name || replyFile.uri.split('/').pop() || 'upload.file';
         const type = replyFile.mimeType || 'application/octet-stream';
         formData.append('file', { uri: replyFile.uri, name: filename, type } as any);
-        
+
         const uploadRes = await authClient.$fetch('/api/approvals/upload', {
           baseURL,
           method: 'POST',
           body: formData as any,
         });
-        
+
         if (!uploadRes.error && uploadRes.data) {
           uploadedUrl = (uploadRes.data as any).url || '';
         } else {
@@ -61,10 +58,9 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
         baseURL,
         method: 'POST',
         body: {
-          title: replyTitle,
           description: replyDesc,
           fileUrl: uploadedUrl,
-          action: actionType,
+          action: 'REPLY',
         },
       });
 
@@ -73,9 +69,7 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
         return;
       }
 
-      Toast.show({ type: 'success', text1: actionType === 'APPROVE' ? 'Request Approved!' : actionType === 'REJECT' ? 'Request Rejected!' : 'Message Sent!' });
-      setShowReplyForm(false);
-      setReplyTitle('');
+      Toast.show({ type: 'success', text1: 'Message Sent!' });
       setReplyDesc('');
       setReplyFile(null);
       onUpdate();
@@ -126,21 +120,45 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
     }
   };
 
+  const handleInstantAction = async (action: 'APPROVE' | 'REJECT') => {
+    try {
+      setLoading(true);
+      const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
+
+      const { error } = await authClient.$fetch(`/api/approvals/${ticket.id}/messages`, {
+        baseURL,
+        method: 'POST',
+        body: {
+          title: action === 'APPROVE' ? 'Approval' : 'Rejection',
+          description: action === 'APPROVE' ? 'Request Approved.' : 'Request Rejected.',
+          action,
+        },
+      });
+
+      if (error) {
+        Toast.show({ type: 'error', text1: 'Error', text2: `Failed to ${action.toLowerCase()} request` });
+        return;
+      }
+
+      Toast.show({ type: 'success', text1: action === 'APPROVE' ? 'Request Approved!' : 'Request Rejected!' });
+      onUpdate();
+    } catch (e) {
+      Toast.show({ type: 'error', text1: 'Error', text2: 'An error occurred' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
-    showReplyForm,
-    setShowReplyForm,
-    replyTitle,
-    setReplyTitle,
     replyDesc,
     setReplyDesc,
     replyFile,
     setReplyFile,
-    actionType,
-    setActionType,
     handleSelectFile,
     handleReply,
     handleCloseTicket,
     handleRedo,
+    handleInstantAction,
   };
 }
