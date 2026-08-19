@@ -488,6 +488,33 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
     }
   };
 
+  const handleConfirmFollowUp = async (followUpId: string) => {
+    try {
+      const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
+      const { data, error } = await authClient.$fetch<{ success?: boolean; message?: string }>(`/api/dashboard/pre-sales/follow-ups/${followUpId}/confirm`, {
+        baseURL,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      // authClient returns 'error' object on non-2xx responses. But dashboard controller sends {success, message} often.
+      // We check both forms of errors.
+      if (error) {
+        Alert.alert('Error', error.message || 'Cannot confirm follow-up.');
+        return;
+      }
+      
+      if (data && data.success === false) {
+        Alert.alert('Error', data.message || 'Cannot confirm follow-up.');
+        return;
+      }
+
+      fetchLead();
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to confirm follow-up.');
+    }
+  };
+
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center bg-[#f8fafc]">
@@ -554,6 +581,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
           onEditFollowUp={handleEditFollowUp}
           onArriveAtSiteVisit={handleArriveAtSiteVisit}
           onCompleteSiteVisit={handleCompleteSiteVisit}
+          onConfirmFollowUp={handleConfirmFollowUp}
         />
 
         {(isSalesExecOrManager) && (
