@@ -11,9 +11,10 @@ interface SchedulesTimelineProps {
   onEditFollowUp?: (followUp: NonNullable<LeadProfileData['followUps']>[0]) => void;
   onArriveAtSiteVisit?: (siteVisitId: string) => void;
   onCompleteSiteVisit?: (siteVisitId: string, formData: any) => Promise<void>;
+  onConfirmFollowUp?: (followUpId: string) => void;
 }
 
-export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVisit, onEditFollowUp, onArriveAtSiteVisit, onCompleteSiteVisit }: SchedulesTimelineProps) {
+export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVisit, onEditFollowUp, onArriveAtSiteVisit, onCompleteSiteVisit, onConfirmFollowUp }: SchedulesTimelineProps) {
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState<any>({
@@ -147,6 +148,15 @@ export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVis
                   </Text>
                   {fu.remarks && (
                     <Text className="text-xs text-gray-600 mt-1 border-t border-gray-100 pt-1">{fu.remarks}</Text>
+                  )}
+                  {onConfirmFollowUp && (fu.status === 'SCHEDULED' || fu.status === 'RESCHEDULED' || fu.status === 'MISSED') && (
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); onConfirmFollowUp(fu.id); }}
+                      className="mt-3 bg-emerald-50 p-2 rounded-lg items-center flex-row justify-center"
+                    >
+                      <Feather name="check" size={14} color="#047857" />
+                      <Text className="text-emerald-700 font-bold text-xs ml-1">Confirm</Text>
+                    </TouchableOpacity>
                   )}
                 </TouchableOpacity>
               ))

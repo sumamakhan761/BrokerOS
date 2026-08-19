@@ -44,6 +44,7 @@ export interface LeadProfileData {
     type: string;
     scheduledDate: string;
     remarks?: string;
+    status?: string;
   }>;
   notes?: Array<{
     id: string;
