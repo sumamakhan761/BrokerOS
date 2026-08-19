@@ -29,7 +29,22 @@ export function ApprovalTicketMessages({ ticket, role }: ApprovalTicketMessagesP
               <div className={`text-sm whitespace-pre-wrap font-medium ${alignRight ? 'text-indigo-50' : 'text-slate-600'}`}>
                 {msg.description}
               </div>
-              {msg.fileUrl && (
+              {msg.metadata?.documents && msg.metadata.documents.length > 0 ? (
+                <div className={`mt-3 pt-3 border-t flex flex-col gap-2 ${alignRight ? 'border-indigo-500/50' : 'border-slate-100'}`}>
+                  {msg.metadata.documents.map((doc: any, i: number) => (
+                    <a
+                      key={i}
+                      href={doc.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={`inline-flex items-center text-xs font-bold transition-colors ${alignRight ? 'text-indigo-100 hover:text-white' : 'text-indigo-600 hover:text-indigo-800'}`}
+                    >
+                      <FileText className="w-4 h-4 mr-1.5" />
+                      View {doc.name || 'Attachment'}
+                    </a>
+                  ))}
+                </div>
+              ) : msg.fileUrl && (
                 <div className={`mt-3 pt-3 border-t ${alignRight ? 'border-indigo-500/50' : 'border-slate-100'}`}>
                   <a
                     href={msg.fileUrl}
