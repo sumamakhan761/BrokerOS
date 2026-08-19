@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, TextInput, ActivityIndicator } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Feather } from '@expo/vector-icons';
 import { authClient } from '@/lib/auth-client';
 import { Picker } from '@react-native-picker/picker';
@@ -76,7 +77,7 @@ export default function PossessionModal({
       onSuccess();
       onClose();
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Something went wrong');
+      Toast.show({ type: 'error', text1: 'Error', text2: err.message || 'Something went wrong' });
     } finally {
       setLoading(false);
     }

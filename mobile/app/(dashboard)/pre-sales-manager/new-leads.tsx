@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { authClient } from '@/lib/auth-client';
@@ -66,11 +67,11 @@ export default function MobileNewLeads() {
 
   const handleAssign = async (roundRobin: boolean) => {
     if (selectedLeadIds.size === 0) {
-      Alert.alert('Error', 'Please select at least one lead.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Please select at least one lead.' });
       return;
     }
     if (!roundRobin && !assignTarget) {
-      Alert.alert('Error', 'Please select an employee.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Please select an employee.' });
       return;
     }
 
@@ -87,21 +88,21 @@ export default function MobileNewLeads() {
       });
 
       if (data?.success) {
-        Alert.alert('Success', 'Leads assigned successfully!');
+        Toast.show({ type: 'success', text1: 'Success', text2: 'Leads assigned successfully!' });
         setSelectedLeadIds(new Set());
         setModalVisible(false);
         fetchLeadsAndSubordinates();
       } else {
-        Alert.alert('Error', 'Failed to assign leads.');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to assign leads.' });
       }
     } catch (e) {
-      Alert.alert('Error', 'An error occurred during assignment.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'An error occurred during assignment.' });
     }
   };
 
   const openAssignModal = () => {
     if (selectedLeadIds.size === 0) {
-      Alert.alert('Selection Required', 'Please select at least one lead to assign.');
+      Toast.show({ type: 'info', text1: 'Selection Required', text2: 'Please select at least one lead to assign.' });
       return;
     }
     setModalVisible(true);
@@ -147,25 +148,25 @@ export default function MobileNewLeads() {
             });
 
             if (data && !error) {
-              Alert.alert('Success', `${data.count || mappedLeads.length} leads uploaded successfully!`);
+              Toast.show({ type: 'success', text1: 'Success', text2: `${data.count || mappedLeads.length} leads uploaded successfully!` });
               fetchLeadsAndSubordinates();
             } else {
-              Alert.alert('Error', 'Failed to upload leads.');
+              Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to upload leads.' });
             }
           } catch (e) {
-            Alert.alert('Error', 'An error occurred during upload.');
+            Toast.show({ type: 'error', text1: 'Error', text2: 'An error occurred during upload.' });
           } finally {
             setUploading(false);
           }
         },
         error: () => {
-          Alert.alert('Error', 'Failed to parse the CSV file.');
+          Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to parse the CSV file.' });
           setUploading(false);
         }
       });
     } catch (err) {
       console.error(err);
-      Alert.alert('Error', 'Failed to pick the document.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to pick the document.' });
       setUploading(false);
     }
   };

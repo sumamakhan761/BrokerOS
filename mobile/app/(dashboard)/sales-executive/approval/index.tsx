@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Modal, TextInput } from 'react-native';
+import Toast from 'react-native-toast-message';
 import * as DocumentPicker from 'expo-document-picker';
 import { Feather } from '@expo/vector-icons';
 import { authClient } from '@/lib/auth-client';
@@ -70,7 +71,7 @@ export default function SalesExecutiveApprovalScreen() {
 
   const handleCreateRequest = async () => {
     if (!title || !description) {
-      Alert.alert('Error', 'Title and description are required.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Title and description are required.' });
       return;
     }
 
@@ -94,7 +95,7 @@ export default function SalesExecutiveApprovalScreen() {
         if (!uploadRes.error && uploadRes.data) {
           uploadedUrl = (uploadRes.data as any).url || '';
         } else {
-          Alert.alert('Error', 'Failed to upload file');
+          Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to upload file' });
           setSubmitting(false);
           return;
         }
@@ -107,18 +108,18 @@ export default function SalesExecutiveApprovalScreen() {
       });
 
       if (error) {
-        Alert.alert('Error', 'Failed to create request');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to create request' });
         return;
       }
 
-      Alert.alert('Success', 'Approval request created!');
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Approval request created!' });
       setIsCreateModalOpen(false);
       setTitle('');
       setDescription('');
       setFile(null);
       fetchRequests();
     } catch (e) {
-      Alert.alert('Error', 'An error occurred');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'An error occurred' });
     } finally {
       setSubmitting(false);
     }

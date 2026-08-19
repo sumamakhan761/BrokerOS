@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Feather } from '@expo/vector-icons';
 import SiteVisitRow from './SiteVisitRow';
 import { authClient } from '@/lib/auth-client';
@@ -68,11 +69,11 @@ export default function CompletedSiteVisits({ siteVisits, onRefresh }: { siteVis
         setEditingId(null);
         if (onRefresh) onRefresh();
       } else {
-        Alert.alert('Error', 'Failed to update site visit');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to update site visit' });
       }
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'An error occurred while saving.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'An error occurred while saving.' });
     } finally {
       setSaving(false);
     }

@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
-  RefreshControl, Alert, StyleSheet, TextInput, Modal, DimensionValue
+  RefreshControl, StyleSheet, TextInput, Modal, DimensionValue
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { authClient } from '../../../../lib/auth-client';
@@ -72,7 +73,7 @@ export default function EmployeeDashboardViewScreen() {
       const res = await authClient.$fetch<DashboardData>(`/api/dashboard/pre-sales-manager/employees/${employeeId}/dashboard`, { baseURL });
       if (res.data) setDashData(res.data);
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to load employee dashboard');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to load employee dashboard' });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -84,7 +85,7 @@ export default function EmployeeDashboardViewScreen() {
 
   const handleSaveTask = async () => {
     const taskId = dashData?.dailyTasks.coldCall.taskId;
-    if (!taskId) return Alert.alert("Error", "Employee has no active task assigned.");
+    if (!taskId) { Toast.show({ type: 'error', text1: 'Error', text2: 'Employee has no active task assigned.' }); return; }
     setIsSaving(true);
     try {
       await authClient.$fetch(`/api/dashboard/pre-sales-manager/employees/tasks/${taskId}`, {
@@ -99,7 +100,7 @@ export default function EmployeeDashboardViewScreen() {
       setShowEditTask(false);
       load();
     } catch (e: any) {
-      Alert.alert("Error", e?.message || "Failed to update task.");
+      Toast.show({ type: 'error', text1: 'Error', text2: e?.message || 'Failed to update task.' });
     } finally {
       setIsSaving(false);
     }

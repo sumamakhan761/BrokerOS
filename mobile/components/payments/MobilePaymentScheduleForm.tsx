@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { CreditCard, Hash, Percent } from 'lucide-react-native';
 
 interface MobilePaymentScheduleFormProps {
@@ -75,7 +76,7 @@ export function MobilePaymentScheduleForm({
       });
 
       if (res.ok) {
-        Alert.alert('Success', 'Payment schedule created successfully!');
+        Toast.show({ type: 'success', text1: 'Success', text2: 'Payment schedule created successfully!' });
         onSuccess();
       } else {
         const err = await res.json().catch(() => ({}));

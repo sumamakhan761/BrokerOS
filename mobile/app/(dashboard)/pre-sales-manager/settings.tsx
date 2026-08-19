@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, Alert, PermissionsAndroid } from 'react-native';
+import { View, Text, TouchableOpacity, PermissionsAndroid } from 'react-native';
+import Toast from 'react-native-toast-message';
 import * as FileSystem from 'expo-file-system/legacy';
 import { setODialerFolder } from '../../../modules/auto-dialer';
 import { Feather } from '@expo/vector-icons';
@@ -21,7 +22,7 @@ export default function PreSalesManagerSettingsScreen() {
         granted['android.permission.CALL_PHONE'] === PermissionsAndroid.RESULTS.GRANTED &&
         granted['android.permission.READ_PHONE_STATE'] === PermissionsAndroid.RESULTS.GRANTED
       ) {
-        Alert.alert("Step 1 Complete", "Phone permissions granted. Now please select your ODialer folder.");
+        Toast.show({ type: 'info', text1: 'Step 1 Complete', text2: 'Phone permissions granted. Now please select your ODialer folder.' });
 
         // 2. Request Folder Permission
         // @ts-ignore
@@ -29,18 +30,18 @@ export default function PreSalesManagerSettingsScreen() {
         if (permissions.granted) {
           try {
             setODialerFolder(permissions.directoryUri);
-            Alert.alert("Success!", "All permissions granted and ODialer folder linked for background sync!");
+            Toast.show({ type: 'success', text1: 'Success!', text2: 'All permissions granted and ODialer folder linked for background sync!' });
           } catch (folderError) {
             console.log("Persistable permission warning:", folderError);
-            Alert.alert("Success", "Folder linked, but you may need to re-link it if the app restarts.");
+            Toast.show({ type: 'success', text1: 'Success', text2: 'Folder linked, but you may need to re-link it if the app restarts.' });
           }
         }
       } else {
-        Alert.alert("Error", "Phone permissions are required for the Auto-Dialer to work.");
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Phone permissions are required for the Auto-Dialer to work.' });
       }
     } catch (e) {
       console.error(e);
-      Alert.alert("Error", "Could not grant permissions");
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Could not grant permissions' });
     }
   };
 

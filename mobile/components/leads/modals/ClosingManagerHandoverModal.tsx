@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Modal, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Feather } from '@expo/vector-icons';
 import { authClient } from '../../../lib/auth-client';
 
@@ -37,11 +38,11 @@ export default function ClosingManagerHandoverModal({ isVisible, onClose, lead, 
         onSuccess();
         setNotes('');
       } else {
-        Alert.alert('Error', 'Failed to handover lead');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to handover lead' });
       }
     } catch (e: any) {
       console.error('Handover error:', e);
-      Alert.alert('Error', e.message || 'An error occurred during handover');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'An error occurred during handover' });
     } finally {
       setLoading(false);
     }

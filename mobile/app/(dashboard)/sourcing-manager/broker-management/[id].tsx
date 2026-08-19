@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { authClient } from '../../../../lib/auth-client';
@@ -84,7 +85,7 @@ export default function SourcingManagerBrokerProfile() {
       if (res.error) throw new Error(res.error.message || "Failed to fetch broker");
       setBroker(res.data);
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to load broker details');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to load broker details' });
     } finally {
       setLoading(false);
     }
@@ -102,7 +103,7 @@ export default function SourcingManagerBrokerProfile() {
       await loadBroker();
       setIsNoteModalOpen(false);
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to save note');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to save note' });
     }
   };
 
@@ -117,7 +118,7 @@ export default function SourcingManagerBrokerProfile() {
       await loadBroker();
       setIsStatusModalOpen(false);
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to update status');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to update status' });
     }
   };
 
@@ -132,7 +133,7 @@ export default function SourcingManagerBrokerProfile() {
       await loadBroker();
       setIsSubStatusModalOpen(false);
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to update sub-status');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to update sub-status' });
     }
   };
 
@@ -158,7 +159,7 @@ export default function SourcingManagerBrokerProfile() {
       await loadBroker();
       setIsFollowUpModalOpen(false);
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to schedule follow-up');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to schedule follow-up' });
     }
   };
 
@@ -185,7 +186,7 @@ export default function SourcingManagerBrokerProfile() {
       await loadBroker();
       setIsSiteVisitModalOpen(false);
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to schedule site visit');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to schedule site visit' });
     }
   };
 
@@ -194,7 +195,7 @@ export default function SourcingManagerBrokerProfile() {
       const Location = await import('expo-location');
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission to access location was denied');
+        Toast.show({ type: 'info', text1: 'Permission Denied', text2: 'Permission to access location was denied' });
         return;
       }
       const location = await Location.getCurrentPositionAsync({});
@@ -209,13 +210,13 @@ export default function SourcingManagerBrokerProfile() {
         }
       });
       if (!error) {
-        Alert.alert('Success', 'Arrival confirmed!');
+        Toast.show({ type: 'success', text1: 'Success', text2: 'Arrival confirmed!' });
         loadBroker();
       } else {
-        Alert.alert('Error', error.message || 'Failed to confirm arrival');
+        Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Failed to confirm arrival' });
       }
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Could not fetch location');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Could not fetch location' });
     }
   };
 

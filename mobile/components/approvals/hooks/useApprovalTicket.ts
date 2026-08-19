@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import Toast from 'react-native-toast-message';
 import * as DocumentPicker from 'expo-document-picker';
 import { authClient } from '../../../lib/auth-client';
 
@@ -27,7 +27,7 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
 
   const handleReply = async () => {
     if (!replyTitle || !replyDesc) {
-      Alert.alert('Error', 'Title and description are required.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Title and description are required.' });
       return;
     }
 
@@ -51,7 +51,7 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
         if (!uploadRes.error && uploadRes.data) {
           uploadedUrl = (uploadRes.data as any).url || '';
         } else {
-          Alert.alert('Error', 'Failed to upload file');
+          Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to upload file' });
           setLoading(false);
           return;
         }
@@ -69,49 +69,40 @@ export function useApprovalTicket(ticket: any, onUpdate: () => void) {
       });
 
       if (error) {
-        Alert.alert('Error', 'Failed to submit message');
+        Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to submit message' });
         return;
       }
 
-      Alert.alert('Success', actionType === 'APPROVE' ? 'Request Approved!' : 'Message Sent!');
+      Toast.show({ type: 'success', text1: actionType === 'APPROVE' ? 'Request Approved!' : 'Message Sent!' });
       setShowReplyForm(false);
       setReplyTitle('');
       setReplyDesc('');
       setReplyFile(null);
       onUpdate();
     } catch (e) {
-      Alert.alert('Error', 'An error occurred');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'An error occurred' });
     } finally {
       setLoading(false);
     }
   };
 
   const handleCloseTicket = async () => {
-    Alert.alert('Close Ticket', 'Are you sure you want to close this ticket?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Close',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            setLoading(true);
-            const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
-            const { error } = await authClient.$fetch(`/api/approvals/${ticket.id}/close`, {
-              baseURL,
-              method: 'PATCH',
-            });
-            if (!error) {
-              Alert.alert('Success', 'Ticket closed');
-              onUpdate();
-            }
-          } catch (e) {
-            Alert.alert('Error', 'Error closing ticket');
-          } finally {
-            setLoading(false);
-          }
-        },
-      },
-    ]);
+    try {
+      setLoading(true);
+      const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
+      const { error } = await authClient.$fetch(`/api/approvals/${ticket.id}/close`, {
+        baseURL,
+        method: 'PATCH',
+      });
+      if (!error) {
+        Toast.show({ type: 'success', text1: 'Ticket closed' });
+        onUpdate();
+      }
+    } catch (e) {
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Error closing ticket' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return {

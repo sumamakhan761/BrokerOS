@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, ScrollView } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Feather } from '@expo/vector-icons';
 import { authClient } from '../../lib/auth-client';
 
@@ -31,7 +32,7 @@ export function BrokerDealSection({ broker, onRefresh }: { broker: any, onRefres
 
   const handleSave = async () => {
     if (!formData.projectId) {
-      Alert.alert('Error', 'Please select a project');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Please select a project' });
       return;
     }
     setLoading(true);
@@ -48,7 +49,7 @@ export function BrokerDealSection({ broker, onRefresh }: { broker: any, onRefres
       setFormData({ projectId: '', brokeragePercent: '', brokerageFlat: '' });
       if (onRefresh) onRefresh();
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to save deal');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to save deal' });
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,8 @@
 import { Tabs } from 'expo-router';
 import { authClient } from '../../lib/auth-client';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View, Text, Alert } from 'react-native';
+import { ActivityIndicator, View, Text } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
@@ -158,7 +159,7 @@ export default function DashboardLayout() {
           try {
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
-              Alert.alert('Error', 'Location permission is required to Arrive at a site visit.');
+              Toast.show({ type: 'error', text1: 'Error', text2: 'Location permission is required to Arrive at a site visit.' });
               return;
             }
             const location = await Location.getCurrentPositionAsync({});
@@ -173,12 +174,12 @@ export default function DashboardLayout() {
             });
 
             if (!error) {
-              Alert.alert('Success', 'Site Visit arrival confirmed!');
+              Toast.show({ type: 'success', text1: 'Success', text2: 'Site Visit arrival confirmed!' });
             } else {
-              Alert.alert('Error', error.message || 'Failed to confirm arrival');
+              Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Failed to confirm arrival' });
             }
           } catch (e: any) {
-            Alert.alert('Error', e.message || 'Could not fetch location');
+            Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Could not fetch location' });
           }
         }
         return; // Do not proceed to routing if it was an action button

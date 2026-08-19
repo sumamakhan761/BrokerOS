@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, ActivityIndicator, ScrollView } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { Feather } from '@expo/vector-icons';
 import { authClient } from '@/lib/auth-client';
 
@@ -72,7 +73,7 @@ export default function AssignmentModal({
       setSelectedCMIds(cmIds);
       setSelectedSEIds(seIds);
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Something went wrong');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Something went wrong' });
     } finally {
       setFetching(false);
     }
@@ -111,7 +112,7 @@ export default function AssignmentModal({
       onSuccess?.();
       onClose();
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Something went wrong');
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Something went wrong' });
     } finally {
       setLoading(false);
     }

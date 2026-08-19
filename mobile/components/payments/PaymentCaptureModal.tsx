@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import Toast from 'react-native-toast-message';
 import * as ImagePicker from 'expo-image-picker';
 import { X, Camera, Upload } from 'lucide-react-native';
 
@@ -20,7 +21,7 @@ export function PaymentCaptureModal({ visible, onClose, scheduleId, amount, onSu
     if (!cameraPermission?.granted) {
       const permissionResult = await requestPermission();
       if (!permissionResult.granted) {
-        Alert.alert('Permission Required', 'Camera permission is required to capture the receipt.');
+        Toast.show({ type: 'info', text1: 'Permission Required', text2: 'Camera permission is required to capture the receipt.' });
         return;
       }
     }
@@ -71,12 +72,12 @@ export function PaymentCaptureModal({ visible, onClose, scheduleId, amount, onSu
         throw new Error('Upload failed');
       }
 
-      Alert.alert('Success', 'Payment marked as paid successfully!');
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Payment marked as paid successfully!' });
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Upload Error:', error);
-      Alert.alert('Error', 'Failed to upload receipt. Please try again.');
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to upload receipt. Please try again.' });
     } finally {
       setUploading(false);
     }
