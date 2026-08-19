@@ -26,9 +26,6 @@ export function ApprovalMessageThread({ messages, role }: ApprovalMessageThreadP
                 : 'bg-white border border-slate-200 rounded-tl-sm'
                 }`}
             >
-              <Text className={`font-bold text-sm mb-1 ${alignRight ? 'text-white' : 'text-slate-800'}`}>
-                {msg.title}
-              </Text>
               <Text className={`text-sm ${alignRight ? 'text-blue-50' : 'text-slate-600'}`}>
                 {msg.description}
               </Text>
