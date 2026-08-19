@@ -20,10 +20,10 @@ export class ApprovalsController {
   }
 
   @Post()
-  async createRequest(@Req() req, @Body() body: { title: string; description: string; fileUrl?: string }) {
+  async createRequest(@Req() req, @Body() body: { title: string; description: string; fileUrl?: string; type?: any; bookingId?: string }) {
     const userId = req.user?.id || req.user?.userId;
     if (!userId) throw new UnauthorizedException('User not authenticated');
-    return this.approvalsService.createRequest(userId, body.title, body.description, body.fileUrl);
+    return this.approvalsService.createRequest(userId, body.title, body.description, body.fileUrl, body.type, body.bookingId);
   }
 
   @Get()
@@ -42,7 +42,7 @@ export class ApprovalsController {
   async addMessage(
     @Param('id') id: string,
     @Req() req,
-    @Body() body: { title: string; description: string; fileUrl?: string; action?: 'APPROVE' | 'REPLY' }
+    @Body() body: { title: string; description: string; fileUrl?: string; action?: 'APPROVE' | 'REJECT' | 'REPLY' }
   ) {
     const userId = req.user?.id || req.user?.userId;
     if (!userId) throw new UnauthorizedException('User not authenticated');
@@ -52,5 +52,12 @@ export class ApprovalsController {
   @Patch(':id/close')
   async closeRequest(@Param('id') id: string) {
     return this.approvalsService.closeRequest(id);
+  }
+
+  @Post(':id/redo')
+  async redoRequestDecision(@Param('id') id: string, @Req() req) {
+    const userId = req.user?.id || req.user?.userId;
+    if (!userId) throw new UnauthorizedException('User not authenticated');
+    return this.approvalsService.redoRequestDecision(id, userId);
   }
 }
