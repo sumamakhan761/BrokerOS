@@ -69,15 +69,15 @@ export default function BookingDocumentList({
         formData.append('bookingId', booking.id);
         
         const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
-        const res = await fetch(`${baseURL}/api/leads/${leadId}/booking/documents`, {
+        const { error, data } = await authClient.$fetch(`${baseURL}/api/leads/${leadId}/booking/documents`, {
           method: 'POST',
-          body: formData,
+          body: formData as any,
         });
         
-        if (res.ok) {
+        if (!error) {
           onRefresh();
         } else {
-          Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to upload document' });
+          Toast.show({ type: 'error', text1: 'Error', text2: error?.message || 'Failed to upload document' });
         }
       }
     } catch (e) {
