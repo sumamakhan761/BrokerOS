@@ -22,6 +22,7 @@ export function ApprovalTicketHeader({
     switch (status) {
       case 'REQUESTED': return 'bg-amber-50 text-amber-600 border-amber-200';
       case 'APPROVED': return 'bg-emerald-50 text-emerald-600 border-emerald-200';
+      case 'REJECTED': return 'bg-rose-50 text-rose-600 border-rose-200';
       case 'CLOSED': return 'bg-slate-50 text-slate-600 border-slate-200';
       default: return 'bg-slate-50 text-slate-600 border-slate-200';
     }
@@ -34,9 +35,16 @@ export function ApprovalTicketHeader({
           <ArrowLeft className="w-5 h-5 text-slate-600" />
         </Button>
         <div>
-          <h2 className="font-extrabold text-lg text-slate-900 tracking-tight">
-            Ticket #{ticket.id.slice(0, 8).toUpperCase()}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-extrabold text-lg text-slate-900 tracking-tight">
+              Ticket #{ticket.id.slice(0, 8).toUpperCase()}
+            </h2>
+            {ticket.type === 'BOOKING' && (
+              <Badge variant="default" className="bg-indigo-50 text-indigo-600 border-indigo-200 font-bold px-2 py-0.5 border">
+                {ticket.type}
+              </Badge>
+            )}
+          </div>
           <div className="text-sm font-medium text-slate-500 mt-0.5">
             {role === 'SALES_MANAGER' ? `Requested by ${ticket.salesExec.name}` : `Sent to ${ticket.manager.name}`}
           </div>

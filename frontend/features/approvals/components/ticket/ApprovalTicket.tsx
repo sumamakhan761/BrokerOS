@@ -23,7 +23,7 @@ export default function ApprovalTicket({
   const [replyFile, setReplyFile] = useState<File | null>(null);
 
   // For the manager's action when replying
-  const [actionType, setActionType] = useState<'APPROVE' | 'REPLY'>('REPLY');
+  const [actionType, setActionType] = useState<'APPROVE' | 'REJECT' | 'REPLY'>('REPLY');
 
   const handleReply = async () => {
     if (!replyTitle || !replyDesc) {
@@ -72,7 +72,7 @@ export default function ApprovalTicket({
         return;
       }
 
-      toast.success(actionType === 'APPROVE' ? 'Request Approved!' : 'Message Sent!');
+      toast.success(actionType === 'APPROVE' ? 'Request Approved!' : actionType === 'REJECT' ? 'Request Rejected!' : 'Message Sent!');
       setShowReplyForm(false);
       setReplyTitle('');
       setReplyDesc('');
@@ -100,6 +100,27 @@ export default function ApprovalTicket({
       }
     } catch (e) {
       toast.error('Error closing ticket');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRedo = async () => {
+    try {
+      setLoading(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const res = await fetch(`${apiUrl}/api/approvals/${ticket.id}/redo`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        toast.success('Action Undone');
+        onUpdate();
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(errorData.message || 'Failed to redo decision');
+      }
+    } catch (e) {
+      toast.error('Error undoing action');
     } finally {
       setLoading(false);
     }
@@ -133,6 +154,7 @@ export default function ApprovalTicket({
         setReplyDesc={setReplyDesc}
         setReplyFile={setReplyFile}
         handleReply={handleReply}
+        handleRedo={handleRedo}
         loading={loading}
       />
     </div>

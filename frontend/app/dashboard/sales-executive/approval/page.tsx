@@ -60,6 +60,7 @@ export default function SalesExecutiveApprovalPage() {
     switch (status) {
       case 'REQUESTED': return 'bg-amber-50 text-amber-600 border-amber-200';
       case 'APPROVED': return 'bg-emerald-50 text-emerald-600 border-emerald-200';
+      case 'REJECTED': return 'bg-rose-50 text-rose-600 border-rose-200';
       case 'CLOSED': return 'bg-slate-50 text-slate-600 border-slate-200';
       default: return 'bg-slate-50 text-slate-600 border-slate-200';
     }
@@ -107,6 +108,7 @@ export default function SalesExecutiveApprovalPage() {
                     <tr>
                       <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">ID</th>
                       <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Latest Title</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Type</th>
                       <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Manager</th>
                       <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Updated At</th>
                       <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
@@ -121,6 +123,13 @@ export default function SalesExecutiveApprovalPage() {
                       >
                         <td className="px-6 py-4 font-bold text-indigo-600 group-hover:text-indigo-700">#{req.id.slice(0, 8).toUpperCase()}</td>
                         <td className="px-6 py-4 text-slate-900 font-bold">{req.messages[0]?.title || 'No Title'}</td>
+                        <td className="px-6 py-4">
+                          {req.type === 'BOOKING' && (
+                            <Badge variant="default" className="bg-indigo-50 text-indigo-600 border-indigo-200 font-bold px-2 py-0.5 border">
+                              {req.type}
+                            </Badge>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-slate-600 font-medium">{req.manager?.name || '-'}</td>
                         <td className="px-6 py-4 text-slate-500 font-medium">{new Date(req.updatedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</td>
                         <td className="px-6 py-4">
