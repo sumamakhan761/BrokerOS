@@ -19,9 +19,9 @@ export class PostSalesDashboardService {
     const leadWhere: any = { deletedAt: null };
     // Post-sales agents only view leads corresponding to bookings assigned to them
     if (roleCode === 'POST_SALES') {
-      leadWhere.customer = { some: { bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } } } };
+      leadWhere.customer = { bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } } };
     } else if (roleCode === 'POST_SALES_MANAGER') {
-      leadWhere.customer = { some: { bookings: { some: { source: 'DIRECT' } } } };
+      leadWhere.customer = { bookings: { some: { source: 'DIRECT' } } };
     } else if (roleCode === 'SALES_EXECUTIVE') {
       leadWhere.assignedUserId = userId;
     }
