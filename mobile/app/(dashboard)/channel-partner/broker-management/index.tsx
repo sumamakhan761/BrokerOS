@@ -126,6 +126,7 @@ export default function ChannelPartnerBrokerManagement() {
           <BrokerListCard
             key={broker.id}
             broker={broker}
+            showAssignee={true}
             onPress={() => router.push(`/channel-partner/broker-management/${broker.id}`)}
             onAssign={() => setAssignModalData({
               isOpen: true,
