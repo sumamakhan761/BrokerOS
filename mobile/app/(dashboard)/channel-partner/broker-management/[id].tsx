@@ -32,7 +32,10 @@ export default function CPBrokerProfileScreen() {
   // Forms state
   const [newNoteContent, setNewNoteContent] = useState('');
   const [followUpData, setFollowUpData] = useState({ title: '', description: '', date: '' });
-  const [siteVisitData, setSiteVisitData] = useState<{ projectId: string; description: string; date: string; destinationUrl?: string }>({ projectId: 'OFFICE_MEETING', description: '', date: '', destinationUrl: '' });
+  const [siteVisitData, setSiteVisitData] = useState<{ projectId: string; description: string; date: string; destinationUrl?: string }>({ projectId: '', description: '', date: '', destinationUrl: '' });
+
+  const [isEditingBrokerInfo, setIsEditingBrokerInfo] = useState(false);
+  const [brokerInfoData, setBrokerInfoData] = useState<any>({});
 
   const [showFollowUpDatePicker, setShowFollowUpDatePicker] = useState(false);
   const [showFollowUpTimePicker, setShowFollowUpTimePicker] = useState(false);
@@ -78,7 +81,24 @@ export default function CPBrokerProfileScreen() {
       await loadBroker();
       setIsStatusModalOpen(false);
     } catch (e: any) {
-      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to update status' });
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to fetch sourcing managers' });
+    }
+  };
+
+  const handleBrokerInfoSave = async () => {
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
+      await authClient.$fetch(`/api/brokers/${id}`, {
+        baseURL: baseUrl,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: brokerInfoData
+      });
+      await loadBroker();
+      setIsEditingBrokerInfo(false);
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Broker information updated' });
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to update broker info' });
     }
   };
 
@@ -94,6 +114,67 @@ export default function CPBrokerProfileScreen() {
       setIsSubStatusModalOpen(false);
     } catch (e: any) {
       Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to update sub-status' });
+    }
+  };
+
+  const handleArriveAtSiteVisit = async (svId: string) => {
+    try {
+      const Location = await import('expo-location');
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Toast.show({ type: 'info', text1: 'Permission Denied', text2: 'Permission to access location was denied' });
+        return;
+      }
+      const location = await Location.getCurrentPositionAsync({});
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
+      const { data, error } = await authClient.$fetch(`/api/brokers/${id}/meetings/${svId}/arrive`, {
+        baseURL: baseUrl,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude
+        }
+      });
+      if (!error) {
+        Toast.show({ type: 'success', text1: 'Success', text2: 'Arrival confirmed!' });
+        loadBroker();
+      } else {
+        Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Failed to confirm arrival' });
+      }
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Could not fetch location' });
+    }
+  };
+
+  const handleCompleteSiteVisit = async (svId: string, formData: any) => {
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
+      await authClient.$fetch(`/api/brokers/${id}/meetings/${svId}/complete`, {
+        baseURL: baseUrl,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: formData
+      });
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Meeting completed!' });
+      await loadBroker();
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to complete meeting' });
+    }
+  };
+
+  const handleConfirmFollowUp = async (fuId: string) => {
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
+      await authClient.$fetch(`/api/brokers/${id}/follow-ups/${fuId}/confirm`, {
+        baseURL: baseUrl,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Follow up confirmed!' });
+      await loadBroker();
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to confirm follow up' });
     }
   };
 
@@ -203,18 +284,40 @@ export default function CPBrokerProfileScreen() {
   }
 
   // Map meetings to siteVisits structure for SchedulesTimeline
-  const mappedBroker = {
+  const mappedBroker: any = {
     ...broker,
-    siteVisits: (broker.meetings || []).map((m: any) => ({
-      id: m.id,
-      scheduledDate: m.scheduledDate,
-      status: m.status,
-      meetingNotes: m.meetingNotes,
-      project: null,
-      destinationUrl: m.destinationUrl,
-      arrivedAt: m.arrivedAt,
-      completedAt: m.actualDate // Note: broker meeting schema uses actualDate
-    }))
+    firstName: broker.name || broker.companyName,
+    lastName: '',
+    phone: broker.phone || '',
+    followUps: (broker.followUps || []).map((s: any) => ({
+      id: s.id,
+      type: s.type || 'Follow Up',
+      scheduledDate: s.scheduledDate,
+      remarks: s.remarks,
+    })),
+    siteVisits: (broker.meetings || []).map((s: any) => ({
+      id: s.id,
+      projectId: 'OFFICE_MEETING',
+      project: { id: 'OFFICE_MEETING', name: 'General Meeting' },
+      scheduledDate: s.scheduledDate || s.scheduledAt,
+      meetingNotes: s.meetingNotes || s.agenda,
+      status: s.status || 'SCHEDULED',
+      destinationUrl: s.destinationUrl,
+      arrivedAt: s.arrivedAt,
+      arriveLatitude: s.arriveLatitude,
+      arriveLongitude: s.arriveLongitude,
+      completedAt: s.actualDate,
+    })),
+    callRecords: (broker.calls || []).map((c: any) => ({
+      id: c.id,
+      recordingUrl: c.recordingUrl,
+      startedAt: c.createdAt,
+      duration: c.duration,
+      callType: c.type,
+      status: c.status
+    })),
+    notes: broker.notes || [],
+    createdAt: broker.createdAt
   };
 
   return (
@@ -233,17 +336,27 @@ export default function CPBrokerProfileScreen() {
             handleOpenMeetingModal={() => setIsSiteVisitModalOpen(true)}
           />
 
-          <BrokerInformationCard broker={broker} />
+          <BrokerInformationCard 
+            broker={broker} 
+            isEditingBrokerInfo={isEditingBrokerInfo}
+            setIsEditingBrokerInfo={setIsEditingBrokerInfo}
+            brokerInfoData={brokerInfoData}
+            setBrokerInfoData={setBrokerInfoData}
+            handleBrokerInfoSave={handleBrokerInfoSave}
+            canEdit={true}
+          />
           
           <BrokerDealSection broker={broker} onRefresh={loadBroker} />
 
           <View className="mt-4">
             <SchedulesTimeline
-              siteVisits={mappedBroker.siteVisits?.filter((sv: any) => sv.status === 'SCHEDULED' && !sv.completedAt)}
-              followUps={broker.followUps}
+              siteVisits={mappedBroker.siteVisits}
+              followUps={mappedBroker.followUps}
               onEditSiteVisit={() => {}} // Disabled editing for brokers for now (matches web)
               onEditFollowUp={() => {}}
-              onArriveAtSiteVisit={async () => {}} // Stub
+              onArriveAtSiteVisit={handleArriveAtSiteVisit}
+              onCompleteSiteVisit={handleCompleteSiteVisit}
+              onConfirmFollowUp={handleConfirmFollowUp}
             />
           </View>
 

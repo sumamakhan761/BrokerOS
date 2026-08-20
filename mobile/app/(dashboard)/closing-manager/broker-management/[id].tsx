@@ -198,18 +198,40 @@ export default function CMBrokerProfileScreen() {
     );
   }
 
-  const mappedBroker = {
+  const mappedBroker: any = {
     ...broker,
-    siteVisits: (broker.meetings || []).map((m: any) => ({
-      id: m.id,
-      scheduledDate: m.scheduledDate,
-      status: m.status,
-      meetingNotes: m.meetingNotes,
-      project: null,
-      destinationUrl: m.destinationUrl,
-      arrivedAt: m.arrivedAt,
-      completedAt: m.actualDate
-    }))
+    firstName: broker.name || broker.companyName,
+    lastName: '',
+    phone: broker.phone || '',
+    followUps: (broker.followUps || []).map((s: any) => ({
+      id: s.id,
+      type: s.type || 'Follow Up',
+      scheduledDate: s.scheduledDate,
+      remarks: s.remarks,
+    })),
+    siteVisits: (broker.meetings || []).map((s: any) => ({
+      id: s.id,
+      projectId: 'OFFICE_MEETING',
+      project: { id: 'OFFICE_MEETING', name: 'General Meeting' },
+      scheduledDate: s.scheduledDate || s.scheduledAt,
+      meetingNotes: s.meetingNotes || s.agenda,
+      status: s.status || 'SCHEDULED',
+      destinationUrl: s.destinationUrl,
+      arrivedAt: s.arrivedAt,
+      arriveLatitude: s.arriveLatitude,
+      arriveLongitude: s.arriveLongitude,
+      completedAt: s.actualDate,
+    })),
+    callRecords: (broker.calls || []).map((c: any) => ({
+      id: c.id,
+      recordingUrl: c.recordingUrl,
+      startedAt: c.createdAt,
+      duration: c.duration,
+      callType: c.type,
+      status: c.status
+    })),
+    notes: broker.notes || [],
+    createdAt: broker.createdAt
   };
 
   return (
@@ -228,8 +250,8 @@ export default function CMBrokerProfileScreen() {
 
           <View className="mt-4">
             <SchedulesTimeline
-              siteVisits={mappedBroker.siteVisits?.filter((sv: any) => sv.status === 'SCHEDULED' && !sv.completedAt)}
-              followUps={broker.followUps}
+              siteVisits={mappedBroker.siteVisits}
+              followUps={mappedBroker.followUps}
               onEditSiteVisit={() => {}}
               onEditFollowUp={() => {}}
               onArriveAtSiteVisit={async () => {}}
