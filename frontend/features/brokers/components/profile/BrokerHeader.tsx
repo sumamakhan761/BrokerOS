@@ -19,6 +19,7 @@ interface BrokerHeaderProps {
   openMeetingModal: () => void;
   handleAiAutoAdvance: () => void;
   isAiAdvancing: boolean;
+  isCM?: boolean;
 }
 
 export function BrokerHeader({
@@ -34,7 +35,8 @@ export function BrokerHeader({
   openFollowUpModal,
   openMeetingModal,
   handleAiAutoAdvance,
-  isAiAdvancing
+  isAiAdvancing,
+  isCM
 }: BrokerHeaderProps) {
   const displayName = broker.name || 'Unknown Broker';
 
@@ -123,6 +125,7 @@ export function BrokerHeader({
               openMeetingModal={openMeetingModal}
               handleAiAutoAdvance={handleAiAutoAdvance}
               isAiAdvancing={isAiAdvancing}
+              isCM={isCM}
             />
           ) : (
             <BrokerHeaderEdit

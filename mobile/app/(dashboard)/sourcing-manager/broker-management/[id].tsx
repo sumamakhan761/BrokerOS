@@ -10,8 +10,7 @@ import { BrokerHeader } from '../../../../components/brokers/profile/BrokerHeade
 import { BrokerInformationCard } from '../../../../components/brokers/profile/BrokerInformationCard';
 import { BrokerDealSection } from '../../../../components/brokers/BrokerDealSection';
 
-// Shared Lead Components (As requested)
-import ActionButtons from '../../../../components/leads/profile/ActionButtons';
+import { BrokerActionButtons } from '../../../../components/brokers/profile/BrokerActionButtons';
 import NotesTimeline from '../../../../components/leads/timeline/NotesTimeline';
 import SchedulesTimeline from '../../../../components/leads/timeline/SchedulesTimeline';
 import HistoryTimeline from '../../../../components/leads/timeline/HistoryTimeline';
@@ -311,8 +310,8 @@ export default function SourcingManagerBrokerProfile() {
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
 
-        <ActionButtons
-          lead={mappedLead}
+        <BrokerActionButtons
+          broker={broker}
           setIsFollowUpModalOpen={(isOpen) => {
             if (isOpen) {
               setFollowUpData({ title: '', description: '', date: '' });
@@ -320,7 +319,7 @@ export default function SourcingManagerBrokerProfile() {
             }
             setIsFollowUpModalOpen(isOpen);
           }}
-          handleOpenSiteVisitModal={() => {
+          handleOpenMeetingModal={() => {
             setSiteVisitData({ projectId: '', description: '', date: '', destinationUrl: '' });
             setEditingSiteVisitId(null);
             setIsSiteVisitModalOpen(true);

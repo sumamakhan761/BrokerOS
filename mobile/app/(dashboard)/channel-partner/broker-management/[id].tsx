@@ -229,7 +229,6 @@ export default function CPBrokerProfileScreen() {
         <View className="px-4">
           <BrokerActionButtons 
             broker={broker} 
-            setIsNoteModalOpen={setIsNoteModalOpen}
             setIsFollowUpModalOpen={setIsFollowUpModalOpen}
             handleOpenMeetingModal={() => setIsSiteVisitModalOpen(true)}
           />
