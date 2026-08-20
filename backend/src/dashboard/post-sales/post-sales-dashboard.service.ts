@@ -13,6 +13,9 @@ export class PostSalesDashboardService {
     if (roleId) {
       const role = await this.prisma.role.findUnique({ where: { id: roleId } });
       if (role) roleCode = role.code;
+    } else {
+      const user = await this.prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
+      if (user?.role) roleCode = user.role.code;
     }
 
     // Generic where clause for post-sales leads

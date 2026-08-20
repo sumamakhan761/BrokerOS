@@ -23,16 +23,19 @@ export class PostSalesAnalyticsService {
   async getPostSalesAnalytics(userId?: string, timeRange?: string, roleId?: string) {
     const startDate = this.getDateBoundary(timeRange);
     const dateFilter = startDate ? { gte: startDate } : undefined;
-    
+
     let roleCode = 'ADMIN';
     if (roleId) {
       const role = await this.prisma.role.findUnique({ where: { id: roleId } });
       if (role) roleCode = role.code;
+    } else if (userId) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
+      if (user?.role) roleCode = user.role.code;
     }
 
     const leadWhere: any = { deletedAt: null };
     if (dateFilter) leadWhere.updatedAt = dateFilter;
-    
+
     if (roleCode === 'POST_SALES') {
       leadWhere.customer = { bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } } };
     } else if (roleCode === 'POST_SALES_MANAGER') {
@@ -101,8 +104,8 @@ export class PostSalesAnalyticsService {
     // 3. Velocity Data
     // Find bookings that have reached 'HANDOVER' status 'DONE' or have actualDate in PossessionHandover
     const possessions = await this.prisma.possessionHandover.findMany({
-      where: { 
-        status: 'HANDED_OVER', 
+      where: {
+        status: 'HANDED_OVER',
         actualDate: dateFilter ? { not: null, gte: startDate } : { not: null },
         booking: bookingWhere
       },
@@ -128,8 +131,8 @@ export class PostSalesAnalyticsService {
     const loanApproved = funnel.agreement + funnel.handover;
     const loanInProgress = funnel.loan;
     const loanRejectedCount = await this.prisma.loanCase.count({
-      where: { 
-        status: 'REJECTED', 
+      where: {
+        status: 'REJECTED',
         ...(dateFilter && { updatedAt: dateFilter }),
         booking: bookingWhere
       },
@@ -216,12 +219,12 @@ export class PostSalesAnalyticsService {
     // 7. Follow-up Efficiency
     const followUps = await this.prisma.followUp.groupBy({
       by: ['status'],
-      where: { 
-        lead: { 
+      where: {
+        lead: {
           status: { in: ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'] },
           ...leadWhere
-        }, 
-        ...(dateFilter && { updatedAt: dateFilter }) 
+        },
+        ...(dateFilter && { updatedAt: dateFilter })
       },
       _count: { _all: true },
     });

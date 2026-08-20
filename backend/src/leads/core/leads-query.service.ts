@@ -27,7 +27,12 @@ export class LeadsQueryService {
     const where: Prisma.LeadWhereInput = {};
 
     if (filters?.assignedToId) {
-      where.assignedUserId = filters.assignedToId;
+      const assignedUser = await this.prisma.user.findUnique({ where: { id: filters.assignedToId }, include: { role: true } });
+      if (assignedUser?.role?.code === 'POST_SALES') {
+        where.customer = { bookings: { some: { assignedPostSalesId: filters.assignedToId, source: 'DIRECT' } } };
+      } else {
+        where.assignedUserId = filters.assignedToId;
+      }
     } else if (filters?.roleId && filters?.userId) {
       const role = await this.prisma.role.findUnique({ where: { id: filters.roleId } });
 
@@ -153,6 +158,9 @@ export class LeadsQueryService {
         assignedUser: {
           select: { name: true, username: true },
         },
+        interestedProject: {
+          select: { id: true, name: true, slug: true },
+        },
         siteVisits: {
           orderBy: { scheduledDate: 'desc' },
           take: 1,
@@ -192,9 +200,10 @@ export class LeadsQueryService {
         subStatus: lead.subStatus,
         score: lead.score,
         lastContactDate: lead.lastContactDate,
-        nextFollowUpDate: lead.nextFollowUpDate,
+        nextFollowUpDate: lead.nextFollowUpDate || latestFollowUp?.scheduledDate || null,
         createdAt: lead.createdAt,
         assignedUser: lead.assignedUser,
+        interestedProject: (lead as any).interestedProject || null,
         latestSiteVisit: latestSV,
         siteVisitScheduledDate: latestSV?.scheduledDate ?? null,
         siteVisitCompletedDate: latestSV?.completedAt ?? null,
