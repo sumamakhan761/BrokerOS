@@ -9,6 +9,7 @@ interface ProfileHeaderProps {
   uploading: boolean;
   handleAvatarUpload: () => void;
   setIsStatusModalOpen: (val: boolean) => void;
+  setIsSubStatusModalOpen: (val: boolean) => void;
   setIsTemperatureModalOpen: (val: boolean) => void;
   handleAiAutoAdvance?: () => void;
   isAiAdvancing?: boolean;
@@ -39,6 +40,7 @@ export default function ProfileHeader({
   uploading,
   handleAvatarUpload,
   setIsStatusModalOpen,
+  setIsSubStatusModalOpen,
   setIsTemperatureModalOpen,
   handleAiAutoAdvance,
   isAiAdvancing,
@@ -80,6 +82,15 @@ export default function ProfileHeader({
           <TouchableOpacity onPress={() => setIsStatusModalOpen(true)} className={`px-2 py-0.5 rounded-md border ${getStatusColor(lead.status)}`}>
             <Text className="text-[10px] font-bold uppercase">{lead.status}</Text>
           </TouchableOpacity>
+
+          {['DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'].includes(lead.status) && (
+            <TouchableOpacity 
+              onPress={() => setIsSubStatusModalOpen(true)} 
+              className={`px-2 py-0.5 rounded-md border ${lead.subStatus === 'DONE' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}
+            >
+              <Text className="text-[10px] font-bold uppercase">{lead.subStatus || 'PENDING'}</Text>
+            </TouchableOpacity>
+          )}
 
           {isPreSales && handleAiAutoAdvance && (
             <TouchableOpacity
