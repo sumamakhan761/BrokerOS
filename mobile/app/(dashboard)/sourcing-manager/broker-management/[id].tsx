@@ -113,7 +113,8 @@ export default function SourcingManagerBrokerProfile() {
       await authClient.$fetch(`/api/brokers/${id}`, {
         baseURL: baseUrl,
         method: 'PATCH',
-        body: { status }
+        headers: { 'Content-Type': 'application/json' },
+        body: { status, subStatus: 'PENDING' }
       });
       await loadBroker();
       setIsStatusModalOpen(false);
@@ -128,6 +129,7 @@ export default function SourcingManagerBrokerProfile() {
       await authClient.$fetch(`/api/brokers/${id}`, {
         baseURL: baseUrl,
         method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: { subStatus }
       });
       await loadBroker();
@@ -389,7 +391,7 @@ export default function SourcingManagerBrokerProfile() {
         onClose={() => setIsStatusModalOpen(false)}
         currentStatus={broker.status}
         onStatusChange={handleStatusChange}
-        availableStatuses={['NEW', 'IN_PROGRESS', 'DEAL', 'LOST']}
+        availableStatuses={['NEW', 'CONTACTED', 'VISIT', 'DEAL']}
       />
 
       <StatusModal
