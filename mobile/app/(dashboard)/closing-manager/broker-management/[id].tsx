@@ -208,6 +208,7 @@ export default function CMBrokerProfileScreen() {
       type: s.type || 'Follow Up',
       scheduledDate: s.scheduledDate,
       remarks: s.remarks,
+      status: s.status,
     })),
     siteVisits: (broker.meetings || []).map((s: any) => ({
       id: s.id,
@@ -255,6 +256,7 @@ export default function CMBrokerProfileScreen() {
               onEditSiteVisit={() => {}}
               onEditFollowUp={() => {}}
               onArriveAtSiteVisit={async () => {}}
+              mode="broker"
             />
           </View>
 

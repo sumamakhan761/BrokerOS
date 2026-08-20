@@ -57,7 +57,7 @@ export class BrokerActivitiesService {
       data: {
         actualDate: new Date(),
         status: 'COMPLETED',
-        meetingNotes: `Title: ${data.title || ''}\nType: ${data.meetingType || 'OFFICE'}\nAgenda: ${data.agenda || ''}\nReaction: ${data.customerReaction || ''}\nNext Action: ${data.nextAction || ''}\nObjections: ${data.customerObjections || ''}`,
+        meetingNotes: `Title: ${data.title || ''}\nType: ${data.meetingType || 'OFFICE'}\nAgenda: ${data.agenda || ''}\nSatisfaction: ${data.satisfactionLevel || ''}\nCommission Discussed: ${data.commissionDiscussed || ''}\nNext Action: ${data.nextAction || ''}\nNotes: ${data.meetingNotes || ''}`,
       },
     });
   }

@@ -260,11 +260,21 @@ export default function SourcingManagerBrokerProfile() {
   const handleConfirmFollowUp = async (fuId: string) => {
     try {
       const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
-      await authClient.$fetch(`/api/brokers/${id}/follow-ups/${fuId}/confirm`, {
+      const { data, error } = await authClient.$fetch<{ success?: boolean; message?: string }>(`/api/brokers/${id}/follow-ups/${fuId}/confirm`, {
         baseURL: baseUrl,
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' }
       });
+
+      if (error) {
+        Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Failed to confirm follow up' });
+        return;
+      }
+      if (data && data.success === false) {
+        Toast.show({ type: 'error', text1: 'Error', text2: data.message || 'Cannot confirm follow-up.' });
+        return;
+      }
+
       Toast.show({ type: 'success', text1: 'Success', text2: 'Follow up confirmed!' });
       await loadBroker();
     } catch (e: any) {
@@ -326,6 +336,7 @@ export default function SourcingManagerBrokerProfile() {
       type: s.type || 'Follow Up',
       scheduledDate: s.scheduledDate,
       remarks: s.remarks,
+      status: s.status,
     })),
     siteVisits: (broker.meetings || []).map((s: any) => ({
       id: s.id,
@@ -378,8 +389,8 @@ export default function SourcingManagerBrokerProfile() {
           }}
         />
 
-        <BrokerInformationCard 
-          broker={broker} 
+        <BrokerInformationCard
+          broker={broker}
           isEditingBrokerInfo={isEditingBrokerInfo}
           setIsEditingBrokerInfo={setIsEditingBrokerInfo}
           brokerInfoData={brokerInfoData}
@@ -398,6 +409,7 @@ export default function SourcingManagerBrokerProfile() {
             onArriveAtSiteVisit={handleArriveAtSiteVisit}
             onCompleteSiteVisit={handleCompleteSiteVisit}
             onConfirmFollowUp={handleConfirmFollowUp}
+            mode="broker"
           />
 
           <NotesTimeline

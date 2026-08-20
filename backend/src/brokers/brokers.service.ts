@@ -115,7 +115,7 @@ export class BrokersService {
       where: whereClause,
       include: {
         notes: {
-          include: { user: { select: { name: true, image: true } } },
+          include: { user: { select: { name: true, image: true, username: true, displayUsername: true } } },
           orderBy: { createdAt: 'desc' }
         },
         followUps: {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import SiteVisitEditMode from '../misc/SiteVisitEditMode';
+import BrokerMeetingEditMode from '../../../components/brokers/misc/BrokerMeetingEditMode';
 import { LeadProfileData } from '../misc/lead-profile-types';
 
 interface SchedulesTimelineProps {
@@ -12,9 +13,10 @@ interface SchedulesTimelineProps {
   onArriveAtSiteVisit?: (siteVisitId: string) => void;
   onCompleteSiteVisit?: (siteVisitId: string, formData: any) => Promise<void>;
   onConfirmFollowUp?: (followUpId: string) => void;
+  mode?: 'lead' | 'broker';
 }
 
-export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVisit, onEditFollowUp, onArriveAtSiteVisit, onCompleteSiteVisit, onConfirmFollowUp }: SchedulesTimelineProps) {
+export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVisit, onEditFollowUp, onArriveAtSiteVisit, onCompleteSiteVisit, onConfirmFollowUp, mode = 'lead' }: SchedulesTimelineProps) {
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState<any>({
@@ -25,7 +27,9 @@ export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVis
     closingProbability: '',
     nextAction: '',
     customerObjections: '',
-    meetingNotes: ''
+    meetingNotes: '',
+    satisfactionLevel: '',
+    commissionDiscussed: ''
   });
 
   const startComplete = (sv: any) => {
@@ -37,7 +41,9 @@ export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVis
       closingProbability: sv.closingProbability || '',
       nextAction: sv.nextAction || '',
       customerObjections: sv.customerObjections || '',
-      meetingNotes: sv.meetingNotes || ''
+      meetingNotes: sv.meetingNotes || '',
+      satisfactionLevel: sv.satisfactionLevel || '',
+      commissionDiscussed: sv.commissionDiscussed || ''
     });
     setCompletingId(sv.id);
   };
@@ -168,13 +174,23 @@ export default function SchedulesTimeline({ siteVisits, followUps, onEditSiteVis
         <View className="flex-1 bg-black/50 justify-center p-4">
           <View className="bg-white rounded-2xl overflow-hidden max-h-[85%] shadow-xl">
             <View className="p-4 border-b border-gray-100 flex-row justify-between items-center">
-              <Text className="text-lg font-bold text-gray-900">Complete Site Visit</Text>
+              <Text className="text-lg font-bold text-gray-900">{mode === 'broker' ? 'Complete Meeting' : 'Complete Site Visit'}</Text>
               <TouchableOpacity onPress={() => setCompletingId(null)} className="p-1">
                 <Feather name="x" size={20} color="#64748b" />
               </TouchableOpacity>
             </View>
             <ScrollView className="px-2 pb-2">
-              {completingId && (
+              {completingId && mode === 'broker' && (
+                <BrokerMeetingEditMode
+                  svId={completingId}
+                  editForm={editForm}
+                  setEditForm={setEditForm}
+                  saving={saving}
+                  saveEdit={handleSaveComplete}
+                  onCancel={() => setCompletingId(null)}
+                />
+              )}
+              {completingId && mode === 'lead' && (
                 <SiteVisitEditMode
                   svId={completingId}
                   editForm={editForm}
