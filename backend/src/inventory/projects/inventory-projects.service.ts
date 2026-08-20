@@ -19,7 +19,7 @@ export class InventoryProjectsService {
     if (!user) throw new NotFoundException('User not found');
 
     const roleCode = user.role?.code || '';
-    const isAdminOrManager = ['ADMIN', 'SALES_MANAGER', 'PRE_SALES_MANAGER', 'DIRECTOR', 'POST_SALES'].includes(roleCode);
+    const isAdminOrManager = ['ADMIN', 'SALES_MANAGER', 'PRE_SALES_MANAGER', 'DIRECTOR', 'POST_SALES', 'POST_SALES_MANAGER'].includes(roleCode);
     const isCpRole = ['CHANNEL_PARTNER', 'SOURCING_MANAGER', 'CLOSING_MANAGER'].includes(roleCode);
 
     // If client explicitly passes isCpProject, honour it.

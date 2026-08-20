@@ -5,8 +5,20 @@ import { PrismaService } from '../../lib/database/prisma.service.js';
 export class PostSalesCommissionsService {
   constructor(private prisma: PrismaService) {}
 
-  async getInboundCommissions() {
+  async getInboundCommissions(userId: string, roleId: string) {
+    let roleCode = 'ADMIN';
+    if (roleId) {
+      const role = await this.prisma.role.findUnique({ where: { id: roleId } });
+      if (role) roleCode = role.code;
+    }
+
+    const where: any = {};
+    if (roleCode === 'POST_SALES') {
+      where.booking = { assignedPostSalesId: userId };
+    }
+
     return this.prisma.inboundCommission.findMany({
+      where,
       include: {
         unit: {
           include: {

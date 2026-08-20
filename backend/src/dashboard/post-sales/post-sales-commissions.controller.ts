@@ -6,8 +6,10 @@ export class PostSalesCommissionsController {
   constructor(private readonly commissionsService: PostSalesCommissionsService) {}
 
   @Get()
-  async getCommissions() {
-    return this.commissionsService.getInboundCommissions();
+  async getCommissions(@Req() req: any) {
+    const userId = req.user?.id;
+    const roleId = req.user?.roleId;
+    return this.commissionsService.getInboundCommissions(userId, roleId);
   }
 
   @Put(':id/receive')

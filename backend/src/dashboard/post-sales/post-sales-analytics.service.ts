@@ -33,10 +33,10 @@ export class PostSalesAnalyticsService {
     const leadWhere: any = { deletedAt: null };
     if (dateFilter) leadWhere.updatedAt = dateFilter;
     
-    if (roleCode === 'POST_SALES' && userId) {
-      leadWhere.customer = { some: { bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } } } };
+    if (roleCode === 'POST_SALES') {
+      leadWhere.customer = { bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } } };
     } else if (roleCode === 'POST_SALES_MANAGER') {
-      leadWhere.customer = { some: { bookings: { some: { source: 'DIRECT' } } } };
+      leadWhere.customer = { bookings: { some: { source: 'DIRECT' } } };
     }
 
     // 1. Funnel Data

@@ -89,6 +89,10 @@ export class LeadsQueryService {
           { assignedUserId: { in: subordinateIds } },
           { broker: { sourcingManagerId: { in: subordinateIds } } }
         ];
+      } else if (role?.code === 'POST_SALES') {
+        where.customer = { bookings: { some: { assignedPostSalesId: filters.userId, source: 'DIRECT' } } };
+      } else if (role?.code === 'POST_SALES_MANAGER') {
+        where.customer = { bookings: { some: { source: 'DIRECT' } } };
       }
     }
 
@@ -252,6 +256,10 @@ export class LeadsQueryService {
           { assignedUserId: { in: subordinateIds } },
           { broker: { sourcingManagerId: { in: subordinateIds } } }
         ];
+      } else if (role?.code === 'POST_SALES') {
+        where.customer = { bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } } };
+      } else if (role?.code === 'POST_SALES_MANAGER') {
+        where.customer = { bookings: { some: { source: 'DIRECT' } } };
       }
     }
 
