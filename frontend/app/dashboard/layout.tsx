@@ -20,6 +20,7 @@ const ROLE_COLORS: Record<string, { accent: string; bg: string }> = {
   SALES_EXECUTIVE: { accent: "#0369a1", bg: "rgba(3,105,161,0.06)" },
   SALES_MANAGER: { accent: "#0e7490", bg: "rgba(14,116,144,0.06)" },
   POST_SALES: { accent: "#15803d", bg: "rgba(21,128,61,0.06)" },
+  POST_SALES_MANAGER: { accent: "#166534", bg: "rgba(22,101,52,0.06)" },
   SOURCING_MANAGER: { accent: "#b45309", bg: "rgba(180,83,9,0.06)" },
   CLOSING_MANAGER: { accent: "#be123c", bg: "rgba(190,18,60,0.06)" },
   CHANNEL_PARTNER: { accent: "#7c3aed", bg: "rgba(124,58,237,0.06)" },
@@ -36,6 +37,7 @@ const ROLE_DISPLAY: Record<string, string> = {
   SALES_EXECUTIVE: "Sales Executive",
   SALES_MANAGER: "Sales Manager",
   POST_SALES: "Post-Sales",
+  POST_SALES_MANAGER: "Post-Sales Manager",
   SOURCING_MANAGER: "Sourcing Manager",
   CLOSING_MANAGER: "Closing Manager",
   CHANNEL_PARTNER: "Channel Partner",
@@ -129,7 +131,7 @@ export default function DashboardLayout({
   const allNavLinks = [
     { name: "Pre-Sales", href: "/dashboard/pre-sales", icon: Users, roles: ["PRE_SALES", "PRE_SALES_MANAGER", "DIRECTOR", "ADMIN"] },
     { name: "Sales", href: "/dashboard/sales", icon: Briefcase, roles: ["SALES_EXECUTIVE", "SALES_MANAGER", "DIRECTOR", "ADMIN"] },
-    { name: "Post-Sales", href: "/dashboard/post-sales", icon: Handshake, roles: ["POST_SALES", "DIRECTOR", "ADMIN"] },
+    { name: "Post-Sales", href: "/dashboard/post-sales", icon: Handshake, roles: ["POST_SALES", "POST_SALES_MANAGER", "DIRECTOR", "ADMIN"] },
     { name: "Finance", href: "/dashboard/finance", icon: DollarSign, roles: ["FINANCE", "BUSINESS_MANAGER", "DIRECTOR", "ADMIN"] },
     { name: "Business Mgr", href: "/dashboard/business-manager", icon: Building2, roles: ["BUSINESS_MANAGER", "DIRECTOR", "ADMIN"] },
     { name: "Director", href: "/dashboard/director", icon: ShieldCheck, roles: ["DIRECTOR", "ADMIN"] },
@@ -188,6 +190,16 @@ export default function DashboardLayout({
       { name: "Handover", href: "/dashboard/post-sales/handover", icon: Handshake, roles: ["POST_SALES"] },
       { name: "Analytics", href: "/dashboard/post-sales/analytics", icon: BarChart2, roles: ["POST_SALES"] },
       { name: "Settings", href: "/dashboard/post-sales/settings", icon: Settings, roles: ["POST_SALES"] },
+    ];
+  } else if (userRole === "POST_SALES_MANAGER") {
+    navLinks = [
+      { name: "Overview", href: "/dashboard/post-sales-manager", icon: LayoutDashboard, roles: ["POST_SALES_MANAGER"] },
+      { name: "Employees", href: "/dashboard/post-sales-manager/employees", icon: Users, roles: ["POST_SALES_MANAGER"] },
+      { name: "Lead Management", href: "/dashboard/post-sales-manager/lead-management", icon: List, roles: ["POST_SALES_MANAGER"] },
+      { name: "Commissions", href: "/dashboard/post-sales-manager/commissions", icon: Handshake, roles: ["POST_SALES_MANAGER"] },
+      { name: "Handover", href: "/dashboard/post-sales-manager/handover", icon: Handshake, roles: ["POST_SALES_MANAGER"] },
+      { name: "Analytics", href: "/dashboard/post-sales-manager/analytics", icon: BarChart2, roles: ["POST_SALES_MANAGER"] },
+      { name: "Settings", href: "/dashboard/post-sales-manager/settings", icon: Settings, roles: ["POST_SALES_MANAGER"] },
     ];
   } else if (userRole === "SOURCING_MANAGER") {
     navLinks = [
