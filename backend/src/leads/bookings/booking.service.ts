@@ -23,6 +23,10 @@ export class BookingService {
     return this.bookingCreation.createBooking(leadId, data);
   }
 
+  async updateBooking(bookingId: string, data: any) {
+    return this.bookingCreation.updateBooking(bookingId, data);
+  }
+
   async markBookingDone(bookingId: string) {
     return this.bookingStatus.markBookingDone(bookingId);
   }

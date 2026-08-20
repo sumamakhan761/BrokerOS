@@ -36,16 +36,24 @@ interface BookingCardProps {
 
 export function BookingCard({ booking, leadId, userId, onRefresh, lead }: BookingCardProps) {
   const [showForm, setShowForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
-  if (!booking) {
+  if (!booking || isEditing) {
     return (
       <BookingForm
         leadId={leadId}
         userId={userId}
-        showForm={showForm}
-        setShowForm={setShowForm}
-        onRefresh={onRefresh}
+        showForm={showForm || isEditing}
+        setShowForm={(val) => {
+          setShowForm(val);
+          if (!val) setIsEditing(false);
+        }}
+        onRefresh={() => {
+          setIsEditing(false);
+          onRefresh();
+        }}
         lead={lead}
+        booking={isEditing ? booking : undefined}
       />
     );
   }
@@ -55,6 +63,7 @@ export function BookingCard({ booking, leadId, userId, onRefresh, lead }: Bookin
       booking={booking}
       leadId={leadId}
       onRefresh={onRefresh}
+      onEdit={() => setIsEditing(true)}
     />
   );
 }

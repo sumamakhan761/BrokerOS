@@ -7,7 +7,8 @@ export function useBookingForm(
   showForm: boolean,
   setShowForm: (show: boolean) => void,
   onRefresh: () => void,
-  lead?: any
+  lead?: any,
+  booking?: any
 ) {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -22,6 +23,8 @@ export function useBookingForm(
     remarks: '',
   });
 
+  const [hasInitializedFromBooking, setHasInitializedFromBooking] = useState(false);
+
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
 
@@ -34,15 +37,33 @@ export function useBookingForm(
   const [units, setUnits] = useState<any[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState(lead?.interestedUnitId || '');
 
-  // Pre-fill from lead
+  // Pre-fill from lead or booking
   useEffect(() => {
-    if (showForm && lead) {
+    if (showForm && booking && !hasInitializedFromBooking) {
+      if (booking.unit?.floor?.tower?.projectId) setSelectedProjectId(booking.unit.floor.tower.projectId);
+      if (booking.unit?.floor?.towerId) setSelectedTowerId(booking.unit.floor.towerId);
+      if (booking.unit?.floorId) setSelectedFloorId(booking.unit.floorId);
+      if (booking.unitId) setSelectedUnitId(booking.unitId);
+      
+      setForm({
+        unitDescription: booking.unitDescription || '',
+        agreedPrice: booking.agreedPrice ? String(booking.agreedPrice) : '',
+        bookingAmount: booking.tokenAmount ? String(booking.tokenAmount) : '',
+        commissionPercentage: booking.commissionPercentage ? String(booking.commissionPercentage) : '',
+        commissionAmount: booking.commissionAmount ? String(booking.commissionAmount) : '',
+        paymentMode: booking.paymentMode || '', // NOTE: paymentMode and others might need to be extracted from notes in backend or just left blank if not available directly on booking record unless we pass it down.
+        transactionRef: booking.transactionRef || '',
+        loanRequired: false,
+        remarks: booking.cancelReason || '',
+      });
+      setHasInitializedFromBooking(true);
+    } else if (showForm && lead && !booking) {
       if (lead.interestedProjectId) setSelectedProjectId(lead.interestedProjectId);
       if (lead.interestedTowerId) setSelectedTowerId(lead.interestedTowerId);
       if (lead.interestedUnit?.floorId) setSelectedFloorId(lead.interestedUnit.floorId);
       if (lead.interestedUnitId) setSelectedUnitId(lead.interestedUnitId);
     }
-  }, [showForm, lead]);
+  }, [showForm, lead, booking, hasInitializedFromBooking]);
 
   // Fetch Projects on Mount (when form opens)
   useEffect(() => {
@@ -159,24 +180,34 @@ export function useBookingForm(
     setSaving(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
-      await authClient.$fetch(`/api/leads/${leadId}/booking`, {
+      const url = booking ? `/api/leads/${leadId}/booking` : `/api/leads/${leadId}/booking`;
+      const method = booking ? 'PATCH' : 'POST';
+      
+      const payload: any = {
+        userId,
+        unitId: selectedUnitId, // Pass unitId to backend for unit status linking
+        unitDescription: form.unitDescription,
+        agreedPrice: form.agreedPrice ? Number(form.agreedPrice) : undefined,
+        bookingAmount: form.bookingAmount ? Number(form.bookingAmount) : undefined,
+        commissionPercentage: form.commissionPercentage ? Number(form.commissionPercentage) : undefined,
+        commissionAmount: form.commissionAmount ? Number(form.commissionAmount) : undefined,
+        paymentMode: form.paymentMode,
+        transactionRef: form.transactionRef,
+        loanRequired: form.loanRequired,
+        remarks: form.remarks,
+      };
+
+      if (booking) {
+        payload.bookingId = booking.id;
+      }
+
+      await authClient.$fetch(url, {
         baseURL: apiUrl,
-        method: 'POST',
-        body: {
-          userId,
-          unitId: selectedUnitId, // Pass unitId to backend for unit status linking
-          unitDescription: form.unitDescription,
-          agreedPrice: form.agreedPrice ? Number(form.agreedPrice) : undefined,
-          bookingAmount: form.bookingAmount ? Number(form.bookingAmount) : undefined,
-          commissionPercentage: form.commissionPercentage ? Number(form.commissionPercentage) : undefined,
-          commissionAmount: form.commissionAmount ? Number(form.commissionAmount) : undefined,
-          paymentMode: form.paymentMode,
-          transactionRef: form.transactionRef,
-          loanRequired: form.loanRequired,
-          remarks: form.remarks,
-        },
+        method: method,
+        body: payload,
       });
       setShowForm(false);
+      setHasInitializedFromBooking(false);
       onRefresh();
     } finally {
       setSaving(false);
