@@ -56,10 +56,29 @@ All users have the exact same password: **Demo@1234**
 - **Phone:** 9800000008
 - **Password:** Demo@1234
 
-### Post-Sales
-- **Role:** Post-Sales
-- **Email:** postsales@demo.com
+### Post-Sales Manager
+- **Role:** Post-Sales Manager
+- **Email:** postsalesmanager@demo.com
 - **Phone:** 9800000009
+- **Password:** Demo@1234
+
+### Post-Sales Agents
+**User 1:**
+- **Role:** Post-Sales
+- **Email:** postsales1@demo.com
+- **Phone:** 9800000021
+- **Password:** Demo@1234
+
+**User 2:**
+- **Role:** Post-Sales
+- **Email:** postsales2@demo.com
+- **Phone:** 9800000022
+- **Password:** Demo@1234
+
+**User 3:**
+- **Role:** Post-Sales
+- **Email:** postsales3@demo.com
+- **Phone:** 9800000023
 - **Password:** Demo@1234
 
 ### Finance
