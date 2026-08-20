@@ -90,4 +90,23 @@ export class BrokersController {
   ) {
     return this.activitiesService.arriveAtMeeting(id, meetingId, req.user.id, locationData);
   }
+
+  @Patch(':id/meetings/:meetingId/complete')
+  completeMeeting(
+    @Param('id') id: string,
+    @Param('meetingId') meetingId: string,
+    @Req() req: any,
+    @Body() data: any
+  ) {
+    return this.activitiesService.completeMeeting(id, meetingId, req.user.id, data);
+  }
+
+  @Patch(':id/follow-ups/:followUpId/confirm')
+  confirmFollowUp(
+    @Param('id') id: string,
+    @Param('followUpId') followUpId: string,
+    @Req() req: any
+  ) {
+    return this.activitiesService.confirmFollowUp(id, followUpId, req.user.id);
+  }
 }

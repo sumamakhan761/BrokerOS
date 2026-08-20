@@ -50,4 +50,24 @@ export class BrokerActivitiesService {
       },
     });
   }
+
+  async completeMeeting(brokerId: string, meetingId: string, userId: string, data: any) {
+    return this.prisma.brokerMeeting.update({
+      where: { id: meetingId },
+      data: {
+        actualDate: new Date(),
+        status: 'COMPLETED',
+        meetingNotes: `Title: ${data.title || ''}\nType: ${data.meetingType || 'OFFICE'}\nAgenda: ${data.agenda || ''}\nReaction: ${data.customerReaction || ''}\nNext Action: ${data.nextAction || ''}\nObjections: ${data.customerObjections || ''}`,
+      },
+    });
+  }
+
+  async confirmFollowUp(brokerId: string, followUpId: string, userId: string) {
+    return this.prisma.followUp.update({
+      where: { id: followUpId },
+      data: {
+        status: 'COMPLETED'
+      },
+    });
+  }
 }

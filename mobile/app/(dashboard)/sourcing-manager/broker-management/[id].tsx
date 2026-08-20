@@ -42,6 +42,9 @@ export default function SourcingManagerBrokerProfile() {
   const [followUpData, setFollowUpData] = useState({ title: '', description: '', date: '' });
   const [siteVisitData, setSiteVisitData] = useState<{ projectId: string; description: string; date: string; destinationUrl?: string }>({ projectId: '', description: '', date: '', destinationUrl: '' });
 
+  const [isEditingBrokerInfo, setIsEditingBrokerInfo] = useState(false);
+  const [brokerInfoData, setBrokerInfoData] = useState<any>({});
+
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
@@ -103,6 +106,23 @@ export default function SourcingManagerBrokerProfile() {
       setIsNoteModalOpen(false);
     } catch (e: any) {
       Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to save note' });
+    }
+  };
+
+  const handleBrokerInfoSave = async () => {
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
+      await authClient.$fetch(`/api/brokers/${id}`, {
+        baseURL: baseUrl,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: brokerInfoData
+      });
+      await loadBroker();
+      setIsEditingBrokerInfo(false);
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Broker information updated' });
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to update broker info' });
     }
   };
 
@@ -221,6 +241,37 @@ export default function SourcingManagerBrokerProfile() {
     }
   };
 
+  const handleCompleteSiteVisit = async (svId: string, formData: any) => {
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
+      await authClient.$fetch(`/api/brokers/${id}/meetings/${svId}/complete`, {
+        baseURL: baseUrl,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: formData
+      });
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Meeting completed!' });
+      await loadBroker();
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to complete meeting' });
+    }
+  };
+
+  const handleConfirmFollowUp = async (fuId: string) => {
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
+      await authClient.$fetch(`/api/brokers/${id}/follow-ups/${fuId}/confirm`, {
+        baseURL: baseUrl,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Follow up confirmed!' });
+      await loadBroker();
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to confirm follow up' });
+    }
+  };
+
   const handleEditFollowUp = (fu: any) => {
     setFollowUpData({
       title: fu.type || '',
@@ -287,6 +338,7 @@ export default function SourcingManagerBrokerProfile() {
       arrivedAt: s.arrivedAt,
       arriveLatitude: s.arriveLatitude,
       arriveLongitude: s.arriveLongitude,
+      completedAt: s.actualDate,
     })),
     callRecords: (broker.calls || []).map((c: any) => ({
       id: c.id,
@@ -326,7 +378,15 @@ export default function SourcingManagerBrokerProfile() {
           }}
         />
 
-        <BrokerInformationCard broker={broker} />
+        <BrokerInformationCard 
+          broker={broker} 
+          isEditingBrokerInfo={isEditingBrokerInfo}
+          setIsEditingBrokerInfo={setIsEditingBrokerInfo}
+          brokerInfoData={brokerInfoData}
+          setBrokerInfoData={setBrokerInfoData}
+          handleBrokerInfoSave={handleBrokerInfoSave}
+          canEdit={true}
+        />
         <BrokerDealSection broker={broker} onRefresh={loadBroker} />
 
         <View className="mt-6 space-y-6">
@@ -336,6 +396,8 @@ export default function SourcingManagerBrokerProfile() {
             onEditSiteVisit={handleEditSiteVisit}
             onEditFollowUp={handleEditFollowUp}
             onArriveAtSiteVisit={handleArriveAtSiteVisit}
+            onCompleteSiteVisit={handleCompleteSiteVisit}
+            onConfirmFollowUp={handleConfirmFollowUp}
           />
 
           <NotesTimeline
