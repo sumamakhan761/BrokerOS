@@ -11,6 +11,7 @@ const roleToRouteMap: Record<string, string> = {
   'SALES_EXECUTIVE': '/dashboard/sales-executive',
   'SALES_MANAGER': '/dashboard/sales-manager',
   'POST_SALES': '/dashboard/post-sales',
+  'POST_SALES_MANAGER': '/dashboard/post-sales-manager',
   'FINANCE': '/dashboard/finance',
   'BUSINESS_MANAGER': '/dashboard/business-manager',
   'DIRECTOR': '/dashboard/director',
