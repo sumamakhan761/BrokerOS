@@ -11,6 +11,7 @@ import { PostSalesDashboardService } from '../post-sales/post-sales-dashboard.se
 import { PostSalesAnalyticsService } from '../post-sales/post-sales-analytics.service.js';
 import { SourcingManagerDashboardService } from '../sourcing-manager/sourcing-manager-dashboard.service.js';
 import { ClosingManagerDashboardService } from '../closing-manager/closing-manager-dashboard.service.js';
+
 // ─── Pre-Sales Agent Dashboard ────────────────────────────────────────────────
 
 @Controller('api/dashboard/pre-sales')
@@ -397,5 +398,75 @@ export class ChannelPartnerEmployeesController {
   @Get(':employeeId/closing/dashboard')
   async getClosingEmployeeDashboard(@Param('employeeId') employeeId: string, @Req() req: any) {
     return this.closingDashboardService.getDashboard(employeeId);
+  }
+}
+
+// --- Post-Sales Manager Employees -----------------------------------------------
+
+@Controller('api/dashboard/post-sales-manager/employees')
+export class PostSalesManagerEmployeesController {
+  constructor(
+    private readonly employeesService: EmployeesService,
+    private readonly postSalesDashboard: PostSalesDashboardService,
+    private readonly postSalesAnalytics: PostSalesAnalyticsService,
+  ) { }
+
+  /** Employee cards grid with this-month stats */
+  @Get()
+  getEmployeeCards(@Req() req: any) {
+    return this.employeesService.getPostSalesManagerEmployeeCards(req.user?.id);
+  }
+
+  // ── View-As ──
+
+  /** Manager views a specific employee's full post-sales dashboard data */
+  @Get(':employeeId/dashboard')
+  async getEmployeeDashboard(@Param('employeeId') employeeId: string, @Req() req: any) {
+    // Validate manager-employee relationship first
+    await this.employeesService.getPostSalesEmployeeDashboardData(req.user?.id, employeeId);
+    // Return the actual post-sales dashboard data scoped to the employee
+    return this.postSalesDashboard.getPostSalesDashboard(employeeId);
+  }
+
+  /** Manager views a specific employee's analytics data */
+  @Get(':employeeId/analytics')
+  async getEmployeeAnalytics(@Param('employeeId') employeeId: string, @Req() req: any, @Query('timeRange') timeRange?: string) {
+    // Validate manager-employee relationship first
+    await this.employeesService.getPostSalesEmployeeDashboardData(req.user?.id, employeeId);
+    // Return analytics for the specific employee (no roleId override needed, it falls back to employee role)
+    return this.postSalesAnalytics.getPostSalesAnalytics(employeeId, timeRange);
+  }
+
+  // ── Announcements ──
+
+  /** List all announcements created by this manager */
+  @Get('announcements')
+  getAnnouncements(@Req() req: any) {
+    return this.employeesService.getManagerAnnouncements(req.user?.id);
+  }
+
+  /** Create a new announcement */
+  @Post('announcements')
+  createAnnouncement(
+    @Req() req: any,
+    @Body() body: { title: string; description: string },
+  ) {
+    return this.employeesService.createAnnouncement(req.user?.id, body);
+  }
+
+  /** Update an existing announcement */
+  @Patch('announcements/:id')
+  updateAnnouncement(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Body() body: { title?: string; description?: string },
+  ) {
+    return this.employeesService.updateAnnouncement(id, req.user?.id, body);
+  }
+
+  /** Soft-delete an announcement (immediately hidden from employees) */
+  @Delete('announcements/:id')
+  deleteAnnouncement(@Param('id') id: string, @Req() req: any) {
+    return this.employeesService.deleteAnnouncement(id, req.user?.id);
   }
 }

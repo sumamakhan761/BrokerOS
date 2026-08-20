@@ -26,6 +26,7 @@ import {
   EmployeesController,
   SalesManagerEmployeesController,
   ChannelPartnerEmployeesController,
+  PostSalesManagerEmployeesController,
 } from './core/dashboard.controller.js';
 
 @Module({
@@ -51,6 +52,7 @@ import {
     EmployeesController,
     SalesManagerEmployeesController,
     ChannelPartnerEmployeesController,
+    PostSalesManagerEmployeesController,
   ],
   providers: [
     DashboardService,

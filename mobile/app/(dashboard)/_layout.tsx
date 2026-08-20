@@ -286,6 +286,8 @@ export default function DashboardLayout() {
     { name: "post-sales/analytics", title: "Analytics", icon: "pie-chart", roles: ['POST_SALES'] },
     { name: "post-sales/settings", title: "Settings", icon: "settings", roles: ['POST_SALES'] },
     { name: "post-sales-manager/index", title: "Overview", icon: "layout", roles: ['POST_SALES_MANAGER'] },
+    { name: "post-sales-manager/employees/index", title: "Employees", icon: "users", roles: ['POST_SALES_MANAGER'] },
+    { name: "post-sales-manager/employees/[employeeId]", title: "Employee Details", icon: "user", roles: ['POST_SALES_MANAGER'] },
     { name: "post-sales-manager/lead-management", title: "Leads", icon: "list", roles: ['POST_SALES_MANAGER'] },
     { name: "post-sales-manager/inventory/index", title: "Inventory", icon: "package", roles: ['POST_SALES_MANAGER'] },
     { name: "post-sales-manager/inventory/[projectId]", title: "Project Details", icon: "package", roles: ['POST_SALES_MANAGER'] },
@@ -378,6 +380,7 @@ export default function DashboardLayout() {
   } else if (userRole === 'POST_SALES_MANAGER') {
     navLinks = [
       { name: "post-sales-manager/index", title: "Overview", icon: "layout", roles: ['POST_SALES_MANAGER'] },
+      { name: "post-sales-manager/employees/index", title: "Employees", icon: "users", roles: ['POST_SALES_MANAGER'] },
       { name: "post-sales-manager/lead-management", title: "Leads", icon: "list", roles: ['POST_SALES_MANAGER'] },
       { name: "post-sales-manager/inventory/index", title: "Inventory", icon: "package", roles: ['POST_SALES_MANAGER'] },
       { name: "post-sales-manager/handover", title: "Handover", icon: "clipboard", roles: ['POST_SALES_MANAGER'] },

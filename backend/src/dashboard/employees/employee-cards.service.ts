@@ -142,6 +142,71 @@ export class EmployeeCardsService {
     return { employeeId };
   }
 
+  // ─── Post-Sales Manager ───────────────────────────────────────────────────
+
+  /**
+   * Returns a grid of cards for each subordinate of the given post-sales manager,
+   * with this-month activity stats (total bookings, pending docs, loan cases).
+   */
+  async getPostSalesManagerEmployeeCards(managerId: string) {
+    const { start: monthStart, end: monthEnd } = getMonthRange();
+
+    const subordinates = await this.prisma.user.findMany({
+      where: { managerId, status: 'ACTIVE', deletedAt: null },
+      select: { id: true, name: true, username: true, image: true, employeeCode: true, isOnCall: true },
+    });
+
+    const cards = await Promise.all(
+      subordinates.map(async (sub) => {
+        const [totalBookings, pendingDocs, loanCases] = await Promise.all([
+          // Total bookings confirmed this month
+          this.prisma.booking.count({
+            where: {
+              assignedPostSalesId: sub.id,
+              status: 'CONFIRMED',
+              bookingDate: { gte: monthStart, lte: monthEnd },
+            },
+          }),
+          // Pending documents (DOCUMENT status)
+          this.prisma.lead.count({
+            where: {
+              customer: { bookings: { some: { assignedPostSalesId: sub.id } } },
+              status: 'DOCUMENT',
+            },
+          }),
+          // Active loan cases this month
+          this.prisma.loanCase.count({
+            where: {
+              booking: { assignedPostSalesId: sub.id },
+              applicationDate: { gte: monthStart, lte: monthEnd },
+            },
+          }),
+        ]);
+
+        return {
+          id: sub.id,
+          name: sub.name,
+          username: sub.username,
+          image: sub.image,
+          employeeCode: sub.employeeCode,
+          isOnCall: sub.isOnCall,
+          stats: { totalBookings, pendingDocs, loanCases },
+        };
+      }),
+    );
+
+    return cards;
+  }
+
+  /**
+   * Returns the full post-sales dashboard data for a specific employee,
+   * but only if that employee reports to the requesting manager.
+   */
+  async getPostSalesEmployeeDashboardData(managerId: string, employeeId: string) {
+    await this.validateManagerEmployeeRelation(managerId, employeeId);
+    return { employeeId };
+  }
+
   /**
    * Returns a grid of cards for each Sourcing Manager reporting to the Channel Partner.
    * Includes total brokers, completed site visits (meetings), and completed follow-ups for this month.

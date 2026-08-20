@@ -29,6 +29,14 @@ export class EmployeesService {
     return this.employeeCards.getSalesEmployeeDashboardData(managerId, employeeId);
   }
 
+  async getPostSalesManagerEmployeeCards(managerId: string) {
+    return this.employeeCards.getPostSalesManagerEmployeeCards(managerId);
+  }
+
+  async getPostSalesEmployeeDashboardData(managerId: string, employeeId: string) {
+    return this.employeeCards.getPostSalesEmployeeDashboardData(managerId, employeeId);
+  }
+
   async getCPSourcingManagerCards(managerId: string) {
     return this.employeeCards.getCPSourcingManagerCards(managerId);
   }
