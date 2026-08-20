@@ -1,9 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
+import { NotificationType } from '../../generated/prisma/client.js';
 
 @Injectable()
 export class BookingStatusService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService
+  ) {}
 
   async markBookingDone(bookingId: string) {
     const booking = await this.prisma.booking.findUnique({ 
@@ -46,6 +51,17 @@ export class BookingStatusService {
         ...(assignedPostSalesId ? { assignedPostSalesId } : {})
       }
     });
+
+    if (assignedPostSalesId && (!booking.assignedPostSalesId || booking.assignedPostSalesId !== assignedPostSalesId)) {
+      await this.notificationsService.createNotification({
+        userId: assignedPostSalesId,
+        type: NotificationType.LEAD_ASSIGNED, // Or a generic type for assignment
+        title: 'New Booking Assigned 📋',
+        body: `A new confirmed booking has been assigned to you for post-sales processing.`,
+        actionUrl: `/dashboard/post-sales/inventory`,
+        metadata: { bookingId }
+      });
+    }
 
     // Also update lead status to BOOKING
     const customer = await this.prisma.customer.findUnique({ where: { id: booking.customerId } });
