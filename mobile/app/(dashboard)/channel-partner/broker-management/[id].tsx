@@ -14,6 +14,7 @@ import HistoryTimeline from '@/components/leads/timeline/HistoryTimeline';
 import NoteModal from '@/components/leads/modals/NoteModal';
 import FollowUpModal from '@/components/leads/modals/FollowUpModal';
 import SiteVisitModal from '@/components/leads/modals/SiteVisitModal';
+import StatusModal from '@/components/leads/modals/StatusModal';
 
 export default function CPBrokerProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -25,6 +26,8 @@ export default function CPBrokerProfileScreen() {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isSiteVisitModalOpen, setIsSiteVisitModalOpen] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isSubStatusModalOpen, setIsSubStatusModalOpen] = useState(false);
 
   // Forms state
   const [newNoteContent, setNewNoteContent] = useState('');
@@ -63,6 +66,36 @@ export default function CPBrokerProfileScreen() {
       loadBroker();
     }
   }, [id]);
+
+  const handleStatusChange = async (status: string) => {
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL || '';
+      await authClient.$fetch(`${baseUrl}/api/brokers/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: { status, subStatus: 'PENDING' }
+      });
+      await loadBroker();
+      setIsStatusModalOpen(false);
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to update status' });
+    }
+  };
+
+  const handleSubStatusChange = async (subStatus: string) => {
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL || '';
+      await authClient.$fetch(`${baseUrl}/api/brokers/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: { subStatus }
+      });
+      await loadBroker();
+      setIsSubStatusModalOpen(false);
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: e.message || 'Failed to update sub-status' });
+    }
+  };
 
   // Notes API
   const saveNote = async () => {
@@ -187,7 +220,11 @@ export default function CPBrokerProfileScreen() {
   return (
     <View className="flex-1 bg-slate-50">
       <ScrollView className="flex-1 bg-slate-50" contentContainerStyle={{ paddingBottom: 60 }}>
-        <BrokerHeader broker={broker} />
+        <BrokerHeader 
+          broker={broker} 
+          setIsStatusModalOpen={setIsStatusModalOpen}
+          setIsSubStatusModalOpen={setIsSubStatusModalOpen}
+        />
         
         <View className="px-4">
           <BrokerActionButtons 
@@ -256,6 +293,22 @@ export default function CPBrokerProfileScreen() {
         saveSiteVisit={saveSiteVisit}
         availableProjects={availableProjects}
         isEditing={false}
+      />
+
+      <StatusModal
+        isVisible={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        currentStatus={broker?.status || ''}
+        onStatusChange={handleStatusChange}
+        availableStatuses={['NEW', 'CONTACTED', 'VISIT', 'DEAL']}
+      />
+
+      <StatusModal
+        isVisible={isSubStatusModalOpen}
+        onClose={() => setIsSubStatusModalOpen(false)}
+        currentStatus={broker?.subStatus || ''}
+        onStatusChange={handleSubStatusChange}
+        availableStatuses={['PENDING', 'FOLLOW_UP_SCHEDULED', 'MEETING_SCHEDULED', 'NEGOTIATION', 'FINALIZED']}
       />
     </View>
   );

@@ -525,7 +525,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
         Toast.show({ type: 'error', text1: 'Error', text2: error.message || 'Cannot confirm follow-up.' });
         return;
       }
-      
+
       if (data && data.success === false) {
         Toast.show({ type: 'error', text1: 'Error', text2: data.message || 'Cannot confirm follow-up.' });
         return;
