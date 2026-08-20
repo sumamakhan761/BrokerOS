@@ -17,6 +17,7 @@ export default function SignIn() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { refetch } = authClient.useSession();
 
   useEffect(() => {
     async function fetchRoles() {
@@ -52,8 +53,10 @@ export default function SignIn() {
         setError(authError.message || "Invalid credentials.");
         setLoading(false);
       } else if (data) {
-        // State-driven navigation will take over, redirecting to dashboard.
-        // Keep loading=true so the spinner shows until the layout switches.
+        // Explicitly fetch the session so the layout doesn't bounce us back
+        await refetch();
+        // Explicitly navigate to the dashboard.
+        router.replace('/(dashboard)' as any);
       }
     } catch (err: any) {
       setError(err?.message || "An unexpected error occurred.");
