@@ -1,13 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../lib/database/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { BookingStatusService } from '../leads/bookings/booking-status.service.js';
 import { NotificationType, ApprovalType } from '../generated/prisma/client.js';
 
 @Injectable()
 export class ApprovalsService {
   constructor(
     private prisma: PrismaService,
-    private notificationsService: NotificationsService
+    private notificationsService: NotificationsService,
+    private bookingStatusService: BookingStatusService
   ) { }
 
   async createRequest(salesExecId: string, title: string, description: string, fileUrl?: string, type: ApprovalType = 'DISCOUNT', bookingId?: string) {
@@ -217,10 +219,7 @@ Remarks: System generated booking request.`;
     });
 
     if (newStatus === 'APPROVED' && request.type === 'BOOKING' && request.bookingId) {
-      await this.prisma.booking.update({
-        where: { id: request.bookingId },
-        data: { status: 'CONFIRMED' }
-      });
+      await this.bookingStatusService.markBookingDone(request.bookingId);
       // Trigger Congratulatory Notification
       await this.notificationsService.createNotification({
         userId: request.salesExecId,

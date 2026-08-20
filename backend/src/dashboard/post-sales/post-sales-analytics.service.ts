@@ -67,9 +67,17 @@ export class PostSalesAnalyticsService {
       where: { ...leadWhere, status: 'HANDOVER', subStatus: 'DONE' },
     });
 
+    const bookingWhere: any = { status: 'CONFIRMED', ...(dateFilter && { bookingDate: dateFilter }) };
+    if (roleCode === 'POST_SALES') {
+      bookingWhere.assignedPostSalesId = userId;
+      bookingWhere.source = 'DIRECT';
+    } else if (roleCode === 'POST_SALES_MANAGER') {
+      bookingWhere.source = 'DIRECT';
+    }
+
     // Fetch confirmed bookings for revenue & commission
     const confirmedBookings = await this.prisma.booking.findMany({
-      where: { status: 'CONFIRMED', ...(dateFilter && { bookingDate: dateFilter }) },
+      where: bookingWhere,
       select: { agreedPrice: true, commissionAmount: true },
     });
 
@@ -93,7 +101,11 @@ export class PostSalesAnalyticsService {
     // 3. Velocity Data
     // Find bookings that have reached 'HANDOVER' status 'DONE' or have actualDate in PossessionHandover
     const possessions = await this.prisma.possessionHandover.findMany({
-      where: { status: 'HANDED_OVER', actualDate: dateFilter ? { not: null, gte: startDate } : { not: null } },
+      where: { 
+        status: 'HANDED_OVER', 
+        actualDate: dateFilter ? { not: null, gte: startDate } : { not: null },
+        booking: bookingWhere
+      },
       include: { booking: true },
     });
 
@@ -116,7 +128,11 @@ export class PostSalesAnalyticsService {
     const loanApproved = funnel.agreement + funnel.handover;
     const loanInProgress = funnel.loan;
     const loanRejectedCount = await this.prisma.loanCase.count({
-      where: { status: 'REJECTED', ...(dateFilter && { updatedAt: dateFilter }) },
+      where: { 
+        status: 'REJECTED', 
+        ...(dateFilter && { updatedAt: dateFilter }),
+        booking: bookingWhere
+      },
     });
 
     const loanSuccessRate = {
@@ -128,7 +144,10 @@ export class PostSalesAnalyticsService {
     // 5. Handover Readiness
     const possessionStats = await this.prisma.possessionHandover.groupBy({
       by: ['status'],
-      where: dateFilter ? { updatedAt: dateFilter } : undefined,
+      where: {
+        ...(dateFilter && { updatedAt: dateFilter }),
+        booking: bookingWhere
+      },
       _count: { _all: true },
     });
 
@@ -197,7 +216,13 @@ export class PostSalesAnalyticsService {
     // 7. Follow-up Efficiency
     const followUps = await this.prisma.followUp.groupBy({
       by: ['status'],
-      where: { lead: { status: { in: ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'] } }, ...(dateFilter && { updatedAt: dateFilter }) },
+      where: { 
+        lead: { 
+          status: { in: ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'] },
+          ...leadWhere
+        }, 
+        ...(dateFilter && { updatedAt: dateFilter }) 
+      },
       _count: { _all: true },
     });
 
