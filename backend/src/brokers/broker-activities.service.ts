@@ -63,11 +63,35 @@ export class BrokerActivitiesService {
   }
 
   async confirmFollowUp(brokerId: string, followUpId: string, userId: string) {
-    return this.prisma.followUp.update({
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const callRecordToday = await this.prisma.callRecord.findFirst({
+      where: {
+        userId,
+        brokerId,
+        startedAt: { gte: start, lte: end },
+      },
+      select: { id: true },
+    });
+
+    if (!callRecordToday) {
+      return {
+        success: false,
+        message: 'No call record found for today. You must call the broker before confirming the follow-up.',
+      };
+    }
+
+    await this.prisma.followUp.update({
       where: { id: followUpId },
       data: {
-        status: 'COMPLETED'
+        status: 'COMPLETED',
+        completedAt: new Date()
       },
     });
+
+    return { success: true, message: 'Follow-up confirmed successfully' };
   }
 }
