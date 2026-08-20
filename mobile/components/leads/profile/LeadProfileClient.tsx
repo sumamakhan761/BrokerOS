@@ -42,6 +42,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
 
   // Modals state
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isSubStatusModalOpen, setIsSubStatusModalOpen] = useState(false);
   const [isTemperatureModalOpen, setIsTemperatureModalOpen] = useState(false);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
@@ -253,13 +254,13 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
   const handleStatusChange = async (newStatus: string) => {
     try {
       const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
-      const { error } = await authClient.$fetch(`${baseURL}/api/leads/${leadId}`, {
+      const { error } = await authClient.$fetch(`${baseURL}/api/leads/${leadId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: { status: newStatus },
+        body: { status: newStatus, subStatus: 'PENDING' },
       });
       if (!error && lead) {
-        setLead({ ...lead, status: newStatus });
+        setLead({ ...lead, status: newStatus, subStatus: 'PENDING' });
         if (isPostSales) {
           fetchLead(); // Refresh for subStatus changes if needed
         }
@@ -268,6 +269,27 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
       console.error(e);
     } finally {
       setIsStatusModalOpen(false);
+    }
+  };
+
+  const handleSubStatusChange = async (newSubStatus: string) => {
+    try {
+      const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
+      const { error } = await authClient.$fetch(`${baseURL}/api/leads/${leadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: { subStatus: newSubStatus },
+      });
+      if (!error && lead) {
+        setLead({ ...lead, subStatus: newSubStatus });
+        if (isPostSales) {
+          fetchLead(); // Refresh full state if needed
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSubStatusModalOpen(false);
     }
   };
 
@@ -538,6 +560,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
         uploading={uploading}
         handleAvatarUpload={handleAvatarUpload}
         setIsStatusModalOpen={setIsStatusModalOpen}
+        setIsSubStatusModalOpen={setIsSubStatusModalOpen}
         setIsTemperatureModalOpen={setIsTemperatureModalOpen}
         handleAiAutoAdvance={handleAiAutoAdvance}
         isAiAdvancing={isAiAdvancing}
@@ -639,6 +662,14 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
         currentStatus={lead.status}
         onStatusChange={handleStatusChange}
         availableStatuses={getAvailableStatusesForRole(role)}
+      />
+
+      <StatusModal
+        isVisible={isSubStatusModalOpen}
+        onClose={() => setIsSubStatusModalOpen(false)}
+        currentStatus={lead.subStatus || 'PENDING'}
+        onStatusChange={handleSubStatusChange}
+        availableStatuses={['PENDING', 'DONE']}
       />
 
       <TemperatureModal
