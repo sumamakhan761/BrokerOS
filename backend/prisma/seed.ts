@@ -7,10 +7,10 @@ import { auth } from '../src/lib/auth.js';
 //
 // Creates a fully functional demo environment:
 //
-// 👥 Users (20 total) — All password: Demo@1234
+// 👥 Users (23 total) — All password: Demo@1234
 //    Brokerage: Pre-Sales Manager, 3× Pre-Sales, Sales Manager,
-//               3× Sales Exec, Post-Sales, Finance, Business Manager,
-//               Director, Admin
+//               3× Sales Exec, Post-Sales Manager, 3× Post-Sales,
+//               Finance, Business Manager, Director, Admin
 //    CP World:  Channel Partner, 3× Sourcing Manager, 3× Closing Manager
 //
 // 🏗️  Projects
@@ -19,15 +19,18 @@ import { auth } from '../src/lib/auth.js';
 //
 // 📋 Brokerage Leads (40 total)
 //    Pre-Sales 1: 10  |  Pre-Sales 2: 5  |  Pre-Sales 3: 5
-//    Sales Exec 1: 10 |  Sales Exec 2: 5 |  Sales Exec 3: 5
+//    Sales Exec 1: 10 (luxury-villas) | Sales Exec 2: 5 (sunrise-valley)
+//    Sales Exec 3: 5 (green-meadows)  ← each exec stays in their project
 //
-// 📦 Bookings (7 brokerage + 3 CP)
-//    Post-Sales sees 5 bookings at different stages
+// 📦 Bookings (7 brokerage + 2 CP)
+//    Post-Sales team (3 agents) shares 7 brokerage bookings round-robin
 //
 // 🤝 CP World
-//    3 external Brokers (not users) managed by Sourcing Manager 1
-//    5 CP leads, 3 CP bookings with BrokerageRecords
+//    3 external Brokers managed by Sourcing Manager 1
+//    5 CP leads, 2 CP bookings with BrokerageRecords
+//    BRK-001 → Closing Manager 1 | BRK-002 → Closing Manager 2 | BRK-003 → Closing Manager 3
 // ============================================================
+
 
 const DEMO_PASSWORD = 'Demo@1234';
 
@@ -38,6 +41,7 @@ const ROLES = [
   { name: 'Pre-sales Manager', code: 'PRE_SALES_MANAGER' },
   { name: 'Sales Executive', code: 'SALES_EXECUTIVE' },
   { name: 'Sales Manager', code: 'SALES_MANAGER' },
+  { name: 'Post-sales Manager', code: 'POST_SALES_MANAGER' },
   { name: 'Post-sales', code: 'POST_SALES' },
   { name: 'Finance', code: 'FINANCE' },
   { name: 'Business Manager', code: 'BUSINESS_MANAGER' },
@@ -60,7 +64,10 @@ const DEMO_USERS = [
   { name: 'Sales Executive 1', email: 'salesexec1@demo.com', username: 'salesexec1', phone: '9800000006', roleCode: 'SALES_EXECUTIVE' },
   { name: 'Sales Executive 2', email: 'salesexec2@demo.com', username: 'salesexec2', phone: '9800000007', roleCode: 'SALES_EXECUTIVE' },
   { name: 'Sales Executive 3', email: 'salesexec3@demo.com', username: 'salesexec3', phone: '9800000008', roleCode: 'SALES_EXECUTIVE' },
-  { name: 'Post Sales', email: 'postsales@demo.com', username: 'postsales', phone: '9800000009', roleCode: 'POST_SALES' },
+  { name: 'Post-Sales Manager', email: 'postsalesmanager@demo.com', username: 'postsalesmanager', phone: '9800000009', roleCode: 'POST_SALES_MANAGER' },
+  { name: 'Post Sales 1', email: 'postsales1@demo.com', username: 'postsales1', phone: '9800000021', roleCode: 'POST_SALES' },
+  { name: 'Post Sales 2', email: 'postsales2@demo.com', username: 'postsales2', phone: '9800000022', roleCode: 'POST_SALES' },
+  { name: 'Post Sales 3', email: 'postsales3@demo.com', username: 'postsales3', phone: '9800000023', roleCode: 'POST_SALES' },
   { name: 'Finance', email: 'finance@demo.com', username: 'finance', phone: '9800000010', roleCode: 'FINANCE' },
   { name: 'Business Manager', email: 'businessmanager@demo.com', username: 'businessmanager', phone: '9800000011', roleCode: 'BUSINESS_MANAGER' },
   { name: 'Director', email: 'director@demo.com', username: 'director', phone: '9800000012', roleCode: 'DIRECTOR' },
@@ -100,7 +107,10 @@ async function upsertUser(userData: typeof DEMO_USERS[0], roleId: string) {
     }
   }
   if (user) {
-    await prisma.user.update({ where: { id: user.id }, data: { roleId } });
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { roleId, email: userData.email, username: userData.username }
+    });
   }
   return user;
 }
@@ -294,6 +304,15 @@ async function main() {
   }
   console.log('  ✓ Sales Executives linked to Sales Manager');
 
+  // Post-Sales agents → Post-Sales Manager
+  const posm = userMap['postsalesmanager'];
+  for (const key of ['postsales1', 'postsales2', 'postsales3']) {
+    if (userMap[key] && posm) {
+      await prisma.user.update({ where: { id: userMap[key].id }, data: { managerId: posm.id } });
+    }
+  }
+  console.log('  ✓ Post-Sales agents linked to Post-Sales Manager');
+
   // CP team → Channel Partner
   const cp = userMap['cp1'];
   for (const key of ['sourcingmanager1', 'sourcingmanager2', 'sourcingmanager3', 'closingmanager1', 'closingmanager2', 'closingmanager3']) {
@@ -475,10 +494,18 @@ async function main() {
 
   // ── STEP 10: SiteVisits for Scheduled leads ────────────────
   console.log('\n📌 Step 10: Creating site visits for scheduled leads...');
+  // Map each brokerage project slug to its assigned sales exec
+  const projectSlugToExecKey: Record<string, string> = {
+    'luxury-villas': 'salesexec1',
+    'sunrise-valley': 'salesexec2',
+    'green-meadows': 'salesexec3',
+  };
   for (const { lead, spec } of createdPreSalesLeads) {
     if (spec.status === 'SITE_VISIT_SCHEDULED') {
       const proj = projectMap[spec.projectSlug];
-      const salesExec = userMap['salesexec1']; // Default exec for all pre-sales site visits
+      // Assign the correct sales exec based on project, not always salesexec1
+      const execKey = projectSlugToExecKey[spec.projectSlug] || 'salesexec1';
+      const salesExec = userMap[execKey];
       const createdBy = userMap[spec.assignedKey];
       await prisma.siteVisit.create({
         data: {
@@ -506,33 +533,36 @@ async function main() {
   }
 
   const se1Leads: AdvancedLeadSpec[] = [
+    // salesexec1 is assigned to luxury-villas → ALL se1 leads must be luxury-villas
     { firstName: 'Nidhi', lastName: 'Kapoor', status: 'SITE_VISIT_COMPLETED', temperature: 'HOT', sourceType: 'FACEBOOK_ADS', projectSlug: 'luxury-villas', assignedKey: 'salesexec1', budget: 5000000 },
     { firstName: 'Rohit', lastName: 'Bansal', status: 'SITE_VISIT_COMPLETED', temperature: 'WARM', sourceType: 'GOOGLE_ADS', projectSlug: 'luxury-villas', assignedKey: 'salesexec1', budget: 4800000 },
-    { firstName: 'Tanya', lastName: 'Chawla', status: 'SITE_VISIT_COMPLETED', temperature: 'HOT', sourceType: 'REFERRAL', projectSlug: 'sunrise-valley', assignedKey: 'salesexec1', budget: 4200000 },
+    { firstName: 'Tanya', lastName: 'Chawla', status: 'SITE_VISIT_COMPLETED', temperature: 'HOT', sourceType: 'REFERRAL', projectSlug: 'luxury-villas', assignedKey: 'salesexec1', budget: 4200000 },
     { firstName: 'Ganesh', lastName: 'Iyer', status: 'NEGOTIATION', temperature: 'HOT', sourceType: 'DIRECT_CALL', projectSlug: 'luxury-villas', assignedKey: 'salesexec1', budget: 5200000 },
-    { firstName: 'Lakshmi', lastName: 'Reddy', status: 'NEGOTIATION', temperature: 'HOT', sourceType: 'WALK_IN', projectSlug: 'sunrise-valley', assignedKey: 'salesexec1', budget: 4600000 },
+    { firstName: 'Lakshmi', lastName: 'Reddy', status: 'NEGOTIATION', temperature: 'HOT', sourceType: 'WALK_IN', projectSlug: 'luxury-villas', assignedKey: 'salesexec1', budget: 4600000 },
     // Leads that converted to bookings
     { firstName: 'Manoj', lastName: 'Khanna', status: 'BOOKING', temperature: 'HOT', sourceType: 'FACEBOOK_ADS', projectSlug: 'luxury-villas', assignedKey: 'salesexec1', makeBooking: true, bookingStage: 'CONFIRMED', budget: 5000000 },
     { firstName: 'Ritika', lastName: 'Sood', status: 'LOAN', temperature: 'HOT', sourceType: 'GOOGLE_ADS', projectSlug: 'luxury-villas', assignedKey: 'salesexec1', makeBooking: true, bookingStage: 'LOAN', budget: 5500000 },
-    { firstName: 'Sanjay', lastName: 'Luthra', status: 'AGREEMENT', temperature: 'HOT', sourceType: 'REFERRAL', projectSlug: 'sunrise-valley', assignedKey: 'salesexec1', makeBooking: true, bookingStage: 'AGREEMENT', budget: 4000000 },
-    { firstName: 'Preeti', lastName: 'Arora', status: 'HANDOVER', temperature: 'HOT', sourceType: 'WALK_IN', projectSlug: 'green-meadows', assignedKey: 'salesexec1', makeBooking: true, bookingStage: 'POSSESSION', budget: 3500000 },
+    { firstName: 'Sanjay', lastName: 'Luthra', status: 'AGREEMENT', temperature: 'HOT', sourceType: 'REFERRAL', projectSlug: 'luxury-villas', assignedKey: 'salesexec1', makeBooking: true, bookingStage: 'AGREEMENT', budget: 4000000 },
+    { firstName: 'Preeti', lastName: 'Arora', status: 'HANDOVER', temperature: 'HOT', sourceType: 'WALK_IN', projectSlug: 'luxury-villas', assignedKey: 'salesexec1', makeBooking: true, bookingStage: 'POSSESSION', budget: 3500000 },
     { firstName: 'Vinod', lastName: 'Chopra', status: 'HANDOVER', temperature: 'HOT', sourceType: 'DIRECT_CALL', projectSlug: 'luxury-villas', assignedKey: 'salesexec1', makeBooking: true, bookingStage: 'HANDOVER', budget: 5000000 },
   ];
 
   const se2Leads: AdvancedLeadSpec[] = [
+    // salesexec2 is assigned to sunrise-valley → ALL se2 leads must be sunrise-valley
     { firstName: 'Sneha', lastName: 'Pillai', status: 'SITE_VISIT_COMPLETED', temperature: 'WARM', sourceType: 'FACEBOOK_ADS', projectSlug: 'sunrise-valley', assignedKey: 'salesexec2', budget: 4000000 },
     { firstName: 'Harish', lastName: 'Nanda', status: 'SITE_VISIT_COMPLETED', temperature: 'HOT', sourceType: 'WALK_IN', projectSlug: 'sunrise-valley', assignedKey: 'salesexec2', budget: 4500000 },
     { firstName: 'Aisha', lastName: 'Shaikh', status: 'NEGOTIATION', temperature: 'HOT', sourceType: 'REFERRAL', projectSlug: 'sunrise-valley', assignedKey: 'salesexec2', budget: 4300000 },
     { firstName: 'Tarun', lastName: 'Malviya', status: 'BOOKING', temperature: 'HOT', sourceType: 'GOOGLE_ADS', projectSlug: 'sunrise-valley', assignedKey: 'salesexec2', makeBooking: true, bookingStage: 'CONFIRMED', budget: 4200000 },
-    { firstName: 'Ritu', lastName: 'Mishra', status: 'LOST', temperature: 'COLD', sourceType: 'INSTAGRAM', projectSlug: 'green-meadows', assignedKey: 'salesexec2' },
+    { firstName: 'Ritu', lastName: 'Mishra', status: 'LOST', temperature: 'COLD', sourceType: 'INSTAGRAM', projectSlug: 'sunrise-valley', assignedKey: 'salesexec2' },
   ];
 
   const se3Leads: AdvancedLeadSpec[] = [
+    // salesexec3 is assigned to green-meadows → ALL se3 leads must be green-meadows
     { firstName: 'Chirag', lastName: 'Desai', status: 'SITE_VISIT_COMPLETED', temperature: 'WARM', sourceType: 'FACEBOOK_ADS', projectSlug: 'green-meadows', assignedKey: 'salesexec3', budget: 3500000 },
     { firstName: 'Pallavi', lastName: 'Joshi', status: 'SITE_VISIT_COMPLETED', temperature: 'HOT', sourceType: 'DIRECT_CALL', projectSlug: 'green-meadows', assignedKey: 'salesexec3', budget: 3800000 },
     { firstName: 'Kunal', lastName: 'Mehta', status: 'NEGOTIATION', temperature: 'HOT', sourceType: 'REFERRAL', projectSlug: 'green-meadows', assignedKey: 'salesexec3', budget: 4000000 },
     { firstName: 'Divya', lastName: 'Raman', status: 'LOAN', temperature: 'HOT', sourceType: 'WALK_IN', projectSlug: 'green-meadows', assignedKey: 'salesexec3', makeBooking: true, bookingStage: 'LOAN', budget: 3600000 },
-    { firstName: 'Ajay', lastName: 'Pandey', status: 'LOST', temperature: 'COLD', sourceType: 'INSTAGRAM', projectSlug: 'luxury-villas', assignedKey: 'salesexec3' },
+    { firstName: 'Ajay', lastName: 'Pandey', status: 'LOST', temperature: 'COLD', sourceType: 'INSTAGRAM', projectSlug: 'green-meadows', assignedKey: 'salesexec3' },
   ];
 
   const allSeLeads = [...se1Leads, ...se2Leads, ...se3Leads];
@@ -589,11 +619,67 @@ async function main() {
   // ── STEP 12: Customers + Bookings ──────────────────────────
   console.log('\n📌 Step 12: Creating bookings and post-sales records...');
 
+  const postSalesKeys = ['postsales1', 'postsales2', 'postsales3'];
+  let postSalesIndex = 0;
+
+  // Collect NEGOTIATION leads so we can create Negotiation records after the SE lead loop
+  const negotiationLeads: { lead: any; spec: AdvancedLeadSpec }[] = [];
+
+  // Build negotiation leads list from the SE leads array (collect during allSeLeads loop above)
+  // We do it here by scanning allSeLeads for NEGOTIATION status
+  for (const spec of allSeLeads) {
+    if (spec.status === 'NEGOTIATION') {
+      // Find the lead we created — match by firstName+lastName combo
+      // We need to query it from DB since we didn't store them separately
+      const salesExecUser = userMap[spec.assignedKey];
+      const proj = projectMap[spec.projectSlug];
+      if (!salesExecUser || !proj) continue;
+      const negotiationLead = await prisma.lead.findFirst({
+        where: {
+          firstName: spec.firstName,
+          lastName: spec.lastName,
+          assignedUserId: salesExecUser.id,
+          interestedProjectId: proj.id,
+          status: 'NEGOTIATION',
+        },
+      });
+      if (negotiationLead) {
+        negotiationLeads.push({ lead: negotiationLead, spec });
+      }
+    }
+  }
+
+  // Create Negotiation records for all NEGOTIATION leads
+  console.log(`  Creating ${negotiationLeads.length} negotiation records...`);
+  for (const { lead, spec } of negotiationLeads) {
+    const salesExecUser = userMap[spec.assignedKey];
+    const askingPrice = spec.budget ?? 4500000;
+    const discountRequested = Math.round(askingPrice * 0.03); // 3% discount request
+    const offeredPrice = askingPrice - discountRequested;
+    await prisma.negotiation.create({
+      data: {
+        leadId: lead.id,
+        salesExecId: salesExecUser.id,
+        askingPrice,
+        offeredPrice,
+        discountRequested,
+        discountType: 'FLAT',
+        customerObjections: 'Customer feels the price is slightly above market rate for the area.',
+        negotiationNotes: 'Customer is serious buyer. Requesting 3% discount to close the deal.',
+        nextActionPlan: 'Present counter-offer after manager approval.',
+        status: 'OPEN',
+      },
+    });
+  }
+  console.log(`  ✓ Negotiation records created`);
+
   for (const { lead, spec } of bookingsToCreate) {
     const proj = projectMap[spec.projectSlug];
     const salesExec = userMap[spec.assignedKey];
-    const closingManager = userMap['closingmanager1']; // brokerage closing/post-sales N/A but using for reference
-    const postSales = userMap['postsales'];
+
+    // Round robin for post sales
+    const postSales = userMap[postSalesKeys[postSalesIndex % postSalesKeys.length]];
+    postSalesIndex++;
 
     // Get an available unit
     const unit = await getAvailableUnit(proj.id);
@@ -631,6 +717,7 @@ async function main() {
         unitId: unit.id,
         source: 'DIRECT',
         salesExecId: salesExec.id,
+        assignedPostSalesId: postSales?.id,
         agreedPrice,
         tokenAmount: bookingAmount,
         totalPayable: agreedPrice,
@@ -681,7 +768,7 @@ async function main() {
       });
     }
 
-    // Update lead status to reflect booking stage
+    // Update booking status to reflect the correct post-sales stage
     await prisma.booking.update({
       where: { id: booking.id },
       data: {
@@ -693,20 +780,66 @@ async function main() {
       },
     });
 
-    console.log(`  ✓ Booking ${bookingNum}: ${spec.firstName} ${spec.lastName} (${stage}) — Unit ${unit.unitNumber}`);
+    // For HANDOVER stage, set subStatus='DONE' on the lead so Post-Sales dashboard
+    // can distinguish "Handover Completed" from "Possession Pending"
+    if (stage === 'HANDOVER') {
+      await prisma.lead.update({
+        where: { id: lead.id },
+        data: { subStatus: 'DONE' },
+      });
+    }
+
+    // Transfer lead ownership to post-sales agent for LOAN and beyond.
+    // - BOOKING (just confirmed): Sales Exec still owns it — they're finalising docs
+    // - LOAN, AGREEMENT, POSSESSION, HANDOVER: Post-Sales owns the lead
+    // The Booking record still has salesExecId to show who originally closed the deal.
+    if (['LOAN', 'AGREEMENT', 'POSSESSION', 'HANDOVER'].includes(stage) && postSales?.id) {
+      await prisma.lead.update({
+        where: { id: lead.id },
+        data: { assignedUserId: postSales.id },
+      });
+    }
+
+    // Create Follow-up for post-sales if it's assigned
+    if (postSales?.id) {
+      await prisma.followUp.create({
+        data: {
+          leadId: lead.id,
+          userId: postSales.id,
+          scheduledDate: new Date(), // today
+          status: 'SCHEDULED',
+          type: 'CALL',
+          remarks: `Follow up regarding ${stage.toLowerCase()} for Unit ${unit.unitNumber}.`,
+        },
+      });
+    }
+
+    console.log(`  ✓ Booking ${bookingNum}: ${spec.firstName} ${spec.lastName} (${stage}) — Unit ${unit.unitNumber} assigned to ${postSales?.name}`);
   }
 
   // ── STEP 13: CP World — Brokers ────────────────────────────
   console.log('\n📌 Step 13: Setting up CP World (brokers + leads + bookings)...');
 
   const sm1 = userMap['sourcingmanager1'];
+  const sm2 = userMap['sourcingmanager2'];
+  const sm3 = userMap['sourcingmanager3'];
   const cm1 = userMap['closingmanager1'];
+  const cm2 = userMap['closingmanager2'];
+  const cm3 = userMap['closingmanager3'];
 
-  // Create 3 external brokers (NOT users — managed by Sourcing Manager 1)
+  // Map broker code → closing manager (each CM handles their own broker at the project site)
+  const brokerToClosingManager: Record<string, any> = {
+    'BRK-001': cm1,
+    'BRK-002': cm2,
+    'BRK-003': cm3,
+  };
+
+  // Create 3 external brokers — each recruited by a different Sourcing Manager
+  // SM recruits → CM closes deals at site
   const brokerData = [
-    { code: 'BRK-001', name: 'Pawan Realty', company: 'Pawan Realty Pvt Ltd', phone: '9600000001', status: 'DEAL' },
-    { code: 'BRK-002', name: 'Skyline Brokers', company: 'Skyline Brokers LLP', phone: '9600000002', status: 'DEAL' },
-    { code: 'BRK-003', name: 'Prime Associates', company: 'Prime Associates', phone: '9600000003', status: 'VISIT' },
+    { code: 'BRK-001', name: 'Pawan Realty', company: 'Pawan Realty Pvt Ltd', phone: '9600000001', status: 'DEAL', sourcingManager: sm1 },
+    { code: 'BRK-002', name: 'Skyline Brokers', company: 'Skyline Brokers LLP', phone: '9600000002', status: 'DEAL', sourcingManager: sm2 },
+    { code: 'BRK-003', name: 'Prime Associates', company: 'Prime Associates', phone: '9600000003', status: 'VISIT', sourcingManager: sm3 },
   ];
 
   const brokerMap: Record<string, any> = {};
@@ -722,7 +855,7 @@ async function main() {
           companyName: b.company,
           phone: b.phone,
           status: b.status as any,
-          sourcingManagerId: sm1?.id,
+          sourcingManagerId: b.sourcingManager?.id, // Each SM recruits their own broker
           city: 'Pune',
           state: 'Maharashtra',
           serviceAreas: ['Pune', 'Pimpri-Chinchwad'],
@@ -731,11 +864,12 @@ async function main() {
       });
       brokerMap[b.code] = broker;
     }
-    console.log(`  ✓ Broker: ${b.name}`);
+    console.log(`  ✓ Broker: ${b.name} (managed by ${b.sourcingManager?.name ?? 'unknown'})`);
   }
 
-  // Assign brokers to Grand Horizon CP project with commission %
+  // Assign brokers to Grand Horizon CP project — each to their own closing manager
   for (const [code, broker] of Object.entries(brokerMap)) {
+    const assignedCm = brokerToClosingManager[code];
     await prisma.brokerProjectAssignment.upsert({
       where: { brokerId_projectId: { brokerId: broker.id, projectId: cpProject.id } },
       update: {},
@@ -743,7 +877,7 @@ async function main() {
         brokerId: broker.id,
         projectId: cpProject.id,
         brokeragePercent: 2.0,
-        closingManagerId: cm1?.id,
+        closingManagerId: assignedCm?.id,
         isLocked: code === 'BRK-001' || code === 'BRK-002', // Deal signed for first two
       },
     });
@@ -764,6 +898,8 @@ async function main() {
   const cpBookingsToCreate: { lead: any; brokerCode: string; budget: number }[] = [];
   for (const spec of cpLeadsData) {
     const broker = brokerMap[spec.brokerCode];
+    // Assign the lead to the correct closing manager for this broker
+    const assignedCmForLead = brokerToClosingManager[spec.brokerCode];
     const lead = await prisma.lead.create({
       data: {
         firstName: spec.firstName,
@@ -774,7 +910,7 @@ async function main() {
         temperature: spec.temperature as any,
         score: 80,
         interestedProjectId: cpProject.id,
-        assignedUserId: cm1?.id,
+        assignedUserId: assignedCmForLead?.id, // Each lead goes to the CM who handles its broker
         brokerId: broker?.id,
         budget: spec.budget,
         sourceId: sourceMap['REFERRAL'], // CP leads come via broker referral
@@ -792,6 +928,8 @@ async function main() {
 
   for (const { lead, brokerCode, budget } of cpBookingsToCreate) {
     const broker = brokerMap[brokerCode];
+    // Use the correct closing manager for this broker's booking
+    const bookingCm = brokerToClosingManager[brokerCode];
     const unit = await getAvailableUnit(cpProject.id);
     if (!unit) {
       console.warn('  ⚠ No available CP unit — skipping');
@@ -821,7 +959,7 @@ async function main() {
         customerId: customer.id,
         unitId: unit.id,
         source: 'CHANNEL_PARTNER',
-        closingManagerId: cm1?.id,
+        closingManagerId: bookingCm?.id, // Correct CM per broker
         agreedPrice,
         tokenAmount: Math.round(agreedPrice * 0.01),
         totalPayable: agreedPrice,
@@ -859,7 +997,7 @@ async function main() {
       });
     }
 
-    console.log(`  ✓ CP Booking ${bookingNum}: ${lead.firstName} via ${broker.name} — Brokerage: ₹${brokerageAmount.toLocaleString()}`);
+    console.log(`  ✓ CP Booking ${bookingNum}: ${lead.firstName} via ${broker.name} (CM: ${bookingCm?.name}) — Brokerage: ₹${brokerageAmount.toLocaleString()}`);
   }
 
   // ── STEP 16: Clean up old data ─────────────────────────────
@@ -883,10 +1021,13 @@ async function main() {
   console.log('  presales2@demo.com         — Pre-Sales Agent 2  (5 leads)');
   console.log('  presales3@demo.com         — Pre-Sales Agent 3  (5 leads)');
   console.log('  salesmanager@demo.com      — Sales Manager');
-  console.log('  salesexec1@demo.com        — Sales Executive 1  (10 leads + 5 bookings)');
-  console.log('  salesexec2@demo.com        — Sales Executive 2  (5 leads + 1 booking)');
-  console.log('  salesexec3@demo.com        — Sales Executive 3  (5 leads + 1 booking)');
-  console.log('  postsales@demo.com         — Post Sales         (sees 7 bookings)');
+  console.log('  salesexec1@demo.com        — Sales Executive 1  (luxury-villas: 3 SVC + 2 NEG + 1 BOOKING active | 4 leads transferred to post-sales)');
+  console.log('  salesexec2@demo.com        — Sales Executive 2  (sunrise-valley: 2 SVC + 1 NEG + 1 BOOKING active)');
+  console.log('  salesexec3@demo.com        — Sales Executive 3  (green-meadows: 2 SVC + 1 NEG + 1 LOAN→post-sales)');
+  console.log('  postsalesmanager@demo.com  — Post-Sales Manager');
+  console.log('  postsales1@demo.com        — Post Sales 1       (owns LOAN/AGREEMENT/HANDOVER leads — round-robin)');
+  console.log('  postsales2@demo.com        — Post Sales 2       (owns LOAN/AGREEMENT/HANDOVER leads — round-robin)');
+  console.log('  postsales3@demo.com        — Post Sales 3       (owns LOAN/AGREEMENT/HANDOVER leads — round-robin)');
   console.log('  finance@demo.com           — Finance');
   console.log('  businessmanager@demo.com   — Business Manager');
   console.log('  director@demo.com          — Director');
@@ -894,12 +1035,12 @@ async function main() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('  CP WORLD  (Grand Horizon — CP Exclusive project)');
   console.log('  cp1@demo.com               — Channel Partner');
-  console.log('  sourcingmanager1@demo.com  — Sourcing Manager 1 (manages 3 brokers)');
-  console.log('  sourcingmanager2@demo.com  — Sourcing Manager 2');
-  console.log('  sourcingmanager3@demo.com  — Sourcing Manager 3');
-  console.log('  closingmanager1@demo.com   — Closing Manager 1  (handles CP bookings)');
-  console.log('  closingmanager2@demo.com   — Closing Manager 2');
-  console.log('  closingmanager3@demo.com   — Closing Manager 3');
+  console.log('  sourcingmanager1@demo.com  — Sourcing Manager 1 (recruited BRK-001 Pawan Realty)');
+  console.log('  sourcingmanager2@demo.com  — Sourcing Manager 2 (recruited BRK-002 Skyline Brokers)');
+  console.log('  sourcingmanager3@demo.com  — Sourcing Manager 3 (recruited BRK-003 Prime Associates)');
+  console.log('  closingmanager1@demo.com   — Closing Manager 1  (closes BRK-001 leads: Rajan, Smita)');
+  console.log('  closingmanager2@demo.com   — Closing Manager 2  (closes BRK-002 leads: Nilesh BOOKING, Madhuri LOAN — 2 bookings)');
+  console.log('  closingmanager3@demo.com   — Closing Manager 3  (closes BRK-003 leads: Sachin)');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 }
 
