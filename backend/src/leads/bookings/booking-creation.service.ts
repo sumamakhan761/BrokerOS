@@ -143,4 +143,124 @@ export class BookingCreationService {
 
     return result;
   }
+
+  async updateBooking(bookingId: string, data: {
+    userId: string;
+    unitId?: string;
+    unitDescription?: string;
+    agreedPrice?: number;
+    bookingAmount?: number;
+    commissionPercentage?: number;
+    commissionAmount?: number;
+    paymentMode?: string;
+    transactionRef?: string;
+    loanRequired?: boolean;
+    remarks?: string;
+  }) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { unit: true },
+    });
+
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (booking.status === 'CONFIRMED') throw new Error('Cannot edit confirmed booking');
+
+    await this.prisma.$transaction(async (tx) => {
+      let finalUnitId = booking.unitId;
+      let finalCommPercent = data.commissionPercentage;
+      let finalCommAmount = data.commissionAmount;
+
+      // Handle unit change
+      if (data.unitId && data.unitId !== booking.unitId) {
+        // Free up old unit if it was reserved
+        if (booking.unitId) {
+          await tx.unit.update({
+            where: { id: booking.unitId },
+            data: { status: 'AVAILABLE', reservedAt: null, reservedForId: null }
+          });
+        }
+
+        // Reserve new unit
+        const newUnit = await tx.unit.findUnique({
+          where: { id: data.unitId },
+          include: { floor: { include: { tower: true } } }
+        });
+        if (!newUnit || newUnit.status !== 'AVAILABLE') {
+          throw new Error('New selected unit is not available');
+        }
+
+        // Auto-fetch commission if broker is attached
+        const customer = await tx.customer.findUnique({
+          where: { id: booking.customerId },
+          include: { lead: true }
+        });
+
+        if (customer?.lead?.brokerId && newUnit.floor?.tower?.projectId) {
+          const dealCard = await tx.brokerProjectAssignment.findUnique({
+            where: {
+              brokerId_projectId: {
+                brokerId: customer.lead.brokerId,
+                projectId: newUnit.floor.tower.projectId
+              }
+            }
+          });
+
+          if (dealCard && dealCard.brokeragePercent) {
+            finalCommPercent = Number(dealCard.brokeragePercent);
+            if (data.agreedPrice && finalCommPercent !== undefined) {
+              finalCommAmount = (data.agreedPrice * finalCommPercent) / 100;
+            }
+          }
+        }
+
+        await tx.unit.update({
+          where: { id: data.unitId },
+          data: {
+            status: 'RESERVED',
+            reservedAt: new Date(),
+            reservedForId: data.userId,
+            ...(finalCommPercent !== undefined ? { commissionPercentage: finalCommPercent } : {})
+          }
+        });
+
+        finalUnitId = data.unitId;
+      }
+
+      await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          unitId: finalUnitId,
+          agreedPrice: data.agreedPrice || booking.agreedPrice,
+          totalPayable: data.agreedPrice || booking.totalPayable,
+          tokenAmount: data.bookingAmount || booking.tokenAmount,
+          commissionPercentage: finalCommPercent !== undefined ? finalCommPercent : booking.commissionPercentage,
+          commissionAmount: finalCommAmount !== undefined ? finalCommAmount : booking.commissionAmount,
+          cancelReason: data.remarks || booking.cancelReason,
+        }
+      });
+
+      // Find the first note for this booking (which contains the form details)
+      const firstNote = await tx.note.findFirst({
+        where: { bookingId },
+        orderBy: { createdAt: 'asc' }
+      });
+
+      if (firstNote) {
+        await tx.note.update({
+          where: { id: firstNote.id },
+          data: {
+            content: JSON.stringify({
+              unitDescription: data.unitDescription,
+              paymentMode: data.paymentMode,
+              transactionRef: data.transactionRef,
+              loanRequired: data.loanRequired,
+              remarks: data.remarks
+            })
+          }
+        });
+      }
+    });
+
+    return { success: true };
+  }
 }

@@ -31,9 +31,10 @@ interface BookingSummaryProps {
   booking: BookingData;
   leadId: string;
   onRefresh: () => void;
+  onEdit?: () => void;
 }
 
-export function BookingSummary({ booking, leadId, onRefresh }: BookingSummaryProps) {
+export function BookingSummary({ booking, leadId, onRefresh, onEdit }: BookingSummaryProps) {
   const [saving, setSaving] = useState(false);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
 
@@ -114,13 +115,24 @@ export function BookingSummary({ booking, leadId, onRefresh }: BookingSummaryPro
           </div>
         </div>
         {booking.status !== 'CONFIRMED' && (
-          <button
-            onClick={handleRequestApproval}
-            disabled={saving}
-            className="text-xs bg-indigo-600 text-white px-3 py-2 rounded-xl font-medium hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5"
-          >
-            {saving ? 'Sending...' : <><Send className="w-3.5 h-3.5" /> Send for Approval</>}
-          </button>
+          <div className="flex gap-2">
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                disabled={saving}
+                className="text-xs bg-white text-gray-700 border border-gray-300 px-3 py-2 rounded-xl font-medium hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5"
+              >
+                Edit Booking
+              </button>
+            )}
+            <button
+              onClick={handleRequestApproval}
+              disabled={saving}
+              className="text-xs bg-indigo-600 text-white px-3 py-2 rounded-xl font-medium hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5"
+            >
+              {saving ? 'Sending...' : <><Send className="w-3.5 h-3.5" /> Send for Approval</>}
+            </button>
+          </div>
         )}
       </div>
 

@@ -11,9 +11,10 @@ interface BookingFormProps {
   setShowForm: (show: boolean) => void;
   onRefresh: () => void;
   lead?: any;
+  booking?: any;
 }
 
-export function BookingForm({ leadId, userId, showForm, setShowForm, onRefresh, lead }: BookingFormProps) {
+export function BookingForm({ leadId, userId, showForm, setShowForm, onRefresh, lead, booking }: BookingFormProps) {
   const {
     saving,
     form,
@@ -31,7 +32,7 @@ export function BookingForm({ leadId, userId, showForm, setShowForm, onRefresh, 
     selectedUnitId,
     setSelectedUnitId,
     handleCreateBooking,
-  } = useBookingForm(leadId, userId, showForm, setShowForm, onRefresh, lead);
+  } = useBookingForm(leadId, userId, showForm, setShowForm, onRefresh, lead, booking);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
@@ -40,8 +41,8 @@ export function BookingForm({ leadId, userId, showForm, setShowForm, onRefresh, 
           <FileText className="w-5 h-5 text-amber-600" />
         </div>
         <div>
-          <h3 className="font-semibold text-gray-900">Booking</h3>
-          <p className="text-xs text-gray-500 font-medium">No booking yet</p>
+          <h3 className="font-semibold text-gray-900">{booking ? 'Edit Booking' : 'Booking'}</h3>
+          <p className="text-xs text-gray-500 font-medium">{booking ? 'Modify booking details' : 'No booking yet'}</p>
         </div>
       </div>
 
@@ -61,7 +62,7 @@ export function BookingForm({ leadId, userId, showForm, setShowForm, onRefresh, 
           </div>
         ) : (
           <div className="space-y-5">
-            <p className="font-semibold text-gray-900 text-sm">New Booking Details</p>
+            <p className="font-semibold text-gray-900 text-sm">{booking ? 'Edit Booking Details' : 'New Booking Details'}</p>
             <div className="grid grid-cols-1 gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -222,19 +223,20 @@ export function BookingForm({ leadId, userId, showForm, setShowForm, onRefresh, 
                 />
               </div>
             </div>
-            <div className="flex gap-3 pt-3">
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
               <button
-                onClick={handleCreateBooking}
-                disabled={saving}
-                className="flex-1 bg-amber-500 text-white text-sm rounded-xl py-2.5 font-medium hover:bg-amber-600 disabled:opacity-50 transition-all shadow-sm"
-              >
-                {saving ? 'Creating...' : 'Create Booking'}
-              </button>
-              <button
+                type="button"
                 onClick={() => setShowForm(false)}
-                className="px-5 border border-gray-200 text-gray-700 text-sm rounded-xl py-2.5 font-medium hover:bg-gray-50 transition-all"
+                className="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors"
               >
                 Cancel
+              </button>
+              <button
+                onClick={handleCreateBooking}
+                disabled={saving || !selectedUnitId || !form.agreedPrice}
+                className="px-5 py-2.5 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+              >
+                {saving ? 'Saving...' : booking ? 'Update Booking' : 'Create Booking'}
               </button>
             </div>
           </div>

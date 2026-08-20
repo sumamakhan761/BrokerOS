@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BookingService } from './booking.service.js';
 
@@ -17,6 +17,14 @@ export class BookingController {
     @Body() bookingData: any,
   ) {
     return this.bookingService.createBooking(id, bookingData);
+  }
+
+  @Patch(':id/booking')
+  updateBooking(
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.bookingService.updateBooking(body.bookingId, body);
   }
 
   @Post(':id/booking/done')

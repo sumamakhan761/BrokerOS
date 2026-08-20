@@ -63,7 +63,7 @@ docker compose up --build
 
 # Once running, open a new terminal to seed the database with demo users:
 docker exec -it crm-backend npx prisma db seed
-# 🔑 View all demo users & passwords created: [docs/role-password.md](docs/role-password.md)
+# 🔑 View all demo users & passwords created: docs/role-password.md
 ```
 
 ### Manual Setup
@@ -77,7 +77,7 @@ pnpm install
 cp .env.example .env          # Edit with your values
 pnpm db:generate
 pnpm db:migrate
-pnpm db:seed                  # Populate database with sample data (🔑 View credentials: [docs/role-password.md](../docs/role-password.md))
+pnpm db:seed                  # Populate database with sample data (🔑 View credentials: docs/role-password.md)
 pnpm start:dev                # → http://localhost:3333
 ```
 
