@@ -7,9 +7,10 @@ interface BrokerListCardProps {
   broker: any;
   onPress: () => void;
   onAssign?: () => void;
+  showAssignee?: boolean;
 }
 
-export default function BrokerListCard({ broker, onPress, onAssign }: BrokerListCardProps) {
+export default function BrokerListCard({ broker, onPress, onAssign, showAssignee }: BrokerListCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'DEAL': return 'bg-green-100 text-green-700 border-green-200';
@@ -21,7 +22,7 @@ export default function BrokerListCard({ broker, onPress, onAssign }: BrokerList
   };
 
   const displayName = broker.companyName || broker.name || 'Unknown Broker';
-  const assignedName = broker.assignedTo ? (broker.assignedTo.name || broker.assignedTo.username) : 'Unassigned';
+  const assignedName = broker.sourcingManager ? (broker.sourcingManager.name || broker.sourcingManager.username) : 'Unassigned';
 
   return (
     <View className="mb-3">
@@ -42,9 +43,11 @@ export default function BrokerListCard({ broker, onPress, onAssign }: BrokerList
             <Text className="text-sm text-gray-500 ml-1">{broker.phone}</Text>
           </View>
         </View>
-        <View className="ml-3 items-center justify-center bg-gray-50 px-3 h-8 rounded-full border border-gray-200">
-          <Text className="text-gray-700 font-bold text-xs">{assignedName}</Text>
-        </View>
+        {showAssignee && (
+          <View className="ml-3 items-center justify-center bg-gray-50 px-3 h-8 rounded-full border border-gray-200">
+            <Text className="text-gray-700 font-bold text-xs">{assignedName}</Text>
+          </View>
+        )}
       </TouchableOpacity>
 
       {onAssign && (

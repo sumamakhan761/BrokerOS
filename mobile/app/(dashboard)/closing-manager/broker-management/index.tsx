@@ -88,6 +88,7 @@ export default function ClosingManagerBrokerManagement() {
           <BrokerListCard
             key={broker.id}
             broker={broker}
+            showAssignee={true}
             onPress={() => router.push(`/closing-manager/broker-management/${broker.id}`)}
             onAssign={undefined} // Closing Manager cannot assign sourcing managers
           />
