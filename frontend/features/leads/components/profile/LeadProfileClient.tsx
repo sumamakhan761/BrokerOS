@@ -25,6 +25,7 @@ import { useLeadDetails } from '@/features/leads/hooks/useLeadDetails';
 import { useLeadNotes } from '@/features/leads/hooks/useLeadNotes';
 import { useLeadSchedules } from '@/features/leads/hooks/useLeadSchedules';
 import { useLeadBooking } from '@/features/leads/hooks/useLeadBooking';
+import { useLeadNegotiations } from '@/features/leads/hooks/useLeadNegotiations';
 
 export function LeadProfileClient({ leadId }: { leadId: string }) {
   const { data: session } = authClient.useSession();
@@ -104,6 +105,11 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
     fetchBooking,
   } = useLeadBooking(leadId);
 
+  const {
+    negotiations,
+    fetchNegotiations,
+  } = useLeadNegotiations(leadId);
+
   const [isAiAdvancing, setIsAiAdvancing] = React.useState(false);
 
   const handleAiAutoAdvance = async () => {
@@ -146,6 +152,7 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
     fetchFollowUps();
     fetchSiteVisits();
     fetchBooking();
+    fetchNegotiations();
   }, [leadId]);
 
   if (loading) {
@@ -273,10 +280,10 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
             onRefresh={fetchSiteVisits}
           />
           <NegotiationCard
-            notes={notes}
+            negotiations={negotiations}
             leadId={leadId}
             userId={userId || ''}
-            onRefresh={fetchNotes}
+            onRefresh={fetchNegotiations}
           />
           <BookingCard
             booking={booking}

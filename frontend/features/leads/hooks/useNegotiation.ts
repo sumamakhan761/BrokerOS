@@ -17,22 +17,18 @@ export function useNegotiation(leadId: string, userId: string, onRefresh: () => 
     if (!form.title.trim()) return;
     setSaving(true);
     try {
-      const content = JSON.stringify({
-        title: form.title,
-        askingPrice: form.askingPrice,
-        offeredPrice: form.offeredPrice,
-        objections: form.objections,
-        strategy: form.strategy,
-        nextStep: form.nextStep,
-      });
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
-      const res = await fetch(`${apiUrl}/api/leads/${leadId}/notes`, {
+      const res = await fetch(`${apiUrl}/api/leads/${leadId}/negotiations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content,
           userId,
-          noteType: 'NEGOTIATION',
+          askingPrice: form.askingPrice,
+          offeredPrice: form.offeredPrice,
+          objections: form.objections,
+          strategy: form.strategy,
+          title: form.title,
+          nextStep: form.nextStep,
         }),
       });
       if (res.ok) {

@@ -8,14 +8,14 @@ import { NegotiationAddForm } from '@/features/leads/components/negotiations/Neg
 import { NegotiationTimeline } from '@/features/leads/components/negotiations/NegotiationTimeline';
 
 interface NegotiationCardProps {
-  notes: NegotiationNote[];
+  negotiations: any[];
   leadId: string;
   userId: string;
   onRefresh: () => void;
 }
 
-export function NegotiationCard({ notes, leadId, userId, onRefresh }: NegotiationCardProps) {
-  const negotiationNotes = notes.filter(n => n.noteType === 'NEGOTIATION');
+export function NegotiationCard({ negotiations, leadId, userId, onRefresh }: NegotiationCardProps) {
+  const negotiationNotes = negotiations;
   
   const {
     showForm,

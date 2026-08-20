@@ -39,6 +39,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
   const showSiteVisitScheduling = role !== 'post-sales' && role !== 'closing-manager' && role !== 'channel-partner';
 
   const [booking, setBooking] = useState<any>(null);
+  const [negotiations, setNegotiations] = useState<any[]>([]);
 
   // Modals state
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
@@ -80,7 +81,20 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
     fetchProjects();
     fetchSources();
     fetchBooking();
+    fetchNegotiations();
   }, [leadId]);
+
+  const fetchNegotiations = async () => {
+    try {
+      const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
+      const { data, error } = await authClient.$fetch<any[]>(`/api/leads/${leadId}/negotiations`, { baseURL });
+      if (!error && data) {
+        setNegotiations(data);
+      }
+    } catch (error) {
+      console.error('Error fetching negotiations', error);
+    }
+  };
 
   const fetchBooking = async () => {
     try {
@@ -610,7 +624,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
         {(isSalesExecOrManager) && (
           <View className="mt-4">
             <CompletedSiteVisits siteVisits={lead.siteVisits || []} onRefresh={fetchLead} />
-            <NegotiationHistory notes={lead.notes || []} leadId={leadId as string} onRefresh={fetchLead} />
+            <NegotiationHistory negotiations={negotiations} leadId={leadId as string} onRefresh={() => { fetchLead(); fetchNegotiations(); }} />
             <BookingCard booking={booking} leadId={leadId as string} onRefresh={fetchBooking} lead={lead} />
           </View>
         )}

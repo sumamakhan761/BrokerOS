@@ -12,6 +12,7 @@ import { CallRecordsModule } from './call-records/call-records.module.js';
 import { FollowUpsModule } from './follow-ups/follow-ups.module.js';
 import { NotesModule } from './notes/notes.module.js';
 import { SiteVisitsModule } from './site-visits/site-visits.module.js';
+import { NegotiationsModule } from './negotiations/negotiations.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SiteVisitsModule } from './site-visits/site-visits.module.js';
     FollowUpsModule,
     NotesModule,
     SiteVisitsModule,
+    NegotiationsModule,
   ],
   controllers: [
     LeadsController,

@@ -24,6 +24,10 @@ export class NotesService {
   }
 
   async createNote(leadId: string, data: { content: string; userId: string; statusAtTimeOfNote?: LeadStatus; noteType?: string }) {
+    if (data.noteType === 'NEGOTIATION') {
+      throw new Error('Negotiations must be created via the dedicated negotiations API, not as notes.');
+    }
+    
     const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
     if (!lead) throw new Error('Lead not found');
 
