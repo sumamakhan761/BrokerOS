@@ -6,7 +6,7 @@ import { authClient } from '@/lib/auth-client';
 import { BrokerHeader } from '@/components/brokers/profile/BrokerHeader';
 import { BrokerInformationCard } from '@/components/brokers/profile/BrokerInformationCard';
 import { BrokerDealSection } from '@/components/brokers/BrokerDealSection';
-import { BrokerActionButtons } from '@/components/brokers/profile/BrokerActionButtons';
+
 
 import SchedulesTimeline from '@/components/leads/timeline/SchedulesTimeline';
 import NotesTimeline from '@/components/leads/timeline/NotesTimeline';
@@ -222,13 +222,6 @@ export default function CMBrokerProfileScreen() {
         />
         
         <View className="px-4">
-          <BrokerActionButtons 
-            broker={broker} 
-            setIsNoteModalOpen={setIsNoteModalOpen}
-            setIsFollowUpModalOpen={setIsFollowUpModalOpen}
-            handleOpenMeetingModal={() => setIsSiteVisitModalOpen(true)}
-          />
-
           <BrokerInformationCard broker={broker} />
           
           <BrokerDealSection broker={broker} onRefresh={loadBroker} />

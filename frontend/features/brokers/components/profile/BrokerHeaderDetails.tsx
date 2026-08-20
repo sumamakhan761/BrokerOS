@@ -10,6 +10,7 @@ interface BrokerHeaderDetailsProps {
   openMeetingModal: () => void;
   handleAiAutoAdvance: () => void;
   isAiAdvancing: boolean;
+  isCM?: boolean;
 }
 
 /* dynamic status pill color */
@@ -30,7 +31,8 @@ export function BrokerHeaderDetails({
   openFollowUpModal,
   openMeetingModal,
   handleAiAutoAdvance,
-  isAiAdvancing
+  isAiAdvancing,
+  isCM
 }: BrokerHeaderDetailsProps) {
   return (
     <>
@@ -159,8 +161,9 @@ export function BrokerHeaderDetails({
       </div>
 
       {/* Action buttons */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingTop: 2 }}>
-        {/* Call */}
+      {!isCM && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingTop: 2 }}>
+          {/* Call */}
         <button
           style={{
             padding: '7px 16px',
@@ -274,8 +277,9 @@ export function BrokerHeaderDetails({
         >
           <Users style={{ width: 14, height: 14 }} />
           Meeting
-        </button>
-      </div>
+          </button>
+        </div>
+      )}
     </>
   );
 }

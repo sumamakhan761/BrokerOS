@@ -124,6 +124,7 @@ All users have the exact same password: **Demo@1234**
 **User 2:**
 - **Role:** Closing Manager
 - **Email:** closingmanager2@demo.com
+
 - **Phone:** 9800000019
 - **Password:** Demo@1234
 

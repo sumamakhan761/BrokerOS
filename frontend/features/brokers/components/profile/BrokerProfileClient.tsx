@@ -228,6 +228,7 @@ export function BrokerProfileClient({ brokerId }: { brokerId: string }) {
         openMeetingModal={openMeetingModal}
         handleAiAutoAdvance={handleAiAutoAdvance}
         isAiAdvancing={isAiAdvancing}
+        isCM={isCM}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
