@@ -12,58 +12,50 @@ interface BrokerListCardProps {
 export default function BrokerListCard({ broker, onPress, onAssign }: BrokerListCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'DEAL': return 'bg-emerald-100 border-emerald-200 text-emerald-700';
-      case 'VISIT': return 'bg-amber-100 border-amber-200 text-amber-700';
-      case 'NEW': return 'bg-blue-100 border-blue-200 text-blue-700';
-      case 'CONTACTED': return 'bg-indigo-100 border-indigo-200 text-indigo-700';
-      default: return 'bg-slate-100 border-slate-200 text-slate-700';
+      case 'DEAL': return 'bg-green-100 text-green-700 border-green-200';
+      case 'VISIT': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'NEW': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'CONTACTED': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-4"
-      activeOpacity={0.7}
-    >
-      <View className="flex-row justify-between items-start mb-2">
-        <View className="flex-1">
-          <Text className="text-lg font-bold text-slate-900" numberOfLines={1}>
-            {broker.companyName || 'No Company Name'}
-          </Text>
-          <Text className="text-sm text-slate-500 mt-0.5">{broker.name}</Text>
-        </View>
-        <View className={`px-2.5 py-1 rounded-full border ${getStatusColor(broker.status)}`}>
-          <Text className={`text-xs font-bold ${getStatusColor(broker.status).split(' ')[2]}`}>
-            {broker.status}
-          </Text>
-        </View>
-      </View>
+  const displayName = broker.companyName || broker.name || 'Unknown Broker';
+  const assignedName = broker.assignedTo ? (broker.assignedTo.name || broker.assignedTo.username) : 'Unassigned';
 
-      <View className="mt-3 pt-3 border-t border-slate-100 flex-row justify-between items-center">
-        <View className="flex-row items-center flex-1">
-          <Feather name="phone" size={14} color="#64748b" />
-          <Text className="text-slate-600 text-sm ml-1.5">{broker.phone}</Text>
+  return (
+    <View className="mb-3">
+      <TouchableOpacity
+        onPress={onPress}
+        className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex-row items-center"
+        activeOpacity={0.7}
+      >
+        <View className="flex-1">
+          <View className="flex-row justify-between items-start mb-1">
+            <Text className="text-base font-bold text-gray-900" numberOfLines={1}>{displayName}</Text>
+            <View className={`px-2 py-1 rounded-full border ${getStatusColor(broker.status)}`}>
+              <Text className="text-[10px] font-bold uppercase">{broker.status}</Text>
+            </View>
+          </View>
+          <View className="flex-row items-center mt-1">
+            <Feather name="phone" size={12} color="#64748b" />
+            <Text className="text-sm text-gray-500 ml-1">{broker.phone}</Text>
+          </View>
         </View>
-        <View className="flex-row items-center flex-1 justify-end">
-          <Feather name="map-pin" size={14} color="#64748b" />
-          <Text className="text-slate-600 text-sm ml-1.5" numberOfLines={1}>
-            {broker.city || 'N/A'}
-          </Text>
+        <View className="ml-3 items-center justify-center bg-gray-50 px-3 h-8 rounded-full border border-gray-200">
+          <Text className="text-gray-700 font-bold text-xs">{assignedName}</Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {onAssign && (
-        <View className="mt-3 pt-3 border-t border-slate-100">
-          <TouchableOpacity
-            onPress={onAssign}
-            className="flex-row items-center justify-center bg-indigo-50 py-2 rounded-xl"
-          >
-            <Feather name="user-plus" size={16} color="#4f46e5" />
-            <Text className="text-indigo-700 font-bold ml-2">Assign Manager</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={onAssign}
+          className="flex-row items-center justify-center bg-indigo-50 py-2 rounded-xl mt-1 border border-indigo-100"
+        >
+          <Feather name="user-plus" size={16} color="#4f46e5" />
+          <Text className="text-indigo-700 font-bold ml-2">Assign Manager</Text>
+        </TouchableOpacity>
       )}
-    </TouchableOpacity>
+    </View>
   );
 }

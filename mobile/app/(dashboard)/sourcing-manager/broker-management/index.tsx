@@ -50,32 +50,29 @@ export default function BrokerManagementIndex() {
   );
 
   return (
-    <View className="flex-1 bg-slate-50">
-      <View className="p-6 pt-12 bg-white border-b border-slate-200">
-        <View className="flex-row justify-between items-center mb-4">
-          <View>
-            <Text className="text-2xl font-bold text-slate-900">Brokers</Text>
-            <Text className="text-sm text-slate-500 mt-1">Manage your channel partners</Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => setIsAddModalOpen(true)}
-            className="w-12 h-12 bg-indigo-600 rounded-full items-center justify-center shadow-sm"
-          >
-            <Feather name="plus" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
+    <View className="flex-1 bg-[#f8fafc]">
+      <View className="p-4 bg-white border-b border-gray-200 shadow-sm flex-row items-center justify-between z-10 pt-12">
+        <Text className="text-xl font-bold text-gray-900">Brokers</Text>
+        <TouchableOpacity
+          onPress={() => setIsAddModalOpen(true)}
+          className="w-8 h-8 bg-indigo-600 rounded-full items-center justify-center shadow-sm"
+        >
+          <Feather name="plus" size={16} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
-        <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-          <Feather name="search" size={20} color="#94a3b8" />
+      <View className="px-4 py-2 bg-white">
+        <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 shadow-sm">
+          <Feather name="search" size={18} color="#94a3b8" />
           <TextInput
             placeholder="Search brokers..."
             value={search}
             onChangeText={setSearch}
-            className="flex-1 ml-3 text-slate-900 text-base"
+            className="flex-1 ml-2 text-base text-gray-900 h-8"
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Feather name="x-circle" size={20} color="#94a3b8" />
+              <Feather name="x-circle" size={18} color="#94a3b8" />
             </TouchableOpacity>
           )}
         </View>
@@ -89,20 +86,20 @@ export default function BrokerManagementIndex() {
       />
 
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#4f46e5" />
+        <View className="flex-1 justify-center items-center bg-[#f8fafc]">
+          <ActivityIndicator size="large" color="#2563eb" />
         </View>
       ) : (
         <FlatList
           data={filteredBrokers}
           keyExtractor={item => item.id}
-          contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-          ItemSeparatorComponent={() => <View className="h-4" />}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, paddingTop: 8 }}
+          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View className="py-20 items-center justify-center">
               <Feather name="users" size={48} color="#cbd5e1" />
-              <Text className="text-lg font-bold text-slate-900 mt-4">No Brokers Found</Text>
-              <Text className="text-slate-500 text-center mt-2 px-8">Try adjusting your search or add a new broker.</Text>
+              <Text className="text-lg font-bold text-gray-900 mt-4">No Brokers Found</Text>
+              <Text className="text-gray-500 text-center mt-2 px-8">Try adjusting your search or add a new broker.</Text>
             </View>
           }
           renderItem={({ item }) => (
