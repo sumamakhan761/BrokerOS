@@ -12,6 +12,11 @@ import PostSalesFollowUps from '../../../../components/dashboards/post-sales/wid
 import { Users, FileText, CircleDollarSign, Edit, Key, CheckCircle } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { PostSalesAnalyticsWidgets } from '../../../../components/analytics/PostSalesAnalyticsWidgets';
+import { PipelinePyramid } from '../../../../components/analytics/PipelinePyramid';
+import { VelocityGauge } from '../../../../components/analytics/VelocityGauge';
+import { StatusDistributionBar } from '../../../../components/analytics/StatusDistributionBar';
+import { InventorySellThroughChart } from '../../../../components/analytics/InventorySellThroughChart';
 
 type Tab = 'dashboard' | 'leads' | 'analytics';
 
@@ -229,35 +234,69 @@ function EmployeeAnalyticsView({ employeeId, baseURL }: { employeeId: string; ba
         </View>
       ) : data ? (
         <>
-          {/* Widgets */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-            {[
-              { label: 'Total Booked', value: data.widgets?.totalBooked ?? 0, color: '#6366f1' },
-              { label: 'Handover Done', value: data.widgets?.totalHandoverCompleted ?? 0, color: '#10b981' },
-              { label: 'Conversion %', value: `${data.widgets?.conversionRate ?? '0.0'}%`, color: '#f59e0b' },
-            ].map((w, i) => (
-              <View key={i} style={[styles.card, { width: '48%', padding: 16, alignItems: 'center' }]}>
-                <Text style={{ fontSize: 26, fontWeight: 'bold', color: w.color }}>{w.value}</Text>
-                <Text style={{ fontSize: 12, color: '#64748b', marginTop: 4, textAlign: 'center' }}>{w.label}</Text>
-              </View>
-            ))}
-          </View>
+          <PostSalesAnalyticsWidgets widgets={data.widgets} />
 
-          {/* Funnel */}
+          {/* ── Post-Sales Funnel ── */}
           {data.funnel && (
-            <View style={[styles.card, { padding: 16, marginBottom: 12 }]}>
-              <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#0f172a', marginBottom: 12 }}>Post-Sales Funnel</Text>
-              {Object.entries(data.funnel).map(([key, val]: any) => (
-                <View key={key} style={{ marginBottom: 8 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <Text style={{ fontSize: 12, color: '#64748b', textTransform: 'capitalize' }}>{key}</Text>
-                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#0f172a' }}>{val}</Text>
-                  </View>
-                  <View style={{ height: 6, backgroundColor: '#f1f5f9', borderRadius: 3 }}>
-                    <View style={{ height: '100%', width: `${Math.min(100, (val / Math.max(1, data.funnel.booking)) * 100)}%`, backgroundColor: '#ec4899', borderRadius: 3 }} />
-                  </View>
-                </View>
-              ))}
+            <View style={[styles.card, { padding: 16, marginBottom: 12, marginTop: 12 }]}>
+              <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#0f172a', marginBottom: 2 }}>Funnel Progression</Text>
+              <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>Pipeline conversion journey</Text>
+              <PipelinePyramid
+                data={[
+                  { stage: 'Booking', count: data.funnel.booking, color: '#ec4899' },
+                  { stage: 'Document', count: data.funnel.document, color: '#d946ef' },
+                  { stage: 'Loan', count: data.funnel.loan, color: '#a855f7' },
+                  { stage: 'Agreement', count: data.funnel.agreement, color: '#8b5cf6' },
+                  { stage: 'Handover', count: data.funnel.handover, color: '#6366f1' },
+                ]}
+              />
+            </View>
+          )}
+
+          {/* ── Velocity Gauge ── */}
+          {data && (
+            <VelocityGauge days={data.velocity} delay={0.3} />
+          )}
+
+          {/* ── Status Distributions ── */}
+          {data && (
+            <View style={{ width: '100%' }}>
+              <StatusDistributionBar
+                title="Loan Approval Success"
+                description="Breakdown of loan case statuses"
+                delay={0.4}
+                data={[
+                  { name: 'Approved', value: data.loanSuccessRate.approved, color: '#10b981' },
+                  { name: 'In Progress', value: data.loanSuccessRate.inProgress, color: '#f59e0b' },
+                  { name: 'Rejected', value: data.loanSuccessRate.rejected, color: '#ef4444' },
+                ]}
+              />
+              <StatusDistributionBar
+                title="Handover Readiness"
+                description="Status of possession/handover readiness"
+                delay={0.5}
+                data={[
+                  { name: 'Not Ready', value: data.handoverReadiness.notReady, color: '#ef4444' },
+                  { name: 'Scheduled', value: data.handoverReadiness.scheduled, color: '#3b82f6' },
+                  { name: 'Handed Over', value: data.handoverReadiness.handedOver, color: '#10b981' },
+                ]}
+              />
+            </View>
+          )}
+
+          {/* ── Internal Project Analytics ── */}
+          {data && (
+            <View style={{ width: '100%', marginTop: 8 }}>
+              <StatusDistributionBar
+                title="Internal Sales Distribution"
+                description="Percentage share of total sold/reserved units per project"
+                delay={0.6}
+                data={data.internalSalesDistribution.map((p: any, index: number) => {
+                  const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4'];
+                  return { name: p.projectName, value: p.soldUnits, color: colors[index % colors.length] };
+                })}
+              />
+              <InventorySellThroughChart data={data.inventorySellThrough} delay={0.7} />
             </View>
           )}
         </>
