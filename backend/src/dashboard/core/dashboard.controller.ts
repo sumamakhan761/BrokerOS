@@ -183,7 +183,7 @@ export class PostSalesDashboardController {
 
   @Get('analytics')
   getAnalytics(@Req() req: any, @Query('timeRange') timeRange?: string) {
-    return this.postSalesAnalyticsService.getPostSalesAnalytics(req.user?.id, timeRange);
+    return this.postSalesAnalyticsService.getPostSalesAnalytics(req.user?.id, timeRange, req.user?.roleId);
   }
 }
 

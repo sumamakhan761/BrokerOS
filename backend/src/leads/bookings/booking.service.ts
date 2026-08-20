@@ -31,7 +31,7 @@ export class BookingService {
     return this.bookingStatus.markBookingDone(bookingId);
   }
 
-  async getAllBookings(userId: string, roleId: number) {
+  async getAllBookings(userId: string, roleId: string) {
     return this.bookingQuery.getAllBookings(userId, roleId);
   }
 

@@ -20,12 +20,24 @@ export class PostSalesAnalyticsService {
     return boundary;
   }
 
-  async getPostSalesAnalytics(userId?: string, timeRange?: string) {
+  async getPostSalesAnalytics(userId?: string, timeRange?: string, roleId?: string) {
     const startDate = this.getDateBoundary(timeRange);
     const dateFilter = startDate ? { gte: startDate } : undefined;
     
+    let roleCode = 'ADMIN';
+    if (roleId) {
+      const role = await this.prisma.role.findUnique({ where: { id: roleId } });
+      if (role) roleCode = role.code;
+    }
+
     const leadWhere: any = { deletedAt: null };
     if (dateFilter) leadWhere.updatedAt = dateFilter;
+    
+    if (roleCode === 'POST_SALES' && userId) {
+      leadWhere.customer = { some: { bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } } } };
+    } else if (roleCode === 'POST_SALES_MANAGER') {
+      leadWhere.customer = { some: { bookings: { some: { source: 'DIRECT' } } } };
+    }
 
     // 1. Funnel Data
     const funnelCounts = await this.prisma.lead.groupBy({

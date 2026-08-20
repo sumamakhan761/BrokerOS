@@ -59,9 +59,18 @@ export class BookingQueryService {
     };
   }
 
-  async getAllBookings(userId: string, roleId: number) {
-    // Sales Executive (2)
-    if (roleId === 2) {
+  async getAllBookings(userId: string, roleId: string) {
+    let roleCode = 'ADMIN'; // Default fallback
+
+    if (roleId) {
+      const role = await this.prisma.role.findUnique({ where: { id: roleId } });
+      if (role) {
+        roleCode = role.code;
+      }
+    }
+
+    // Sales Executive
+    if (roleCode === 'SALES_EXECUTIVE') {
       return this.prisma.booking.findMany({
         where: {
           status: 'CONFIRMED',
@@ -75,18 +84,67 @@ export class BookingQueryService {
       });
     }
 
-    // Sales Manager (3) -> should see all bookings from their subordinates. For now, all bookings or filter by subordinate.
-    if (roleId === 3) {
-      // In a real app we would filter by salesExecId in subordinate list.
-      // Assuming for demo manager sees all or specific.
+    // Sales Manager
+    if (roleCode === 'SALES_MANAGER') {
       return this.prisma.booking.findMany({
         where: {
           status: 'CONFIRMED',
+          source: 'DIRECT' // only sees brokerage bookings
         },
         include: {
           customer: { include: { lead: true } },
           unit: true,
           salesExec: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
+
+    // Post Sales
+    if (roleCode === 'POST_SALES') {
+      return this.prisma.booking.findMany({
+        where: {
+          status: 'CONFIRMED',
+          assignedPostSalesId: userId,
+          source: 'DIRECT' // only internal brokerage bookings
+        },
+        include: {
+          customer: { include: { lead: true } },
+          unit: true,
+          salesExec: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
+
+    // Post Sales Manager
+    if (roleCode === 'POST_SALES_MANAGER') {
+      return this.prisma.booking.findMany({
+        where: {
+          status: 'CONFIRMED',
+          source: 'DIRECT' // only internal brokerage bookings
+        },
+        include: {
+          customer: { include: { lead: true } },
+          unit: true,
+          salesExec: true,
+          assignedPostSales: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
+
+    // Closing Manager / Sourcing Manager (CP Side)
+    if (roleCode === 'CLOSING_MANAGER' || roleCode === 'SOURCING_MANAGER' || roleCode === 'CHANNEL_PARTNER') {
+      return this.prisma.booking.findMany({
+        where: {
+          status: 'CONFIRMED',
+          source: 'CHANNEL_PARTNER'
+        },
+        include: {
+          customer: { include: { lead: true } },
+          unit: true,
+          closingManager: true
         },
         orderBy: { createdAt: 'desc' }
       });
@@ -98,7 +156,9 @@ export class BookingQueryService {
       include: {
         customer: { include: { lead: true } },
         unit: true,
-        salesExec: true
+        salesExec: true,
+        closingManager: true,
+        assignedPostSales: true
       },
       orderBy: { createdAt: 'desc' }
     });

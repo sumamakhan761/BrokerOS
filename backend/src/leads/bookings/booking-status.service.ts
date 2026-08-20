@@ -12,9 +12,39 @@ export class BookingStatusService {
     });
     if (!booking) throw new NotFoundException('Booking not found');
 
+    let assignedPostSalesId = booking.assignedPostSalesId;
+
+    // If it's a DIRECT booking and hasn't been assigned to a post sales agent yet
+    if (booking.source === 'DIRECT' && !assignedPostSalesId) {
+      // Find the POST_SALES role
+      const postSalesRole = await this.prisma.role.findFirst({ where: { code: 'POST_SALES' } });
+      if (postSalesRole) {
+        // Find all active post sales agents
+        const postSalesAgents = await this.prisma.user.findMany({
+          where: { roleId: postSalesRole.id, status: 'ACTIVE' },
+          include: {
+            _count: {
+              select: { assignedPostSalesBookings: true }
+            }
+          },
+          orderBy: {
+            assignedPostSalesBookings: { _count: 'asc' }
+          }
+        });
+
+        if (postSalesAgents.length > 0) {
+          // Assign to the one with the least bookings
+          assignedPostSalesId = postSalesAgents[0].id;
+        }
+      }
+    }
+
     const updatedBooking = await this.prisma.booking.update({
       where: { id: bookingId },
-      data: { status: 'CONFIRMED' }
+      data: { 
+        status: 'CONFIRMED',
+        ...(assignedPostSalesId ? { assignedPostSalesId } : {})
+      }
     });
 
     // Also update lead status to BOOKING

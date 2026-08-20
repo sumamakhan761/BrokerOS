@@ -574,6 +574,7 @@ model User {
   approvalRequestsManaged    ApprovalRequest[]   @relation("ApprovalRequestManager")
   approvalMessagesSent       ApprovalMessage[]   @relation("ApprovalMessageSender")
   receivedInboundCommissions InboundCommission[] @relation("ReceivedInboundCommissions")
+  assignedPostSalesBookings  Booking[]           @relation("BookingPostSales")
 
   @@index([departmentId])
   @@index([roleId])
@@ -1753,6 +1754,8 @@ model Booking {
   salesExec        User?         @relation("BookingSalesExec", fields: [salesExecId], references: [id])
   closingManagerId String?
   closingManager   User?         @relation("BookingClosingManager", fields: [closingManagerId], references: [id])
+  assignedPostSalesId String?
+  assignedPostSales   User?      @relation("BookingPostSales", fields: [assignedPostSalesId], references: [id])
   negotiationId    String?
   negotiation      Negotiation?  @relation(fields: [negotiationId], references: [id])
 

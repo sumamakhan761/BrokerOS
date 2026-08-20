@@ -6,14 +6,23 @@ import { getTodayRange } from '../core/dashboard.utils.js';
 export class PostSalesDashboardService {
   constructor(private prisma: PrismaService) { }
 
-  async getPostSalesDashboard(userId: string, roleCode?: string) {
+  async getPostSalesDashboard(userId: string, roleId?: string) {
     const { start: todayStart, end: todayEnd } = getTodayRange();
+
+    let roleCode = 'ADMIN';
+    if (roleId) {
+      const role = await this.prisma.role.findUnique({ where: { id: roleId } });
+      if (role) roleCode = role.code;
+    }
 
     // Generic where clause for post-sales leads
     const leadWhere: any = { deletedAt: null };
-    // Post-sales agents typically view all leads in post-sales statuses, regardless of assignedUserId 
-    // (which belongs to the sales exec/pre-sales). 
-    if (roleCode && roleCode === 'SALES_EXECUTIVE') {
+    // Post-sales agents only view leads corresponding to bookings assigned to them
+    if (roleCode === 'POST_SALES') {
+      leadWhere.customer = { some: { bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } } } };
+    } else if (roleCode === 'POST_SALES_MANAGER') {
+      leadWhere.customer = { some: { bookings: { some: { source: 'DIRECT' } } } };
+    } else if (roleCode === 'SALES_EXECUTIVE') {
       leadWhere.assignedUserId = userId;
     }
 
