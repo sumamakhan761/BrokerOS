@@ -285,6 +285,14 @@ export default function DashboardLayout() {
     { name: "post-sales/handover", title: "Handover", icon: "clipboard", roles: ['POST_SALES'] },
     { name: "post-sales/analytics", title: "Analytics", icon: "pie-chart", roles: ['POST_SALES'] },
     { name: "post-sales/settings", title: "Settings", icon: "settings", roles: ['POST_SALES'] },
+    { name: "post-sales-manager/index", title: "Overview", icon: "layout", roles: ['POST_SALES_MANAGER'] },
+    { name: "post-sales-manager/lead-management", title: "Leads", icon: "list", roles: ['POST_SALES_MANAGER'] },
+    { name: "post-sales-manager/inventory/index", title: "Inventory", icon: "package", roles: ['POST_SALES_MANAGER'] },
+    { name: "post-sales-manager/inventory/[projectId]", title: "Project Details", icon: "package", roles: ['POST_SALES_MANAGER'] },
+    { name: "post-sales-manager/commissions/index", title: "Commissions", icon: "credit-card", roles: ['POST_SALES_MANAGER'] },
+    { name: "post-sales-manager/handover", title: "Handover", icon: "clipboard", roles: ['POST_SALES_MANAGER'] },
+    { name: "post-sales-manager/analytics", title: "Analytics", icon: "pie-chart", roles: ['POST_SALES_MANAGER'] },
+    { name: "post-sales-manager/settings", title: "Settings", icon: "settings", roles: ['POST_SALES_MANAGER'] },
     { name: "finance/index", title: "Finance", icon: "dollar-sign", roles: ['FINANCE'] },
     { name: "business-manager/index", title: "Business Mgr", icon: "bar-chart-2", roles: ['BUSINESS_MANAGER'] },
     { name: "director/index", title: "Director", icon: "shield", roles: ['DIRECTOR'] },
@@ -366,6 +374,16 @@ export default function DashboardLayout() {
       { name: "post-sales/commissions/index", title: "Commissions", icon: "credit-card", roles: ['POST_SALES'] },
       { name: "post-sales/analytics", title: "Analytics", icon: "pie-chart", roles: ['POST_SALES'] },
       { name: "post-sales/settings", title: "Settings", icon: "settings", roles: ['POST_SALES'] },
+    ];
+  } else if (userRole === 'POST_SALES_MANAGER') {
+    navLinks = [
+      { name: "post-sales-manager/index", title: "Overview", icon: "layout", roles: ['POST_SALES_MANAGER'] },
+      { name: "post-sales-manager/lead-management", title: "Leads", icon: "list", roles: ['POST_SALES_MANAGER'] },
+      { name: "post-sales-manager/inventory/index", title: "Inventory", icon: "package", roles: ['POST_SALES_MANAGER'] },
+      { name: "post-sales-manager/handover", title: "Handover", icon: "clipboard", roles: ['POST_SALES_MANAGER'] },
+      { name: "post-sales-manager/commissions/index", title: "Commissions", icon: "credit-card", roles: ['POST_SALES_MANAGER'] },
+      { name: "post-sales-manager/analytics", title: "Analytics", icon: "pie-chart", roles: ['POST_SALES_MANAGER'] },
+      { name: "post-sales-manager/settings", title: "Settings", icon: "settings", roles: ['POST_SALES_MANAGER'] },
     ];
   } else if (userRole === 'SOURCING_MANAGER') {
     navLinks = [
