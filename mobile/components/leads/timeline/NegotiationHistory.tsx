@@ -7,13 +7,13 @@ import NegotiationTimeline from './NegotiationTimeline';
 import { authClient } from '@/lib/auth-client';
 
 interface NegotiationHistoryProps {
-  notes: any[];
+  negotiations: any[];
   leadId?: string;
   onRefresh?: () => void;
 }
 
-export default function NegotiationHistory({ notes, leadId, onRefresh }: NegotiationHistoryProps) {
-  const negotiationNotes = notes?.filter((n: any) => n.noteType === 'NEGOTIATION') || [];
+export default function NegotiationHistory({ negotiations, leadId, onRefresh }: NegotiationHistoryProps) {
+  const negotiationNotes = negotiations || [];
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -37,24 +37,19 @@ export default function NegotiationHistory({ notes, leadId, onRefresh }: Negotia
         return;
       }
 
-      const contentObj = {
-        title: form.title.trim() || `Round ${negotiationNotes.length + 1}`,
-        askingPrice: form.askingPrice,
-        offeredPrice: form.offeredPrice,
-        objections: form.objections,
-        strategy: form.strategy,
-        nextStep: form.nextStep,
-      };
-
       const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
-      const { error } = await authClient.$fetch(`/api/leads/${leadId}/notes`, {
+      const { error } = await authClient.$fetch(`/api/leads/${leadId}/negotiations`, {
         baseURL,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: {
-          content: JSON.stringify(contentObj),
+          askingPrice: form.askingPrice,
+          offeredPrice: form.offeredPrice,
+          objections: form.objections,
+          strategy: form.strategy,
+          title: form.title.trim() || `Round ${negotiationNotes.length + 1}`,
+          nextStep: form.nextStep,
           userId,
-          noteType: 'NEGOTIATION'
         },
       });
 

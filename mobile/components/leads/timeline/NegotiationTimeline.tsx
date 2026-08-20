@@ -34,7 +34,14 @@ export default function NegotiationTimeline({ negotiationNotes }: NegotiationTim
   return (
     <View className="space-y-3">
       {negotiationNotes.map((note) => {
-        const data = parseNegotiationContent(note.content);
+        const data = {
+          askingPrice: note.askingPrice,
+          offeredPrice: note.offeredPrice,
+          objections: note.customerObjections,
+          strategy: note.managerSuggestion,
+          title: note.negotiationNotes,
+          nextStep: note.nextActionPlan,
+        };
         const isExpanded = expandedId === note.id;
         const gap = data.askingPrice && data.offeredPrice
           ? Number(data.askingPrice) - Number(data.offeredPrice)
@@ -118,17 +125,6 @@ export default function NegotiationTimeline({ negotiationNotes }: NegotiationTim
                     </View>
                   )}
                 </View>
-
-                {data.raw && !data.objections && !data.strategy && !data.nextStep && (
-                  <View className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm mt-3">
-                    <Text className="text-sm text-gray-700 leading-tight">{data.raw}</Text>
-                  </View>
-                )}
-                {data.raw && (data.objections || data.strategy || data.nextStep) && (
-                  <View className="pt-3 mt-3 border-t border-gray-200">
-                    <Text className="text-xs text-gray-400 italic">{data.raw}</Text>
-                  </View>
-                )}
               </View>
             )}
           </View>

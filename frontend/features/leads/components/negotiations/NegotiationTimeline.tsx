@@ -3,7 +3,7 @@ import { TrendingUp, ChevronDown, ChevronUp, Handshake } from 'lucide-react';
 import { NegotiationNote, parseNegotiationContent } from '@/features/leads/types/negotiation-types';
 
 interface NegotiationTimelineProps {
-  negotiationNotes: NegotiationNote[];
+  negotiationNotes: any[];
 }
 
 export function NegotiationTimeline({ negotiationNotes }: NegotiationTimelineProps) {
@@ -26,7 +26,15 @@ export function NegotiationTimeline({ negotiationNotes }: NegotiationTimelinePro
   return (
     <div className="relative space-y-4">
       {negotiationNotes.map((note, index) => {
-        const data = parseNegotiationContent(note.content);
+        // Map database fields to the UI expected variables
+        const data = {
+          askingPrice: note.askingPrice,
+          offeredPrice: note.offeredPrice,
+          objections: note.customerObjections,
+          strategy: note.managerSuggestion,
+          title: note.negotiationNotes,
+          nextStep: note.nextActionPlan,
+        };
         const isExpanded = expandedId === note.id;
         const gap = data.askingPrice && data.offeredPrice
           ? Number(data.askingPrice) - Number(data.offeredPrice)
@@ -114,17 +122,6 @@ export function NegotiationTimeline({ negotiationNotes }: NegotiationTimelinePro
                       </div>
                     )}
                   </div>
-
-                  {data.raw && !data.objections && !data.strategy && !data.nextStep && (
-                    <div className="bg-white border border-gray-100 rounded-xl p-3.5 shadow-sm mt-3">
-                      <p className="text-sm text-gray-700 leading-relaxed">{data.raw}</p>
-                    </div>
-                  )}
-                  {data.raw && (data.objections || data.strategy || data.nextStep) && (
-                    <div className="pt-3 mt-3 border-t border-gray-200/60">
-                      <p className="text-xs text-gray-400 italic">{data.raw}</p>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
