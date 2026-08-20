@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import PossessionModal from './PossessionModal';
 import { UnitDetailsView } from './UnitDetailsView';
@@ -18,6 +18,7 @@ export function UnitDetailsModal({ unit, visible, onClose, onSave }: UnitDetails
   const [isSaving, setIsSaving] = useState(false);
   const [bookingData, setBookingData] = useState<any>(null);
   const [loadingBooking, setLoadingBooking] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [isPossessionModalOpen, setIsPossessionModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     status: 'AVAILABLE',
@@ -90,6 +91,48 @@ export function UnitDetailsModal({ unit, visible, onClose, onSave }: UnitDetails
     }
   };
 
+  const handleCancelBooking = () => {
+    if (!bookingData) return;
+    Alert.prompt(
+      "Cancel Booking",
+      "Enter reason for cancellation:",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Yes, Cancel",
+          style: "destructive",
+          onPress: async (reason?: string) => {
+            if (!reason) {
+              alert("Reason is required to cancel a booking.");
+              return;
+            }
+            try {
+              setIsCancelling(true);
+              const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+              const res = await fetch(`${apiUrl}/api/leads/${bookingData.customer.leadId}/booking/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId: bookingData.id, reason })
+              });
+              if (res.ok) {
+                // Trigger a fake "AVAILABLE" update to refresh grid and close drawer safely
+                await onSave(unit.id || unit.unitNumber, { ...formData, status: 'AVAILABLE', clearBooking: true });
+                onClose(); // Close and refresh
+              } else {
+                alert('Failed to cancel booking');
+              }
+            } catch (error) {
+              console.error(error);
+              alert('Error cancelling booking');
+            } finally {
+              setIsCancelling(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="formSheet">
       <KeyboardAvoidingView
@@ -116,6 +159,9 @@ export function UnitDetailsModal({ unit, visible, onClose, onSave }: UnitDetails
               />
               <UnitDetailsPostSales 
                 unit={unit} 
+                bookingData={bookingData}
+                handleCancelBooking={handleCancelBooking}
+                isCancelling={isCancelling}
                 onUpdateTimelinePress={() => setIsPossessionModalOpen(true)} 
               />
             </>

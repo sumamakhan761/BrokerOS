@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Toast from 'react-native-toast-message';
 import { authClient } from '../../../lib/auth-client';
 
-export function useBookingForm(leadId: string, onRefresh: () => void, lead?: any) {
+export function useBookingForm(leadId: string, onRefresh: () => void, lead?: any, booking?: any) {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -17,19 +17,38 @@ export function useBookingForm(leadId: string, onRefresh: () => void, lead?: any
     remarks: '',
   });
 
+  const [hasInitializedFromBooking, setHasInitializedFromBooking] = useState(false);
+
   // Cascading Dropdown States
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
 
-  // Pre-fill from lead
+  // Pre-fill from lead or booking
   useEffect(() => {
-    if (showForm && lead) {
+    if (showForm && booking && !hasInitializedFromBooking) {
+      if (booking.unit?.floor?.tower?.projectId) setSelectedProjectId(booking.unit.floor.tower.projectId);
+      if (booking.unit?.floor?.towerId) setSelectedTowerId(booking.unit.floor.towerId);
+      if (booking.unit?.floorId) setSelectedFloorId(booking.unit.floorId);
+      if (booking.unitId) setSelectedUnitId(booking.unitId);
+      
+      setForm({
+        unitDescription: booking.unitDescription || '',
+        agreedPrice: booking.agreedPrice ? String(booking.agreedPrice) : '',
+        bookingAmount: booking.tokenAmount ? String(booking.tokenAmount) : '',
+        commissionPercentage: booking.commissionPercentage ? String(booking.commissionPercentage) : '',
+        commissionAmount: booking.commissionAmount ? String(booking.commissionAmount) : '',
+        paymentMode: booking.paymentMode || '',
+        transactionRef: booking.transactionRef || '',
+        loanRequired: false,
+        remarks: booking.cancelReason || '',
+      });
+      setHasInitializedFromBooking(true);
+    } else if (showForm && lead && !booking) {
       if (lead.interestedProjectId) setSelectedProjectId(lead.interestedProjectId);
-      // Depending on if lead stores interestedTowerId, interestedUnitId
       if (lead.interestedTowerId) setSelectedTowerId(lead.interestedTowerId);
       if (lead.interestedUnitId) setSelectedUnitId(lead.interestedUnitId);
     }
-  }, [showForm, lead]);
+  }, [showForm, lead, booking, hasInitializedFromBooking]);
 
   const [towers, setTowers] = useState<any[]>([]);
   const [selectedTowerId, setSelectedTowerId] = useState('');
@@ -124,26 +143,36 @@ export function useBookingForm(leadId: string, onRefresh: () => void, lead?: any
       }
 
       const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
-      const { error } = await authClient.$fetch(`/api/leads/${leadId}/booking`, {
+      const url = booking ? `/api/leads/${leadId}/booking` : `/api/leads/${leadId}/booking`;
+      const method = booking ? 'PATCH' : 'POST';
+
+      const payload: any = {
+        userId,
+        unitId: selectedUnitId,
+        unitDescription: form.unitDescription,
+        agreedPrice: form.agreedPrice ? Number(form.agreedPrice) : undefined,
+        bookingAmount: form.bookingAmount ? Number(form.bookingAmount) : undefined,
+        commissionPercentage: form.commissionPercentage ? Number(form.commissionPercentage) : undefined,
+        commissionAmount: form.commissionAmount ? Number(form.commissionAmount) : undefined,
+        paymentMode: form.paymentMode,
+        transactionRef: form.transactionRef,
+        loanRequired: form.loanRequired,
+        remarks: form.remarks,
+      };
+
+      if (booking) {
+        payload.bookingId = booking.id;
+      }
+
+      const { error } = await authClient.$fetch(url, {
         baseURL,
-        method: 'POST',
+        method: method,
         headers: { 'Content-Type': 'application/json' },
-        body: {
-          userId,
-          unitId: selectedUnitId,
-          unitDescription: form.unitDescription,
-          agreedPrice: form.agreedPrice ? Number(form.agreedPrice) : undefined,
-          bookingAmount: form.bookingAmount ? Number(form.bookingAmount) : undefined,
-          commissionPercentage: form.commissionPercentage ? Number(form.commissionPercentage) : undefined,
-          commissionAmount: form.commissionAmount ? Number(form.commissionAmount) : undefined,
-          paymentMode: form.paymentMode,
-          transactionRef: form.transactionRef,
-          loanRequired: form.loanRequired,
-          remarks: form.remarks,
-        },
+        body: payload,
       });
       if (!error) {
         setShowForm(false);
+        setHasInitializedFromBooking(false);
         onRefresh();
       } else {
         Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to create booking' });
