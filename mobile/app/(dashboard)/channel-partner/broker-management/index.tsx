@@ -85,28 +85,23 @@ export default function ChannelPartnerBrokerManagement() {
   }
 
   return (
-    <View className="flex-1 bg-slate-50">
-      {/* Header */}
-      <View className="px-4 py-4 bg-white shadow-sm z-10 flex-row justify-between items-center">
-        <View>
-          <Text className="text-xl font-bold text-slate-900">Broker Management</Text>
-          <Text className="text-slate-500 text-sm">Manage your channel partners</Text>
-        </View>
+    <View className="flex-1 bg-[#f8fafc]">
+      <View className="p-4 bg-white border-b border-gray-200 shadow-sm flex-row items-center justify-between z-10 pt-12">
+        <Text className="text-xl font-bold text-gray-900">Brokers</Text>
       </View>
 
-      {/* Search Bar */}
-      <View className="px-4 py-3 bg-white border-b border-slate-100">
-        <View className="flex-row items-center bg-slate-100 rounded-xl px-3 py-2">
+      <View className="px-4 py-2 bg-white">
+        <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 shadow-sm">
           <Feather name="search" size={18} color="#94a3b8" />
           <TextInput
-            className="flex-1 ml-2 text-slate-700"
             placeholder="Search brokers..."
             value={search}
             onChangeText={setSearch}
+            className="flex-1 ml-2 text-base text-gray-900 h-8"
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Feather name="x-circle" size={16} color="#94a3b8" />
+              <Feather name="x-circle" size={18} color="#94a3b8" />
             </TouchableOpacity>
           )}
         </View>
