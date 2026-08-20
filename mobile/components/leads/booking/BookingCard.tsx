@@ -37,6 +37,7 @@ interface BookingCardProps {
 const PAYMENT_MODES = ['Cash', 'Cheque', 'NEFT', 'UPI', 'RTGS', 'Demand Draft'];
 
 export default function BookingCard({ booking, leadId, onRefresh, lead }: BookingCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
   const {
     showForm,
     setShowForm,
@@ -56,7 +57,15 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
     selectedUnitId,
     setSelectedUnitId,
     handleCreateBooking,
-  } = useBookingForm(leadId, onRefresh, lead);
+  } = useBookingForm(leadId, () => {
+    setIsEditing(false);
+    onRefresh();
+  }, lead, isEditing ? booking : undefined);
+
+  const handleShowForm = (val: boolean) => {
+    setShowForm(val);
+    if (!val) setIsEditing(false);
+  };
 
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [docSaving, setDocSaving] = useState(false);
@@ -92,7 +101,7 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
     }
   };
 
-  if (!booking) {
+  if (!booking || isEditing) {
     return (
       <View className="bg-white rounded-2xl border border-gray-200 shadow-sm mb-4">
         <View className="p-4 border-b border-gray-100 flex-row items-center gap-3">
@@ -112,7 +121,7 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
               <Text className="text-gray-500 font-bold mb-1 text-center">No booking created</Text>
               <Text className="text-gray-400 text-sm mb-5 text-center">When this lead reaches booking stage, create a booking record here.</Text>
               <TouchableOpacity
-                onPress={() => setShowForm(true)}
+                onPress={() => handleShowForm(true)}
                 className="flex-row items-center bg-amber-500 px-5 py-3 rounded-xl shadow-sm"
               >
                 <Feather name="plus" size={18} color="white" />
@@ -121,7 +130,7 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
             </View>
           ) : (
             <View className="space-y-4">
-              <Text className="font-bold text-gray-900 mb-2">New Booking Details</Text>
+              <Text className="font-bold text-gray-900 mb-2">{isEditing ? 'Edit Booking Details' : 'New Booking Details'}</Text>
 
               <View className="flex-row gap-2">
                 <View className="flex-1 border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
@@ -221,7 +230,7 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
 
               <View className="flex-row gap-3 pt-4 border-t border-gray-100">
                 <TouchableOpacity
-                  onPress={() => setShowForm(false)}
+                  onPress={() => handleShowForm(false)}
                   className="flex-1 py-3 rounded-xl border border-gray-200 items-center justify-center bg-gray-50"
                   disabled={saving}
                 >
@@ -237,7 +246,7 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
                   ) : (
                     <>
                       <Feather name="check" size={18} color="white" />
-                      <Text className="text-white font-bold ml-2">Save Booking</Text>
+                      <Text className="text-white font-bold ml-2">{isEditing ? 'Update Booking' : 'Save Booking'}</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -333,20 +342,31 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
         />
 
         {booking.status !== 'CONFIRMED' && (
-          <TouchableOpacity
-            className="mt-4 bg-[#2563eb] p-3 rounded-xl flex-row justify-center items-center shadow-sm"
-            onPress={handleRequestApproval}
-            disabled={requestingApproval}
-          >
-            {requestingApproval ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <>
-                <Feather name="send" size={18} color="white" />
-                <Text className="text-white font-bold ml-2">Send for Approval</Text>
-              </>
-            )}
-          </TouchableOpacity>
+          <View className="flex-row gap-3 mt-4">
+            <TouchableOpacity
+              className="flex-1 bg-white border border-gray-300 p-3 rounded-xl flex-row justify-center items-center shadow-sm"
+              onPress={() => setIsEditing(true)}
+              disabled={requestingApproval}
+            >
+              <Feather name="edit-2" size={16} color="#4b5563" />
+              <Text className="text-gray-700 font-bold ml-2">Edit</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="flex-[2] bg-[#2563eb] p-3 rounded-xl flex-row justify-center items-center shadow-sm"
+              onPress={handleRequestApproval}
+              disabled={requestingApproval}
+            >
+              {requestingApproval ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <>
+                  <Feather name="send" size={18} color="white" />
+                  <Text className="text-white font-bold ml-2">Send for Approval</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         )}
 
       </View>

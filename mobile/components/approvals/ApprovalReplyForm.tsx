@@ -85,7 +85,7 @@ export function ApprovalReplyForm({
         )}
 
         <View className="flex-row items-center gap-2">
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleSelectFile}
             className="p-2 rounded-full bg-slate-50 border border-slate-200"
           >
