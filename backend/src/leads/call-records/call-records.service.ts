@@ -28,17 +28,27 @@ export class CallRecordsService {
       where: { phone: data.phoneNumber },
     });
 
+    let broker: any = null;
     if (!lead) {
-      console.log(`No lead found for phone number: ${data.phoneNumber}`);
-      return { success: false, message: 'No lead found' };
+      broker = await this.prisma.broker.findFirst({
+        where: { phone: data.phoneNumber },
+      });
     }
 
-    const blob = await put(`calls/${lead.id}-${Date.now()}-${file.originalname}`, file.buffer, {
+    if (!lead && !broker) {
+      console.log(`No lead or broker found for phone number: ${data.phoneNumber}`);
+      return { success: false, message: 'No lead or broker found' };
+    }
+
+    const targetId = lead ? lead.id : broker!.id;
+    const blob = await put(`calls/${targetId}-${Date.now()}-${file.originalname}`, file.buffer, {
       access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN,
     });
 
-    const assignedUserId = lead.assignedUserId || (await this.prisma.user.findFirst())?.id;
+    const assignedUserId = lead 
+      ? (lead.assignedUserId || (await this.prisma.user.findFirst())?.id)
+      : (broker!.sourcingManagerId || (await this.prisma.user.findFirst())?.id);
 
     if (!assignedUserId) {
       return { success: false, message: 'No valid user found to assign call record' };
@@ -46,7 +56,8 @@ export class CallRecordsService {
 
     const callRecord = await this.prisma.callRecord.create({
       data: {
-        leadId: lead.id,
+        leadId: lead ? lead.id : undefined,
+        brokerId: broker ? broker.id : undefined,
         userId: assignedUserId,
         phoneNumber: data.phoneNumber,
         direction: 'OUTBOUND',
@@ -120,10 +131,12 @@ export class CallRecordsService {
         let leadData: any = null;
 
         if (transcript && transcript.length > 10) {
-          leadData = await this.prisma.lead.findUnique({
-            where: { id: callRecord.leadId! },
-            include: { _count: { select: { callRecords: true } } },
-          });
+          if (callRecord.leadId) {
+            leadData = await this.prisma.lead.findUnique({
+              where: { id: callRecord.leadId },
+              include: { _count: { select: { callRecords: true } } },
+            });
+          }
 
           // Fetch active projects to pass to AI
           const availableProjects = await this.prisma.project.findMany({
@@ -196,15 +209,18 @@ export class CallRecordsService {
           }
 
           // AI Follow-up Scheduling Logic
-          if (leadData && summaryResult !== null && typeof summaryResult !== 'string' && summaryResult.scheduleFollowUp && summaryResult.followUpIsoDate) {
+          if ((leadData || callRecord.brokerId) && summaryResult !== null && typeof summaryResult !== 'string' && summaryResult.scheduleFollowUp && summaryResult.followUpIsoDate) {
             try {
-              console.log(`[Queue] Triggering AI Auto-Schedule Follow-up for Lead: ${leadData.id}`);
+              const targetType = leadData ? 'Lead' : 'Broker';
+              const targetId = leadData ? leadData.id : callRecord.brokerId;
+              console.log(`[Queue] Triggering AI Auto-Schedule Follow-up for ${targetType}: ${targetId}`);
               const parsedDate = new Date(summaryResult.followUpIsoDate);
               
               if (!isNaN(parsedDate.getTime())) {
                 await this.prisma.followUp.create({
                   data: {
-                    leadId: leadData.id,
+                    leadId: leadData ? leadData.id : undefined,
+                    brokerId: !leadData ? callRecord.brokerId : undefined,
                     userId: assignedUserId,
                     scheduledDate: parsedDate,
                     type: summaryResult.followUpTitle || 'Follow-up Call',
