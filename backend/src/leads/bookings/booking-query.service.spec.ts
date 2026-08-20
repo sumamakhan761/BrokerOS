@@ -13,6 +13,9 @@ describe('BookingQueryService', () => {
     booking: {
       findFirst: jest.fn(),
       findMany: jest.fn(),
+    },
+    role: {
+      findUnique: jest.fn(),
     }
   };
 
@@ -55,17 +58,18 @@ describe('BookingQueryService', () => {
   });
 
   describe('getAllBookings', () => {
-    it('should query based on roleId = 2', async () => {
-      mockPrisma.booking.findMany.mockResolvedValue([]);
-      await service.getAllBookings('u-1', 2);
-      expect(mockPrisma.booking.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { status: 'CONFIRMED', salesExecId: 'u-1' }
-      }));
+    it('should query based on roleId for SALES_EXECUTIVE', async () => {
+      mockPrisma.role.findUnique.mockResolvedValue({ code: 'SALES_EXECUTIVE' });
+      mockPrisma.booking.findMany.mockResolvedValue([{ id: 'booking-id' }]);
+      const result = await service.getAllBookings('user-id', 'role-id');
+      expect(result).toEqual([{ id: 'booking-id' }]);
     });
 
-    it('should query based on roleId = 3', async () => {
-      mockPrisma.booking.findMany.mockResolvedValue([]);
-      await service.getAllBookings('u-1', 3);
+    it('should query bookings without assignedUserId for roles above SALES_MANAGER', async () => {
+      mockPrisma.role.findUnique.mockResolvedValue({ id: 'role-id', code: 'DIRECTOR' });
+      mockPrisma.booking.findMany.mockResolvedValue([{ id: 'booking-id' }]);
+
+      const result = await service.getAllBookings('user-id', 'role-id');
       expect(mockPrisma.booking.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { status: 'CONFIRMED' }
       }));
