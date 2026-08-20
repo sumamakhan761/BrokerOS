@@ -8,6 +8,7 @@ interface PendingListWidgetProps {
   list: LeadListItem[];
   statusFilter: string;
   emptyMessage?: string;
+  baseRoute?: string;
 }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
@@ -17,7 +18,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   HANDOVER: { bg: "#fce7f3", text: "#db2777" },
 };
 
-export default function PendingListWidget({ title, list, statusFilter, emptyMessage = "No pending items." }: PendingListWidgetProps) {
+export default function PendingListWidget({ title, list, statusFilter, emptyMessage = "No pending items.", baseRoute = "/(dashboard)/post-sales" }: PendingListWidgetProps) {
   const router = useRouter();
 
   return (
@@ -35,7 +36,7 @@ export default function PendingListWidget({ title, list, statusFilter, emptyMess
               return (
                 <TouchableOpacity
                   key={lead.id}
-                  onPress={() => router.push({ pathname: '/(dashboard)/post-sales/lead-management/[id]' as any, params: { id: lead.id } })}
+                  onPress={() => router.push({ pathname: `${baseRoute}/lead-management/[id]` as any, params: { id: lead.id } })}
                   style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: i < list.length - 1 ? 1 : 0, borderBottomColor: '#f1f5f9', paddingBottom: 10 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
                     <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center' }}>
@@ -59,7 +60,7 @@ export default function PendingListWidget({ title, list, statusFilter, emptyMess
           </View>
         )}
         <TouchableOpacity
-          onPress={() => router.push({ pathname: '/(dashboard)/post-sales/lead-management' as any, params: { status: statusFilter } })} style={{ marginTop: 16, backgroundColor: '#eef2ff', padding: 12, borderRadius: 12 }}>
+          onPress={() => router.push({ pathname: `${baseRoute}/lead-management` as any, params: { status: statusFilter } })} style={{ marginTop: 16, backgroundColor: '#eef2ff', padding: 12, borderRadius: 12 }}>
           <Text style={{ textAlign: 'center', fontSize: 13, fontWeight: '700', color: '#4f46e5' }}>See all {title.toLowerCase()} </Text>
         </TouchableOpacity>
       </View>

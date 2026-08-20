@@ -27,6 +27,7 @@ export default function DashboardIndex() {
               else if (code === 'SALES_EXECUTIVE') targetPath = '/(dashboard)/sales-executive';
               else if (code === 'SALES_MANAGER') targetPath = '/(dashboard)/sales-manager';
               else if (code === 'POST_SALES') targetPath = '/(dashboard)/post-sales';
+              else if (code === 'POST_SALES_MANAGER') targetPath = '/(dashboard)/post-sales-manager';
               else if (code === 'FINANCE') targetPath = '/(dashboard)/finance';
               else if (code === 'BUSINESS_MANAGER') targetPath = '/(dashboard)/business-manager';
               else if (code === 'DIRECTOR') targetPath = '/(dashboard)/director';
