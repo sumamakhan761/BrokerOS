@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
+import { UpdateUnitStatusDto, UpdatePossessionDto } from './dto/unit.dto.js';
 
 @Injectable()
 export class InventoryUnitsService {
   constructor(private prisma: PrismaService) { }
 
-  async updateUnitStatus(unitId: string, data: any, userId: string) {
+  async updateUnitStatus(unitId: string, data: UpdateUnitStatusDto, userId: string) {
     return this.prisma.$transaction(async (tx) => {
       const unit = await tx.unit.findUnique({ where: { id: unitId } });
       if (!unit) throw new NotFoundException('Unit not found');
@@ -15,7 +16,7 @@ export class InventoryUnitsService {
           data: {
             unitId,
             fromStatus: unit.status,
-            toStatus: data.status,
+            toStatus: data.status as any,
             changedById: userId,
             reason: data.reason
           }
@@ -85,50 +86,50 @@ export class InventoryUnitsService {
     return booking;
   }
 
-  async updateProjectPossession(projectId: string, data: { status: any, timeline: any }) {
+  async updateProjectPossession(projectId: string, data: UpdatePossessionDto) {
     return this.prisma.$transaction(async (tx) => {
       const proj = await tx.project.update({
         where: { id: projectId },
-        data: { constructionStatus: data.status, possessionTimeline: data.timeline }
+        data: { constructionStatus: data.status as any, possessionTimeline: data.timeline }
       });
       await tx.tower.updateMany({
         where: { projectId },
-        data: { constructionStatus: data.status, possessionTimeline: data.timeline }
+        data: { constructionStatus: data.status as any, possessionTimeline: data.timeline }
       });
       const towers = await tx.tower.findMany({ where: { projectId }, select: { floors: { select: { id: true } } } });
       const floorIds = towers.flatMap(t => t.floors.map(f => f.id));
       if (floorIds.length > 0) {
         await tx.unit.updateMany({
           where: { floorId: { in: floorIds } },
-          data: { constructionStatus: data.status, possessionTimeline: data.timeline }
+          data: { constructionStatus: data.status as any, possessionTimeline: data.timeline }
         });
       }
       return proj;
     });
   }
 
-  async updateTowerPossession(towerId: string, data: { status: any, timeline: any }) {
+  async updateTowerPossession(towerId: string, data: UpdatePossessionDto) {
     return this.prisma.$transaction(async (tx) => {
       const tower = await tx.tower.update({
         where: { id: towerId },
-        data: { constructionStatus: data.status, possessionTimeline: data.timeline },
+        data: { constructionStatus: data.status as any, possessionTimeline: data.timeline },
         include: { floors: { select: { id: true } } }
       });
       const floorIds = tower.floors.map(f => f.id);
       if (floorIds.length > 0) {
         await tx.unit.updateMany({
           where: { floorId: { in: floorIds } },
-          data: { constructionStatus: data.status, possessionTimeline: data.timeline }
+          data: { constructionStatus: data.status as any, possessionTimeline: data.timeline }
         });
       }
       return tower;
     });
   }
 
-  async updateUnitPossession(unitId: string, data: { status: any, timeline: any }) {
+  async updateUnitPossession(unitId: string, data: UpdatePossessionDto) {
     return this.prisma.unit.update({
       where: { id: unitId },
-      data: { constructionStatus: data.status, possessionTimeline: data.timeline }
+      data: { constructionStatus: data.status as any, possessionTimeline: data.timeline }
     });
   }
 }
