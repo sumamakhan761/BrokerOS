@@ -1,5 +1,6 @@
 import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
+import { CreateTaskDto, UpdateTaskDto } from '../core/dto/dashboard.dto.js';
 
 @Injectable()
 export class ManagerTasksService {
@@ -9,7 +10,7 @@ export class ManagerTasksService {
    * Creates a new active task and assigns it to specified employees (or all subordinates).
    * Rule: an employee can only have ONE active task assignment at a time.
    */
-  async createTask(managerId: string, data: { coldCallTarget: number; assignToAll: boolean; userIds?: string[] }) {
+  async createTask(managerId: string, data: CreateTaskDto) {
     let targetUserIds: string[];
 
     if (data.assignToAll) {
@@ -68,7 +69,7 @@ export class ManagerTasksService {
   async updateTask(
     taskId: string,
     managerId: string,
-    data: { coldCallTarget?: number; userId?: string; backlogOverride?: number },
+    data: UpdateTaskDto,
   ) {
     const task = await this.prisma.managerTask.findUnique({
       where: { id: taskId },
