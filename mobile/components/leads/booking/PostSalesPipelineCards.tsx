@@ -15,9 +15,10 @@ interface PostSalesPipelineCardsProps {
   leadSubStatus: string;
   booking: any;
   onRefresh: () => void;
+  userRole?: string;
 }
 
-export default function PostSalesPipelineCards({ leadId, leadStatus, leadSubStatus, booking, onRefresh }: PostSalesPipelineCardsProps) {
+export default function PostSalesPipelineCards({ leadId, leadStatus, leadSubStatus, booking, onRefresh, userRole }: PostSalesPipelineCardsProps) {
   const { saving, handleMarkStageDone, uploadFile, uploadDoc, saveModelData } = usePostSalesPipeline(leadId, booking?.id, onRefresh);
 
   if (!booking) {
@@ -28,24 +29,24 @@ export default function PostSalesPipelineCards({ leadId, leadStatus, leadSubStat
     );
   }
 
-  const wrapperProps = { leadStatus, leadSubStatus, saving, handleMarkStageDone };
+  const wrapperProps = { leadStatus, leadSubStatus, saving, handleMarkStageDone, userRole };
 
   return (
     <View className="space-y-4 w-full">
       <PipelineCardWrapper title="Documentation" statusKey="DOCUMENT" description="Collect and verify all KYC and property related documents." icon={<FileText size={20} color="#4f46e5" />} {...wrapperProps}>
-        <DocumentForm booking={booking} saving={saving} uploadDoc={uploadDoc} />
+        <DocumentForm booking={booking} saving={saving} uploadDoc={uploadDoc} userRole={userRole} />
       </PipelineCardWrapper>
-      
+
       <PipelineCardWrapper title="Loan Processing" statusKey="LOAN" description="Process home loan applications and await disbursement." icon={<Banknote size={20} color="#4f46e5" />} {...wrapperProps}>
-        <LoanForm booking={booking} saving={saving} saveModelData={saveModelData} uploadFile={uploadFile} />
+        <LoanForm booking={booking} saving={saving} saveModelData={saveModelData} uploadFile={uploadFile} userRole={userRole} />
       </PipelineCardWrapper>
-      
+
       <PipelineCardWrapper title="Agreement Execution" statusKey="AGREEMENT" description="Draft and execute the final agreement to sell / sale deed." icon={<PenTool size={20} color="#4f46e5" />} {...wrapperProps}>
-        <AgreementForm booking={booking} saving={saving} saveModelData={saveModelData} uploadFile={uploadFile} />
+        <AgreementForm booking={booking} saving={saving} saveModelData={saveModelData} uploadFile={uploadFile} userRole={userRole} />
       </PipelineCardWrapper>
-      
+
       <PipelineCardWrapper title="Handover" statusKey="HANDOVER" description="Complete final snagging, clear dues, and hand over the keys." icon={<Key size={20} color="#4f46e5" />} {...wrapperProps}>
-        <HandoverForm booking={booking} saving={saving} saveModelData={saveModelData} uploadFile={uploadFile} />
+        <HandoverForm booking={booking} saving={saving} saveModelData={saveModelData} uploadFile={uploadFile} userRole={userRole} />
       </PipelineCardWrapper>
     </View>
   );

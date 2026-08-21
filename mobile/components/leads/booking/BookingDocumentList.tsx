@@ -44,6 +44,7 @@ interface BookingDocumentListProps {
   setSaving: (val: boolean) => void;
   uploadingType: string | null;
   setUploadingType: (val: string | null) => void;
+  userRole?: string;
 }
 
 export default function BookingDocumentList({
@@ -53,7 +54,8 @@ export default function BookingDocumentList({
   saving,
   setSaving,
   uploadingType,
-  setUploadingType
+  setUploadingType,
+  userRole
 }: BookingDocumentListProps) {
 
   const handleDocumentUpload = async (docType: string) => {
@@ -62,18 +64,18 @@ export default function BookingDocumentList({
       if (!result.canceled && result.assets[0] && booking) {
         setUploadingType(docType);
         const file = result.assets[0];
-        
+
         const formData = new FormData();
         formData.append('file', { uri: file.uri, name: file.name, type: file.mimeType || 'application/octet-stream' } as any);
         formData.append('docType', docType);
         formData.append('bookingId', booking.id);
-        
+
         const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
         const { error, data } = await authClient.$fetch(`${baseURL}/api/leads/${leadId}/booking/documents`, {
           method: 'POST',
           body: formData as any,
         });
-        
+
         if (!error) {
           onRefresh();
         } else {
@@ -117,12 +119,12 @@ export default function BookingDocumentList({
           <Text className="text-blue-600 text-xs font-bold">{booking.documents?.length || 0} / {DOC_TYPES.length - 2} uploaded</Text>
         </View>
       </View>
-      
+
       <View className="space-y-3">
         {DOC_TYPES.map(docType => {
           const uploadedDoc = booking.documents?.find(d => d.type === docType.key);
           const isUploading = uploadingType === docType.key;
-          
+
           return (
             <View key={docType.key} className="flex-row items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50">
               <View className="flex-row items-center flex-1">
@@ -138,10 +140,10 @@ export default function BookingDocumentList({
                   )}
                 </View>
               </View>
-              
+
               <View className="flex-row items-center ml-2">
                 {uploadedDoc && (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => {
                       const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
                       Linking.openURL(uploadedDoc.fileUrl.startsWith('http') ? uploadedDoc.fileUrl : `${baseUrl}${uploadedDoc.fileUrl}`);
@@ -151,42 +153,47 @@ export default function BookingDocumentList({
                     <Feather name="eye" size={18} color="#2563eb" />
                   </TouchableOpacity>
                 )}
-                
-                <TouchableOpacity 
-                  onPress={() => handleDocumentUpload(docType.key)}
-                  disabled={isUploading}
-                  className={`p-2 rounded-lg ${uploadedDoc ? 'bg-gray-200' : 'bg-blue-100'}`}
-                >
-                  {isUploading ? (
-                    <ActivityIndicator size="small" color="#2563eb" />
-                  ) : (
-                    <Feather name={uploadedDoc ? "refresh-cw" : "upload"} size={16} color={uploadedDoc ? "#475569" : "#2563eb"} />
-                  )}
-                </TouchableOpacity>
+
+                {userRole !== 'CHANNEL_PARTNER' && (
+                  <TouchableOpacity
+                    onPress={() => handleDocumentUpload(docType.key)}
+                    disabled={isUploading}
+                    className={`p-2 rounded-lg ${uploadedDoc ? 'bg-gray-200' : 'bg-blue-100'}`}
+                  >
+                    {isUploading ? (
+                      <ActivityIndicator size="small" color="#2563eb" />
+                    ) : (
+                      <Feather name={uploadedDoc ? "refresh-cw" : "upload"} size={16} color={uploadedDoc ? "#475569" : "#2563eb"} />
+                    )}
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           );
         })}
       </View>
-      
-      {booking.status !== 'CONFIRMED' && (
+
+      {booking.status !== 'CONFIRMED' && userRole !== 'CHANNEL_PARTNER' && (
         <View className="mt-6">
           <Text className="text-sm text-gray-500 mb-3 text-center">
-            Once you have uploaded the signed booking form and payment proof, you can send it for manager approval.
+            {userRole === 'CLOSING_MANAGER'
+              ? 'Once you have uploaded all necessary documents, mark the booking as done.'
+              : 'Once you have uploaded the signed booking form and payment proof, you can send it for manager approval.'}
           </Text>
           <TouchableOpacity
             onPress={handleMarkDone}
             disabled={saving || !booking.documents?.some(d => d.type === 'BOOKING_FORM')}
-            className={`w-full py-4 rounded-xl flex-row justify-center items-center ${
-              !booking.documents?.some(d => d.type === 'BOOKING_FORM') ? 'bg-gray-300' : 'bg-emerald-600'
-            }`}
+            className={`w-full py-4 rounded-xl flex-row justify-center items-center ${!booking.documents?.some(d => d.type === 'BOOKING_FORM') ? 'bg-gray-300' : 'bg-emerald-600'
+              }`}
           >
             {saving ? (
               <ActivityIndicator color="white" />
             ) : (
               <>
                 <Feather name="check-circle" size={18} color="white" />
-                <Text className="text-white font-bold ml-2">Submit for Approval</Text>
+                <Text className="text-white font-bold ml-2">
+                  {userRole === 'CLOSING_MANAGER' ? 'Mark as Done' : 'Submit for Approval'}
+                </Text>
               </>
             )}
           </TouchableOpacity>

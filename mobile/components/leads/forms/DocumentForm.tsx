@@ -6,9 +6,10 @@ interface DocumentFormProps {
   booking: any;
   saving: boolean;
   uploadDoc: (docType: string, description?: string) => void;
+  userRole?: string;
 }
 
-export function DocumentForm({ booking, saving, uploadDoc }: DocumentFormProps) {
+export function DocumentForm({ booking, saving, uploadDoc, userRole }: DocumentFormProps) {
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const docTypes = [
     { key: 'AADHAAR', label: 'Aadhaar Card' },
@@ -36,16 +37,16 @@ export function DocumentForm({ booking, saving, uploadDoc }: DocumentFormProps) 
                     <Download size={14} color="#2563eb" />
                     <Text className="text-blue-600 font-bold text-xs">View</Text>
                   </TouchableOpacity>
-                ) : (
+                ) : userRole !== 'CHANNEL_PARTNER' ? (
                   <TouchableOpacity onPress={() => uploadDoc(doc.key, descriptions[doc.key])} disabled={saving} className="flex-row items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-lg">
                     <Upload size={14} color="#4b5563" />
                     <Text className="text-gray-600 font-bold text-xs">Upload</Text>
                   </TouchableOpacity>
-                )}
+                ) : null}
               </View>
             </View>
             
-            {!existing ? (
+            {!existing && userRole !== 'CHANNEL_PARTNER' ? (
               <TextInput 
                 placeholder={`Add description for ${doc.label}...`}
                 placeholderTextColor="#9ca3af"
@@ -53,11 +54,9 @@ export function DocumentForm({ booking, saving, uploadDoc }: DocumentFormProps) 
                 onChangeText={text => setDescriptions({ ...descriptions, [doc.key]: text })}
                 className="w-full text-xs text-black border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 mt-1"
               />
-            ) : (
-              existing.description ? (
-                <Text className="text-xs text-gray-500 italic px-1 mt-1">{existing.description}</Text>
-              ) : null
-            )}
+            ) : existing && existing.description ? (
+              <Text className="text-xs text-gray-500 italic px-1 mt-1">{existing.description}</Text>
+            ) : null}
           </View>
         );
       })}

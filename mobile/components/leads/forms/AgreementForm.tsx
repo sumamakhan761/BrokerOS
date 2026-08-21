@@ -8,9 +8,10 @@ interface AgreementFormProps {
   saving: boolean;
   saveModelData: (endpoint: string, data: any) => void;
   uploadFile: (type: 'loan' | 'agreement' | 'handover', fieldName: string) => void;
+  userRole?: string;
 }
 
-export function AgreementForm({ booking, saving, saveModelData, uploadFile }: AgreementFormProps) {
+export function AgreementForm({ booking, saving, saveModelData, uploadFile, userRole }: AgreementFormProps) {
   const [agreementData, setAgreementData] = useState(booking?.agreement || {});
 
   useEffect(() => {
@@ -20,7 +21,7 @@ export function AgreementForm({ booking, saving, saveModelData, uploadFile }: Ag
   }, [booking?.agreement]);
 
   return (
-    <View className="space-y-3">
+    <View className={`space-y-3 ${userRole === 'CHANNEL_PARTNER' ? 'opacity-75' : ''}`} pointerEvents={userRole === 'CHANNEL_PARTNER' ? 'none' : 'auto'}>
       <TextInput
         placeholder="Agreement Number"
         placeholderTextColor="#9ca3af"
@@ -104,9 +105,11 @@ export function AgreementForm({ booking, saving, saveModelData, uploadFile }: Ag
         className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50 min-h-[60px]"
       />
 
-      <TouchableOpacity onPress={() => saveModelData('agreement', agreementData)} disabled={saving} className="bg-indigo-600 px-4 py-3 rounded-xl items-center mt-2 shadow-sm">
-        <Text className="text-white font-semibold text-sm">Save Details</Text>
-      </TouchableOpacity>
+      {userRole !== 'CHANNEL_PARTNER' && (
+        <TouchableOpacity onPress={() => saveModelData('agreement', agreementData)} disabled={saving} className="bg-indigo-600 px-4 py-3 rounded-xl items-center mt-2 shadow-sm">
+          <Text className="text-white font-semibold text-sm">Save Details</Text>
+        </TouchableOpacity>
+      )}
 
       <View className="mt-4 border-t border-gray-100 pt-4 space-y-3">
         {(['draftDocumentUrl', 'finalDocumentUrl'] as const).map(field => (
@@ -117,12 +120,12 @@ export function AgreementForm({ booking, saving, saveModelData, uploadFile }: Ag
                 <Download size={14} color="#2563eb" />
                 <Text className="text-blue-600 font-bold text-xs">View</Text>
               </TouchableOpacity>
-            ) : (
+            ) : userRole !== 'CHANNEL_PARTNER' ? (
               <TouchableOpacity onPress={() => uploadFile('agreement', field)} disabled={saving} className="flex-row items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-lg">
                 <Upload size={14} color="#4b5563" />
                 <Text className="text-gray-600 font-bold text-xs">Upload</Text>
               </TouchableOpacity>
-            )}
+            ) : null}
           </View>
         ))}
       </View>
