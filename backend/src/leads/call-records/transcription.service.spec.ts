@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TranscriptionService } from './transcription.service.js';
+import { AvailableProjectDto } from './dto/call-record.dto.js';
 
 // Mock dependencies
 jest.mock('fs', () => ({
@@ -77,7 +78,7 @@ describe('TranscriptionService', () => {
     });
 
     it('should summarize successfully', async () => {
-      const result = await service.summarizeCall('test transcript', 'NEW', [{ id: 'p1', name: 'Project 1' }]);
+      const result = await service.summarizeCall('test transcript', 'NEW', [{ id: 'p1', name: 'Project 1' } as AvailableProjectDto]);
       expect(typeof result).toBe('object');
       if (typeof result === 'object') {
         expect(result.summary).toBe('Test summary');
