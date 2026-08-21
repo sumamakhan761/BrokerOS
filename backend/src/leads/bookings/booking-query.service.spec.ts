@@ -36,6 +36,23 @@ describe('BookingQueryService', () => {
   });
 
   describe('getBooking', () => {
+    it('should get a booking', async () => {
+      mockPrisma.booking.findFirst.mockResolvedValue({ id: 'b-1', documents: [], notes: [] });
+      const result = await service.getBooking('l-1');
+      expect(result?.id).toEqual('b-1');
+      expect(mockPrisma.booking.findFirst).toHaveBeenCalled();
+    });
+
+    it('should get all bookings for sales exec', async () => {
+      mockPrisma.role.findUnique.mockResolvedValue({ code: 'SALES_EXECUTIVE' });
+      mockPrisma.booking.findMany.mockResolvedValue([{ id: 'b-1' }]);
+      const result = await service.getAllBookings('u-1', 'r-1');
+      expect(result).toHaveLength(1);
+      expect(mockPrisma.booking.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ salesExecId: 'u-1' })
+      }));
+    });
+
     it('should return null if not found', async () => {
       mockPrisma.booking.findFirst.mockResolvedValue(null);
       expect(await service.getBooking('lead-1')).toBeNull();
