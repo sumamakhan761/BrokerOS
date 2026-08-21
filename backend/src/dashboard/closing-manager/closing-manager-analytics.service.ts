@@ -43,9 +43,10 @@ export class ClosingManagerAnalyticsService {
       // Step 1: Get assigned CP project IDs for this closing manager
       const cpProjectIds = await this.getAssignedCpProjectIds(userId);
 
-      // Project-scoped booking filter
+      // Project-scoped booking filter specific to this closing manager
       const bookingFilter: any = {
         status: { not: 'CANCELLED' },
+        closingManagerId: userId,
         unit: {
           floor: {
             tower: {
@@ -169,9 +170,10 @@ export class ClosingManagerAnalyticsService {
         }
       }
 
-      // Follow-ups — scoped to leads in assigned CP projects
+      // Follow-ups — scoped to leads in assigned CP projects for this closing manager
       const totalFollowUps = await this.prisma.followUp.count({
         where: {
+          userId: userId,
           lead: { interestedProjectId: { in: cpProjectIds } },
           ...(start ? { scheduledDate: dateFilter } : {})
         }

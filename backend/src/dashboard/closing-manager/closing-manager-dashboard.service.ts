@@ -31,8 +31,10 @@ export class ClosingManagerDashboardService {
       const cpProjectIds = await this.getAssignedCpProjectIds(userId);
 
       // Project-scoped booking filter: only bookings in units belonging to assigned CP projects
+      // AND specific to this closing manager
       const projectScopedBookingFilter: any = {
         status: { not: 'CANCELLED' },
+        closingManagerId: userId,
         unit: {
           floor: {
             tower: {
@@ -131,9 +133,10 @@ export class ClosingManagerDashboardService {
           take: 5,
           orderBy: { createdAt: 'desc' }
         }),
-        // Today's Follow-ups — scoped to leads in assigned CP projects
+        // Today's Follow-ups — scoped to leads in assigned CP projects for this closing manager
         this.prisma.followUp.findMany({
           where: {
+            userId: userId,
             lead: { interestedProjectId: { in: cpProjectIds } },
             status: 'SCHEDULED',
             scheduledDate: { gte: todayStart, lte: todayEnd }
@@ -160,6 +163,7 @@ export class ClosingManagerDashboardService {
         }),
         todayFollowups: await this.prisma.followUp.count({
           where: {
+            userId: userId,
             lead: { interestedProjectId: { in: cpProjectIds } },
             scheduledDate: { gte: todayStart, lte: todayEnd },
             status: 'SCHEDULED'
