@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-jest.mock('../../generated/prisma/client.js', () => ({ NotificationType: { RECOGNITION: 'RECOGNITION' }, PrismaClient: class {} }));
+jest.mock('../../generated/prisma/client.js', () => ({ NotificationType: { RECOGNITION: 'RECOGNITION', ACHIEVEMENT_MILESTONE: 'ACHIEVEMENT_MILESTONE' }, PrismaClient: class {} }));
 jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 jest.mock('../../notifications/notifications.service.js');
 jest.mock('@vercel/blob', () => ({ put: jest.fn().mockResolvedValue({ url: 'url' }) }));

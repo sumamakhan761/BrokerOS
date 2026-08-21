@@ -30,7 +30,7 @@ describe('BookingDocumentsService', () => {
   it('should upload doc', async () => {
     mockPrisma.booking.findUnique.mockResolvedValue({ id: 'b-1', customerId: 'c-1' });
     mockPrisma.customerDocument.create.mockResolvedValue({ id: 'd-1' });
-    const res = await service.uploadDocument('b-1', 'ID', { buffer: Buffer.from(''), originalname: 'test.jpg' });
+    const res = await service.uploadDocument('b-1', 'ID', { buffer: Buffer.from(''), originalname: 'test.jpg' } as Express.Multer.File);
     expect(res).toEqual({ id: 'd-1' });
   });
 

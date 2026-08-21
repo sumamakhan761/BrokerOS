@@ -11,7 +11,7 @@ export class BookingPostSalesService {
     private notificationsService: NotificationsService
   ) { }
 
-  async saveLoanCase(bookingId: string, data: any) {
+  async saveLoanCase(bookingId: string, data: Record<string, any>) {
     const { id, createdAt, updatedAt, bookingId: _, sanctionLetterUrl, loanDocumentUrls, ...cleanData } = data;
     try {
       return await this.prisma.loanCase.upsert({
@@ -25,7 +25,7 @@ export class BookingPostSalesService {
     }
   }
 
-  async saveAgreement(bookingId: string, data: any) {
+  async saveAgreement(bookingId: string, data: Record<string, any>) {
     const { id, createdAt, updatedAt, bookingId: _, draftDocumentUrl, finalDocumentUrl, ...cleanData } = data;
     try {
       return await this.prisma.agreement.upsert({
@@ -39,7 +39,7 @@ export class BookingPostSalesService {
     }
   }
 
-  async saveHandover(bookingId: string, data: any) {
+  async saveHandover(bookingId: string, data: Record<string, any>) {
     const { id, createdAt, updatedAt, bookingId: _, occupancyCertUrl, completionCertUrl, handoverDocUrl, ...cleanData } = data;
     try {
       const result = await this.prisma.possessionHandover.upsert({
@@ -189,7 +189,7 @@ export class BookingPostSalesService {
     }
   }
 
-  async uploadPostSalesFile(bookingId: string, type: 'loan' | 'agreement' | 'handover', fieldName: string, file: any) {
+  async uploadPostSalesFile(bookingId: string, type: 'loan' | 'agreement' | 'handover', fieldName: string, file: Express.Multer.File) {
     const blob = await put(`bookings/${bookingId}/${type}/${fieldName}-${file.originalname}`, file.buffer, {
       access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN,
