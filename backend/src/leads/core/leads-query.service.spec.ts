@@ -4,6 +4,7 @@ jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 
 import { LeadsQueryService } from './leads-query.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
+import { GetLeadsFilterDto } from './dto/lead.dto.js';
 
 describe('LeadsQueryService', () => {
   let service: LeadsQueryService;
@@ -23,7 +24,7 @@ describe('LeadsQueryService', () => {
 
   it('should find all leads', async () => {
     mockPrisma.lead.findMany.mockResolvedValue([{ id: 'l-1', siteVisits: [], followUps: [] }]);
-    const res = await service.findAll();
+    const res = await service.findAll({} as GetLeadsFilterDto);
     expect(res.length).toBe(1);
     expect(mockPrisma.lead.findMany).toHaveBeenCalled();
   });

@@ -6,7 +6,7 @@ import { put } from '@vercel/blob';
 export class LeadsMediaService {
   constructor(private prisma: PrismaService) {}
 
-  async uploadAvatar(id: string, file: any) {
+  async uploadAvatar(id: string, file: Express.Multer.File) {
     const lead = await this.prisma.lead.findUnique({ where: { id } });
     if (!lead) throw new NotFoundException(`Lead with ID ${id} not found`);
 
