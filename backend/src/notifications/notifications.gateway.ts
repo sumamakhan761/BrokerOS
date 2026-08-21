@@ -1,6 +1,7 @@
 import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { SendNotificationDto } from './dto/notifications.dto.js';
 
 @WebSocketGateway({
   cors: {
@@ -67,7 +68,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     }
   }
 
-  sendNotificationToUser(userId: string, notification: any) {
+  sendNotificationToUser(userId: string, notification: SendNotificationDto) {
     const sockets = this.userSockets.get(userId);
     if (sockets && sockets.length > 0) {
       sockets.forEach(socketId => {

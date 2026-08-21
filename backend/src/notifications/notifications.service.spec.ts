@@ -22,6 +22,7 @@ jest.mock('expo-server-sdk', () => ({
 import { NotificationsService } from './notifications.service.js';
 import { NotificationsGateway } from './notifications.gateway.js';
 import { prismaClient } from '../lib/database/prisma-client.js';
+import { CreateNotificationDto } from './dto/notifications.dto.js';
 
 describe('NotificationsService', () => {
   let service: NotificationsService;
@@ -58,7 +59,8 @@ describe('NotificationsService', () => {
     (prismaClient.notification.create as jest.Mock).mockResolvedValue({ id: 'n-1' });
     (prismaClient.user.findUnique as jest.Mock).mockResolvedValue({ expoPushToken: 'ExponentPushToken[123]' });
     
-    const res = await service.createNotification({ userId: 'u-1', type: 'TEST', title: 'Title' });
+    const dto = { userId: 'u-1', type: 'TEST', title: 'Title' } as CreateNotificationDto;
+    const res = await service.createNotification(dto);
     expect(res.id).toBe('n-1');
     expect(mockGateway.sendNotificationToUser).toHaveBeenCalled();
   });

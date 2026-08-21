@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationsGateway } from './notifications.gateway.js';
+import { SendNotificationDto } from './dto/notifications.dto.js';
 
 describe('NotificationsGateway', () => {
   let gateway: NotificationsGateway;
@@ -35,7 +36,7 @@ describe('NotificationsGateway', () => {
     gateway.handleConnection(mockSocket);
     expect(mockSocket.disconnect).not.toHaveBeenCalled();
     
-    gateway.sendNotificationToUser('u-1', { message: 'hello' });
+    gateway.sendNotificationToUser('u-1', { message: 'hello' } as any as SendNotificationDto);
     expect(gateway.server.to).toHaveBeenCalledWith('socket-1');
   });
   
