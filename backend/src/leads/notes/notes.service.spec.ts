@@ -11,6 +11,7 @@ import { NotesService } from './notes.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { TranscriptionService } from '../call-records/transcription.service.js';
 import { LeadStatus } from '../../generated/prisma/client.js';
+import { CreateNoteDto } from './dto/create-note.dto.js';
 
 jest.mock('../../lib/database/prisma.service.js', () => ({
   PrismaService: jest.fn().mockImplementation(() => ({})),
@@ -89,8 +90,9 @@ describe('NotesService', () => {
   describe('createNote', () => {
     it('should throw an error if lead not found', async () => {
       mockPrismaService.lead.findUnique.mockResolvedValue(null);
+      const dto: CreateNoteDto = { content: 'test', userId: 'user-id' };
       await expect(
-        service.createNote('invalid-lead-id', { content: 'test', userId: 'user-id' })
+        service.createNote('invalid-lead-id', dto)
       ).rejects.toThrow('Lead not found');
     });
 
@@ -98,7 +100,8 @@ describe('NotesService', () => {
       mockPrismaService.lead.findUnique.mockResolvedValue({ id: 'lead-id', status: 'NEW' });
       mockPrismaService.note.create.mockResolvedValue({ id: 'note-1', content: 'test' });
 
-      const result = await service.createNote('lead-id', { content: 'test', userId: 'user-id' });
+      const dto: CreateNoteDto = { content: 'test', userId: 'user-id' };
+      const result = await service.createNote('lead-id', dto);
 
       expect(mockPrismaService.lead.update).not.toHaveBeenCalled();
       expect(mockPrismaService.note.create).toHaveBeenCalledWith({
@@ -120,12 +123,13 @@ describe('NotesService', () => {
       mockPrismaService.lead.findUnique.mockResolvedValue({ id: 'lead-id', status: 'NEW' });
       mockPrismaService.note.create.mockResolvedValue({ id: 'note-1', content: 'test' });
 
-      await service.createNote('lead-id', {
+      const dto: CreateNoteDto = {
         content: 'test',
         userId: 'user-id',
         statusAtTimeOfNote: LeadStatus.INTERESTED,
         noteType: 'CALL',
-      });
+      };
+      await service.createNote('lead-id', dto);
 
       expect(mockPrismaService.lead.update).toHaveBeenCalledWith({
         where: { id: 'lead-id' },
