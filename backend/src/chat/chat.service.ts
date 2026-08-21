@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../lib/database/prisma.service.js';
+import { MessageAttachmentDto } from './dto/chat.dto.js';
 
 @Injectable()
 export class ChatService {
@@ -290,7 +291,7 @@ export class ChatService {
     return messages; // they are in desc order, client may reverse
   }
 
-  async sendMessage(userId: string, roomId: string, content: string, attachment?: { url: string, type: string, name: string }) {
+  async sendMessage(userId: string, roomId: string, content?: string, attachment?: MessageAttachmentDto) {
     // Verify membership
     const membership = await this.prisma.chatRoomMember.findUnique({
       where: { chatRoomId_userId: { chatRoomId: roomId, userId } }

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Req, Query, UseGuards, UseIntercept
 import { FileInterceptor } from '@nestjs/platform-express';
 import { put } from '@vercel/blob';
 import { ChatService } from './chat.service.js';
+import { SendMessageDto } from './dto/chat.dto.js';
 
 @Controller('api/chat')
 export class ChatController {
@@ -18,7 +19,7 @@ export class ChatController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(@UploadedFile() file: any) {
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) return { success: false, url: null };
     const blob = await put(`chat/${Date.now()}-${file.originalname}`, file.buffer, {
       access: 'public',
@@ -64,7 +65,7 @@ export class ChatController {
   async sendMessage(
     @Req() req: any,
     @Param('roomId') roomId: string,
-    @Body() body: { content: string, attachment?: { url: string, type: string, name: string } }
+    @Body() body: SendMessageDto
   ) {
     const userId = req.user?.id;
     if (!userId) return { success: false, message: 'Unauthorized' };

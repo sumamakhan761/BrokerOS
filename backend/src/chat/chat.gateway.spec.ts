@@ -3,6 +3,7 @@ jest.mock('../generated/prisma/client.js', () => ({ PrismaClient: class {} }));
 jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 import { ChatGateway } from './chat.gateway.js';
 import { ChatService } from './chat.service.js';
+import { SendSocketMessageDto, TypingIndicatorDto } from './dto/chat.dto.js';
 
 describe('ChatGateway', () => {
   let gateway: ChatGateway;
@@ -47,7 +48,8 @@ describe('ChatGateway', () => {
     
     mockChatService.sendMessage.mockResolvedValue({ id: 'msg-1', content: 'test' });
     
-    await gateway.handleSendMessage({ roomId: 'r-1', content: 'test' }, mockSocket);
+    const dto = { roomId: 'r-1', content: 'test' } as SendSocketMessageDto;
+    await gateway.handleSendMessage(dto, mockSocket);
     
     expect(mockChatService.sendMessage).toHaveBeenCalledWith('u-1', 'r-1', 'test', undefined);
     expect(gateway.server.to).toHaveBeenCalledWith('room_r-1');
@@ -59,7 +61,8 @@ describe('ChatGateway', () => {
       to: jest.fn().mockReturnValue({ emit: jest.fn() })
     } as any;
     
-    gateway.handleTyping({ roomId: 'r-1', isTyping: true }, mockSocket);
+    const dto = { roomId: 'r-1', isTyping: true } as TypingIndicatorDto;
+    gateway.handleTyping(dto, mockSocket);
     expect(mockSocket.to).toHaveBeenCalledWith('room_r-1');
   });
 });
