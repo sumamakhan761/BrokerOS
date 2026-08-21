@@ -63,7 +63,7 @@ export class BookingStatusService {
       });
     }
 
-    // Also update lead status to BOOKING
+    // Also update lead status to BOOKING and subStatus to DONE
     const customer = await this.prisma.customer.findUnique({ where: { id: booking.customerId } });
     let lead: any = null;
     if (customer) {
@@ -71,7 +71,7 @@ export class BookingStatusService {
       if (lead) {
         await this.prisma.lead.update({
           where: { id: lead.id },
-          data: { status: 'BOOKING' }
+          data: { status: 'BOOKING', subStatus: 'DONE' }
         });
       }
     }
