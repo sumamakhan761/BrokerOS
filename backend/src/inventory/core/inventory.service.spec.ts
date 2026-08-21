@@ -8,9 +8,10 @@ import { InventoryUnitsService } from '../units/inventory-units.service.js';
 
 describe('InventoryService', () => {
   let service: InventoryService;
+  let moduleRef: TestingModule;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       providers: [
         InventoryService,
         { provide: InventoryProjectsService, useValue: { getProjects: jest.fn() } },
@@ -19,10 +20,17 @@ describe('InventoryService', () => {
       ],
     }).compile();
 
-    service = module.get(InventoryService);
+    service = moduleRef.get(InventoryService);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  it('should call getProjects with correct DTO', async () => {
+    const mockQuery = { isCpProject: true };
+    await service.getProjects(mockQuery as any, 'user-1');
+    const projectsService = moduleRef.get(InventoryProjectsService);
+    expect(projectsService.getProjects).toHaveBeenCalledWith(mockQuery, 'user-1');
   });
 });
