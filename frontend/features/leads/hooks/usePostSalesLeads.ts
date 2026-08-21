@@ -23,9 +23,9 @@ export function usePostSalesLeads(options?: { completedHandoversOnly?: boolean, 
     try {
       const statusesToFetch = status.split(',');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
-      
+
       let allLeads: any[] = [];
-      
+
       for (const st of statusesToFetch) {
         const params = new URLSearchParams();
         params.append('status', st);
@@ -37,15 +37,15 @@ export function usePostSalesLeads(options?: { completedHandoversOnly?: boolean, 
           allLeads = [...allLeads, ...res.data];
         }
       }
-      
+
       let uniqueLeads = Array.from(new Map(allLeads.map(item => [item.id, item])).values());
-      
+
       if (options?.completedHandoversOnly) {
         uniqueLeads = uniqueLeads.filter(l => l.subStatus === 'DONE');
       }
-      
+
       uniqueLeads.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      
+
       setLeads(uniqueLeads);
     } catch (e) {
       console.error('Failed to fetch leads:', e);

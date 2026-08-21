@@ -582,6 +582,7 @@ async function main() {
         phone,
         email: `${spec.firstName.toLowerCase()}.${spec.lastName?.toLowerCase() || 'lead'}@demo-leads.com`,
         status: spec.status as any,
+        subStatus: ['BOOKING', 'LOAN', 'AGREEMENT', 'HANDOVER'].includes(spec.status) ? 'DONE' : 'PENDING',
         temperature: spec.temperature as any,
         score: spec.temperature === 'HOT' ? 85 : 55,
         sourceId,
@@ -888,11 +889,11 @@ async function main() {
   console.log('\n📌 Step 14: Creating CP leads...');
 
   const cpLeadsData = [
-    { firstName: 'Rajan', lastName: 'Sethi', phone: nextPhone(), brokerCode: 'BRK-001', status: 'INTERESTED', temperature: 'HOT', budget: 6000000 },
-    { firstName: 'Smita', lastName: 'Kulkarni', phone: nextPhone(), brokerCode: 'BRK-001', status: 'SITE_VISIT_COMPLETED', temperature: 'HOT', budget: 6500000 },
-    { firstName: 'Nilesh', lastName: 'Patil', phone: nextPhone(), brokerCode: 'BRK-002', status: 'BOOKING', temperature: 'HOT', budget: 7000000 },
-    { firstName: 'Madhuri', lastName: 'Rane', phone: nextPhone(), brokerCode: 'BRK-002', status: 'LOAN', temperature: 'HOT', budget: 6800000 },
-    { firstName: 'Sachin', lastName: 'Wagle', phone: nextPhone(), brokerCode: 'BRK-003', status: 'INTERESTED', temperature: 'WARM', budget: 5500000 },
+    { firstName: 'Rajan', lastName: 'Sethi', phone: nextPhone(), brokerCode: 'BRK-001', status: 'NEW', temperature: 'HOT', budget: 6000000 },
+    { firstName: 'Smita', lastName: 'Kulkarni', phone: nextPhone(), brokerCode: 'BRK-001', status: 'NEW', temperature: 'HOT', budget: 6500000 },
+    { firstName: 'Nilesh', lastName: 'Patil', phone: nextPhone(), brokerCode: 'BRK-002', status: 'BOOKING', subStatus: 'DONE', temperature: 'HOT', budget: 7000000 },
+    { firstName: 'Madhuri', lastName: 'Rane', phone: nextPhone(), brokerCode: 'BRK-002', status: 'LOAN', subStatus: 'DONE', temperature: 'HOT', budget: 6800000 },
+    { firstName: 'Sachin', lastName: 'Wagle', phone: nextPhone(), brokerCode: 'BRK-003', status: 'NEW', temperature: 'WARM', budget: 5500000 },
   ];
 
   const cpBookingsToCreate: { lead: any; brokerCode: string; budget: number }[] = [];
@@ -907,6 +908,7 @@ async function main() {
         phone: spec.phone,
         email: `${spec.firstName.toLowerCase()}@cplead.com`,
         status: spec.status as any,
+        subStatus: (spec as any).subStatus || 'PENDING',
         temperature: spec.temperature as any,
         score: 80,
         interestedProjectId: cpProject.id,
