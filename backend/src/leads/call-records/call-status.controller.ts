@@ -1,5 +1,6 @@
 import { Controller, Post, Body, Req } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
+import { CallStatusDto } from './dto/call-record.dto.js';
 
 @Controller('api/call-status')
 export class CallStatusController {
@@ -15,7 +16,7 @@ export class CallStatusController {
    * a real-time on-call/not-in-call indicator on each employee card.
    */
   @Post()
-  async setCallStatus(@Body() body: { isOnCall: boolean }, @Req() req: any) {
+  async setCallStatus(@Body() body: CallStatusDto, @Req() req: any) {
     const userId = req.user?.id;
     if (!userId) return { success: false, message: 'Not authenticated' };
 
