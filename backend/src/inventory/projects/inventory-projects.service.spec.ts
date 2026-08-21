@@ -6,6 +6,7 @@ jest.mock('../../notifications/notifications.service.js');
 import { InventoryProjectsService } from './inventory-projects.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { ProjectQueryDto } from './dto/project.dto.js';
 
 describe('InventoryProjectsService', () => {
   let service: InventoryProjectsService;
@@ -34,7 +35,8 @@ describe('InventoryProjectsService', () => {
   it('should get projects', async () => {
     mockPrisma.user.findUnique.mockResolvedValue({ id: 'u-1', role: { code: 'ADMIN' } });
     mockPrisma.project.findMany.mockResolvedValue([{ id: 'p-1' }]);
-    const res = await service.getProjects({}, 'u-1');
+    const query = {} as ProjectQueryDto;
+    const res = await service.getProjects(query, 'u-1');
     expect(res.length).toBe(1);
   });
 });

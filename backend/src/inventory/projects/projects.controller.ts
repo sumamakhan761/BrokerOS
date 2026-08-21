@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { InventoryService } from '../core/inventory.service.js';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import { ProjectQueryDto, CreateProjectDto, AssignProjectDto } from './dto/project.dto.js';
 
 @Controller('api/inventory/projects')
 @UseGuards(AuthGuard)
@@ -8,13 +9,13 @@ export class ProjectsController {
   constructor(private readonly inventoryService: InventoryService) { }
 
   @Get()
-  async getProjects(@Query() query: any, @Req() req: any) {
+  async getProjects(@Query() query: ProjectQueryDto, @Req() req: any) {
     const userId = req.user?.id;
     return this.inventoryService.getProjects(query, userId);
   }
 
   @Post()
-  async createProject(@Body() data: any, @Req() req: any) {
+  async createProject(@Body() data: CreateProjectDto, @Req() req: any) {
     const userId = req.user?.id;
     return this.inventoryService.createProject(data, userId);
   }
@@ -36,7 +37,7 @@ export class ProjectsController {
   }
 
   @Post('towers/:towerId/assign')
-  async assignTower(@Param('towerId') towerId: string, @Body() data: { sourcingManagerIds: string[], closingManagerIds: string[], salesExecIds?: string[] }) {
+  async assignTower(@Param('towerId') towerId: string, @Body() data: AssignProjectDto) {
     return this.inventoryService.assignTower(towerId, data.sourcingManagerIds || [], data.closingManagerIds || [], data.salesExecIds || []);
   }
 
@@ -46,7 +47,7 @@ export class ProjectsController {
   }
 
   @Post(':projectId/assign')
-  async assignProject(@Param('projectId') projectId: string, @Body() data: { sourcingManagerIds: string[], closingManagerIds: string[], salesExecIds?: string[] }) {
+  async assignProject(@Param('projectId') projectId: string, @Body() data: AssignProjectDto) {
     return this.inventoryService.assignProject(projectId, data.sourcingManagerIds || [], data.closingManagerIds || [], data.salesExecIds || []);
   }
 }

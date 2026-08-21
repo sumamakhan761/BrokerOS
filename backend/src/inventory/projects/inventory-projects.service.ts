@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { NotificationType } from '../../generated/prisma/client.js';
+import { ProjectQueryDto, CreateProjectDto } from './dto/project.dto.js';
 
 @Injectable()
 export class InventoryProjectsService {
@@ -10,7 +11,7 @@ export class InventoryProjectsService {
     private notificationsService: NotificationsService
   ) { }
 
-  async getProjects(query: any, userId: string) {
+  async getProjects(query: ProjectQueryDto, userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { role: true }
@@ -59,19 +60,20 @@ export class InventoryProjectsService {
     return projects.filter(p => p.isCpProject === isCpRequest);
   }
 
-  async createProject(data: any, userId?: string) {
-    if (data.builderName && !data.builderId) {
-      data.builder = { create: { name: data.builderName } };
-      delete data.builderName;
+  async createProject(data: CreateProjectDto, userId?: string) {
+    const createData: any = { ...data };
+    if (createData.builderName && !createData.builderId) {
+      createData.builder = { create: { name: createData.builderName } };
+      delete createData.builderName;
     }
     // ensure boolean is cast properly if sent as string
-    if (data.isCpProject === 'true' || data.isCpProject === true) {
-      data.isCpProject = true;
+    if (createData.isCpProject === 'true' || createData.isCpProject === true) {
+      createData.isCpProject = true;
     } else {
-      data.isCpProject = false;
+      createData.isCpProject = false;
     }
 
-    const project = await this.prisma.project.create({ data });
+    const project = await this.prisma.project.create({ data: createData });
 
     // Automatically assign the user who created it to the project so it appears in their inventory
     if (userId) {
