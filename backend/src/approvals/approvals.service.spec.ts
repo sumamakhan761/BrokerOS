@@ -31,8 +31,10 @@ jest.mock('../notifications/notifications.service.js');
 import { ApprovalsService } from './approvals.service.js';
 import { PrismaService } from '../lib/database/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { BookingStatusService } from '../leads/bookings/booking-status.service.js';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { NotificationType } from '../generated/prisma/client.js';
+import { CreateApprovalRequestDto, AddApprovalMessageDto } from './dto/approvals.dto.js';
 
 jest.mock('../lib/database/prisma.service.js', () => ({
   PrismaService: class { },
@@ -59,6 +61,10 @@ describe('ApprovalsService', () => {
     createNotification: jest.fn(),
   };
 
+  const mockBookingStatusService = {
+    markBookingDone: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -70,6 +76,10 @@ describe('ApprovalsService', () => {
         {
           provide: NotificationsService,
           useValue: mockNotificationsService,
+        },
+        {
+          provide: BookingStatusService,
+          useValue: mockBookingStatusService,
         },
       ],
     }).compile();
@@ -92,7 +102,7 @@ describe('ApprovalsService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.createRequest('se-id', 'Title', 'Desc')
+        service.createRequest('se-id', { title: 'Title', description: 'Desc' } as CreateApprovalRequestDto)
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -106,7 +116,7 @@ describe('ApprovalsService', () => {
         salesExec: { name: 'John Doe' },
       });
 
-      const result = await service.createRequest('se-id', 'Test Title', 'Test Description');
+      const result = await service.createRequest('se-id', { title: 'Test Title', description: 'Test Description' } as CreateApprovalRequestDto);
 
       expect(mockPrismaService.approvalRequest.create).toHaveBeenCalled();
       expect(mockNotificationsService.createNotification).toHaveBeenCalledWith(
@@ -169,7 +179,7 @@ describe('ApprovalsService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue({ role: { code: 'SALES_MANAGER' } });
       mockPrismaService.approvalRequest.findUnique.mockResolvedValue(null);
       await expect(
-        service.addMessage('invalid-id', 'user-id', { title: 'T', description: 'D' })
+        service.addMessage('invalid-id', 'user-id', { title: 'T', description: 'D' } as AddApprovalMessageDto)
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -177,7 +187,7 @@ describe('ApprovalsService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue({ role: { code: 'SALES_MANAGER' } });
       mockPrismaService.approvalRequest.findUnique.mockResolvedValue({ status: 'CLOSED' });
       await expect(
-        service.addMessage('req-1', 'user-id', { title: 'T', description: 'D' })
+        service.addMessage('req-1', 'user-id', { title: 'T', description: 'D' } as AddApprovalMessageDto)
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -197,7 +207,7 @@ describe('ApprovalsService', () => {
         title: 'Approved',
         description: 'Looks good',
         action: 'APPROVE',
-      });
+      } as AddApprovalMessageDto);
 
       expect(mockPrismaService.approvalRequest.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -227,7 +237,7 @@ describe('ApprovalsService', () => {
       await service.addMessage('req-1', 'se-id', {
         title: 'Reply',
         description: 'Thanks',
-      });
+      } as AddApprovalMessageDto);
 
       expect(mockPrismaService.approvalRequest.update).toHaveBeenCalledWith(
         expect.objectContaining({

@@ -3,6 +3,7 @@ import { PrismaService } from '../lib/database/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { BookingStatusService } from '../leads/bookings/booking-status.service.js';
 import { NotificationType, ApprovalType } from '../generated/prisma/client.js';
+import { CreateApprovalRequestDto, AddApprovalMessageDto } from './dto/approvals.dto.js';
 
 @Injectable()
 export class ApprovalsService {
@@ -12,7 +13,7 @@ export class ApprovalsService {
     private bookingStatusService: BookingStatusService
   ) { }
 
-  async createRequest(salesExecId: string, title: string, description: string, fileUrl?: string, type: ApprovalType = 'DISCOUNT', bookingId?: string) {
+  async createRequest(salesExecId: string, dto: CreateApprovalRequestDto) {
     // Get the SE's manager
     const se = await this.prisma.user.findUnique({
       where: { id: salesExecId },
@@ -23,12 +24,12 @@ export class ApprovalsService {
       throw new BadRequestException('Sales Executive does not have an assigned manager.');
     }
 
-    let finalDescription = description;
+    let finalDescription = dto.description;
     let finalMetadata: any = undefined;
 
-    if (type === 'BOOKING' && bookingId) {
+    if (dto.type === 'BOOKING' && dto.bookingId) {
       const booking = await this.prisma.booking.findUnique({
-        where: { id: bookingId },
+        where: { id: dto.bookingId },
         include: {
           customer: true,
           unit: {
@@ -74,14 +75,14 @@ Remarks: System generated booking request.`;
         salesExecId,
         managerId: se.managerId,
         status: 'REQUESTED',
-        type,
-        bookingId,
+        type: dto.type || 'DISCOUNT',
+        bookingId: dto.bookingId,
         messages: {
           create: {
             senderId: salesExecId,
-            title,
+            title: dto.title,
             description: finalDescription,
-            fileUrl,
+            fileUrl: dto.fileUrl,
             metadata: finalMetadata ? finalMetadata : undefined,
           },
         },
@@ -92,7 +93,7 @@ Remarks: System generated booking request.`;
       }
     });
 
-    const preview = description.length > 100 ? description.substring(0, 100) + '...' : description;
+    const preview = dto.description.length > 100 ? dto.description.substring(0, 100) + '...' : dto.description;
     await this.notificationsService.createNotification({
       userId: se.managerId,
       type: NotificationType.BOOKING_REQUEST,
@@ -101,8 +102,8 @@ Remarks: System generated booking request.`;
       actionUrl: `/dashboard/sales-manager/approval`,
       metadata: {
         approvalId: request.id,
-        type,
-        bookingId,
+        type: dto.type || 'DISCOUNT',
+        bookingId: dto.bookingId,
         fromEmployeeName: request.salesExec?.name,
       }
     });
@@ -168,7 +169,7 @@ Remarks: System generated booking request.`;
   async addMessage(
     requestId: string,
     userId: string,
-    data: { title: string; description: string; fileUrl?: string; action?: 'APPROVE' | 'REJECT' | 'REPLY' }
+    data: AddApprovalMessageDto
   ) {
     const user = await this.prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
     const roleCode = user?.role?.code;
