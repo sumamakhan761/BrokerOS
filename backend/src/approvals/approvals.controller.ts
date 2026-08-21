@@ -3,6 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { put } from '@vercel/blob';
 import { ApprovalsService } from './approvals.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { CreateApprovalRequestDto, AddApprovalMessageDto } from './dto/approvals.dto.js';
 
 @Controller('api/approvals')
 export class ApprovalsController {
@@ -10,7 +11,7 @@ export class ApprovalsController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(@UploadedFile() file: any) {
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) return { url: null };
     const blob = await put(`approvals/${Date.now()}-${file.originalname}`, file.buffer, {
       access: 'public',
@@ -20,10 +21,10 @@ export class ApprovalsController {
   }
 
   @Post()
-  async createRequest(@Req() req, @Body() body: { title: string; description: string; fileUrl?: string; type?: any; bookingId?: string }) {
+  async createRequest(@Req() req, @Body() body: CreateApprovalRequestDto) {
     const userId = req.user?.id || req.user?.userId;
     if (!userId) throw new UnauthorizedException('User not authenticated');
-    return this.approvalsService.createRequest(userId, body.title, body.description, body.fileUrl, body.type, body.bookingId);
+    return this.approvalsService.createRequest(userId, body);
   }
 
   @Get()
@@ -42,7 +43,7 @@ export class ApprovalsController {
   async addMessage(
     @Param('id') id: string,
     @Req() req,
-    @Body() body: { title: string; description: string; fileUrl?: string; action?: 'APPROVE' | 'REJECT' | 'REPLY' }
+    @Body() body: AddApprovalMessageDto
   ) {
     const userId = req.user?.id || req.user?.userId;
     if (!userId) throw new UnauthorizedException('User not authenticated');
