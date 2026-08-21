@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
 import { FollowUpsService } from './follow-ups.service.js';
+import { CreateFollowUpDto, UpdateFollowUpDto } from './dto/follow-up.dto.js';
 
 @Controller('api/leads')
 export class FollowUpsController {
@@ -13,7 +14,7 @@ export class FollowUpsController {
   @Post(':id/follow-ups')
   createFollowUp(
     @Param('id') id: string,
-    @Body() followUpData: { userId: string; scheduledDate: string; type?: string; remarks?: string },
+    @Body() followUpData: CreateFollowUpDto,
   ) {
     return this.followUpsService.createFollowUp(id, followUpData);
   }
@@ -21,7 +22,7 @@ export class FollowUpsController {
   @Patch('follow-ups/:followUpId')
   updateFollowUp(
     @Param('followUpId') followUpId: string,
-    @Body() updateData: { scheduledDate?: string; type?: string; remarks?: string; status?: string },
+    @Body() updateData: UpdateFollowUpDto,
   ) {
     return this.followUpsService.updateFollowUp(followUpId, updateData);
   }

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { CreateFollowUpDto, UpdateFollowUpDto } from './dto/follow-up.dto.js';
 
 @Injectable()
 export class FollowUpsService {
@@ -22,7 +23,7 @@ export class FollowUpsService {
     });
   }
 
-  async createFollowUp(leadId: string, data: { userId: string; scheduledDate: string; type?: string; remarks?: string }) {
+  async createFollowUp(leadId: string, data: CreateFollowUpDto) {
     const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
     if (!lead) throw new Error('Lead not found');
 
@@ -49,7 +50,7 @@ export class FollowUpsService {
     return followUp;
   }
 
-  async updateFollowUp(followUpId: string, data: { scheduledDate?: string; type?: string; remarks?: string; status?: string; completedAt?: string }) {
+  async updateFollowUp(followUpId: string, data: UpdateFollowUpDto) {
     const updated = await this.prisma.followUp.update({
       where: { id: followUpId },
       data: {
