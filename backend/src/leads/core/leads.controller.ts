@@ -3,6 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { LeadsService } from './leads.service.js';
 import { LeadStatus } from '../../generated/prisma/client.js';
 import { Public } from '@thallesp/nestjs-better-auth';
+import { CreateLeadDto, BulkCreateLeadsDto, AssignLeadsDto, UpdateLeadStatusDto, UpdateLeadDto, GetLeadsFilterDto } from './dto/lead.dto.js';
 
 @Controller('api/leads')
 
@@ -14,39 +15,29 @@ export class LeadsController {
   @Get()
   async findAll(
     @Req() req: any,
-    @Query('status') status?: string,
-    @Query('followUpDate') followUpDate?: string,
-    @Query('siteVisitDate') siteVisitDate?: string,
-    @Query('scoreRange') scoreRange?: string,
-    @Query('managerUnassigned') managerUnassigned?: string,
-    @Query('isCpProject') isCpProject?: string,
+    @Query() query: GetLeadsFilterDto,
   ) {
     return this.leadsService.findAll({
-      status: status as LeadStatus,
-      followUpDate,
-      siteVisitDate,
-      scoreRange,
+      ...query,
       userId: req.user?.id,
       roleId: req.user?.roleId,
-      managerUnassigned: managerUnassigned === 'true',
-      isCpProject: isCpProject === 'true' ? true : (isCpProject === 'false' ? false : undefined),
     });
   }
 
   @Post()
-  createLead(@Req() req: any, @Body() data: any) {
+  createLead(@Req() req: any, @Body() data: CreateLeadDto) {
     return this.leadsService.create(data, req.user?.id);
   }
 
   @Post('bulk-create')
-  bulkCreate(@Req() req: any, @Body() leads: any[]) {
-    return this.leadsService.bulkCreate(leads, req.user?.id);
+  bulkCreate(@Req() req: any, @Body() body: BulkCreateLeadsDto) {
+    return this.leadsService.bulkCreate(body.leads, req.user?.id);
   }
 
   @Post('assign')
   assignLeads(
     @Req() req: any,
-    @Body() data: { leadIds: string[]; targetUserId?: string; roundRobin?: boolean },
+    @Body() data: AssignLeadsDto,
   ) {
     return this.leadsService.assignLeads(data.leadIds, req.user?.id, data.targetUserId, data.roundRobin);
   }
@@ -66,7 +57,7 @@ export class LeadsController {
   @Patch(':id/status')
   updateStatus(
     @Param('id') id: string,
-    @Body() body: { status: LeadStatus, subStatus?: string },
+    @Body() body: UpdateLeadStatusDto,
   ) {
     return this.leadsService.updateStatus(id, body.status, body.subStatus);
   }
@@ -74,28 +65,14 @@ export class LeadsController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body()
-    updateData: {
-      firstName?: string;
-      lastName?: string;
-      email?: string;
-      preferredLocation?: string;
-      budget?: number;
-      lastContactDate?: string;
-      nextFollowUpDate?: string;
-      sourceId?: string;
-      interestedProjectId?: string;
-      temperature?: string;
-      requirements?: string;
-      subStatus?: string;
-    },
+    @Body() updateData: UpdateLeadDto,
   ) {
     return this.leadsService.update(id, updateData);
   }
 
   @Post(':id/avatar')
   @UseInterceptors(FileInterceptor('file'))
-  uploadAvatar(@Param('id') id: string, @UploadedFile() file: any) {
+  uploadAvatar(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
     return this.leadsService.uploadAvatar(id, file);
   }
 
