@@ -31,10 +31,13 @@ export class ClosingManagerDashboardService {
       const cpProjectIds = await this.getAssignedCpProjectIds(userId);
 
       // Project-scoped booking filter: only bookings in units belonging to assigned CP projects
-      // AND specific to this closing manager
       const projectScopedBookingFilter: any = {
         status: { not: 'CANCELLED' },
-        closingManagerId: userId,
+        OR: [
+          { closingManagerId: userId },
+          { salesExecId: userId },
+          { customer: { lead: { assignedUserId: userId } } }
+        ],
         unit: {
           floor: {
             tower: {
