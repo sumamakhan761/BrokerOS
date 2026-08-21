@@ -7,6 +7,8 @@ jest.mock('expo-server-sdk', () => ({ Expo: class { } }));
 import { FollowUpsService } from './follow-ups.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { CreateFollowUpDto, UpdateFollowUpDto } from './dto/follow-up.dto.js';
+import { FollowUpStatus } from '../../generated/prisma/client.js';
 
 jest.mock('../../lib/database/prisma.service.js', () => ({
   PrismaService: jest.fn().mockImplementation(() => ({})),
@@ -87,7 +89,7 @@ describe('FollowUpsService', () => {
     it('should throw an error if lead not found', async () => {
       mockPrismaService.lead.findUnique.mockResolvedValue(null);
       await expect(
-        service.createFollowUp('invalid-lead', { userId: 'u-1', scheduledDate: '2026-01-01' })
+        service.createFollowUp('invalid-lead', { userId: 'u-1', scheduledDate: '2026-01-01' } as CreateFollowUpDto)
       ).rejects.toThrow('Lead not found');
     });
 
@@ -100,7 +102,7 @@ describe('FollowUpsService', () => {
         scheduledDate: '2026-01-01T00:00:00.000Z',
         type: 'CALL',
         remarks: 'Test remark',
-      });
+      } as CreateFollowUpDto);
 
       expect(mockPrismaService.followUp.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -125,7 +127,7 @@ describe('FollowUpsService', () => {
   describe('updateFollowUp', () => {
     it('should update a follow-up', async () => {
       mockPrismaService.followUp.update.mockResolvedValue({ id: 'f-1', userId: 'u-1' });
-      const result = await service.updateFollowUp('f-1', { remarks: 'New remark' });
+      const result = await service.updateFollowUp('f-1', { remarks: 'New remark' } as UpdateFollowUpDto);
       expect(result).toEqual({ id: 'f-1', userId: 'u-1' });
       expect(mockPrismaService.followUp.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -138,7 +140,7 @@ describe('FollowUpsService', () => {
 
     it('should check daily task completion if status is COMPLETED', async () => {
       mockPrismaService.followUp.update.mockResolvedValue({ id: 'f-1', userId: 'u-1', status: 'COMPLETED' });
-      const result = await service.updateFollowUp('f-1', { status: 'COMPLETED' });
+      const result = await service.updateFollowUp('f-1', { status: 'COMPLETED' as FollowUpStatus } as UpdateFollowUpDto);
       expect(result).toEqual({ id: 'f-1', userId: 'u-1', status: 'COMPLETED' });
       expect(mockNotificationsService.checkDailyTaskCompletion).toHaveBeenCalledWith('u-1', 'FOLLOW_UPS');
     });
