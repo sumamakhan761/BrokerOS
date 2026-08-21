@@ -32,7 +32,7 @@ export class BrokerCommissionsService {
     });
   }
 
-  async completeCommission(recordId: string, userId: string, file?: any) {
+  async completeCommission(recordId: string, userId: string, file?: Express.Multer.File) {
     let paymentReference: string | null = null;
 
     if (file) {

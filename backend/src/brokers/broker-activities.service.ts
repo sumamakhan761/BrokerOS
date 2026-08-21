@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../lib/database/prisma.service.js';
+import { AddBrokerNoteDto, AddBrokerFollowUpDto, AddBrokerMeetingDto, CompleteMeetingDto } from './dto/broker.dto.js';
 
 @Injectable()
 export class BrokerActivitiesService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async addNote(brokerId: string, userId: string, data: any) {
+  async addNote(brokerId: string, userId: string, data: AddBrokerNoteDto) {
     return this.prisma.note.create({
       data: {
         content: data.content,
@@ -15,7 +16,7 @@ export class BrokerActivitiesService {
     });
   }
 
-  async addFollowUp(brokerId: string, userId: string, data: any) {
+  async addFollowUp(brokerId: string, userId: string, data: AddBrokerFollowUpDto) {
     return this.prisma.followUp.create({
       data: {
         type: data.type || 'CALL',
@@ -27,7 +28,7 @@ export class BrokerActivitiesService {
     });
   }
 
-  async addMeeting(brokerId: string, userId: string, data: any) {
+  async addMeeting(brokerId: string, userId: string, data: AddBrokerMeetingDto) {
     return this.prisma.brokerMeeting.create({
       data: {
         scheduledDate: new Date(data.scheduledAt),
@@ -51,7 +52,7 @@ export class BrokerActivitiesService {
     });
   }
 
-  async completeMeeting(brokerId: string, meetingId: string, userId: string, data: any) {
+  async completeMeeting(brokerId: string, meetingId: string, userId: string, data: CompleteMeetingDto) {
     return this.prisma.brokerMeeting.update({
       where: { id: meetingId },
       data: {

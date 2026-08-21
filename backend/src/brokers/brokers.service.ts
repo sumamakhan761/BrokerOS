@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../lib/database/prisma.service.js';
+import { CreateBrokerDto, UpdateBrokerDto, UpdateDealCardDto } from './dto/broker.dto.js';
 
 @Injectable()
 export class BrokersService {
@@ -140,7 +141,7 @@ export class BrokersService {
     return broker;
   }
 
-  async createBroker(data: any, userId: string) {
+  async createBroker(data: CreateBrokerDto, userId: string) {
     const roleCode = await this.getUserRoleCode(userId);
     let sourcingManagerId: string | null = null;
 
@@ -162,7 +163,7 @@ export class BrokersService {
         serviceAreas: Array.isArray(data.serviceAreas)
           ? data.serviceAreas
           : typeof data.serviceAreas === 'string'
-            ? data.serviceAreas.split(',').map((s: string) => s.trim()).filter(Boolean)
+            ? (data.serviceAreas as string).split(',').map((s: string) => s.trim()).filter(Boolean)
             : [],
         status: 'NEW',
         subStatus: 'PENDING',
@@ -176,7 +177,7 @@ export class BrokersService {
     });
   }
 
-  async updateBroker(id: string, userId: string, data: any) {
+  async updateBroker(id: string, userId: string, data: UpdateBrokerDto) {
     const roleCode = await this.getUserRoleCode(userId);
     const whereClause = roleCode === 'CHANNEL_PARTNER' ? { id } : { id, sourcingManagerId: userId };
     const broker = await this.prisma.broker.findUnique({
@@ -187,11 +188,21 @@ export class BrokersService {
     }
     return this.prisma.broker.update({
       where: { id },
-      data
+      data: {
+        ...data,
+        serviceAreas: data.serviceAreas 
+          ? (Array.isArray(data.serviceAreas) 
+              ? data.serviceAreas 
+              : typeof data.serviceAreas === 'string' 
+                ? data.serviceAreas.split(',').map((s: string) => s.trim()).filter(Boolean) 
+                : undefined)
+          : undefined,
+        assignedProjects: undefined // Ignore assignedProjects for direct update if we are not handling relations here
+      } as any
     });
   }
 
-  async updateDealCard(brokerId: string, userId: string, data: any) {
+  async updateDealCard(brokerId: string, userId: string, data: UpdateDealCardDto) {
     const roleCode = await this.getUserRoleCode(userId);
     const whereClause = roleCode === 'CHANNEL_PARTNER' ? { id: brokerId } : { id: brokerId, sourcingManagerId: userId };
     const broker = await this.prisma.broker.findUnique({
@@ -224,8 +235,8 @@ export class BrokersService {
         data: {
           towerId,
           dealDocuments: dealDocuments || [],
-          brokeragePercent: brokeragePercent ? parseFloat(brokeragePercent) : null,
-          brokerageFlat: brokerageFlat ? parseFloat(brokerageFlat) : null,
+          brokeragePercent: brokeragePercent ?? null,
+          brokerageFlat: brokerageFlat ?? null,
           isLocked: isLocked || false,
         }
       });
@@ -236,8 +247,8 @@ export class BrokersService {
           projectId,
           towerId,
           dealDocuments: dealDocuments || [],
-          brokeragePercent: brokeragePercent ? parseFloat(brokeragePercent) : null,
-          brokerageFlat: brokerageFlat ? parseFloat(brokerageFlat) : null,
+          brokeragePercent: brokeragePercent ?? null,
+          brokerageFlat: brokerageFlat ?? null,
           isLocked: isLocked || false,
         }
       });
