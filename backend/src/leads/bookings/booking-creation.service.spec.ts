@@ -7,6 +7,8 @@ import { BookingCreationService } from './booking-creation.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 
+import { CreateBookingDto } from './dto/booking.dto.js';
+
 describe('BookingCreationService', () => {
   let service: BookingCreationService;
 
@@ -53,7 +55,7 @@ describe('BookingCreationService', () => {
     mockPrisma.unit.count.mockResolvedValue(10);
     mockPrisma.projectAssignment.findMany.mockResolvedValue([]);
 
-    await service.createBooking('l-1', { userId: 'u-1', unitId: 'u-1', agreedPrice: 1000 });
+    await service.createBooking('l-1', { userId: 'u-1', unitId: 'u-1', agreedPrice: 1000 } as CreateBookingDto);
     expect(mockPrisma.booking.create).toHaveBeenCalled();
     expect(mockPrisma.unit.update).toHaveBeenCalled();
   });

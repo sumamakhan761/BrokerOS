@@ -4,6 +4,7 @@ import { BookingCreationService } from './booking-creation.service.js';
 import { BookingStatusService } from './booking-status.service.js';
 import { BookingDocumentsService } from './booking-documents.service.js';
 import { BookingPostSalesService } from './booking-post-sales.service.js';
+import { CreateBookingDto, UpdateBookingDto } from './dto/booking.dto.js';
 
 @Injectable()
 export class BookingService {
@@ -19,11 +20,11 @@ export class BookingService {
     return this.bookingQuery.getBooking(leadId);
   }
 
-  async createBooking(leadId: string, data: any) {
+  async createBooking(leadId: string, data: CreateBookingDto) {
     return this.bookingCreation.createBooking(leadId, data);
   }
 
-  async updateBooking(bookingId: string, data: any) {
+  async updateBooking(bookingId: string, data: UpdateBookingDto) {
     return this.bookingCreation.updateBooking(bookingId, data);
   }
 
@@ -39,7 +40,7 @@ export class BookingService {
     return this.bookingStatus.cancelBooking(bookingId, reason);
   }
 
-  async uploadDocument(bookingId: string, docType: string, file: any, description?: string) {
+  async uploadDocument(bookingId: string, docType: string, file: Express.Multer.File, description?: string) {
     return this.bookingDocuments.uploadDocument(bookingId, docType, file, description);
   }
 
@@ -47,19 +48,19 @@ export class BookingService {
     return this.bookingDocuments.getDocumentFile(documentId);
   }
 
-  async saveLoanCase(bookingId: string, data: any) {
+  async saveLoanCase(bookingId: string, data: Record<string, any>) {
     return this.bookingPostSales.saveLoanCase(bookingId, data);
   }
 
-  async saveAgreement(bookingId: string, data: any) {
+  async saveAgreement(bookingId: string, data: Record<string, any>) {
     return this.bookingPostSales.saveAgreement(bookingId, data);
   }
 
-  async saveHandover(bookingId: string, data: any) {
+  async saveHandover(bookingId: string, data: Record<string, any>) {
     return this.bookingPostSales.saveHandover(bookingId, data);
   }
 
-  async uploadPostSalesFile(bookingId: string, type: 'loan' | 'agreement' | 'handover', fieldName: string, file: any) {
+  async uploadPostSalesFile(bookingId: string, type: 'loan' | 'agreement' | 'handover', fieldName: string, file: Express.Multer.File) {
     return this.bookingPostSales.uploadPostSalesFile(bookingId, type, fieldName, file);
   }
 }
