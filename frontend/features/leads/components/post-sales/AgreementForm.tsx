@@ -6,9 +6,10 @@ interface AgreementFormProps {
   saving: boolean;
   saveModelData: (endpoint: string, data: any) => void;
   uploadFile: (type: 'loan' | 'agreement' | 'handover', fieldName: string, file: File) => void;
+  userRole?: string;
 }
 
-export function AgreementForm({ booking, saving, saveModelData, uploadFile }: AgreementFormProps) {
+export function AgreementForm({ booking, saving, saveModelData, uploadFile, userRole }: AgreementFormProps) {
   const [agreementData, setAgreementData] = useState(booking?.agreement || {});
 
   useEffect(() => {
@@ -19,7 +20,7 @@ export function AgreementForm({ booking, saving, saveModelData, uploadFile }: Ag
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className={`grid grid-cols-2 gap-3 ${userRole === 'CHANNEL_PARTNER' ? 'pointer-events-none opacity-80' : ''}`}>
         <input type="text" placeholder="Agreement Number" value={agreementData.agreementNumber || ''} onChange={e => setAgreementData({ ...agreementData, agreementNumber: e.target.value })} className="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-medium text-gray-900 placeholder:text-gray-400" />
         <select value={agreementData.status || 'NOT_STARTED'} onChange={e => setAgreementData({ ...agreementData, status: e.target.value })} className="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-medium text-gray-900">
           <option value="NOT_STARTED">Not Started</option>
@@ -35,10 +36,12 @@ export function AgreementForm({ booking, saving, saveModelData, uploadFile }: Ag
         <input type="text" placeholder="Lawyer Name" value={agreementData.lawyerName || ''} onChange={e => setAgreementData({ ...agreementData, lawyerName: e.target.value })} className="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-medium text-gray-900 placeholder:text-gray-400" />
         <input type="text" placeholder="Lawyer Contact" value={agreementData.lawyerContact || ''} onChange={e => setAgreementData({ ...agreementData, lawyerContact: e.target.value })} className="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-medium text-gray-900 placeholder:text-gray-400" />
       </div>
-      <textarea placeholder="Remarks / Notes" value={agreementData.remarks || ''} onChange={e => setAgreementData({ ...agreementData, remarks: e.target.value })} className="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-medium text-gray-900 placeholder:text-gray-400 resize-none" rows={2}></textarea>
-      <button onClick={() => saveModelData('agreement', agreementData)} disabled={saving} className="bg-indigo-600 text-white text-sm px-5 py-2.5 rounded-xl font-semibold hover:bg-indigo-700 shadow-sm disabled:opacity-50 transition-all active:scale-95">
-        Save Details
-      </button>
+      <textarea placeholder="Remarks / Notes" value={agreementData.remarks || ''} onChange={e => setAgreementData({ ...agreementData, remarks: e.target.value })} className="w-full text-sm border border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-medium text-gray-900 placeholder:text-gray-400 resize-none" rows={2} disabled={userRole === 'CHANNEL_PARTNER'}></textarea>
+      {userRole !== 'CHANNEL_PARTNER' && (
+        <button onClick={() => saveModelData('agreement', agreementData)} disabled={saving} className="bg-indigo-600 text-white text-sm px-5 py-2.5 rounded-xl font-semibold hover:bg-indigo-700 shadow-sm disabled:opacity-50 transition-all active:scale-95">
+          Save Details
+        </button>
+      )}
 
       <div className="mt-5 border-t border-gray-100 pt-5 space-y-3">
         {['draftDocumentUrl', 'finalDocumentUrl'].map(field => (
@@ -46,12 +49,12 @@ export function AgreementForm({ booking, saving, saveModelData, uploadFile }: Ag
             <p className="text-sm font-semibold text-gray-900">{field === 'draftDocumentUrl' ? 'Draft Document' : 'Final Document'}</p>
             {booking?.agreement?.[field] ? (
               <a href={booking.agreement[field]} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 px-3 py-1.5 rounded-lg font-bold transition-all"><Download className="w-3.5 h-3.5" /> View</a>
-            ) : (
+            ) : userRole !== 'CHANNEL_PARTNER' ? (
               <label className="cursor-pointer flex items-center gap-1.5 text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900 px-3 py-1.5 rounded-lg font-bold transition-all">
                 <Upload className="w-3.5 h-3.5" /> Upload
                 <input type="file" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadFile('agreement', field, e.target.files[0]); }} disabled={saving} />
               </label>
-            )}
+            ) : null}
           </div>
         ))}
       </div>

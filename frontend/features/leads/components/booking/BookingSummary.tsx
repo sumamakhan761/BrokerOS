@@ -32,9 +32,10 @@ interface BookingSummaryProps {
   leadId: string;
   onRefresh: () => void;
   onEdit?: () => void;
+  userRole?: string;
 }
 
-export function BookingSummary({ booking, leadId, onRefresh, onEdit }: BookingSummaryProps) {
+export function BookingSummary({ booking, leadId, onRefresh, onEdit, userRole }: BookingSummaryProps) {
   const [saving, setSaving] = useState(false);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
 
@@ -90,6 +91,31 @@ export function BookingSummary({ booking, leadId, onRefresh, onEdit }: BookingSu
     }
   };
 
+  const handleMarkAsDone = async () => {
+    if (!booking) return;
+    setSaving(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const res = await fetch(`${apiUrl}/api/leads/${leadId}/booking/done`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: booking.id }),
+      });
+      
+      if (!res.ok) {
+        toast.error('Failed to mark booking as done');
+        return;
+      }
+      
+      toast.success('Booking marked as done.');
+      onRefresh();
+    } catch (e) {
+      toast.error('An error occurred');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="p-6 border-b border-gray-100 flex items-center gap-4">
@@ -114,7 +140,7 @@ export function BookingSummary({ booking, leadId, onRefresh, onEdit }: BookingSu
             )}
           </div>
         </div>
-        {booking.status !== 'CONFIRMED' && (
+        {booking.status !== 'CONFIRMED' && userRole !== 'CHANNEL_PARTNER' && (
           <div className="flex gap-2">
             {onEdit && (
               <button
@@ -125,13 +151,23 @@ export function BookingSummary({ booking, leadId, onRefresh, onEdit }: BookingSu
                 Edit Booking
               </button>
             )}
-            <button
-              onClick={handleRequestApproval}
-              disabled={saving}
-              className="text-xs bg-indigo-600 text-white px-3 py-2 rounded-xl font-medium hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5"
-            >
-              {saving ? 'Sending...' : <><Send className="w-3.5 h-3.5" /> Send for Approval</>}
-            </button>
+            {userRole === 'CLOSING_MANAGER' ? (
+              <button
+                onClick={handleMarkAsDone}
+                disabled={saving}
+                className="text-xs bg-emerald-600 text-white px-3 py-2 rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5"
+              >
+                {saving ? 'Saving...' : <><CheckCircle className="w-3.5 h-3.5" /> Mark as Done</>}
+              </button>
+            ) : (
+              <button
+                onClick={handleRequestApproval}
+                disabled={saving}
+                className="text-xs bg-indigo-600 text-white px-3 py-2 rounded-xl font-medium hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5"
+              >
+                {saving ? 'Sending...' : <><Send className="w-3.5 h-3.5" /> Send for Approval</>}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -226,7 +262,7 @@ export function BookingSummary({ booking, leadId, onRefresh, onEdit }: BookingSu
                         <Download className="w-4 h-4" />
                         View File
                       </a>
-                    ) : (
+                    ) : userRole !== 'CHANNEL_PARTNER' ? (
                       <label className="cursor-pointer flex items-center gap-1.5 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium px-4 py-2 rounded-lg transition-all">
                         <Upload className="w-4 h-4" />
                         {uploadingType === doc.key ? 'Uploading...' : 'Upload'}
@@ -238,7 +274,7 @@ export function BookingSummary({ booking, leadId, onRefresh, onEdit }: BookingSu
                           disabled={uploadingType !== null}
                         />
                       </label>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               );

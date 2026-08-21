@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { LeadHeader } from '@/features/leads/components/profile/LeadHeader';
@@ -30,6 +31,15 @@ import { useLeadNegotiations } from '@/features/leads/hooks/useLeadNegotiations'
 export function LeadProfileClient({ leadId }: { leadId: string }) {
   const { data: session } = authClient.useSession();
   const userId = session?.user?.id;
+  const pathname = usePathname();
+
+  let inferredRole = (session?.user as any)?.role || '';
+  if (!inferredRole) {
+    if (pathname.includes('/closing-manager')) inferredRole = 'CLOSING_MANAGER';
+    else if (pathname.includes('/channel-partner')) inferredRole = 'CHANNEL_PARTNER';
+    else if (pathname.includes('/sales-executive')) inferredRole = 'SALES_EXECUTIVE';
+    else if (pathname.includes('/post-sales')) inferredRole = 'POST_SALES';
+  }
 
   const {
     lead,
@@ -309,12 +319,14 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
               userId={userId || ''}
               onRefresh={fetchBooking}
               lead={lead}
+              userRole={inferredRole}
             />
             <PostSalesPipelineCards
               leadId={leadId}
               leadStatus={lead.status}
               leadSubStatus={lead.subStatus}
               booking={booking}
+              userRole={inferredRole}
               onRefresh={() => {
                 fetchLead();
                 fetchBooking();
@@ -331,6 +343,7 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
             userId={userId || ''}
             onRefresh={fetchBooking}
             lead={lead}
+            userRole={inferredRole}
           />
         </div>
       )}

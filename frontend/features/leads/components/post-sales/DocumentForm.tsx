@@ -5,9 +5,10 @@ interface DocumentFormProps {
   booking: any;
   saving: boolean;
   uploadDoc: (docType: string, file: File, description?: string) => void;
+  userRole?: string;
 }
 
-export function DocumentForm({ booking, saving, uploadDoc }: DocumentFormProps) {
+export function DocumentForm({ booking, saving, uploadDoc, userRole }: DocumentFormProps) {
   const [descriptions, setDescriptions] = useState<Record<string, string>>({});
   const docTypes = [
     { key: 'AADHAAR', label: 'Aadhaar Card' },
@@ -34,15 +35,15 @@ export function DocumentForm({ booking, saving, uploadDoc }: DocumentFormProps) 
                   <a href={existing.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 px-3 py-1.5 rounded-lg font-bold transition-all">
                     <Download className="w-3.5 h-3.5" /> View
                   </a>
-                ) : (
+                ) : userRole !== 'CHANNEL_PARTNER' ? (
                   <label className="cursor-pointer flex items-center gap-1.5 text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900 px-3 py-1.5 rounded-lg font-bold transition-all">
                     <Upload className="w-3.5 h-3.5" /> Upload
                     <input type="file" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadDoc(doc.key, e.target.files[0], descriptions[doc.key]); }} disabled={saving} />
                   </label>
-                )}
+                ) : null}
               </div>
             </div>
-            {!existing && (
+            {!existing && userRole !== 'CHANNEL_PARTNER' && (
               <input type="text" placeholder={`Add description for ${doc.label}...`} value={descriptions[doc.key] || ''} onChange={e => setDescriptions({ ...descriptions, [doc.key]: e.target.value })} className="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-gray-900 placeholder:text-gray-400 mt-1" />
             )}
             {existing && existing.description && (
