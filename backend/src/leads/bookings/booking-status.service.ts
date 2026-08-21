@@ -13,14 +13,15 @@ export class BookingStatusService {
   async markBookingDone(bookingId: string) {
     const booking = await this.prisma.booking.findUnique({ 
       where: { id: bookingId },
-      include: { unit: { include: { floor: { include: { tower: true } } } } }
+      include: { unit: { include: { floor: { include: { tower: { include: { project: true } } } } } } }
     });
     if (!booking) throw new NotFoundException('Booking not found');
 
     let assignedPostSalesId = booking.assignedPostSalesId;
 
-    // If it's a DIRECT booking and hasn't been assigned to a post sales agent yet
-    if (booking.source === 'DIRECT' && !assignedPostSalesId) {
+    // If it's a non-CP project booking and hasn't been assigned to a post sales agent yet
+    const isCpProject = booking.unit?.floor?.tower?.project?.isCpProject;
+    if (!isCpProject && booking.source === 'DIRECT' && !assignedPostSalesId) {
       // Find the POST_SALES role
       const postSalesRole = await this.prisma.role.findFirst({ where: { code: 'POST_SALES' } });
       if (postSalesRole) {

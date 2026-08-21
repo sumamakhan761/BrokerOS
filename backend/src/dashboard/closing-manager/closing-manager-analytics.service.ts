@@ -46,7 +46,11 @@ export class ClosingManagerAnalyticsService {
       // Project-scoped booking filter specific to this closing manager
       const bookingFilter: any = {
         status: { not: 'CANCELLED' },
-        closingManagerId: userId,
+        OR: [
+          { closingManagerId: userId },
+          { salesExecId: userId },
+          { customer: { lead: { assignedUserId: userId } } }
+        ],
         unit: {
           floor: {
             tower: {

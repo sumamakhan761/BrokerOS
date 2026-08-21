@@ -5,7 +5,7 @@ import { BookingStatusService } from '../../src/leads/bookings/booking-status.se
 async function runTest() {
   console.log("Starting E2E Commission Test...");
   const bookingService = new BookingCreationService(prisma as any, {} as any);
-  const bookingStatusService = new BookingStatusService(prisma as any);
+  const bookingStatusService = new BookingStatusService(prisma as any, {} as any);
 
   try {
     // 1. Find a Sourcing Manager
