@@ -9,6 +9,7 @@ jest.mock('../../lib/database/prisma.service.js', () => ({
 
 import { NegotiationsController } from './negotiations.controller.js';
 import { NegotiationsService } from './negotiations.service.js';
+import { CreateNegotiationDto } from './dto/negotiation.dto.js';
 
 describe('NegotiationsController', () => {
   let controller: NegotiationsController;
@@ -61,25 +62,18 @@ describe('NegotiationsController', () => {
       const req = { user: { id: 'auth-user-1' } };
       const body = {
         userId: 'body-user-1',
-        askingPrice: '1500',
+        askingPrice: 1500,
         offeredPrice: 1400,
         objections: 'Too much',
         strategy: 'Discount',
         title: 'Round 1',
         nextStep: 'Follow up',
-      };
+      } as CreateNegotiationDto;
 
       const result = await controller.createNegotiation('lead-1', req, body);
       
       expect(result).toEqual(mockResult);
-      expect(mockNegotiationsService.createNegotiation).toHaveBeenCalledWith('lead-1', 'body-user-1', {
-        askingPrice: 1500,
-        offeredPrice: 1400,
-        customerObjections: 'Too much',
-        managerSuggestion: 'Discount',
-        negotiationNotes: 'Round 1',
-        nextActionPlan: 'Follow up',
-      });
+      expect(mockNegotiationsService.createNegotiation).toHaveBeenCalledWith('lead-1', 'body-user-1', body);
     });
 
     it('should create a negotiation using req.user.id if userId not in body', async () => {
@@ -89,19 +83,12 @@ describe('NegotiationsController', () => {
       const req = { user: { id: 'auth-user-1' } };
       const body = {
         askingPrice: 1500,
-      };
+      } as CreateNegotiationDto;
 
       const result = await controller.createNegotiation('lead-1', req, body);
       
       expect(result).toEqual(mockResult);
-      expect(mockNegotiationsService.createNegotiation).toHaveBeenCalledWith('lead-1', 'auth-user-1', {
-        askingPrice: 1500,
-        offeredPrice: undefined,
-        customerObjections: undefined,
-        managerSuggestion: undefined,
-        negotiationNotes: undefined,
-        nextActionPlan: undefined,
-      });
+      expect(mockNegotiationsService.createNegotiation).toHaveBeenCalledWith('lead-1', 'auth-user-1', body);
     });
 
     it('should throw error if user ID is missing everywhere', async () => {

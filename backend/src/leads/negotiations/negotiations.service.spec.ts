@@ -8,6 +8,7 @@ jest.mock('../../lib/database/prisma.service.js', () => ({
 import { NegotiationsService } from './negotiations.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { BadRequestException } from '@nestjs/common';
+import { CreateNegotiationDto } from './dto/negotiation.dto.js';
 
 describe('NegotiationsService', () => {
   let service: NegotiationsService;
@@ -78,11 +79,11 @@ describe('NegotiationsService', () => {
     const createData = {
       askingPrice: 1500,
       offeredPrice: 1400,
-      customerObjections: 'Too expensive',
-      managerSuggestion: 'Offer 1450',
-      negotiationNotes: 'Round 1',
-      nextActionPlan: 'Call back tomorrow',
-    };
+      objections: 'Too expensive',
+      strategy: 'Offer 1450',
+      title: 'Round 1',
+      nextStep: 'Call back tomorrow',
+    } as CreateNegotiationDto;
 
     it('should throw an error if lead is not found', async () => {
       mockPrismaService.lead.findUnique.mockResolvedValue(null);

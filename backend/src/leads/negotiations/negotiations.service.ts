@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
+import { CreateNegotiationDto } from './dto/negotiation.dto.js';
 
 @Injectable()
 export class NegotiationsService {
@@ -21,14 +22,7 @@ export class NegotiationsService {
   async createNegotiation(
     leadId: string, 
     userId: string, 
-    data: { 
-      askingPrice?: number;
-      offeredPrice?: number;
-      customerObjections?: string;
-      managerSuggestion?: string;
-      negotiationNotes?: string;
-      nextActionPlan?: string;
-    }
+    data: CreateNegotiationDto
   ) {
     const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
     if (!lead) throw new BadRequestException('Lead not found');
@@ -39,10 +33,10 @@ export class NegotiationsService {
         salesExecId: userId,
         askingPrice: data.askingPrice,
         offeredPrice: data.offeredPrice,
-        customerObjections: data.customerObjections,
-        managerSuggestion: data.managerSuggestion,
-        negotiationNotes: data.negotiationNotes,
-        nextActionPlan: data.nextActionPlan,
+        customerObjections: data.objections,
+        managerSuggestion: data.strategy,
+        negotiationNotes: data.title,
+        nextActionPlan: data.nextStep,
       },
       include: {
         salesExec: { select: { username: true, email: true, displayUsername: true } },
