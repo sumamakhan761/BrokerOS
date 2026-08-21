@@ -1,16 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { put } from '@vercel/blob';
+import { UploadDocumentDto } from './dto/document.dto.js';
 
 @Injectable()
 export class DocumentsService {
   constructor(private prisma: PrismaService) { }
 
-  async uploadDocument(projectId: string, towerId: string | null, file: any, title: string, category: string, isPublic: boolean) {
+  async uploadDocument(projectId: string, file: any, data: UploadDocumentDto) {
     if (!file) throw new Error("File is required");
 
     // Upload to Vercel Blob with project prefix to keep it organized (like bookings)
-    const blob = await put(`projects/${projectId}/${category}-${file.originalname}`, file.buffer, {
+    const blob = await put(`projects/${projectId}/${data.category}-${file.originalname}`, file.buffer, {
       access: 'public',
       token: process.env.BLOB_READ_WRITE_TOKEN
     });
@@ -19,13 +20,13 @@ export class DocumentsService {
     return this.prisma.projectDocument.create({
       data: {
         projectId,
-        towerId: towerId || null,
-        title,
-        category,
+        towerId: data.towerId || null,
+        title: data.title,
+        category: data.category,
         fileUrl: blob.url,
         fileType: file.mimetype,
         fileSize: file.size,
-        isPublic: String(isPublic) === 'true' || isPublic === true,
+        isPublic: data.isPublic === true,
       }
     });
   }

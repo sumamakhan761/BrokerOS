@@ -2,6 +2,7 @@ import { Controller, Get, Post, Delete, Param, Query, UseGuards, UseInterceptors
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentsService } from './documents.service.js';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import { UploadDocumentDto } from './dto/document.dto.js';
 
 @Controller('api/inventory/projects/:projectId/documents')
 @UseGuards(AuthGuard)
@@ -27,10 +28,10 @@ export class DocumentsController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadDocument(
     @Param('projectId') projectId: string,
-    @Body() body: { towerId?: string; title: string; category: string; isPublic: string | boolean },
+    @Body() body: UploadDocumentDto,
     @UploadedFile() file: any
   ) {
-    return this.documentsService.uploadDocument(projectId, body.towerId || null, file, body.title, body.category, body.isPublic === 'true' || body.isPublic === true);
+    return this.documentsService.uploadDocument(projectId, file, body);
   }
 
   @Get(':id/file')

@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-jest.mock('../../generated/prisma/client.js', () => ({ PrismaClient: class {} }));
-jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
+jest.mock('../../generated/prisma/client.js', () => ({ PrismaClient: class { } }));
+jest.mock('expo-server-sdk', () => ({ Expo: class { } }));
 jest.mock('@vercel/blob', () => ({ put: jest.fn().mockResolvedValue({ url: 'url' }) }));
 
 import { DocumentsService } from './documents.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
+import { UploadDocumentDto } from './dto/document.dto.js';
 
 describe('DocumentsService', () => {
   let service: DocumentsService;
@@ -19,7 +20,13 @@ describe('DocumentsService', () => {
 
   it('should upload document', async () => {
     mockPrisma.projectDocument.create.mockResolvedValue({ id: 'd-1' });
-    const res = await service.uploadDocument('p-1', null, { buffer: Buffer.from(''), originalname: 'test.pdf' }, 'Title', 'Cat', true);
+    const dto = {
+      towerId: undefined,
+      title: 'Title',
+      category: 'Cat',
+      isPublic: true,
+    } as UploadDocumentDto;
+    const res = await service.uploadDocument('p-1', { buffer: Buffer.from(''), originalname: 'test.pdf', mimetype: 'application/pdf', size: 100 }, dto);
     expect(res.id).toBe('d-1');
   });
 });
