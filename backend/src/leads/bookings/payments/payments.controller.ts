@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Param, Body, UseInterceptors, UploadedFile, Query, BadRequestException } from '@nestjs/common';
 import { PaymentsService } from './payments.service.js';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CreateScheduleDto, MarkAsPaidDto } from './dto/payment.dto.js';
 
 @Controller('api/payments')
 export class PaymentsController {
@@ -9,19 +10,8 @@ export class PaymentsController {
   @Post('schedule/:bookingId')
   async createSchedule(
     @Param('bookingId') bookingId: string,
-    @Body() body: {
-      netAmount: number;
-      startDate: string;
-      // Mode 1 – fixed months
-      installmentsCount?: number;
-      frequency?: 'MONTHLY' | 'QUARTERLY';
-      // Mode 2 – percentage per month
-      percentagePerMonth?: number;
-    }
+    @Body() body: CreateScheduleDto
   ) {
-    if (!body.netAmount || !body.startDate) {
-      throw new BadRequestException('netAmount and startDate are required');
-    }
     if (!body.installmentsCount && !body.percentagePerMonth) {
       throw new BadRequestException('Either installmentsCount or percentagePerMonth is required');
     }
@@ -42,8 +32,8 @@ export class PaymentsController {
   @UseInterceptors(FileInterceptor('receipt'))
   async markAsPaid(
     @Param('scheduleId') scheduleId: string,
-    @Body() body: { amountPaid: string; remarks?: string },
-    @UploadedFile() file: any
+    @Body() body: MarkAsPaidDto,
+    @UploadedFile() file: Express.Multer.File
   ) {
     if (!body.amountPaid) {
       throw new BadRequestException('Amount paid is required');

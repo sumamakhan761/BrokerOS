@@ -1,23 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../lib/database/prisma.service.js';
+import { Prisma } from '../../../generated/prisma/client.js';
 import { put } from '@vercel/blob';
+import { CreateScheduleDto } from './dto/payment.dto.js';
 
 @Injectable()
 export class PaymentsService {
   constructor(private prisma: PrismaService) {}
 
-  async createSchedule(
-    bookingId: string,
-    data: {
-      netAmount: number;           // agreedPrice - tokenAmount
-      startDate: string;           // ISO string
-      // Mode 1: fixed months
-      installmentsCount?: number;
-      frequency?: 'MONTHLY' | 'QUARTERLY';
-      // Mode 2: percentage per month
-      percentagePerMonth?: number;
-    }
-  ) {
+  async createSchedule(bookingId: string, data: CreateScheduleDto) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId }
     });
@@ -28,7 +19,7 @@ export class PaymentsService {
 
     const netAmount = data.netAmount;
     const startDate = new Date(data.startDate);
-    const schedules: any[] = [];
+    const schedules: Prisma.PaymentScheduleCreateManyInput[] = [];
 
     if (data.percentagePerMonth && data.percentagePerMonth > 0) {
       // --- Mode 2: Percentage Per Month ---
@@ -138,7 +129,7 @@ export class PaymentsService {
     scheduleId: string,
     amountPaid: number,
     remarks?: string,
-    file?: any
+    file?: Express.Multer.File
   ) {
     const schedule = await this.prisma.paymentSchedule.findUnique({
       where: { id: scheduleId }
