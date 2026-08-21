@@ -6,7 +6,7 @@ import { put } from '@vercel/blob';
 export class BookingDocumentsService {
   constructor(private prisma: PrismaService) {}
 
-  async uploadDocument(bookingId: string, docType: string, file: any, description?: string) {
+  async uploadDocument(bookingId: string, docType: string, file: Express.Multer.File, description?: string) {
     const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
     if (!booking) throw new NotFoundException('Booking not found');
 
