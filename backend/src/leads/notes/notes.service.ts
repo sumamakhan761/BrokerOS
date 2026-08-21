@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { LeadStatus } from '../../generated/prisma/client.js';
 import { TranscriptionService } from '../call-records/transcription.service.js';
+import { CreateNoteDto } from './dto/create-note.dto.js';
 
 @Injectable()
 export class NotesService {
@@ -23,7 +24,7 @@ export class NotesService {
     });
   }
 
-  async createNote(leadId: string, data: { content: string; userId: string; statusAtTimeOfNote?: LeadStatus; noteType?: string }) {
+  async createNote(leadId: string, data: CreateNoteDto) {
     if (data.noteType === 'NEGOTIATION') {
       throw new Error('Negotiations must be created via the dedicated negotiations API, not as notes.');
     }
