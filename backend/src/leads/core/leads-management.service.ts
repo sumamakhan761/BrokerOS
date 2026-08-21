@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { LeadStatus, NotificationType } from '../../generated/prisma/client.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto.js';
 
 @Injectable()
 export class LeadsManagementService {
@@ -10,7 +11,7 @@ export class LeadsManagementService {
     private notificationsService: NotificationsService
   ) {}
 
-  async bulkCreate(leads: any[], managerId: string) {
+  async bulkCreate(leads: CreateLeadDto[], managerId: string) {
     const sources = await this.prisma.leadSource.findMany();
     const projects = await this.prisma.project.findMany();
 
@@ -149,7 +150,7 @@ export class LeadsManagementService {
     });
   }
 
-  async create(data: any, userId?: string) {
+  async create(data: CreateLeadDto, userId?: string) {
     let sourceId = data.sourceId;
     if (!sourceId && data.source) {
       const source = await this.prisma.leadSource.findFirst({
@@ -186,20 +187,7 @@ export class LeadsManagementService {
 
   async update(
     id: string,
-    data: {
-      firstName?: string;
-      lastName?: string;
-      email?: string;
-      preferredLocation?: string;
-      budget?: number;
-      lastContactDate?: string;
-      nextFollowUpDate?: string;
-      sourceId?: string;
-      interestedProjectId?: string;
-      temperature?: any;
-      requirements?: string;
-      subStatus?: string;
-    },
+    data: UpdateLeadDto,
   ) {
     const lead = await this.prisma.lead.findUnique({ where: { id } });
     if (!lead) throw new NotFoundException(`Lead with ID ${id} not found`);

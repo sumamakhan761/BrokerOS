@@ -6,6 +6,7 @@ jest.mock('../../notifications/notifications.service.js');
 import { LeadsManagementService } from './leads-management.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { CreateLeadDto } from './dto/lead.dto.js';
 
 describe('LeadsManagementService', () => {
   let service: LeadsManagementService;
@@ -37,7 +38,7 @@ describe('LeadsManagementService', () => {
     mockPrisma.leadSource.findMany.mockResolvedValue([]);
     mockPrisma.project.findMany.mockResolvedValue([]);
     mockPrisma.lead.createMany.mockResolvedValue({ count: 2 });
-    await service.bulkCreate([{ firstName: 'A' }, { firstName: 'B' }], 'm-1');
+    await service.bulkCreate([{ firstName: 'A' }, { firstName: 'B' }] as CreateLeadDto[], 'm-1');
     expect(mockPrisma.lead.createMany).toHaveBeenCalled();
     expect(mockNotifs.createNotification).toHaveBeenCalled();
   });
