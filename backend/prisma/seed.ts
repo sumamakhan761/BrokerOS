@@ -582,7 +582,7 @@ async function main() {
         phone,
         email: `${spec.firstName.toLowerCase()}.${spec.lastName?.toLowerCase() || 'lead'}@demo-leads.com`,
         status: spec.status as any,
-        subStatus: ['BOOKING', 'LOAN', 'AGREEMENT', 'HANDOVER'].includes(spec.status) ? 'DONE' : 'PENDING',
+        subStatus: ['BOOKING', 'LOAN', 'AGREEMENT', 'DOCUMENT', 'HANDOVER'].includes(spec.status) ? 'DONE' : 'PENDING',
         temperature: spec.temperature as any,
         score: spec.temperature === 'HOT' ? 85 : 55,
         sourceId,
