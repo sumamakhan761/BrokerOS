@@ -4,6 +4,7 @@ jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 
 import { InventoryUnitsService } from './inventory-units.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
+import { UpdateUnitStatusDto } from './dto/unit.dto.js';
 
 describe('InventoryUnitsService', () => {
   let service: InventoryUnitsService;
@@ -26,7 +27,8 @@ describe('InventoryUnitsService', () => {
   it('should update unit status', async () => {
     mockPrisma.unit.findUnique.mockResolvedValue({ id: 'u-1', status: 'AVAILABLE' });
     mockPrisma.unit.update.mockResolvedValue({ id: 'u-1', status: 'RESERVED' });
-    const res = await service.updateUnitStatus('u-1', { status: 'RESERVED' }, 'user-1');
+    const dto = { status: 'RESERVED' } as UpdateUnitStatusDto;
+    const res = await service.updateUnitStatus('u-1', dto, 'user-1');
     expect(res.status).toBe('RESERVED');
   });
 });
