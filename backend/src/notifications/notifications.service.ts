@@ -3,6 +3,7 @@ import { prismaClient as prisma } from '../lib/database/prisma-client.js';
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { NotificationsGateway } from './notifications.gateway.js';
 import { NotificationType } from '../../src/generated/prisma/client.js';
+import { CreateNotificationDto } from './dto/notifications.dto.js';
 
 @Injectable()
 export class NotificationsService {
@@ -29,18 +30,7 @@ export class NotificationsService {
   /**
    * Creates a notification, emits it via WebSocket, and sends an Expo push notification.
    */
-  async createNotification(params: {
-    userId: string;
-    type: any;
-    title: string;
-    body?: string;
-    entityType?: string;
-    entityId?: string;
-    actionUrl?: string;
-    metadata?: any;
-    categoryId?: string;
-    skipWebSocket?: boolean;
-  }) {
+  async createNotification(params: CreateNotificationDto) {
     // 1. Save to database
     const notification = await prisma.notification.create({
       data: {
