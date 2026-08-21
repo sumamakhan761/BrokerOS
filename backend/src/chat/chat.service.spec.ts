@@ -5,6 +5,7 @@ jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 import { ChatService } from './chat.service.js';
 import { PrismaService } from '../lib/database/prisma.service.js';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { MessageAttachmentDto } from './dto/chat.dto.js';
 
 describe('ChatService', () => {
   let service: ChatService;
@@ -69,7 +70,8 @@ describe('ChatService', () => {
     mockPrisma.chatRoomMember.findUnique.mockResolvedValue({ id: 'm-1' });
     mockPrisma.chatMessage.create.mockResolvedValue({ id: 'msg-1', content: 'hello' });
     mockPrisma.chatRoomMember.update.mockResolvedValue({ id: 'm-1' });
-    const res = await service.sendMessage('u-1', 'r-1', 'hello');
+    const attachment = { url: 'img.png', type: 'image/png', name: 'img' } as MessageAttachmentDto;
+    const res = await service.sendMessage('u-1', 'r-1', 'hello', attachment);
     expect(res.content).toBe('hello');
   });
 });

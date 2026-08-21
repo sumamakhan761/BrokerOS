@@ -2,6 +2,7 @@ import { WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDiscon
 import { Server, Socket } from 'socket.io';
 import { Logger, forwardRef, Inject } from '@nestjs/common';
 import { ChatService } from './chat.service.js';
+import { JoinRoomDto, LeaveRoomDto, SendSocketMessageDto, TypingIndicatorDto } from './dto/chat.dto.js';
 
 @WebSocketGateway({
   cors: {
@@ -71,18 +72,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Real-time events
 
   @SubscribeMessage('join_room')
-  handleJoinRoom(@MessageBody() data: { roomId: string }, @ConnectedSocket() client: Socket) {
+  handleJoinRoom(@MessageBody() data: JoinRoomDto, @ConnectedSocket() client: Socket) {
     client.join(`room_${data.roomId}`);
   }
 
   @SubscribeMessage('leave_room')
-  handleLeaveRoom(@MessageBody() data: { roomId: string }, @ConnectedSocket() client: Socket) {
+  handleLeaveRoom(@MessageBody() data: LeaveRoomDto, @ConnectedSocket() client: Socket) {
     client.leave(`room_${data.roomId}`);
   }
 
   @SubscribeMessage('send_message')
   async handleSendMessage(
-    @MessageBody() data: { roomId: string, content: string, attachment?: any },
+    @MessageBody() data: SendSocketMessageDto,
     @ConnectedSocket() client: Socket
   ) {
     const userId = client.handshake.query.userId as string;
@@ -103,7 +104,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('typing')
-  handleTyping(@MessageBody() data: { roomId: string, isTyping: boolean }, @ConnectedSocket() client: Socket) {
+  handleTyping(@MessageBody() data: TypingIndicatorDto, @ConnectedSocket() client: Socket) {
     const userId = client.handshake.query.userId as string;
     if (!userId) return;
 
