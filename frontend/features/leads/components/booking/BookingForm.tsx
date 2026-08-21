@@ -12,9 +12,10 @@ interface BookingFormProps {
   onRefresh: () => void;
   lead?: any;
   booking?: any;
+  userRole?: string;
 }
 
-export function BookingForm({ leadId, userId, showForm, setShowForm, onRefresh, lead, booking }: BookingFormProps) {
+export function BookingForm({ leadId, userId, showForm, setShowForm, onRefresh, lead, booking, userRole }: BookingFormProps) {
   const {
     saving,
     form,
@@ -52,13 +53,15 @@ export function BookingForm({ leadId, userId, showForm, setShowForm, onRefresh, 
             <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p className="text-gray-600 font-medium mb-1">No booking created</p>
             <p className="text-gray-400 text-sm mb-6">When this lead reaches booking stage, create a booking record here.</p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 bg-amber-500 text-white text-sm rounded-xl px-5 py-2.5 font-medium hover:bg-amber-600 transition-all shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Create Booking
-            </button>
+            {userRole !== 'CHANNEL_PARTNER' && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="inline-flex items-center gap-2 bg-amber-500 text-white text-sm rounded-xl px-5 py-2.5 font-medium hover:bg-amber-600 transition-all shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Create Booking
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-5">
@@ -116,7 +119,7 @@ export function BookingForm({ leadId, userId, showForm, setShowForm, onRefresh, 
                   </select>
                 </div>
               </div>
-              
+
               <div>
                 <label className="text-xs font-semibold text-gray-600 block mb-1.5">Unit / Property Description</label>
                 <input

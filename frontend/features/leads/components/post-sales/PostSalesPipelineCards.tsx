@@ -13,10 +13,11 @@ interface PostSalesPipelineCardsProps {
   leadStatus: string;
   leadSubStatus: string;
   booking: any;
+  userRole?: string;
   onRefresh: () => void;
 }
 
-export function PostSalesPipelineCards({ leadId, leadStatus, leadSubStatus, booking, onRefresh }: PostSalesPipelineCardsProps) {
+export function PostSalesPipelineCards({ leadId, leadStatus, leadSubStatus, booking, userRole, onRefresh }: PostSalesPipelineCardsProps) {
   const [saving, setSaving] = useState(false);
 
   const handleMarkStageDone = async (status: string, subStatus: string) => {
@@ -135,7 +136,7 @@ export function PostSalesPipelineCards({ leadId, leadStatus, leadSubStatus, book
               )}
             </div>
           </div>
-          {isCurrent && !isDone && (
+          {isCurrent && !isDone && userRole !== 'CHANNEL_PARTNER' && (
             <button
               onClick={() => handleMarkStageDone(statusKey, 'DONE')}
               disabled={saving}
@@ -159,16 +160,16 @@ export function PostSalesPipelineCards({ leadId, leadStatus, leadSubStatus, book
   return (
     <div className="space-y-4">
       {renderCardWrapper('Documentation', <FileText className="w-5 h-5" />, 'DOCUMENT', 'Collect and verify all KYC and property related documents.',
-        <DocumentForm booking={booking} saving={saving} uploadDoc={uploadDoc} />
+        <DocumentForm booking={booking} saving={saving} uploadDoc={uploadDoc} userRole={userRole} />
       )}
       {renderCardWrapper('Loan Processing', <Banknote className="w-5 h-5" />, 'LOAN', 'Process home loan applications and await disbursement.',
-        <LoanForm booking={booking} saving={saving} saveModelData={saveModelData} uploadFile={uploadFile} />
+        <LoanForm booking={booking} saving={saving} saveModelData={saveModelData} uploadFile={uploadFile} userRole={userRole} />
       )}
       {renderCardWrapper('Agreement Execution', <PenTool className="w-5 h-5" />, 'AGREEMENT', 'Draft and execute the final agreement to sell / sale deed.',
-        <AgreementForm booking={booking} saving={saving} saveModelData={saveModelData} uploadFile={uploadFile} />
+        <AgreementForm booking={booking} saving={saving} saveModelData={saveModelData} uploadFile={uploadFile} userRole={userRole} />
       )}
       {renderCardWrapper('Handover', <Key className="w-5 h-5" />, 'HANDOVER', 'Complete final snagging, clear dues, and hand over the keys.',
-        <HandoverForm booking={booking} saving={saving} saveModelData={saveModelData} uploadFile={uploadFile} />
+        <HandoverForm booking={booking} saving={saving} saveModelData={saveModelData} uploadFile={uploadFile} userRole={userRole} />
       )}
     </div>
   );
