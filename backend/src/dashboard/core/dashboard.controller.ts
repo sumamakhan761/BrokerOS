@@ -11,6 +11,7 @@ import { PostSalesDashboardService } from '../post-sales/post-sales-dashboard.se
 import { PostSalesAnalyticsService } from '../post-sales/post-sales-analytics.service.js';
 import { SourcingManagerDashboardService } from '../sourcing-manager/sourcing-manager-dashboard.service.js';
 import { ClosingManagerDashboardService } from '../closing-manager/closing-manager-dashboard.service.js';
+import { CreateTaskDto, UpdateTaskDto, CreateAnnouncementDto, UpdateAnnouncementDto } from './dto/dashboard.dto.js';
 
 // ─── Pre-Sales Agent Dashboard ────────────────────────────────────────────────
 
@@ -236,7 +237,7 @@ export class EmployeesController {
   @Post('tasks')
   createTask(
     @Req() req: any,
-    @Body() body: { coldCallTarget: number; assignToAll: boolean; userIds?: string[] },
+    @Body() body: CreateTaskDto,
   ) {
     return this.employeesService.createTask(req.user?.id, body);
   }
@@ -246,7 +247,7 @@ export class EmployeesController {
   updateTask(
     @Param('taskId') taskId: string,
     @Req() req: any,
-    @Body() body: { coldCallTarget?: number; userId?: string; backlogOverride?: number },
+    @Body() body: UpdateTaskDto,
   ) {
     return this.employeesService.updateTask(taskId, req.user?.id, body);
   }
@@ -269,7 +270,7 @@ export class EmployeesController {
   @Post('announcements')
   createAnnouncement(
     @Req() req: any,
-    @Body() body: { title: string; description: string },
+    @Body() body: CreateAnnouncementDto,
   ) {
     return this.employeesService.createAnnouncement(req.user?.id, body);
   }
@@ -279,7 +280,7 @@ export class EmployeesController {
   updateAnnouncement(
     @Param('id') id: string,
     @Req() req: any,
-    @Body() body: { title?: string; description?: string },
+    @Body() body: UpdateAnnouncementDto,
   ) {
     return this.employeesService.updateAnnouncement(id, req.user?.id, body);
   }
@@ -346,7 +347,7 @@ export class SalesManagerEmployeesController {
   @Post('announcements')
   createAnnouncement(
     @Req() req: any,
-    @Body() body: { title: string; description: string },
+    @Body() body: CreateAnnouncementDto,
   ) {
     return this.employeesService.createAnnouncement(req.user?.id, body);
   }
@@ -356,7 +357,7 @@ export class SalesManagerEmployeesController {
   updateAnnouncement(
     @Param('id') id: string,
     @Req() req: any,
-    @Body() body: { title?: string; description?: string },
+    @Body() body: UpdateAnnouncementDto,
   ) {
     return this.employeesService.updateAnnouncement(id, req.user?.id, body);
   }
@@ -449,7 +450,7 @@ export class PostSalesManagerEmployeesController {
   @Post('announcements')
   createAnnouncement(
     @Req() req: any,
-    @Body() body: { title: string; description: string },
+    @Body() body: CreateAnnouncementDto,
   ) {
     return this.employeesService.createAnnouncement(req.user?.id, body);
   }
@@ -459,7 +460,7 @@ export class PostSalesManagerEmployeesController {
   updateAnnouncement(
     @Param('id') id: string,
     @Req() req: any,
-    @Body() body: { title?: string; description?: string },
+    @Body() body: UpdateAnnouncementDto,
   ) {
     return this.employeesService.updateAnnouncement(id, req.user?.id, body);
   }

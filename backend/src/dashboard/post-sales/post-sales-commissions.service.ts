@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
+import { ReceiveCommissionDto } from './dto/post-sales.dto.js';
 
 @Injectable()
 export class PostSalesCommissionsService {
@@ -44,7 +45,7 @@ export class PostSalesCommissionsService {
     });
   }
 
-  async markAsReceived(id: string, userId: string, receiptData?: any) {
+  async markAsReceived(id: string, userId: string, receiptData?: ReceiveCommissionDto) {
     const comm = await this.prisma.inboundCommission.findUnique({ where: { id } });
     if (!comm) throw new NotFoundException('Commission not found');
 

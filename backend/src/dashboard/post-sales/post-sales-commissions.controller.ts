@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Put, Req, Body } from '@nestjs/common';
 import { PostSalesCommissionsService } from './post-sales-commissions.service.js';
+import { ReceiveCommissionDto } from './dto/post-sales.dto.js';
 
 @Controller('api/dashboard/post-sales/commissions')
 export class PostSalesCommissionsController {
@@ -13,7 +14,7 @@ export class PostSalesCommissionsController {
   }
 
   @Put(':id/receive')
-  async markAsReceived(@Param('id') id: string, @Req() req: any, @Body() body: any) {
+  async markAsReceived(@Param('id') id: string, @Req() req: any, @Body() body: ReceiveCommissionDto) {
     return this.commissionsService.markAsReceived(id, req.user?.id || 'SYSTEM', body);
   }
 }

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { EmployeeCardsService } from './employee-cards.service.js';
 import { ManagerTasksService } from '../manager/manager-tasks.service.js';
 import { ManagerAnnouncementsService } from '../manager/manager-announcements.service.js';
+import { CreateTaskDto, UpdateTaskDto, CreateAnnouncementDto, UpdateAnnouncementDto } from '../core/dto/dashboard.dto.js';
 
 @Injectable()
 export class EmployeesService {
@@ -47,14 +48,14 @@ export class EmployeesService {
 
   // ─── Manager Tasks ─────────────────────────────────────────────────────────
 
-  async createTask(managerId: string, data: { coldCallTarget: number; assignToAll: boolean; userIds?: string[] }) {
+  async createTask(managerId: string, data: CreateTaskDto) {
     return this.managerTasks.createTask(managerId, data);
   }
 
   async updateTask(
     taskId: string,
     managerId: string,
-    data: { coldCallTarget?: number; userId?: string; backlogOverride?: number },
+    data: UpdateTaskDto,
   ) {
     return this.managerTasks.updateTask(taskId, managerId, data);
   }
@@ -73,11 +74,11 @@ export class EmployeesService {
 
   // ─── Announcements ─────────────────────────────────────────────────────────
 
-  async createAnnouncement(managerId: string, data: { title: string; description: string }) {
+  async createAnnouncement(managerId: string, data: CreateAnnouncementDto) {
     return this.managerAnnouncements.createAnnouncement(managerId, data);
   }
 
-  async updateAnnouncement(id: string, managerId: string, data: { title?: string; description?: string }) {
+  async updateAnnouncement(id: string, managerId: string, data: UpdateAnnouncementDto) {
     return this.managerAnnouncements.updateAnnouncement(id, managerId, data);
   }
 

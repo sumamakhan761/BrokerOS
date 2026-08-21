@@ -2,6 +2,7 @@ import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/commo
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { NotificationType } from '../../generated/prisma/client.js';
+import { CreateAnnouncementDto, UpdateAnnouncementDto } from '../core/dto/dashboard.dto.js';
 
 @Injectable()
 export class ManagerAnnouncementsService {
@@ -10,7 +11,7 @@ export class ManagerAnnouncementsService {
     private notificationsService: NotificationsService
   ) { }
 
-  async createAnnouncement(managerId: string, data: { title: string; description: string }) {
+  async createAnnouncement(managerId: string, data: CreateAnnouncementDto) {
     const ann = await this.prisma.announcement.create({
       data: {
         managerId,
@@ -58,7 +59,7 @@ export class ManagerAnnouncementsService {
     return ann;
   }
 
-  async updateAnnouncement(id: string, managerId: string, data: { title?: string; description?: string }) {
+  async updateAnnouncement(id: string, managerId: string, data: UpdateAnnouncementDto) {
     const ann = await this.prisma.announcement.findUnique({ where: { id }, select: { managerId: true } });
     if (!ann) throw new NotFoundException('Announcement not found');
     if (ann.managerId !== managerId) throw new ForbiddenException('Not your announcement');
