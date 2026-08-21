@@ -9,6 +9,7 @@ jest.mock('groq-sdk', () => {
 
 import { InventoryTowerGenService } from './inventory-tower-gen.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
+import { SaveTowerDto, UnitTypeEnum } from './dto/tower.dto.js';
 
 describe('InventoryTowerGenService', () => {
   let service: InventoryTowerGenService;
@@ -36,7 +37,8 @@ describe('InventoryTowerGenService', () => {
     mockPrisma.tower.create.mockResolvedValue({ id: 't-1' });
     mockPrisma.floor.create.mockResolvedValue({ id: 'f-1' });
     mockPrisma.unit.createMany.mockResolvedValue({ count: 1 });
-    const res = await service.saveGeneratedTower('p-1', { name: 'A', floors: [{ floorNumber: 1, units: [{ type: 'SHOP', basePrice: 100 }] }] });
+    const dto = { name: 'A', floors: [{ floorNumber: 1, units: [{ type: UnitTypeEnum.SHOP, unitNumber: '101', basePrice: 100 }] }] } as SaveTowerDto;
+    const res = await service.saveGeneratedTower('p-1', dto);
     expect(res.id).toBe('t-1');
   });
 });
