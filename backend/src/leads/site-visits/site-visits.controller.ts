@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
 import { SiteVisitsService } from './site-visits.service.js';
+import { CreateSiteVisitDto, UpdateSiteVisitDto, ArriveSiteVisitDto } from './dto/site-visit.dto.js';
 
 @Controller('api/leads')
 export class SiteVisitsController {
@@ -13,7 +14,7 @@ export class SiteVisitsController {
   @Post(':id/site-visits')
   createSiteVisit(
     @Param('id') id: string,
-    @Body() siteVisitData: { userId: string; projectId: string; scheduledDate: string; meetingNotes?: string; destinationUrl?: string },
+    @Body() siteVisitData: CreateSiteVisitDto,
   ) {
     return this.siteVisitsService.createSiteVisit(id, siteVisitData);
   }
@@ -21,20 +22,7 @@ export class SiteVisitsController {
   @Patch('site-visits/:siteVisitId')
   updateSiteVisit(
     @Param('siteVisitId') siteVisitId: string,
-    @Body() updateData: {
-      scheduledDate?: string;
-      projectId?: string;
-      meetingNotes?: string;
-      status?: string;
-      interestLevel?: string;
-      budgetConfirmed?: number;
-      configInterest?: string;
-      customerReaction?: string;
-      customerObjections?: string;
-      closingProbability?: string;
-      completedAt?: string;
-      nextAction?: string;
-    },
+    @Body() updateData: UpdateSiteVisitDto,
   ) {
     return this.siteVisitsService.updateSiteVisit(siteVisitId, updateData);
   }
@@ -47,7 +35,7 @@ export class SiteVisitsController {
   @Patch(':id/site-visits/:siteVisitId/arrive')
   arriveAtSiteVisit(
     @Param('siteVisitId') siteVisitId: string,
-    @Body() locationData: { latitude: number; longitude: number }
+    @Body() locationData: ArriveSiteVisitDto
   ) {
     return this.siteVisitsService.arriveAtSiteVisit(siteVisitId, locationData);
   }

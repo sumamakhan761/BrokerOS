@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
+import { CreateSiteVisitDto, UpdateSiteVisitDto, ArriveSiteVisitDto } from './dto/site-visit.dto.js';
 
 @Injectable()
 export class SiteVisitsService {
@@ -22,7 +23,7 @@ export class SiteVisitsService {
     });
   }
 
-  async createSiteVisit(leadId: string, data: { userId: string; projectId: string; scheduledDate: string; meetingNotes?: string; destinationUrl?: string }) {
+  async createSiteVisit(leadId: string, data: CreateSiteVisitDto) {
     try {
       const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
       if (!lead) throw new Error('Lead not found');
@@ -114,20 +115,7 @@ export class SiteVisitsService {
     }
   }
 
-  async updateSiteVisit(siteVisitId: string, data: {
-    scheduledDate?: string;
-    projectId?: string;
-    meetingNotes?: string;
-    status?: string;
-    interestLevel?: string;
-    budgetConfirmed?: number;
-    configInterest?: string;
-    customerReaction?: string;
-    customerObjections?: string;
-    closingProbability?: string;
-    completedAt?: string;
-    nextAction?: string;
-  }) {
+  async updateSiteVisit(siteVisitId: string, data: UpdateSiteVisitDto) {
     const updated = await this.prisma.siteVisit.update({
       where: { id: siteVisitId },
       data: {
@@ -165,7 +153,7 @@ export class SiteVisitsService {
     });
   }
 
-  async arriveAtSiteVisit(siteVisitId: string, locationData: { latitude: number; longitude: number }) {
+  async arriveAtSiteVisit(siteVisitId: string, locationData: ArriveSiteVisitDto) {
     return this.prisma.siteVisit.update({
       where: { id: siteVisitId },
       data: {
