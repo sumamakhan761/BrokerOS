@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import Groq from 'groq-sdk';
+import { SaveTowerDto } from './dto/tower.dto.js';
 
 @Injectable()
 export class InventoryTowerGenService {
@@ -54,7 +55,7 @@ Respond ONLY with JSON, no other text.`;
     return JSON.parse(result);
   }
 
-  async saveGeneratedTower(projectId: string, towerData: any) {
+  async saveGeneratedTower(projectId: string, towerData: SaveTowerDto) {
     return this.prisma.$transaction(async (tx) => {
       let totalUnits = 0;
       for (const floor of towerData.floors || []) {
