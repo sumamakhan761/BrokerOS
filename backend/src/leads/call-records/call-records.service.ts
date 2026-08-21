@@ -3,6 +3,7 @@ import { PrismaService } from '../../lib/database/prisma.service.js';
 import { TranscriptionService } from './transcription.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { NotificationType } from '../../generated/prisma/client.js';
+import { UploadCallRecordDto } from './dto/call-record.dto.js';
 import { put } from '@vercel/blob';
 import PQueue from 'p-queue';
 import * as fs from 'fs';
@@ -23,7 +24,7 @@ export class CallRecordsService {
     return this.prisma.callRecord.findUnique({ where: { id } });
   }
 
-  async uploadCallRecord(file: any, data: { phoneNumber: string; startedAt: string; endedAt: string }) {
+  async uploadCallRecord(file: Express.Multer.File, data: UploadCallRecordDto) {
     const lead = await this.prisma.lead.findFirst({
       where: { phone: data.phoneNumber },
     });

@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Param, Body, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { CallRecordsService } from './call-records.service.js';
+import { UploadCallRecordDto } from './dto/call-record.dto.js';
 
 @Controller('api/leads')
 export class CallRecordsController {
@@ -9,8 +11,8 @@ export class CallRecordsController {
   @Post('upload-call-record')
   @UseInterceptors(FileInterceptor('file'))
   async uploadCallRecord(
-    @UploadedFile() file: any,
-    @Body() body: { phoneNumber: string; startedAt: string; endedAt: string },
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: UploadCallRecordDto,
   ) {
     console.log('--- INCOMING UPLOAD REQUEST ---');
     console.log('Body:', body);
@@ -26,7 +28,7 @@ export class CallRecordsController {
   }
 
   @Get('call-records/:id/audio')
-  async getCallRecordAudio(@Param('id') id: string, @Res() res: any) {
+  async getCallRecordAudio(@Param('id') id: string, @Res() res: Response) {
     const record = await this.callRecordsService.getCallRecord(id);
     if (!record || !record.recordingUrl) {
       return res.status(404).send('Audio not found');

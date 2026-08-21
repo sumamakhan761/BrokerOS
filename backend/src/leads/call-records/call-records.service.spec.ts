@@ -24,6 +24,7 @@ jest.mock('fs', () => ({
 }));
 
 import { CallRecordsService } from './call-records.service.js';
+import { UploadCallRecordDto } from './dto/call-record.dto.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { TranscriptionService } from './transcription.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
@@ -43,6 +44,9 @@ describe('CallRecordsService', () => {
       findFirst: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
+    },
+    broker: {
+      findFirst: jest.fn(),
     },
     user: {
       findFirst: jest.fn(),
@@ -109,14 +113,15 @@ describe('CallRecordsService', () => {
   });
 
   describe('uploadCallRecord', () => {
-    it('should return error if no lead is found', async () => {
+    it('should return error if no lead or broker is found', async () => {
       mockPrismaService.lead.findFirst.mockResolvedValue(null);
-      const res = await service.uploadCallRecord({ originalname: 'test.mp3', buffer: Buffer.from('') }, {
+      mockPrismaService.broker.findFirst.mockResolvedValue(null);
+      const res = await service.uploadCallRecord({ originalname: 'test.mp3', buffer: Buffer.from('') } as Express.Multer.File, {
         phoneNumber: '1234567890',
         startedAt: '123',
         endedAt: '124'
-      });
-      expect(res).toEqual({ success: false, message: 'No lead found' });
+      } as UploadCallRecordDto);
+      expect(res).toEqual({ success: false, message: 'No lead or broker found' });
     });
 
     it('should process call record, add to queue, and return success', async () => {
@@ -138,11 +143,11 @@ describe('CallRecordsService', () => {
       mockPrismaService.project.findMany.mockResolvedValue([]);
       mockTranscriptionService.generateLeadScore.mockResolvedValue({ score: 90, category: 'HOT' });
       
-      const res = await service.uploadCallRecord({ originalname: 'test.mp3', buffer: Buffer.from('audio') }, {
+      const res = await service.uploadCallRecord({ originalname: 'test.mp3', buffer: Buffer.from('audio') } as Express.Multer.File, {
         phoneNumber: '1234567890',
         startedAt: '1234567890',
         endedAt: '1234567891'
-      });
+      } as UploadCallRecordDto);
 
       expect(res.success).toBe(true);
       expect(res.callRecord).toEqual({ id: 'cr-1', leadId: 'lead-1' });
