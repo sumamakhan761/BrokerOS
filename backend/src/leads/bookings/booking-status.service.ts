@@ -66,7 +66,7 @@ export class BookingStatusService {
 
     // Also update lead status to BOOKING and subStatus to DONE
     const customer = await this.prisma.customer.findUnique({ where: { id: booking.customerId } });
-    let lead: any = null;
+    let lead: { id: string, brokerId: string | null } | null = null;
     if (customer) {
       lead = await this.prisma.lead.findUnique({ where: { id: customer.leadId } });
       if (lead) {
@@ -97,11 +97,11 @@ export class BookingStatusService {
           if (!existingRecord) {
             const bookingValue = Number(booking.agreedPrice || 0);
             let brokerageAmount = 0;
-            let brokeragePercent: any = null;
+            let brokeragePercent: number | null = null;
 
             if (dealCard.brokeragePercent) {
-              brokeragePercent = dealCard.brokeragePercent;
-              brokerageAmount = (bookingValue * Number(brokeragePercent)) / 100;
+              brokeragePercent = Number(dealCard.brokeragePercent);
+              brokerageAmount = (bookingValue * brokeragePercent) / 100;
             } else if (dealCard.brokerageFlat) {
               brokerageAmount = Number(dealCard.brokerageFlat);
             }

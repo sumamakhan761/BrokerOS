@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-jest.mock('../../generated/prisma/client.js', () => ({ PrismaClient: class { } }));
+jest.mock('../../generated/prisma/client.js', () => ({ PrismaClient: class { }, NotificationType: { LEAD_ASSIGNED: 'LEAD_ASSIGNED' } }));
 jest.mock('expo-server-sdk', () => ({ Expo: class { } }));
 
 import { BookingStatusService } from './booking-status.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
+import { NotificationsService } from '../../notifications/notifications.service.js';
 
 describe('BookingStatusService', () => {
   let service: BookingStatusService;
@@ -16,12 +17,20 @@ describe('BookingStatusService', () => {
     brokerageRecord: { findFirst: jest.fn(), create: jest.fn() },
     $transaction: jest.fn().mockImplementation(async (fn) => fn(mockPrisma)),
     unit: { update: jest.fn() },
-    unitStatusHistory: { create: jest.fn() }
+    unitStatusHistory: { create: jest.fn() },
+    role: { findFirst: jest.fn() },
+    user: { findMany: jest.fn() }
   };
+  
+  const mockNotif = { createNotification: jest.fn() };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BookingStatusService, { provide: PrismaService, useValue: mockPrisma }],
+      providers: [
+        BookingStatusService, 
+        { provide: PrismaService, useValue: mockPrisma },
+        { provide: NotificationsService, useValue: mockNotif }
+      ],
     }).compile();
     service = module.get(BookingStatusService);
   });

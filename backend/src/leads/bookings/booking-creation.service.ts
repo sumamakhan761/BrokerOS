@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { NotificationType } from '../../generated/prisma/client.js';
+import { CreateBookingDto, UpdateBookingDto } from './dto/booking.dto.js';
 
 @Injectable()
 export class BookingCreationService {
@@ -10,19 +11,7 @@ export class BookingCreationService {
     private notificationsService: NotificationsService
   ) { }
 
-  async createBooking(leadId: string, data: {
-    userId: string;
-    unitId?: string;
-    unitDescription?: string;
-    agreedPrice?: number;
-    bookingAmount?: number;
-    commissionPercentage?: number;
-    commissionAmount?: number;
-    paymentMode?: string;
-    transactionRef?: string;
-    loanRequired?: boolean;
-    remarks?: string;
-  }) {
+  async createBooking(leadId: string, data: CreateBookingDto) {
     const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
     if (!lead) throw new NotFoundException('Lead not found');
 
@@ -144,19 +133,7 @@ export class BookingCreationService {
     return result;
   }
 
-  async updateBooking(bookingId: string, data: {
-    userId: string;
-    unitId?: string;
-    unitDescription?: string;
-    agreedPrice?: number;
-    bookingAmount?: number;
-    commissionPercentage?: number;
-    commissionAmount?: number;
-    paymentMode?: string;
-    transactionRef?: string;
-    loanRequired?: boolean;
-    remarks?: string;
-  }) {
+  async updateBooking(bookingId: string, data: UpdateBookingDto) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
       include: { unit: true },
