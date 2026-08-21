@@ -8,9 +8,10 @@ interface LoanFormProps {
   saving: boolean;
   saveModelData: (endpoint: string, data: any) => void;
   uploadFile: (type: 'loan' | 'agreement' | 'handover', fieldName: string) => void;
+  userRole?: string;
 }
 
-export function LoanForm({ booking, saving, saveModelData, uploadFile }: LoanFormProps) {
+export function LoanForm({ booking, saving, saveModelData, uploadFile, userRole }: LoanFormProps) {
   const [loanData, setLoanData] = useState(booking?.loanCase || {});
 
   useEffect(() => {
@@ -20,18 +21,18 @@ export function LoanForm({ booking, saving, saveModelData, uploadFile }: LoanFor
   }, [booking?.loanCase]);
 
   return (
-    <View className="space-y-3">
-      <TextInput 
+    <View className={`space-y-3 ${userRole === 'CHANNEL_PARTNER' ? 'opacity-75' : ''}`} pointerEvents={userRole === 'CHANNEL_PARTNER' ? 'none' : 'auto'}>
+      <TextInput
         placeholder="Loan Application No."
         placeholderTextColor="#9ca3af"
-        value={loanData.loanApplicationNumber || ''} 
-        onChangeText={text => setLoanData({...loanData, loanApplicationNumber: text})} 
-        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50" 
+        value={loanData.loanApplicationNumber || ''}
+        onChangeText={text => setLoanData({ ...loanData, loanApplicationNumber: text })}
+        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50"
       />
       <View className="border border-gray-200 rounded-lg bg-gray-50 overflow-hidden">
         <Picker
           selectedValue={loanData.status || 'NOT_APPLIED'}
-          onValueChange={(itemValue) => setLoanData({...loanData, status: itemValue})}
+          onValueChange={(itemValue) => setLoanData({ ...loanData, status: itemValue })}
           style={{ height: 50, width: '100%', color: 'black' }}
           dropdownIconColor="black"
         >
@@ -44,80 +45,82 @@ export function LoanForm({ booking, saving, saveModelData, uploadFile }: LoanFor
           <Picker.Item label="Rejected" value="REJECTED" color="black" />
         </Picker>
       </View>
-      <TextInput 
+      <TextInput
         placeholder="Bank Name"
         placeholderTextColor="#9ca3af"
-        value={loanData.bankName || ''} 
-        onChangeText={text => setLoanData({...loanData, bankName: text})} 
-        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50" 
+        value={loanData.bankName || ''}
+        onChangeText={text => setLoanData({ ...loanData, bankName: text })}
+        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50"
       />
-      <TextInput 
+      <TextInput
         placeholder="Branch"
         placeholderTextColor="#9ca3af"
-        value={loanData.bankBranch || ''} 
-        onChangeText={text => setLoanData({...loanData, bankBranch: text})} 
-        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50" 
+        value={loanData.bankBranch || ''}
+        onChangeText={text => setLoanData({ ...loanData, bankBranch: text })}
+        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50"
       />
-      <TextInput 
+      <TextInput
         placeholder="DSA / Agent Name"
         placeholderTextColor="#9ca3af"
-        value={loanData.dsaName || ''} 
-        onChangeText={text => setLoanData({...loanData, dsaName: text})} 
-        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50" 
+        value={loanData.dsaName || ''}
+        onChangeText={text => setLoanData({ ...loanData, dsaName: text })}
+        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50"
       />
-      <TextInput 
+      <TextInput
         placeholder="DSA Contact"
         placeholderTextColor="#9ca3af"
-        value={loanData.dsaContact || ''} 
-        onChangeText={text => setLoanData({...loanData, dsaContact: text})} 
-        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50" 
+        value={loanData.dsaContact || ''}
+        onChangeText={text => setLoanData({ ...loanData, dsaContact: text })}
+        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50"
       />
-      <TextInput 
+      <TextInput
         placeholder="Applied Amount (₹)"
         placeholderTextColor="#9ca3af"
-        value={loanData.loanAmount ? String(loanData.loanAmount) : ''} 
-        onChangeText={text => setLoanData({...loanData, loanAmount: Number(text)})} 
+        value={loanData.loanAmount ? String(loanData.loanAmount) : ''}
+        onChangeText={text => setLoanData({ ...loanData, loanAmount: Number(text) })}
         keyboardType="numeric"
-        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50" 
+        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50"
       />
-      <TextInput 
+      <TextInput
         placeholder="Approved Amount (₹)"
         placeholderTextColor="#9ca3af"
-        value={loanData.approvedAmount ? String(loanData.approvedAmount) : ''} 
-        onChangeText={text => setLoanData({...loanData, approvedAmount: Number(text)})} 
+        value={loanData.approvedAmount ? String(loanData.approvedAmount) : ''}
+        onChangeText={text => setLoanData({ ...loanData, approvedAmount: Number(text) })}
         keyboardType="numeric"
-        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50" 
+        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50"
       />
-      <TextInput 
+      <TextInput
         placeholder="Interest Rate (%)"
         placeholderTextColor="#9ca3af"
-        value={loanData.interestRate ? String(loanData.interestRate) : ''} 
-        onChangeText={text => setLoanData({...loanData, interestRate: Number(text)})} 
+        value={loanData.interestRate ? String(loanData.interestRate) : ''}
+        onChangeText={text => setLoanData({ ...loanData, interestRate: Number(text) })}
         keyboardType="numeric"
-        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50" 
+        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50"
       />
-      <TextInput 
+      <TextInput
         placeholder="Tenure (Months)"
         placeholderTextColor="#9ca3af"
-        value={loanData.tenure ? String(loanData.tenure) : ''} 
-        onChangeText={text => setLoanData({...loanData, tenure: Number(text)})} 
+        value={loanData.tenure ? String(loanData.tenure) : ''}
+        onChangeText={text => setLoanData({ ...loanData, tenure: Number(text) })}
         keyboardType="numeric"
-        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50" 
+        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50"
       />
-      <TextInput 
+      <TextInput
         placeholder="Internal Notes / Remarks"
         placeholderTextColor="#9ca3af"
-        value={loanData.internalNotes || ''} 
-        onChangeText={text => setLoanData({...loanData, internalNotes: text})} 
+        value={loanData.internalNotes || ''}
+        onChangeText={text => setLoanData({ ...loanData, internalNotes: text })}
         multiline
         numberOfLines={2}
         textAlignVertical="top"
-        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50 min-h-[60px]" 
+        className="w-full text-sm text-black border border-gray-200 rounded-lg px-3 py-3 bg-gray-50 min-h-[60px]"
       />
 
-      <TouchableOpacity onPress={() => saveModelData('loan-case', loanData)} disabled={saving} className="bg-indigo-600 px-4 py-3 rounded-xl items-center mt-2 shadow-sm">
-        <Text className="text-white font-semibold text-sm">Save Details</Text>
-      </TouchableOpacity>
+      {userRole !== 'CHANNEL_PARTNER' && (
+        <TouchableOpacity onPress={() => saveModelData('loan-case', loanData)} disabled={saving} className="bg-indigo-600 px-4 py-3 rounded-xl items-center mt-2 shadow-sm">
+          <Text className="text-white font-semibold text-sm">Save Details</Text>
+        </TouchableOpacity>
+      )}
 
       <View className="mt-4 border-t border-gray-100 pt-4">
         <View className="flex-row items-center justify-between p-4 border border-gray-100 rounded-xl bg-white shadow-sm">
@@ -127,12 +130,12 @@ export function LoanForm({ booking, saving, saveModelData, uploadFile }: LoanFor
               <Download size={14} color="#2563eb" />
               <Text className="text-blue-600 font-bold text-xs">View</Text>
             </TouchableOpacity>
-          ) : (
+          ) : userRole !== 'CHANNEL_PARTNER' ? (
             <TouchableOpacity onPress={() => uploadFile('loan', 'sanctionLetterUrl')} disabled={saving} className="flex-row items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-lg">
               <Upload size={14} color="#4b5563" />
               <Text className="text-gray-600 font-bold text-xs">Upload</Text>
             </TouchableOpacity>
-          )}
+          ) : null}
         </View>
       </View>
     </View>

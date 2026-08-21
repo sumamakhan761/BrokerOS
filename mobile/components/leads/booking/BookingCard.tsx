@@ -32,11 +32,12 @@ interface BookingCardProps {
   leadId: string;
   onRefresh: () => void;
   lead?: any;
+  userRole?: string;
 }
 
 const PAYMENT_MODES = ['Cash', 'Cheque', 'NEFT', 'UPI', 'RTGS', 'Demand Draft'];
 
-export default function BookingCard({ booking, leadId, onRefresh, lead }: BookingCardProps) {
+export default function BookingCard({ booking, leadId, onRefresh, lead, userRole }: BookingCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const {
     showForm,
@@ -73,6 +74,28 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
   const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
   const { authClient } = require('../../../lib/auth-client'); // or import at top
   const Toast = require('react-native-toast-message').default;
+
+  const handleMarkAsDone = async () => {
+    try {
+      setRequestingApproval(true);
+      if (!booking?.id) throw new Error('Booking ID is missing');
+      const { data, error } = await authClient.$fetch(`/api/leads/${leadId}/booking/done`, {
+        baseURL,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: { bookingId: booking.id }
+      });
+
+      if (error) throw error;
+      
+      Toast.show({ type: 'success', text1: 'Success', text2: 'Booking confirmed successfully' });
+      onRefresh();
+    } catch (err: any) {
+      Toast.show({ type: 'error', text1: 'Error', text2: err.message || 'Failed to mark as done' });
+    } finally {
+      setRequestingApproval(false);
+    }
+  };
 
   const handleRequestApproval = async () => {
     if (!booking) return;
@@ -120,13 +143,15 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
               <Feather name="file-text" size={40} color="#cbd5e1" style={{ marginBottom: 12 }} />
               <Text className="text-gray-500 font-bold mb-1 text-center">No booking created</Text>
               <Text className="text-gray-400 text-sm mb-5 text-center">When this lead reaches booking stage, create a booking record here.</Text>
-              <TouchableOpacity
-                onPress={() => handleShowForm(true)}
-                className="flex-row items-center bg-amber-500 px-5 py-3 rounded-xl shadow-sm"
-              >
-                <Feather name="plus" size={18} color="white" />
-                <Text className="text-white font-bold ml-2">Create Booking</Text>
-              </TouchableOpacity>
+              {userRole !== 'CHANNEL_PARTNER' && (
+                <TouchableOpacity
+                  onPress={() => handleShowForm(true)}
+                  className="flex-row items-center bg-amber-500 px-5 py-3 rounded-xl shadow-sm"
+                >
+                  <Feather name="plus" size={18} color="white" />
+                  <Text className="text-white font-bold ml-2">Create Booking</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : (
             <View className="space-y-4">
@@ -339,9 +364,10 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
           setSaving={setDocSaving}
           uploadingType={uploadingType}
           setUploadingType={setUploadingType}
+          userRole={userRole}
         />
 
-        {booking.status !== 'CONFIRMED' && (
+        {booking.status !== 'CONFIRMED' && userRole !== 'CHANNEL_PARTNER' && (
           <View className="flex-row gap-3 mt-4">
             <TouchableOpacity
               className="flex-1 bg-white border border-gray-300 p-3 rounded-xl flex-row justify-center items-center shadow-sm"
@@ -352,20 +378,37 @@ export default function BookingCard({ booking, leadId, onRefresh, lead }: Bookin
               <Text className="text-gray-700 font-bold ml-2">Edit</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              className="flex-[2] bg-[#2563eb] p-3 rounded-xl flex-row justify-center items-center shadow-sm"
-              onPress={handleRequestApproval}
-              disabled={requestingApproval}
-            >
-              {requestingApproval ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <>
-                  <Feather name="send" size={18} color="white" />
-                  <Text className="text-white font-bold ml-2">Send for Approval</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            {userRole === 'CLOSING_MANAGER' ? (
+              <TouchableOpacity
+                className="flex-[2] bg-emerald-600 p-3 rounded-xl flex-row justify-center items-center shadow-sm"
+                onPress={handleMarkAsDone}
+                disabled={requestingApproval}
+              >
+                {requestingApproval ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <>
+                    <Feather name="check-circle" size={18} color="white" />
+                    <Text className="text-white font-bold ml-2">Mark as Done</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                className="flex-[2] bg-[#2563eb] p-3 rounded-xl flex-row justify-center items-center shadow-sm"
+                onPress={handleRequestApproval}
+                disabled={requestingApproval}
+              >
+                {requestingApproval ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <>
+                    <Feather name="send" size={18} color="white" />
+                    <Text className="text-white font-bold ml-2">Send for Approval</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         )}
 

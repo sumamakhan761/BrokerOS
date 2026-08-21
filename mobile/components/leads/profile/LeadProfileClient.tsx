@@ -38,6 +38,13 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
   const isPostSales = role === 'post-sales' || role === 'closing-manager' || role === 'channel-partner';
   const showSiteVisitScheduling = role !== 'post-sales' && role !== 'closing-manager' && role !== 'channel-partner';
 
+  let mappedRole = '';
+  if (role === 'closing-manager') mappedRole = 'CLOSING_MANAGER';
+  else if (role === 'channel-partner') mappedRole = 'CHANNEL_PARTNER';
+  else if (role === 'sales-executive') mappedRole = 'SALES_EXECUTIVE';
+  else if (role === 'sales-manager') mappedRole = 'SALES_MANAGER';
+  else if (role === 'post-sales') mappedRole = 'POST_SALES';
+
   const [booking, setBooking] = useState<any>(null);
   const [negotiations, setNegotiations] = useState<any[]>([]);
 
@@ -625,7 +632,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
           <View className="mt-4">
             <CompletedSiteVisits siteVisits={lead.siteVisits || []} onRefresh={fetchLead} />
             <NegotiationHistory negotiations={negotiations} leadId={leadId as string} onRefresh={() => { fetchLead(); fetchNegotiations(); }} />
-            <BookingCard booking={booking} leadId={leadId as string} onRefresh={fetchBooking} lead={lead} />
+            <BookingCard booking={booking} leadId={leadId as string} onRefresh={fetchBooking} lead={lead} userRole={mappedRole} />
           </View>
         )}
 
@@ -650,6 +657,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
                 fetchLead();
               }}
               lead={lead}
+              userRole={mappedRole}
             />
             <PostSalesPipelineCards
               leadId={leadId as string}
@@ -660,6 +668,7 @@ export default function LeadProfileClient({ leadId, role }: LeadProfileClientPro
                 fetchBooking();
                 fetchLead();
               }}
+              userRole={mappedRole}
             />
           </View>
         )}

@@ -12,6 +12,7 @@ interface PipelineCardWrapperProps {
   saving: boolean;
   handleMarkStageDone: (status: string, subStatus: string) => void;
   icon?: React.ReactNode;
+  userRole?: string;
 }
 
 export function PipelineCardWrapper({
@@ -23,7 +24,8 @@ export function PipelineCardWrapper({
   leadSubStatus,
   saving,
   handleMarkStageDone,
-  icon
+  icon,
+  userRole
 }: PipelineCardWrapperProps) {
   const stages = ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'];
   const currentIdx = stages.indexOf(leadStatus);
@@ -71,7 +73,7 @@ export function PipelineCardWrapper({
             )}
           </View>
         </View>
-        {isCurrent && !isDone && (
+        {isCurrent && !isDone && userRole !== 'CHANNEL_PARTNER' && (
           <TouchableOpacity
             onPress={() => handleMarkStageDone(statusKey, 'DONE')}
             disabled={saving}
