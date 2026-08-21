@@ -4,6 +4,7 @@ jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 
 import { BrokersService } from './brokers.service.js';
 import { PrismaService } from '../lib/database/prisma.service.js';
+import { UpdateDealCardDto } from './dto/broker.dto.js';
 
 describe('BrokersService', () => {
   let service: BrokersService;
@@ -43,7 +44,8 @@ describe('BrokersService', () => {
     mockPrisma.broker.findUnique.mockResolvedValue({ id: 'b-1', status: 'DEAL' });
     mockPrisma.brokerProjectAssignment.findFirst.mockResolvedValue(null);
     mockPrisma.brokerProjectAssignment.create.mockResolvedValue({ id: 'a-1' });
-    const res = await service.updateDealCard('b-1', 'u-1', { projectId: 'p-1' });
+    const dto = { projectId: 'p-1' } as UpdateDealCardDto;
+    const res = await service.updateDealCard('b-1', 'u-1', dto);
     expect(res.id).toBe('a-1');
   });
 });

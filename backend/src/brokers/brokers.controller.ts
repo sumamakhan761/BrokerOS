@@ -5,6 +5,7 @@ import { BrokerActivitiesService } from './broker-activities.service.js';
 import { BrokerCommissionsService } from './broker-commissions.service.js';
 import { BrokerAiService } from './broker-ai.service.js';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import { CreateBrokerDto, UpdateBrokerDto, UpdateDealCardDto, AddBrokerNoteDto, AddBrokerFollowUpDto, AddBrokerMeetingDto, ArriveAtMeetingDto, CompleteMeetingDto } from './dto/broker.dto.js';
 
 @Controller('api/brokers')
 @UseGuards(AuthGuard)
@@ -36,7 +37,7 @@ export class BrokersController {
   completeCommission(
     @Param('recordId') recordId: string,
     @Req() req: any,
-    @UploadedFile() file: any,
+    @UploadedFile() file: Express.Multer.File,
   ) {
     return this.commissionsService.completeCommission(recordId, req.user.id, file);
   }
@@ -47,32 +48,32 @@ export class BrokersController {
   }
 
   @Post()
-  createBroker(@Body() body: any, @Req() req: any) {
+  createBroker(@Body() body: CreateBrokerDto, @Req() req: any) {
     return this.brokersService.createBroker(body, req.user.id);
   }
 
   @Patch(':id')
-  updateBroker(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+  updateBroker(@Param('id') id: string, @Body() body: UpdateBrokerDto, @Req() req: any) {
     return this.brokersService.updateBroker(id, req.user.id, body);
   }
 
   @Post(':id/deal')
-  updateDealCard(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+  updateDealCard(@Param('id') id: string, @Body() body: UpdateDealCardDto, @Req() req: any) {
     return this.brokersService.updateDealCard(id, req.user.id, body);
   }
 
   @Post(':id/notes')
-  addNote(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+  addNote(@Param('id') id: string, @Body() body: AddBrokerNoteDto, @Req() req: any) {
     return this.activitiesService.addNote(id, req.user.id, body);
   }
 
   @Post(':id/follow-ups')
-  addFollowUp(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+  addFollowUp(@Param('id') id: string, @Body() body: AddBrokerFollowUpDto, @Req() req: any) {
     return this.activitiesService.addFollowUp(id, req.user.id, body);
   }
 
   @Post(':id/meetings')
-  addMeeting(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+  addMeeting(@Param('id') id: string, @Body() body: AddBrokerMeetingDto, @Req() req: any) {
     return this.activitiesService.addMeeting(id, req.user.id, body);
   }
 
@@ -86,7 +87,7 @@ export class BrokersController {
     @Param('id') id: string,
     @Param('meetingId') meetingId: string,
     @Req() req: any,
-    @Body() locationData: { latitude: number; longitude: number }
+    @Body() locationData: ArriveAtMeetingDto
   ) {
     return this.activitiesService.arriveAtMeeting(id, meetingId, req.user.id, locationData);
   }
@@ -96,7 +97,7 @@ export class BrokersController {
     @Param('id') id: string,
     @Param('meetingId') meetingId: string,
     @Req() req: any,
-    @Body() data: any
+    @Body() data: CompleteMeetingDto
   ) {
     return this.activitiesService.completeMeeting(id, meetingId, req.user.id, data);
   }
