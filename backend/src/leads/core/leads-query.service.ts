@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { Prisma, LeadStatus } from '../../generated/prisma/client.js';
+import { GetLeadsFilterDto } from './dto/lead.dto.js';
 
 const SE_VISIBLE_STATUSES: LeadStatus[] = [
   'SITE_VISIT_SCHEDULED',
@@ -13,17 +14,7 @@ const SE_VISIBLE_STATUSES: LeadStatus[] = [
 export class LeadsQueryService {
   constructor(private prisma: PrismaService) { }
 
-  async findAll(filters?: {
-    status?: LeadStatus;
-    followUpDate?: string;
-    siteVisitDate?: string;
-    scoreRange?: string;
-    userId?: string;
-    roleId?: string;
-    managerUnassigned?: boolean;
-    assignedToId?: string;
-    isCpProject?: boolean;
-  }) {
+  async findAll(filters?: GetLeadsFilterDto) {
     const where: Prisma.LeadWhereInput = {};
 
     if (filters?.assignedToId) {

@@ -20,7 +20,7 @@ describe('LeadsMediaService', () => {
   it('should upload avatar', async () => {
     mockPrisma.lead.findUnique.mockResolvedValue({ id: 'l-1' });
     mockPrisma.lead.update.mockResolvedValue({ id: 'l-1', avatar: 'url' });
-    const res = await service.uploadAvatar('l-1', { buffer: Buffer.from(''), originalname: 'test.jpg' });
+    const res = await service.uploadAvatar('l-1', { buffer: Buffer.from(''), originalname: 'test.jpg' } as Express.Multer.File);
     expect(res.avatar).toBe('url');
   });
 });
