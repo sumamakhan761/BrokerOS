@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as fs from 'fs';
 import Groq from 'groq-sdk';
+import { AvailableProjectDto } from './dto/call-record.dto.js';
 
 @Injectable()
 export class TranscriptionService implements OnModuleInit {
@@ -47,7 +48,7 @@ export class TranscriptionService implements OnModuleInit {
   async summarizeCall(
     transcript: string,
     leadStatus?: string,
-    availableProjects: { id: string, name: string }[] = []
+    availableProjects: AvailableProjectDto[] = []
   ): Promise<{
     summary: string,
     nextStepSuggestion: string,
