@@ -22,17 +22,24 @@ You must ALWAYS write or update the corresponding `.spec.ts` file for any servic
 - Explicitly mock all injected dependencies (e.g., `PrismaService`, `NotificationsService`, `Expo`).
 - Ensure the test suite can at minimum instantiate the service (`should be defined`).
 
-## 4. Required Implementation Patterns (`nestjs-expert`)
-You MUST follow the strict BrokerOS implementation patterns. Before writing the code for the above steps, review the relevant `nestjs-expert` documentation:
+## 4. E2E Testing
+For any new controller endpoints or critical flows, you **MUST** write or update the End-to-End (E2E) test file (`.e2e-spec.ts`). 
+Before doing so, you **MUST** read and follow the instructions in the `write-e2e-tests` skill:
+`.agents/skills/write-e2e-tests/SKILL.md`
+
+## 5. Required Implementation Patterns (`nestjs-expert`)
+You **MUST** follow the strict BrokerOS implementation patterns. Before writing the code for the above steps, review the relevant `nestjs-expert` documentation:
 - **Main Constraints**: Read `.agents/skills/nestjs-expert/SKILL.md` (Crucial MUST DO / MUST NOT DO rules)
 - **Controllers/Routing**: Read `.agents/skills/nestjs-expert/references/controllers-routing.md`
 - **DTOs/Validation**: Read `.agents/skills/nestjs-expert/references/dtos-validation.md`
 - **Services/Prisma**: Read `.agents/skills/nestjs-expert/references/services-di.md`
 - **Spec Files**: Read `.agents/skills/nestjs-expert/references/testing-patterns.md`
+- **E2E Testing**: Read `.agents/skills/write-e2e-tests/SKILL.md`
 
-## 5. Verification Loop
+## 6. Verification Loop
 Before concluding your task, you MUST run these terminal commands sequentially to prove the code is structurally sound:
 1. **Type Check**: Run `npx tsc --noEmit` from the `backend/` directory. Fix any type errors before proceeding.
 2. **Unit Tests**: Run `pnpm test src/<module-folder>` to ensure the spec files compile and pass. Fix any mocking errors.
+3. **E2E Tests**: If you modified or created E2E tests, run `pnpm test:e2e` (or the specific test file) to ensure they pass.
 
 Do not ask the user for permission to run these verification commands. Run them proactively.
