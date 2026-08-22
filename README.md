@@ -191,9 +191,18 @@ cp mobile/.env.example mobile/.env
 
 ---
 
-### Option A: Docker Setup (Recommended)
+### 🤖 AI Agent Setup
 
-The fastest way to get the web platform running. This starts PostgreSQL, the NestJS Backend, and the Next.js Frontend.
+If you are using the **AI IDE / CLII**, you don't need to manually run the setup commands. Simply use the built-in AI skills:
+
+1. Type **`/setup-codebase`** in the agent chat. The AI will automatically create your `.env` files, install all dependencies, start the database, and launch all services.
+2. Type **`/codebase-tour`** after setup to have the AI generate an exhaustive, customized markdown map of the codebase and its business logic.
+
+---
+
+### Option B: Docker Setup
+
+The fastest way to get the web platform running manually. This starts PostgreSQL, the NestJS Backend, and the Next.js Frontend.
 
 ```bash
 # Start the web platform and database
@@ -208,11 +217,11 @@ docker exec -it crm-backend npx prisma db seed
 # Backend:   http://localhost:3333
 ```
 
-> **Mobile App:** Docker does not run the mobile app. To run the mobile app alongside Docker, follow the manual Mobile steps in Option B below.
+> **Mobile App:** Docker does not run the mobile app. To run the mobile app alongside Docker, follow the manual Mobile steps in Option C below.
 
 ---
 
-### Option B: Manual Setup
+### Option C: Manual Setup
 
 Run each service individually for full development control. Ensure you have a PostgreSQL database running and configured in `backend/.env` and `backend/README.md`.
 

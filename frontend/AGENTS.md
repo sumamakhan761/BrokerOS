@@ -1,9 +1,6 @@
 # AGENTS.md — frontend/
 
-Read root `AGENTS.md` first. This file adds frontend-only rules. Root owns business invariants; this file owns Next.js 16 App Router mechanics for this project.
-
 ---
-
 **Tailwind v4 note:** This project uses Tailwind CSS v4, NOT v3. The config format, plugin API, and some utility names differ. Check `postcss.config.mjs` and `app/globals.css` before writing any Tailwind classes.
 
 ---
@@ -40,6 +37,29 @@ frontend/
     utils.ts           ← Shared utility functions
   middleware.ts        ← Route protection (cookie check only)
 ```
+
+---
+
+## Skills
+
+You **MUST** consult the appropriate skill before making changes, based on the task you are doing:
+
+- **General UI & Components**: If you are asked to build or modify UI, read:
+  `.agents/skills/better-ui/SKILL.md`
+- **Interface & UX Design**: For high-level interface design and component composition, read:
+  `.agents/skills/better-interface/SKILL.md`
+- **Layouts & Spacing**: When structuring page layouts or modifying grid/flex structures, read:
+  `.agents/skills/better-layout/SKILL.md`
+- **Colors & Theming**: When applying colors or modifying the theme, read:
+  `.agents/skills/better-colors/SKILL.md`
+- **Typography**: When working with fonts, text sizes, or text styling, read:
+  `.agents/skills/better-typography/SKILL.md`
+- **Accessibility (a11y)**: When ensuring components are accessible (ARIA, screen readers, keyboard navigation), read:
+  `.agents/skills/better-accessibility/SKILL.md`
+- **Shadcn UI**: When adding or modifying `shadcn/ui` components, read:
+  `.agents/skills/shadcn/SKILL.md`
+- **Frontend Testing**: When writing or updating tests for the frontend, read:
+  `.agents/skills/write-frontend-tests/SKILL.md`
 
 ---
 

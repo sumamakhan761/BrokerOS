@@ -1,10 +1,4 @@
-# AGENTS.md — mobile/
-
-Read root `AGENTS.md` first. This file adds mobile-only rules. Root owns business invariants; this file owns Expo 54 / Expo Router 6 mechanics for this project.
-
-# Expo HAS CHANGED
-
-Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before writing any code. APIs, hooks, and config keys change between SDK versions. Expo Router 6 is similarly different from earlier versions.
+# AGENTS.md — mobile/.
 
 ---
 
@@ -65,6 +59,29 @@ mobile/
 - This project has only Android configured (`android/` directory exists, no `ios/` directory).
 - `google-services.json` is present for Firebase (used indirectly by Expo Notifications on Android).
 - Build: `npx expo run:android`. OTA updates via EAS (`eas.json` present).
+
+---
+
+## Skills
+
+You **MUST** consult the appropriate skill before making changes, based on the task you are doing:
+
+- **Routing & Navigation**: If the task involves screens, navigation, deep links, `<Link>`, `useRouter`, tabs, or `_layout.tsx`, read:
+  `.agents/skills/expo-router-expert/SKILL.md`
+- **General UI & Components**: If you are asked to build or modify UI components, surfaces, icons, or touch interactions, read:
+  `.agents/skills/mobile-ui/SKILL.md`
+- **Layouts & Spacing**: When structuring screens with Flexbox, `SafeAreaView`, `FlatList`, `ScrollView`, or `KeyboardAvoidingView`, read:
+  `.agents/skills/mobile-layout/SKILL.md`
+- **Colors & Theming**: When applying colors, NativeWind classes, or dark mode theming, read:
+  `.agents/skills/mobile-colors/SKILL.md`
+- **Typography**: When working with `<Text>` components, font sizes, `numberOfLines`, or font scaling, read:
+  `.agents/skills/mobile-typography/SKILL.md`
+- **Animations**: When adding transitions, micro-interactions, spring physics, or Reanimated, read:
+  `.agents/skills/mobile-animations/SKILL.md`
+- **Accessibility (a11y)**: When ensuring components work with TalkBack, VoiceOver, or touch target sizes, read:
+  `.agents/skills/mobile-accessibility/SKILL.md`
+- **Testing**: When writing or updating Jest unit tests, Maestro E2E flows, or native JUnit tests, read:
+  `.agents/skills/write-mobile-tests/SKILL.md`
 
 ---
 
