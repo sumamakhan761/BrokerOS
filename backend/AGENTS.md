@@ -1,34 +1,9 @@
 # AGENTS.md — backend/
-
-Read root `AGENTS.md` first. This file adds backend-only rules. Root owns business invariants; this file owns NestJS-specific mechanics.
-
 ---
 
 ## Tech
 
 NestJS 11 · TypeScript ESM (`"type": "module"` in package.json) · Prisma 7 · PostgreSQL · Better Auth 1.x · Socket.IO 4 · `@nestjs/schedule` for cron jobs.
-
----
-
-## Module Pattern
-
-One NestJS module per domain. Module = `*.module.ts` + one or more controllers + one or more services. All wired in `src/app.module.ts`.
-
-```
-backend/src/
-  auth/            → AuthModule
-  leads/           → LeadsModule  (sub-dirs: core, bookings, call-records, follow-ups, notes, site-visits)
-  inventory/       → InventoryModule  (sub-dirs: core, projects, towers, units, documents)
-  brokers/         → BrokersModule
-  approvals/       → ApprovalsModule
-  chat/            → ChatModule  (Socket.IO gateway)
-  notifications/   → NotificationsModule  (Socket.IO gateway + Expo Push)
-  dashboard/       → DashboardModule  (sub-dirs per role: pre-sales, sales-exec, sales-manager, post-sales, sourcing-manager, closing-manager, channel-partner, business-manager, manager, employees, core)
-  lib/
-    auth.ts          ← Better Auth server instance (betterAuth config)
-    database/        ← PrismaModule, prisma-client singleton
-    storage/         ← Vercel Blob helpers
-```
 
 ---
 
@@ -43,9 +18,16 @@ backend/src/
 
 ## Skills
 
-When asked to build a new feature, endpoint, or modify an existing backend module, you **MUST** follow the instructions in the `build-backend-feature` skill located at:
-`.agents/skills/build-backend-feature/SKILL.md`
+You **MUST** consult the appropriate skill before making changes, based on the task you are doing:
 
+- **Building/Modifying Features**: If you are asked to build a new feature, endpoint, or modify a module, services, specs, e2e read:
+  `.agents/skills/build-backend-feature/SKILL.md`
+- **NestJS Architecture & Patterns**: For specific instructions on routing, dependency injection, DTOs, and controllers, read:
+  `.agents/skills/nestjs-expert/SKILL.md`
+- **Auth & Sessions**: If the task involves Better Auth, user sessions, or plugins, read:
+  `.agents/skills/better-auth-best-practices/SKILL.md`
+- **Database & Prisma**: If the task involves complex queries, relations, or transactions, read:
+  `.agents/skills/prisma-client-api/SKILL.md`
 ---
 
 ## Scripts

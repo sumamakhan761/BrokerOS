@@ -21,69 +21,14 @@ Stack: NestJS 11 backend · PostgreSQL + Prisma 7 · Next.js 16 frontend (App Ro
 
 - Repo root: `BrokerOS/`
 - Three subtrees: `backend/` (NestJS API), `frontend/` (Next.js web), `mobile/` (Expo RN app).
-- Read the scoped `AGENTS.md` in the subtree you are working in before writing code.
+- **CRITICAL**: Before you write any code or start any task, you **MUST** read the scoped `AGENTS.md` in the corresponding subtree:
+  - For ANY request related to the backend, use `view_file` to read `backend/AGENTS.md`
+  - For ANY request related to the frontend, use `view_file` to read `frontend/AGENTS.md`
+  - For ANY request related to the mobile app, use `view_file` to read `mobile/AGENTS.md`
 - Before proposing any custom system, check if an existing service/module/hook already handles it.
 - Never hardcode env secrets. `.env.example` in each subtree is the source of truth for env vars.
 - Never print secrets or tokens in logs or responses.
 - Use repo-root-relative paths in all references: `backend/src/leads/leads.service.ts`, not absolute paths.
-
----
-
-## Roles
-
-Twelve roles exist. Role string values are SCREAMING_SNAKE_CASE exactly as in the DB enum.
-
-| Role | Business Line | Summary |
-|---|---|---|
-| `ADMIN` | Both | Full access, super admin |
-| `DIRECTOR` | Brokerage | Top-level brokerage view |
-| `BUSINESS_MANAGER` | Both | Cross-business oversight (currently placeholder dashboards) |
-| `PRE_SALES_MANAGER` | Brokerage | Manages cold-call team, sets daily targets, assigns leads |
-| `PRE_SALES` | Brokerage | Cold-call exec — makes calls, logs daily performance, schedules follow-ups |
-| `SALES_EXECUTIVE` | Brokerage | Full sales exec — site visits, negotiations, creates bookings |
-| `SALES_MANAGER` | Brokerage | Manages sales exec team, approves discounts |
-| `POST_SALES` | Brokerage | Post-booking pipeline: loan → agreement → possession → handover |
-| `CHANNEL_PARTNER` | CP | Boss of the CP world, owns all CP projects |
-| `SOURCING_MANAGER` | CP | Recruits and manages external brokers |
-| `CLOSING_MANAGER` | CP | Sits at project site, creates bookings for broker leads |
-| `FINANCE` | Both | Commissions, expenses, invoices, settlements |
-
-Role is stored on `User.role`. Guards: `backend/src/auth/roles.guard.ts`. Decorator: `@Roles()` from `backend/src/auth/roles.decorator.ts`. Every new endpoint must declare its required role(s).
-
----
-
-## Architecture
-
-```
-backend/src/
-  auth/          ← Better Auth integration, JWT guards, roles guard, roles decorator
-  leads/         ← Leads, follow-ups, call-records, notes, site-visits, bookings, payments
-  inventory/     ← Projects, towers, floors, units, documents, offers, price sheets
-  brokers/       ← Broker CRUD, meetings, referrals, brokerage settlements, broker AI
-  approvals/     ← ApprovalRequest + FinancialApproval
-  chat/          ← Socket.IO chat rooms and messages
-  notifications/ ← Push notifications (Expo) + in-app notifications
-  dashboard/     ← Role-specific dashboard and analytics services (largest module)
-  lib/           ← Shared utilities, Prisma module
-  generated/     ← Prisma client output — DO NOT EDIT MANUALLY
-
-frontend/
-  app/
-    login/       ← Public login page
-    dashboard/   ← Protected shell: role-based sidebar + role sub-routes per role
-  features/      ← Domain feature code (leads, inventory, brokers, approvals)
-  components/    ← Shared UI (NotificationBell, ChatWidget, analytics, UI primitives)
-  lib/           ← Auth client, API helpers, utilities
-
-mobile/
-  app/
-    (auth)/      ← Login/signup screens
-    (dashboard)/ ← Role-based tab navigator + all role screens (14 role dirs)
-  components/    ← Shared React Native components
-  lib/           ← API client, auth hooks, socket connection
-  modules/
-    auto-dialer/ ← Custom native module — local package, do not npm install
-```
 
 ---
 
@@ -107,23 +52,6 @@ mobile/
 - Multi-model writes must use Prisma transactions (`prisma.$transaction`).
 - Never delete or edit applied migration files.
 - Soft-delete pattern: `deletedAt DateTime?`. Filter `deletedAt: null` in all list queries.
-
----
-
-## File Storage Law
-
-- **Vercel Blob** for all file uploads. Package: `@vercel/blob` in backend.
-- Upload endpoint returns a Blob URL; client reads directly from Vercel Blob CDN.
-
----
-
-## Push Notifications Law
-
-- Expo Push SDK (`expo-server-sdk`) in backend sends all push notifications to mobile devices.
-- Device tokens stored in `User.expoPushToken`. Registered from mobile on successful login.
-- Do not use Firebase Cloud Messaging directly. All push goes via Expo Push Service.
-
----
 
 ## Domain Glossary
 
@@ -152,26 +80,5 @@ mobile/
 - Frontend routes: `app/login` (public), `app/dashboard` (role-protected shell + sub-routes per role).
 - Mobile route groups: `app/(auth)` (login/signup), `app/(dashboard)` (14 role-specific screen dirs).
 - Skills: `.agents/skills/` (root), `backend/.agents/skills/`, `frontend/.agents/skills/`, `mobile/.agents/skills/`.
-
----
-
-## Scripts
-
-```bash
-# Backend — run from backend/
-pnpm start:dev        # dev server with watch
-pnpm db:generate      # regenerate Prisma client after schema change
-pnpm db:migrate       # run pending migrations (creates migration file)
-pnpm db:studio        # open Prisma Studio GUI
-pnpm test             # unit tests (Jest)
-pnpm test:e2e         # e2e tests
-
-# Frontend — run from frontend/
-pnpm dev              # Next.js dev server (port 3000)
-
-# Mobile — run from mobile/
-npx expo start        # Expo dev server
-npx expo run:android  # build + run on Android emulator/device
-```
 
 ---

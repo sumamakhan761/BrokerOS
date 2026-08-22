@@ -48,6 +48,13 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 - PostgreSQL 16+ (or Docker)
 - Android Studio (for mobile work only)
 
+### 🤖 AI Agent Setup 
+
+If you are using the **AI IDE / CLII**, you can skip running commands manually. Use the built-in agent skills:
+
+- Type **`/setup-codebase`** in the chat to have the AI automatically install dependencies, copy `.env` files, run migrations, and start all services.
+- Type **`/codebase-tour`** to have the AI generate a deep-dive, customized architectural map of the system to help you understand where to make your PR changes.
+
 ### Quick Start with Docker
 
 ```bash
