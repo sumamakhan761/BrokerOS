@@ -41,6 +41,13 @@ backend/src/
 
 ---
 
+## Skills
+
+When asked to build a new feature, endpoint, or modify an existing backend module, you **MUST** follow the instructions in the `build-backend-feature` skill located at:
+`.agents/skills/build-backend-feature/SKILL.md`
+
+---
+
 ## Scripts
 
 Run from `backend/`:

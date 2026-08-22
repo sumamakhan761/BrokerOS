@@ -22,7 +22,8 @@
     "db:generate": "npx prisma generate",
     "db:migrate": "npx prisma migrate dev",
     "db:format": "npx prisma format",
-    "db:studio": "npx prisma studio"
+    "db:studio": "npx prisma studio",
+    "db:seed": "npx prisma db seed"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",
