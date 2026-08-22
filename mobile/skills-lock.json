@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "expo-animation": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-animation/SKILL.md",
+      "computedHash": "9e9ad7e0c4a73085484ecf9f4cc763474415ce0d466097b9e09109414ebd55d7"
+    },
+    "expo-data-fetching": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-data-fetching/SKILL.md",
+      "computedHash": "34fe0ea97749dc85f46fe376dc54fb44ee41bdeba04bf4f50e49ee7d16dc3121"
+    },
+    "expo-design-system": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-design-system/SKILL.md",
+      "computedHash": "b893f0f37812a0934f1f4c70326ba0d80bfa97139a6082e3dc20d561d5511dc2"
+    },
+    "expo-module": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-module/SKILL.md",
+      "computedHash": "8434c055b84c5c13d274293890fabe534b514ab2e6897e781c52cc67cde00de0"
+    },
+    "expo-native-ui": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-native-ui/SKILL.md",
+      "computedHash": "8493aa734ed5522d89e02eddb974ec1dc03c6d714a0619eaf15d047ef0019d8e"
+    },
+    "expo-ui": {
+      "source": "expo/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/expo/skills/expo-ui/SKILL.md",
+      "computedHash": "132d7bea7b1f1d026d66efa3e2c252ba86b8fa9a468c97ed1bf3ca5415caec97"
+    }
+  }
+}
