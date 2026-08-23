@@ -1,4 +1,4 @@
-# AGENTS.md — frontend/
+# AGENTS.md — apps/web/
 
 ---
 **Tailwind v4 note:** This project uses Tailwind CSS v4, NOT v3. The config format, plugin API, and some utility names differ. Check `postcss.config.mjs` and `app/globals.css` before writing any Tailwind classes.
@@ -8,7 +8,7 @@
 ## Directory Structure
 
 ```
-frontend/
+apps/web/
   app/
     layout.tsx         ← Root layout (HTML shell, fonts)
     globals.css        ← Global CSS + Tailwind v4 imports
@@ -65,7 +65,7 @@ You **MUST** consult the appropriate skill before making changes, based on the t
 
 ## Scripts
 
-Run from `frontend/`:
+Run from `apps/web/` directory (or use `pnpm --filter @brokeros/web <cmd>` from root):
 
 ```bash
 pnpm dev        # Next.js dev server (port 3000)

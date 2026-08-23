@@ -20,7 +20,7 @@ The frontend is a Next.js 16 App Router application that serves as the web dashb
 ## Directory Structure
 
 ```
-frontend/
+apps/web/
 ├── app/
 │   ├── layout.tsx              Root HTML shell, fonts, providers
 │   ├── globals.css             Global CSS + Tailwind v4 imports
@@ -76,15 +76,18 @@ frontend/
 
 ### 1. Installation
 
+This project is part of a pnpm monorepo. Install dependencies from the root directory:
+
 ```bash
-cd frontend
+cd ../../  # Go to BrokerOS root
 pnpm install
 ```
 
 ### 2. Environment Setup
 
-You must configure your `frontend/.env` file properly before starting the dev server.
+You must configure your `apps/web/.env` file properly before starting the dev server.
 ```bash
+cd apps/web
 cp .env.example .env
 ```
 
