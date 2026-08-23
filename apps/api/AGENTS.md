@@ -1,4 +1,4 @@
-# AGENTS.md — backend/
+# AGENTS.md — apps/api/
 ---
 
 ## Tech
@@ -32,7 +32,7 @@ You **MUST** consult the appropriate skill before making changes, based on the t
 
 ## Scripts
 
-Run from `backend/`:
+Run from `apps/api/` directory (or use `pnpm --filter @brokeros/api <cmd>` from root):
 
 ```bash
 pnpm start:dev          # dev server (watch mode)
