@@ -44,5 +44,6 @@ export class UpdatePossessionDto {
   status: string;
 
   @IsOptional()
+  @IsString()
   timeline?: any; // Often can be string or Date object
 }

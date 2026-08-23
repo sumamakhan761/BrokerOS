@@ -23,6 +23,7 @@ export class TowerUnitDto {
   unitNumber: string;
 
   @IsOptional()
+  @IsEnum(UnitTypeEnum)
   type?: any; // The service handles validation with fallback
 
   @IsOptional()
@@ -44,6 +45,7 @@ export class TowerUnitDto {
 
 export class TowerFloorDto {
   @IsOptional()
+  @IsString()
   floorNumber?: any;
 
   @IsOptional()
