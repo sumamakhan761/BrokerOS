@@ -6,16 +6,15 @@ description: Use when the user asks to "setup the codebase", "run locally", or "
 This skill guides the agent to set up the entire BrokerOS project locally for the user. Execute these steps sequentially.
 
 **Important Context**: Before you begin, or if you run into any setup issues, read the READMEs for deep context:
-- `backend/README.md`
-- `frontend/README.md`
-- `mobile/README.md` (Crucial for Push Notifications and Expo configuration)
+- `apps/api/README.md`
+- `apps/web/README.md`
+- `apps/mobile/README.md` (Crucial for Push Notifications and Expo configuration)
 
 ## 1. Prerequisite Check
 
 First, verify the user's environment by running commands to check versions of:
 - `node -v`
 - `pnpm -v`
-- `npm -v`
 - `docker -v` (optional, for local Postgres)
 
 If any critical tool is missing, guide the user to install it before proceeding.
@@ -24,13 +23,13 @@ If any critical tool is missing, guide the user to install it before proceeding.
 
 Users should not paste their private API keys into the chat. Instead, you will prepare the `.env` files for them so they can fill them in manually.
 
-First, create the `.env` files. Try using the terminal to copy them (e.g., `cp backend/.env.example backend/.env` or `Copy-Item` in PowerShell). If the terminal command fails, fall back to using `view_file` and `write_to_file` to read the `.env.example` files and create `.env` in `backend/`, `frontend/`, and `mobile/`.
+First, create the `.env` files. Try using the terminal to copy them (e.g., `cp apps/api/.env.example apps/api/.env` or `Copy-Item` in PowerShell). If the terminal command fails, fall back to using `view_file` and `write_to_file` to read the `.env.example` files and create `.env` in `apps/api/`, `apps/web/`, and `apps/mobile/`.
 
 Next, automate the non-sensitive configuration:
-1. **Generate Auth Secret**: Run a node script or powershell command to generate a secure 32-character random hex string and inject it into `backend/.env` as `BETTER_AUTH_SECRET`.
-2. **Fetch Local IP**: Run `ipconfig` (Windows) or `ifconfig` (Mac/Linux), parse the IPv4 address, and automatically set `MOBILE_URL="exp://<LAN_IP>:8081"` in `backend/.env` and `EXPO_PUBLIC_API_URL="http://<LAN_IP>:3333"` in `mobile/.env`.
+1. **Generate Auth Secret**: Run a node script or powershell command to generate a secure 32-character random hex string and inject it into `apps/api/.env` as `BETTER_AUTH_SECRET`.
+2. **Fetch Local IP**: Run `ipconfig` (Windows) or `ifconfig` (Mac/Linux), parse the IPv4 address, and automatically set `MOBILE_URL="exp://<LAN_IP>:8081"` in `apps/api/.env` and `EXPO_PUBLIC_API_URL="http://<LAN_IP>:3333"` in `apps/mobile/.env`.
 
-**Completion criterion**: `backend/.env`, `frontend/.env`, and `mobile/.env` are created and the non-sensitive automated variables are injected.
+**Completion criterion**: `apps/api/.env`, `apps/web/.env`, and `apps/mobile/.env` are created and the non-sensitive automated variables are injected.
 
 ## 3. Prompt User for Manual API Key Entry
 
@@ -39,24 +38,22 @@ Once the `.env` files are ready, send a single, conversational, and friendly mes
 1.  **Explain the goal**: Tell them you've created the `.env` files and automated the local configuration, but for security reasons, they must manually paste their private API keys.
 2.  **Provide guided instructions**: Walk them through exactly what keys are needed and provide the links. For example, explicitly explain how to navigate the Google Cloud Console for the Maps SDK key, rather than just dropping a link.
 3.  **The required keys**:
-    - `DATABASE_URL` in `backend/.env` (Explain they can use a local Docker DB which you'll spin up, or a cloud DB like [NeonDB](https://neon.tech/)).
-    - `BLOB_READ_WRITE_TOKEN` in `backend/.env` (From [Vercel Storage](https://vercel.com/storage/blob)).
-    - `GROQ_API_KEY` in `backend/.env` (From [Groq Console](https://console.groq.com/keys)).
-    - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in `frontend/.env` (From [Mapbox](https://account.mapbox.com/)).
-    - `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` in `mobile/.env` (From [Google Cloud Console](https://console.cloud.google.com/apis/credentials) -> Enable Maps SDK for Android -> Credentials).
-    - Optional: Push Notifications (Refer them to `mobile/README.md` if they want to set up Firebase/Expo notifications).
+    - `DATABASE_URL` in `apps/api/.env` (Explain they can use a local Docker DB which you'll spin up, or a cloud DB like [NeonDB](https://neon.tech/)).
+    - `BLOB_READ_WRITE_TOKEN` in `apps/api/.env` (From [Vercel Storage](https://vercel.com/storage/blob)).
+    - `GROQ_API_KEY` in `apps/api/.env` (From [Groq Console](https://console.groq.com/keys)).
+    - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` in `apps/web/.env` (From [Mapbox](https://account.mapbox.com/)).
+    - `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` in `apps/mobile/.env` (From [Google Cloud Console](https://console.cloud.google.com/apis/credentials) -> Enable Maps SDK for Android -> Credentials).
+    - Optional: Push Notifications (Refer them to `apps/mobile/README.md` if they want to set up Firebase/Expo notifications).
 4.  **The Hand-off**: Ask them to reply with the word "done" when they have finished pasting all their keys.
 
 **Completion criterion**: You have thoughtfully and conversationally explained the required keys with proper guidance, and the user has explicitly replied indicating they are done. **Do not proceed to step 4 until the user confirms.**
 
 ## 4. Install Dependencies
 
-Once the user confirms the `.env` files are populated, run dependency installation in all subtrees concurrently using separate terminal commands (the agent should execute these in parallel):
-- `cd backend; pnpm install`
-- `cd frontend; pnpm install`
-- `cd mobile; npm install`
+Once the user confirms the `.env` files are populated, run dependency installation using the monorepo root command:
+- `pnpm install`
 
-**Completion criterion**: `node_modules` exists in `backend/`, `frontend/`, and `mobile/`.
+**Completion criterion**: `node_modules` exists in all workspaces and the command completes successfully.
 
 ## 5. Initialize Database
 
@@ -65,21 +62,21 @@ Based on the user's database preference (ask them to clarify if they didn't in s
   1. Run `docker compose up postgres -d` in the root folder.
   2. **Wait for Health**: Wait a few seconds and run a verification command (e.g., checking `docker ps`) to ensure the Postgres container is healthy and ready to accept connections.
 - **If Cloud DB (Neon, etc.)**: 
-  1. Assume the user has injected it into `backend/.env`.
+  1. Assume the user has injected it into `apps/api/.env`.
 
-Once the database is reachable, execute database migrations in `backend/`:
-- `pnpm db:generate`
-- `pnpm db:migrate`
-- `pnpm db:seed`
+Once the database is reachable, execute database migrations using Turborepo or specific filter:
+- `pnpm --filter @brokeros/api db:generate`
+- `pnpm --filter @brokeros/api db:migrate`
+- `pnpm --filter @brokeros/api db:seed`
 
 **Completion criterion**: Prisma client is generated, tables exist, and seed data is populated without errors.
 
 ## 6. Start Services
 
-Start all services on behalf of the user concurrently using separate background terminal commands:
-- **Backend**: `cd backend; pnpm start:dev`
-- **Frontend**: `cd frontend; pnpm dev`
-- **Mobile**: `cd mobile; npx expo start` or `npx expo run:android`
+Start all services on behalf of the user concurrently using separate background terminal commands (use `cd` before running the specific command, or use `pnpm --filter`):
+- **API**: `cd apps/api; pnpm start:dev`
+- **Web**: `cd apps/web; pnpm dev`
+- **Mobile**: `cd apps/mobile; npx expo start` or `npx expo run:android`
 
 **Critical Mobile Note for Windows**: The mobile app uses custom native code (Auto-Dialer). If building on Windows, ensure your terminal command includes the Java Home before running `npx expo run:android`:
 `$env:JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"; npx expo run:android`

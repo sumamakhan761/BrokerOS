@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "@brokeros/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@brokeros/types": "workspace:*",
+    "@brokeros/constants": "workspace:*",
+    "@brokeros/validators": "workspace:*",
     "@headlessui/react": "^2.2.10",
+    "@hookform/resolvers": "^3.9.0",
     "@heroui/react": "^3.2.2",
     "@heroui/styles": "^3.2.2",
     "@types/mapbox-gl": "^3.5.0",

@@ -19,19 +19,19 @@ Use `view_file` to read `docs/role-password.md`.
 
 Read the foundational rules, but do not stop here.
 - Read `AGENTS.md` and `README.md` at the project root.
-- Read the subtree rules: `backend/AGENTS.md`, `frontend/AGENTS.md`, `mobile/AGENTS.md`.
+- Read the subtree rules: `apps/api/AGENTS.md`, `apps/web/AGENTS.md`, `apps/mobile/AGENTS.md`.
 **Completion Criterion**: You understand the core business logic (e.g., the strict separation of Brokerage vs Channel Partner).
 
 ## 3. Examine the Data Layer
 
-- Open `backend/prisma/schema.prisma`. Locate every model related to the feature, department, or flow requested by the user.
-- Open `backend/prisma/seed.ts`. Trace exactly how those models are populated with initial data.
+- Open `apps/api/prisma/schema.prisma`. Locate every model related to the feature, department, or flow requested by the user.
+- Open `apps/api/prisma/seed.ts`. Trace exactly how those models are populated with initial data.
 **Completion Criterion**: You have traced every relational link, enum, and boolean flag for the requested domain.
 
 ## 4. Relentless Code Search
 
 This is where you must do the heavy **legwork**. Do not guess folder names based on `AGENTS.md`. You must aggressively explore the codebase.
-- Use `list_dir` and `grep_search` repeatedly to explore `backend/src/`, `frontend/app/`, and `mobile/app/`.
+- Use `list_dir` and `grep_search` repeatedly to explore `apps/api/src/`, `apps/web/app/`, and `apps/mobile/app/`.
 - Trace the exact `.ts` and `.tsx` files that implement the logic. 
 **Completion Criterion**: You have successfully found the absolute file paths for the backend controllers/services, frontend UI pages, and mobile screens.
 

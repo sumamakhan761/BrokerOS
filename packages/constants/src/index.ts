@@ -1,3 +1,10 @@
+/**
+ * @brokeros/constants
+ *
+ * Shared constants, enums, and pure utility functions.
+ * Framework-agnostic (no React, no NestJS).
+ */
+
 export const ALL_LEAD_STATUSES = [
   'NEW',
   'CONTACTED',
@@ -12,7 +19,9 @@ export const ALL_LEAD_STATUSES = [
   'AGREEMENT',
   'HANDOVER',
   'LOST',
-];
+] as const;
+
+export type LeadStatus = typeof ALL_LEAD_STATUSES[number];
 
 export const STATUS_LABELS: Record<string, string> = {
   'NEW': 'New',
@@ -30,6 +39,19 @@ export const STATUS_LABELS: Record<string, string> = {
   'LOST': 'Lost',
 };
 
+export const ALL_BROKER_STATUSES = [
+  'PENDING_APPROVAL',
+  'ACTIVE',
+  'INACTIVE',
+  'BLACKLISTED',
+  'NEW',
+  'CONTACTED',
+  'VISIT',
+  'DEAL'
+] as const;
+
+export type BrokerStatus = typeof ALL_BROKER_STATUSES[number];
+
 /**
  * Returns the exact list of statuses a user should see and be able to select,
  * based on their role or pathname.
@@ -46,8 +68,6 @@ export function getAvailableStatusesForRole(roleOrPathname: string): string[] {
   }
 
   if (isSalesExec) {
-    // Sales Execs and Channel Partners have visibility from New to Booking
-    // Sales Execs might technically only handle SV onwards, but maintaining parity with web app's fallback (which gives all non-post-sales)
     return ['SITE_VISIT_SCHEDULED', 'SITE_VISIT_COMPLETED', 'NEGOTIATION', 'BOOKING', 'LOST'];
   }
 
@@ -56,11 +76,8 @@ export function getAvailableStatusesForRole(roleOrPathname: string): string[] {
   }
 
   if (isClosingManager || isCpRole) {
-    // Closing managers sit at site and create bookings for broker leads. 
-    // They need visibility into the pre-booking stages that happen at the site.
     return ['NEW', 'BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER', 'LOST'];
   }
 
-  // Fallback (e.g. admin, director)
-  return ALL_LEAD_STATUSES;
+  return [...ALL_LEAD_STATUSES];
 }

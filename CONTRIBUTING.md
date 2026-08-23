@@ -59,11 +59,11 @@ If you are using the **AI IDE / CLII**, you can skip running commands manually. 
 
 ```bash
 # Copy environment files
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
 
-# Edit backend/.env and frontend/.env with your values
-# (See backend/README.md and frontend/README.md for exact requirements)
+# Edit apps/api/.env and apps/web/.env with your values
+# (See apps/api/README.md and apps/web/README.md for exact requirements)
 
 # Start everything
 docker compose up --build
@@ -75,12 +75,16 @@ docker exec -it crm-backend npx prisma db seed
 
 ### Manual Setup
 
-If you're working on a specific subtree, you only need to set up that part:
+If you're working locally without Docker, follow these steps. With Turborepo and pnpm workspaces, you can install everything from the root!
 
-**Backend:**
+**1. Install all dependencies (Run at root):**
 ```bash
-cd backend
 pnpm install
+```
+
+**2. Backend (API):**
+```bash
+cd apps/api
 cp .env.example .env          # Edit with your values
 pnpm db:generate
 pnpm db:migrate
@@ -88,25 +92,23 @@ pnpm db:seed                  # Populate database with sample data (🔑 View cr
 pnpm start:dev                # → http://localhost:3333
 ```
 
-**Frontend:**
+**3. Frontend (Web):**
 ```bash
-cd frontend
-pnpm install
+cd apps/web
 cp .env.example .env          # Edit with your values
 pnpm dev                      # → http://localhost:3000
 ```
 
-**Mobile (Android Only):**
+**4. Mobile (Android Only):**
 ```bash
-cd mobile
-pnpm install
+cd apps/mobile
 cp .env.example .env          # Set EXPO_PUBLIC_API_URL to your LAN IP
 
 # Do NOT use Expo Go. You must compile the custom native client:
 npx expo run:android
 ```
 
-See the [Backend README](backend/README.md), [Frontend README](frontend/README.md), and [Mobile README](mobile/README.md) for detailed setup instructions.
+See the [Backend README](apps/api/README.md), [Frontend README](apps/web/README.md), and [Mobile README](apps/mobile/README.md) for detailed setup instructions.
 
 ---
 
@@ -114,22 +116,27 @@ See the [Backend README](backend/README.md), [Frontend README](frontend/README.m
 
 ```
 BrokerOS/
-├── backend/       NestJS 11 API + Socket.IO (TypeScript ESM)
-├── frontend/      Next.js 16 App Router web dashboard
-├── mobile/        Expo 54 React Native Android app
+├── apps/
+│   ├── api/       NestJS 11 API + Socket.IO (TypeScript ESM)
+│   ├── web/       Next.js 16 App Router web dashboard
+│   ├── mobile/    Expo 54 React Native Android app
+│   └── workers/   BullMQ async background processors
+├── packages/
+│   ├── types/       Shared TS interfaces (@brokeros/types)
+│   ├── validators/  Shared Zod schemas (@brokeros/validators)
+│   └── constants/   Shared logic and constants (@brokeros/constants)
 └── docs/          Project documentation
 ```
 
-Each subtree is independent — it has its own `package.json`, `.env.example`, and README. You can work on one without setting up the others.
+This is a **pnpm monorepo** managed by Turborepo. You can run commands globally via `pnpm --filter <package_name> <command>`, or work within specific subtrees.
 
 ---
 
 ## Pull Request Process
 
 1. **Ensure your code works:**
-   - Backend: `pnpm test` passes
-   - Frontend: `pnpm build` succeeds, `pnpm lint` passes
-   - Mobile: `npm run lint` passes
+   - Run type checks and linters from the root: `pnpm lint` and `pnpm build`
+   - Test backend specifically: `pnpm --filter @brokeros/api test`
 
 2. **Write a clear PR description:**
    - What does this PR do?
@@ -148,7 +155,7 @@ Use a clear, descriptive title:
 ```
 feat(leads): add bulk CSV import for leads
 fix(auth): session not persisting after page refresh
-docs(backend): update API endpoint documentation
+docs(api): update API endpoint documentation
 chore(deps): upgrade Prisma to 7.x
 ```
 
@@ -178,7 +185,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Scopes
 
-Use the subtree or module name: `backend`, `frontend`, `mobile`, `leads`, `inventory`, `brokers`, `auth`, `dashboard`, `docs`
+Use the app/package or module name: `api`, `web`, `mobile`, `workers`, `types`, `validators`, `constants`, `leads`, `inventory`, `brokers`, `auth`, `dashboard`, `docs`
 
 ### Examples
 

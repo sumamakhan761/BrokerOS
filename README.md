@@ -112,36 +112,44 @@ Every role gets a dedicated dashboard with relevant KPIs, charts, and action ite
 
 ```
 BrokerOS/
-├── backend/          NestJS 11 REST API + Socket.IO
-│   ├── src/
-│   │   ├── auth/           Better Auth + RBAC guards
-│   │   ├── leads/          Leads, follow-ups, calls, notes, site visits, bookings
-│   │   ├── inventory/      Projects, towers, floors, units, documents
-│   │   ├── brokers/        Broker CRUD, meetings, referrals, settlements
-│   │   ├── approvals/      Approval workflows
-│   │   ├── chat/           Real-time chat (Socket.IO)
-│   │   ├── notifications/  Push + in-app notifications
-│   │   ├── dashboard/      12 role-specific analytics services
-│   │   └── lib/            Prisma, auth config, storage helpers
-│   └── prisma/             Schema (74 models, 43 enums) + migrations
+├── apps/
+│   ├── api/          NestJS 11 REST API + Socket.IO
+│   │   ├── src/
+│   │   │   ├── auth/           Better Auth + RBAC guards
+│   │   │   ├── leads/          Leads, follow-ups, calls, notes, site visits, bookings
+│   │   │   ├── inventory/      Projects, towers, floors, units, documents
+│   │   │   ├── brokers/        Broker CRUD, meetings, referrals, settlements
+│   │   │   ├── approvals/      Approval workflows
+│   │   │   ├── chat/           Real-time chat (Socket.IO)
+│   │   │   ├── notifications/  Push + in-app notifications
+│   │   │   ├── dashboard/      12 role-specific analytics services
+│   │   │   └── lib/            Prisma, auth config, storage helpers
+│   │   └── prisma/             Schema (74 models, 43 enums) + migrations
+│   │
+│   ├── web/          Next.js 16 (App Router) web dashboard
+│   │   ├── app/
+│   │   │   ├── login/          Public login page
+│   │   │   └── dashboard/      Role-based shell + 12 role sub-routes
+│   │   ├── features/           Domain feature UI (leads, inventory, brokers, approvals)
+│   │   ├── components/         Shared UI, charts, chat widget, notifications
+│   │   └── lib/                Auth client, utilities
+│   │
+│   ├── mobile/       Expo 54 (React Native) Android app
+│   │   ├── app/
+│   │   │   ├── (auth)/         Login / signup screens
+│   │   │   └── (dashboard)/    Tab navigator + 14 role screen directories
+│   │   ├── modules/
+│   │   │   └── auto-dialer/    Custom native Android module (local package)
+│   │   └── lib/                Auth client, socket context, GPS tracking
+│   │
+│   └── workers/      BullMQ async background processors (Coming soon)
 │
-├── frontend/         Next.js 16 (App Router) web dashboard
-│   ├── app/
-│   │   ├── login/          Public login page
-│   │   └── dashboard/      Role-based shell + 12 role sub-routes
-│   ├── features/           Domain feature UI (leads, inventory, brokers, approvals)
-│   ├── components/         Shared UI, charts, chat widget, notifications
-│   └── lib/                Auth client, utilities
+├── packages/
+│   ├── types/        Shared TS interfaces (@brokeros/types)
+│   ├── validators/   Shared Zod schemas (@brokeros/validators)
+│   └── constants/    Shared constants and pure logic (@brokeros/constants)
 │
-├── mobile/           Expo 54 (React Native) Android app
-│   ├── app/
-│   │   ├── (auth)/         Login / signup screens
-│   │   └── (dashboard)/    Tab navigator + 14 role screen directories
-│   ├── modules/
-│   │   └── auto-dialer/    Custom native Android module (local package)
-│   └── lib/                Auth client, socket context, GPS tracking
-│
-└── docker-compose.yml      PostgreSQL + Backend + Frontend (one command)
+└── docker-compose.yml      PostgreSQL + API + Web (one command)
 ```
 
 ---
@@ -181,13 +189,16 @@ BrokerOS/
 git clone https://github.com/sumamakhan761/BrokerOS.git
 cd BrokerOS
 
-# 2. Copy the environment files
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-cp mobile/.env.example mobile/.env
+# 2. Install dependencies via pnpm workspace
+pnpm install
+
+# 3. Copy the environment files
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
+cp apps/mobile/.env.example apps/mobile/.env
 ```
 
-> **IMPORTANT:** You must configure these `.env` files before running the project. For detailed environment setup, refer to the comments inside each `.env` file and the respective subtree READMEs ([Backend](backend/README.md), [Frontend](frontend/README.md), [Mobile](mobile/README.md)).
+> **IMPORTANT:** You must configure these `.env` files before running the project. For detailed environment setup, refer to the comments inside each `.env` file and the respective subtree READMEs ([Backend](apps/api/README.md), [Frontend](apps/web/README.md), [Mobile](apps/mobile/README.md)).
 
 ---
 
@@ -202,7 +213,7 @@ If you are using the **AI IDE / CLII**, you don't need to manually run the setup
 
 ### Option B: Docker Setup
 
-The fastest way to get the web platform running manually. This starts PostgreSQL, the NestJS Backend, and the Next.js Frontend.
+The fastest way to get the web platform running manually. This starts PostgreSQL, the NestJS API, and the Next.js Web App.
 
 ```bash
 # Start the web platform and database
@@ -223,37 +234,33 @@ docker exec -it crm-backend npx prisma db seed
 
 ### Option C: Manual Setup
 
-Run each service individually for full development control. Ensure you have a PostgreSQL database running and configured in `backend/.env` and `backend/README.md`.
+Run each service individually for full development control. Ensure you have a PostgreSQL database running and configured in `apps/api/.env` and `apps/api/README.md`.
 
-#### 1. Backend
+#### 1. Backend (API)
 ```bash
-cd backend
-pnpm install
-
+cd apps/api
 pnpm db:generate            # Generate Prisma client
 pnpm db:migrate             # Run pending migrations
 pnpm db:seed                # Populate database with sample data (🔑 View credentials: docs/role-password.md)
 pnpm start:dev              # Start dev server → http://localhost:3333
 ```
 
-#### 2. Frontend
+#### 2. Frontend (Web)
 ```bash
-cd frontend
-pnpm install
+cd apps/web
 pnpm dev                    # Start dev server → http://localhost:3000
 ```
 
 #### 3. Mobile (Android Only)
 ```bash
-cd mobile
-npm install
-# Set EXPO_PUBLIC_API_URL in mobile/.env to your machine's LAN IP before starting!
+cd apps/mobile
+# Set EXPO_PUBLIC_API_URL in apps/mobile/.env to your machine's LAN IP before starting!
 
 npx expo start              # Start Metro bundler (press 'a' to run on Android)
 # OR
 npx expo run:android        # Build natively and run on emulator/device
 ```
-> For detailed instructions on setting up an Android emulator, connecting a physical device, and configuring Google Services for push notifications, read the **[Mobile README](mobile/README.md)**.
+> For detailed instructions on setting up an Android emulator, connecting a physical device, and configuring Google Services for push notifications, read the **[Mobile README](apps/mobile/README.md)**.
 
 ---
 

@@ -1,0 +1,26 @@
+{
+  "name": "@brokeros/workers",
+  "version": "0.0.1",
+  "private": true,
+  "description": "BrokerOS async workers — BullMQ job processors for SMS, WhatsApp, portal sync, AI tasks",
+  "type": "module",
+  "scripts": {
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main",
+    "build": "nest build",
+    "lint": "eslint \"{src}/**/*.ts\" --fix",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/core": "^11.1.28",
+    "@nestjs/platform-express": "^11.1.28",
+    "@brokeros/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.24",
+    "@nestjs/testing": "^11.1.28",
+    "@types/node": "^24.13.3",
+    "typescript": "^5.9.3"
+  }
+}
