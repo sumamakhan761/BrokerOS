@@ -18,13 +18,13 @@ The frontend requires different tools for different testing layers:
 
 ### Unit & Component Tests -> Co-location
 You MUST co-locate component and unit tests directly next to the file they are testing. Do not put them in a separate folder.
-- **Source:** `frontend/features/leads/LeadCard.tsx`
-- **Test:** `frontend/features/leads/LeadCard.test.tsx`
+- **Source:** `apps/web/features/leads/LeadCard.tsx`
+- **Test:** `apps/web/features/leads/LeadCard.test.tsx`
 
 ### E2E Tests -> Centralized
 Playwright E2E tests must be kept completely separate from the UI source code.
-- **Location:** `frontend/e2e/`
-- **Example:** `frontend/e2e/dashboard-flow.spec.ts`
+- **Location:** `apps/web/e2e/`
+- **Example:** `apps/web/e2e/dashboard-flow.spec.ts`
 
 ## 3. Mocking Next.js App Router
 When writing Component Tests with React Testing Library, you often need to render components that rely on the Next.js App Router (like `useRouter`, `usePathname`, or `Link`).
@@ -58,11 +58,11 @@ vi.mock('@/lib/auth-client', () => ({
 For **Playwright E2E Tests**, do not mock the hook. Instead, write a global setup script or a `beforeEach` hook that uses the Playwright `request` context to hit the real backend `/api/auth/sign-in/email` endpoint to get a session cookie, injecting it into the browser context.
 
 ## 5. Execution
-- **Run Unit/Component Tests:**
+- **Run Unit/Component Tests (from repo root):**
   ```bash
-  pnpm test
+  pnpm --filter @brokeros/web test
   ```
-- **Run E2E Tests:**
+- **Run E2E Tests (from repo root):**
   ```bash
-  pnpm test:e2e
+  pnpm --filter @brokeros/web test:e2e
   ```
