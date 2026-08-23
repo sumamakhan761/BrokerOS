@@ -58,12 +58,14 @@ If you are using the **AI IDE / CLII**, you can skip running commands manually. 
 ### Quick Start with Docker
 
 ```bash
-# Copy environment files
+# Copy all environment files
+cp .env.example .env
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 
-# Edit apps/api/.env and apps/web/.env with your values
-# (See apps/api/README.md and apps/web/README.md for exact requirements)
+# Note: The root /.env file is the most important one!
+# Edit it with your Database URL, Better Auth secret, etc.
+# apps/web/.env and apps/api/.env are mostly pre-filled with local URLs.
 
 # Start everything
 docker compose up --build
@@ -77,38 +79,67 @@ docker exec -it crm-backend npx prisma db seed
 
 If you're working locally without Docker, follow these steps. With Turborepo and pnpm workspaces, you can install everything from the root!
 
-**1. Install all dependencies (Run at root):**
+**1. Install all dependencies & set up environment variables (Run at root):**
 ```bash
 pnpm install
+
+# Copy all required environment templates
+cp .env.example .env
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
+cp apps/mobile/.env.example apps/mobile/.env
+
+# IMPORTANT: 
+# 1. Edit the root /.env file with your Database URL, Auth secret, Groq API key, etc.
+# 2. Edit apps/mobile/.env and set EXPO_PUBLIC_API_URL to your machine's LAN IP address.
+# 3. For apps/web and apps/api, the defaults are usually fine for local development.
 ```
 
-**2. Backend (API):**
+**2. Backend (API) & Database Setup:**
 ```bash
+# First, generate and seed the database using the Prisma package
+pnpm --filter @brokeros/prisma db:generate
+pnpm --filter @brokeros/prisma db:migrate
+pnpm --filter @brokeros/prisma db:seed       # Populate database with sample data (🔑 View credentials: docs/role-password.md)
+
+# Start the API server
 cd apps/api
-cp .env.example .env          # Edit with your values
-pnpm db:generate
-pnpm db:migrate
-pnpm db:seed                  # Populate database with sample data (🔑 View credentials: docs/role-password.md)
 pnpm start:dev                # → http://localhost:3333
 ```
 
 **3. Frontend (Web):**
 ```bash
 cd apps/web
-cp .env.example .env          # Edit with your values
 pnpm dev                      # → http://localhost:3000
 ```
 
 **4. Mobile (Android Only):**
 ```bash
 cd apps/mobile
-cp .env.example .env          # Set EXPO_PUBLIC_API_URL to your LAN IP
-
 # Do NOT use Expo Go. You must compile the custom native client:
 npx expo run:android
 ```
 
-See the [Backend README](apps/api/README.md), [Frontend README](apps/web/README.md), and [Mobile README](apps/mobile/README.md) for detailed setup instructions.
+> 💡 **Where do I get the API keys?** 
+> 
+> **Authentication (`BETTER_AUTH_SECRET`)**
+> Better Auth requires a strong, randomly generated 32-character secret to sign sessions.
+> Run this command in your terminal to generate one:
+> `openssl rand -hex 32`
+> Set in `.env`: `BETTER_AUTH_SECRET="your-generated-hash-here"`
+> 
+> **Vercel Blob (File Uploads)**
+> Go to [Vercel Storage](https://vercel.com/storage/blob) to get your token.
+> Set in `.env`: `BLOB_READ_WRITE_TOKEN="your_vercel_blob_token"`
+> 
+> **Groq (AI Call Processing)**
+> Go to [Groq Console](https://console.groq.com/keys) to get a free API key.
+> Set in `.env`: `GROQ_API_KEY="gsk_your_key_here"`
+> 
+> **Want to run tests or build a specific app?** Check their dedicated readmes:
+> - 🟢 **[Backend API Guide](apps/api/README.md)**
+> - 🔵 **[Frontend Web Guide](apps/web/README.md)**
+> - 📱 **[Mobile App Guide](apps/mobile/README.md)**
 
 ---
 
@@ -122,6 +153,8 @@ BrokerOS/
 │   ├── mobile/    Expo 54 React Native Android app
 │   └── workers/   BullMQ async background processors
 ├── packages/
+│   ├── prisma/      Prisma ORM schema, migrations, and client (@brokeros/prisma)
+│   ├── storage/     Vercel Blob storage wrappers (@brokeros/storage)
 │   ├── types/       Shared TS interfaces (@brokeros/types)
 │   ├── validators/  Shared Zod schemas (@brokeros/validators)
 │   └── constants/   Shared logic and constants (@brokeros/constants)

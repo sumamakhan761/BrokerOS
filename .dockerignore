@@ -1,0 +1,54 @@
+# Git
+.git
+.github
+
+# Dependencies
+node_modules
+apps/*/node_modules
+packages/*/node_modules
+integrations/*/node_modules
+apps/workers/node_modules
+
+# Next.js / Build Outputs
+.next
+apps/web/.next
+dist
+build
+out
+apps/*/dist
+packages/*/dist
+integrations/*/dist
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment Variables
+.env
+.env.test
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# (Make sure to keep .env.example)
+
+# Turborepo
+.turbo
+
+# Vercel / Cloud
+.vercel
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS metadata
+.DS_Store
+Thumbs.db
