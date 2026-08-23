@@ -65,6 +65,8 @@ You **MUST** consult the appropriate skill before making changes, based on the t
 
 ## Scripts
 
+> **CRITICAL SCRIPTING RULE:** If you are creating a new utility, migration, or maintenance script, DO NOT put it inside `apps/web/`. Create it in the monorepo root at `scripts/` and execute it from the root using `pnpm run script scripts/your-script.ts`.
+
 Run from `apps/web/` directory (or use `pnpm --filter @brokeros/web <cmd>` from root):
 
 ```bash
