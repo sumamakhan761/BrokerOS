@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-jest.mock('../../generated/prisma/client.js', () => ({ PrismaClient: class {} }));
+jest.mock('@brokeros/prisma', () => ({ PrismaClient: class {} }));
 jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 import { BookingService } from './booking.service.js';
 import { BookingQueryService } from './booking-query.service.js';

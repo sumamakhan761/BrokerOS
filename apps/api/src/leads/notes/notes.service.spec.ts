@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-jest.mock('../../generated/prisma/client.js', () => ({
+jest.mock('@brokeros/prisma', () => ({
   LeadStatus: {
     NEW: 'NEW',
     INTERESTED: 'INTERESTED',

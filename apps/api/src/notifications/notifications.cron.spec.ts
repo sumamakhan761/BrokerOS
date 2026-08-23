@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
-jest.mock('../generated/prisma/client.js', () => ({ NotificationType: { MISSED_FOLLOW_UP: 'MISSED_FOLLOW_UP', MANAGER_TEAM_ALERT: 'MANAGER_TEAM_ALERT', SITE_VISIT_REMINDER: 'SITE_VISIT_REMINDER', SITE_VISIT_ARRIVE: 'SITE_VISIT_ARRIVE', MONTHLY_ANALYTICS: 'MONTHLY_ANALYTICS', MONTHLY_LEADERBOARD: 'MONTHLY_LEADERBOARD' } }));
+jest.mock('@brokeros/prisma', () => ({ NotificationType: { MISSED_FOLLOW_UP: 'MISSED_FOLLOW_UP', MANAGER_TEAM_ALERT: 'MANAGER_TEAM_ALERT', SITE_VISIT_REMINDER: 'SITE_VISIT_REMINDER', SITE_VISIT_ARRIVE: 'SITE_VISIT_ARRIVE', MONTHLY_ANALYTICS: 'MONTHLY_ANALYTICS', MONTHLY_LEADERBOARD: 'MONTHLY_LEADERBOARD' } }));
 jest.mock('../lib/database/prisma-client.js', () => ({
   prismaClient: {
     followUp: { findMany: jest.fn(), count: jest.fn() },

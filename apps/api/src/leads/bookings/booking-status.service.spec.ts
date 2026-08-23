@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-jest.mock('../../generated/prisma/client.js', () => ({ PrismaClient: class { }, NotificationType: { LEAD_ASSIGNED: 'LEAD_ASSIGNED' } }));
+jest.mock('@brokeros/prisma', () => ({ PrismaClient: class { }, NotificationType: { LEAD_ASSIGNED: 'LEAD_ASSIGNED' } }));
 jest.mock('expo-server-sdk', () => ({ Expo: class { } }));
 
 import { BookingStatusService } from './booking-status.service.js';

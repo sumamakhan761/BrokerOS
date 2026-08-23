@@ -1,4 +1,5 @@
-import { IsString, IsNotEmpty, IsOptional, IsEmail, IsNumber, IsEnum, IsBoolean, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEmail, IsNumber, IsEnum, IsBoolean, IsArray, ValidateNested } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 import { LeadStatus, LeadTemperature } from '@brokeros/prisma';
 
 export class CreateLeadDto {
@@ -69,6 +70,8 @@ export class CreateLeadDto {
 
 export class BulkCreateLeadsDto {
   @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateLeadDto)
   leads: CreateLeadDto[];
 }
 
@@ -173,6 +176,7 @@ export class GetLeadsFilterDto {
 
   @IsBoolean()
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
   managerUnassigned?: boolean;
 
   @IsString()
@@ -181,5 +185,6 @@ export class GetLeadsFilterDto {
 
   @IsBoolean()
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
   isCpProject?: boolean;
 }

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-jest.mock('../../generated/prisma/client.js', () => ({
+jest.mock('@brokeros/prisma', () => ({
   NotificationType: { ACHIEVEMENT_MILESTONE: 'ACHIEVEMENT_MILESTONE' },
   PrismaClient: class {}
 }));
