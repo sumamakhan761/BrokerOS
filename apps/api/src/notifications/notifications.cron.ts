@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, SchedulerRegistry } from '@nestjs/schedule';
 import { prismaClient as prisma } from '../lib/database/prisma-client.js';
 import { NotificationsService } from './notifications.service.js';
-import { NotificationType } from '../generated/prisma/client.js';
+import { NotificationType } from '@brokeros/prisma';
 
 @Injectable()
 export class NotificationsCron {
