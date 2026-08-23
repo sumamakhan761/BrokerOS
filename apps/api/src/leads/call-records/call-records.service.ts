@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { TranscriptionService } from './transcription.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
-import { NotificationType } from '../../generated/prisma/client.js';
+import { NotificationType } from '@brokeros/prisma';
 import { UploadCallRecordDto } from './dto/call-record.dto.js';
 import { put } from '@vercel/blob';
 import PQueue from 'p-queue';

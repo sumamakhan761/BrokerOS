@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { LeadsQueryService } from './leads-query.service.js';
 import { LeadsManagementService } from './leads-management.service.js';
 import { LeadsMediaService } from './leads-media.service.js';
-import { LeadStatus } from '../../generated/prisma/client.js';
+import { LeadStatus } from '@brokeros/prisma';
 import { CreateLeadDto, UpdateLeadDto, GetLeadsFilterDto } from './dto/lead.dto.js';
 
 @Injectable()

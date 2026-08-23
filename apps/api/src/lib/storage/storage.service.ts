@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { put } from '@vercel/blob';
+import { uploadFileToBlob } from '@brokeros/storage';
 
 @Injectable()
 export class StorageService {
@@ -10,12 +10,9 @@ export class StorageService {
     fileName: string,
     mimeType: string,
   ): Promise<string> {
-    this.logger.log(`Uploading ${fileName} to Vercel Blob`);
+    this.logger.log(`Uploading ${fileName} to Vercel Blob via @brokeros/storage`);
     try {
-      const { url } = await put(fileName, fileBuffer, {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      });
+      const url = await uploadFileToBlob(fileBuffer, fileName);
       return url;
     } catch (error) {
       this.logger.error('Vercel Blob upload failed', error);

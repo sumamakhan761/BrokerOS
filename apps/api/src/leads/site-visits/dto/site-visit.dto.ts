@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsOptional, IsNumber, IsEnum } from 'class-validator';
-import { SiteVisitStatus, CustomerInterestLevel } from '../../../generated/prisma/client.js';
+import { SiteVisitStatus, CustomerInterestLevel } from '@brokeros/prisma';
 
 export class CreateSiteVisitDto {
   @IsString()

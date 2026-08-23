@@ -10,9 +10,10 @@ import { BookingPostSalesService } from './booking-post-sales.service.js';
 import { PrismaModule } from '../../lib/database/prisma.module.js';
 import { NotificationsModule } from '../../notifications/notifications.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
+import { StorageModule } from '../../lib/storage/storage.module.js';
 
 @Module({
-  imports: [PrismaModule, NotificationsModule, PaymentsModule],
+  imports: [PrismaModule, NotificationsModule, PaymentsModule, StorageModule],
   controllers: [BookingsController, BookingController],
   providers: [
     BookingService,

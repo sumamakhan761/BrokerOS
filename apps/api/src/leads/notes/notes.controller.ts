@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Param, Body } from '@nestjs/common';
 import { NotesService } from './notes.service.js';
-import { LeadStatus } from '../../generated/prisma/client.js';
+import { LeadStatus } from '@brokeros/prisma';
 import { CreateNoteDto, GenerateAiTransitionDto } from './dto/create-note.dto.js';
 
 @Controller('api/leads')

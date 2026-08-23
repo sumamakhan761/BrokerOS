@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../lib/database/prisma.service.js';
-import { Prisma } from '../../../generated/prisma/client.js';
+import { Prisma } from '@brokeros/prisma';
 import { put } from '@vercel/blob';
 import { CreateScheduleDto } from './dto/payment.dto.js';
 

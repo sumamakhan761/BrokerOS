@@ -8,7 +8,7 @@ import { FollowUpsService } from './follow-ups.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { CreateFollowUpDto, UpdateFollowUpDto } from './dto/follow-up.dto.js';
-import { FollowUpStatus } from '../../generated/prisma/client.js';
+import { FollowUpStatus } from '@brokeros/prisma';
 
 jest.mock('../../lib/database/prisma.service.js', () => ({
   PrismaService: jest.fn().mockImplementation(() => ({})),

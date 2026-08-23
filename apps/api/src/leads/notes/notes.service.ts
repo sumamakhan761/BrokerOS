@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
-import { LeadStatus } from '../../generated/prisma/client.js';
+import { LeadStatus } from '@brokeros/prisma';
 import { TranscriptionService } from '../call-records/transcription.service.js';
 import { CreateNoteDto } from './dto/create-note.dto.js';
 

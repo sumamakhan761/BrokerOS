@@ -1,7 +1,7 @@
 import { Controller, Get, Patch, Post, Param, Body, Query, UseInterceptors, UploadedFile, Res, Req } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { LeadsService } from './leads.service.js';
-import { LeadStatus } from '../../generated/prisma/client.js';
+import { LeadStatus } from '@brokeros/prisma';
 import { Public } from '@thallesp/nestjs-better-auth';
 import { CreateLeadDto, BulkCreateLeadsDto, AssignLeadsDto, UpdateLeadStatusDto, UpdateLeadDto, GetLeadsFilterDto } from './dto/lead.dto.js';
 

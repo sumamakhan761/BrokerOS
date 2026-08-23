@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
-import { LeadStatus } from '../../../generated/prisma/client.js';
+import { LeadStatus } from '@brokeros/prisma';
 
 export class CreateNoteDto {
   @IsString()

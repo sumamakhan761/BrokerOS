@@ -8,7 +8,7 @@ import { SiteVisitsService } from './site-visits.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { CreateSiteVisitDto, UpdateSiteVisitDto, ArriveSiteVisitDto } from './dto/site-visit.dto.js';
-import { SiteVisitStatus } from '../../generated/prisma/client.js';
+import { SiteVisitStatus } from '@brokeros/prisma';
 
 jest.mock('../../lib/database/prisma.service.js', () => ({
   PrismaService: jest.fn().mockImplementation(() => ({})),
