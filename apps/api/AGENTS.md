@@ -9,9 +9,9 @@ NestJS 11 · TypeScript ESM (`"type": "module"` in package.json) · Prisma 7 · 
 
 ## Prisma Rules
 
-- Import client from `src/lib/database/prisma-client.js` (the singleton) or inject `PrismaService` from `PrismaModule`. Never import from `@prisma/client` directly.
-- Prisma client output: `src/generated/prisma`. Do not edit any file in that directory.
-- After any schema change: `pnpm db:generate` then `pnpm db:migrate`.
+- Import client via `@brokeros/prisma` (from `packages/prisma/generated/client`) or inject `PrismaService` from `PrismaModule`. Never import from `@prisma/client` directly.
+- Prisma client schema and migrations live in `packages/prisma/`. Do not edit generated files.
+- After any schema change: `pnpm --filter @brokeros/prisma db:generate` then `pnpm --filter @brokeros/prisma db:migrate`.
 - `DashboardCache` model exists for caching heavy dashboard queries. Check it before hitting raw Prisma in high-traffic dashboard endpoints.
 
 ---
@@ -27,7 +27,7 @@ You **MUST** consult the appropriate skill before making changes, based on the t
 - **Auth & Sessions**: If the task involves Better Auth, user sessions, or plugins, read:
   `.agents/skills/better-auth-best-practices/SKILL.md`
 - **Database & Prisma**: If the task involves complex queries, relations, or transactions, read:
-  `.agents/skills/prisma-client-api/SKILL.md`
+  `../../.agents/skills/prisma-client-api/SKILL.md` (Monorepo root)
 ---
 
 ## Scripts
@@ -39,10 +39,12 @@ Run from `apps/api/` directory (or use `pnpm --filter @brokeros/api <cmd>` from 
 ```bash
 pnpm start:dev          # dev server (watch mode)
 pnpm build              # compile to dist/
-pnpm db:generate        # regenerate Prisma client
-pnpm db:migrate         # run pending DB migrations
-pnpm db:studio          # Prisma Studio GUI
-pnpm db:format          # format schema.prisma
 pnpm test               # Jest unit tests
 pnpm test:e2e           # e2e tests
+
+# Database commands now belong to the @brokeros/prisma package. Run from root:
+pnpm --filter @brokeros/prisma db:generate
+pnpm --filter @brokeros/prisma db:migrate
+pnpm --filter @brokeros/prisma db:studio
+pnpm --filter @brokeros/prisma db:format
 ```

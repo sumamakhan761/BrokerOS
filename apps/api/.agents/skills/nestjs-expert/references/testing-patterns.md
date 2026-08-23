@@ -12,15 +12,13 @@ Copy this exact pattern when creating a new `.spec.ts` file:
 import { Test, TestingModule } from '@nestjs/testing';
 
 // --- MANDATORY MOCK BLOCK ---
-jest.mock('../../lib/database/prisma-client.js', () => ({
+jest.mock('@brokeros/prisma', () => ({
+  NotificationType: {},
+  PrismaClient: class {},
   prismaClient: {}
 }));
 jest.mock('../../lib/database/prisma.service.js', () => ({
   PrismaService: class {}
-}));
-jest.mock('../../generated/prisma/client.js', () => ({
-  NotificationType: {},
-  PrismaClient: class {}
 }));
 // Expo mock if NotificationsService is injected
 jest.mock('expo-server-sdk', () => ({

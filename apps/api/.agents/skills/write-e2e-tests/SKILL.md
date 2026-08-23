@@ -15,8 +15,8 @@ Whenever you are tasked with creating or modifying End-to-End (E2E) tests in the
 **Never run E2E tests against the production database.**
 E2E tests must be completely isolated.
 1. The `.env.test` file (or `DATABASE_URL_TEST` environment variable) must be used.
-2. The test database must be migrated to the latest schema using `prisma migrate deploy`.
-3. If basic reference data is needed, `pnpm db:seed` (which runs `seed.ts`) should be executed on the test database beforehand.
+2. The test database must be migrated to the latest schema using `pnpm --filter @brokeros/prisma db:migrate`.
+3. If basic reference data is needed, `pnpm --filter @brokeros/prisma db:seed` should be executed on the test database beforehand.
 
 ## 3. Setup and Teardown Strategy
 You must ensure the database is clean for every test suite to prevent test pollution. We use the **Table Truncation** method between suites.
@@ -27,7 +27,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module.js';
-import { PrismaService } from './../src/prisma/prisma.service.js';
+import { PrismaService } from './../src/lib/database/prisma.service.js';
 
 describe('FeatureController (e2e)', () => {
   let app: INestApplication;
