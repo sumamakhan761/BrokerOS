@@ -5,7 +5,7 @@ jest.mock('../../lib/database/prisma-client.js', () => ({
 jest.mock('../../lib/database/prisma.service.js', () => ({
   PrismaService: class { }
 }));
-jest.mock('../../generated/prisma/client.js', () => ({
+jest.mock('@brokeros/prisma', () => ({
   NotificationType: {},
   PrismaClient: class { }
 }));
