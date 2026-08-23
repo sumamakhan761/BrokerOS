@@ -1,0 +1,2478 @@
+// ============================================================================
+// BrokerOS — Complete Prisma Schema
+// Database: PostgreSQL
+// ORM: Prisma
+// Version: 1.0
+
+// Organization:
+//   1. Generator & Datasource
+//   2. Enums
+//   3. Domain 1: Identity & Access
+//   4. Domain 2: Lead & Customer Management
+//   5. Domain 3: Activity & Communication (incl. WhatsApp)
+//   6. Domain 4: Project & Inventory
+//   7. Domain 5: Site Visit & Sales Pipeline
+//   8. Domain 6: Booking & Post-Sales
+//   9. Domain 7: Channel Partner & Brokerage
+//  10. Domain 8: Accounts & Collections
+//  11. Domain 9: Business Manager & Director
+//  12. Domain 10: Internal Communication
+// ============================================================================
+
+// ─────────────────────────────────────────────
+// 1. GENERATOR & DATASOURCE
+// ─────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// 2. ENUMS
+// ─────────────────────────────────────────────
+
+// ── Identity & Access ──
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum PermissionAction {
+  VIEW
+  CREATE
+  EDIT
+  DELETE
+  EXPORT
+  IMPORT
+  APPROVE
+  ASSIGN
+  MANAGE
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  ASSIGN
+  APPROVE
+  REJECT
+  STATUS_CHANGE
+  EXPORT
+}
+
+// ── Lead Management ──
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  QUALIFIED
+  SITE_VISIT_SCHEDULED
+  SITE_VISIT_COMPLETED
+  NEGOTIATION
+  BOOKING
+  DOCUMENT
+  LOAN
+  AGREEMENT
+  HANDOVER
+  LOST
+}
+
+enum LeadTemperature {
+  HOT
+  WARM
+  COLD
+}
+
+enum LeadSourceType {
+  FACEBOOK_ADS
+  GOOGLE_ADS
+  INSTAGRAM
+  REFERRAL
+  ORGANIC
+  DIRECT_CALL
+  WALK_IN
+  CHANNEL_PARTNER
+  WHATSAPP
+  OTHER
+}
+
+enum DistributionMethod {
+  ROUND_ROBIN
+  MANUAL
+  PROJECT_WISE
+}
+
+// ── Activity & Communication ──
+
+enum FollowUpStatus {
+  SCHEDULED
+  COMPLETED
+  MISSED
+  RESCHEDULED
+  CANCELLED
+}
+
+enum CallDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum CallStatus {
+  CONNECTED
+  NOT_ANSWERED
+  BUSY
+  FAILED
+  VOICEMAIL
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationType {
+  LEAD_ASSIGNED
+  FOLLOW_UP_REMINDER
+  MISSED_FOLLOW_UP
+  SITE_VISIT_ASSIGNED
+  SITE_VISIT_REMINDER
+  BOOKING_CONFIRMED
+  BOOKING_REQUEST
+  REQUEST_APPROVED
+  REQUEST_REJECTED
+  PAYMENT_DUE
+  PAYMENT_RECEIVED
+  DOCUMENT_REMINDER
+  TARGET_REMINDER
+  ANNOUNCEMENT
+  INVENTORY_CHANGED
+  MEETING_REMINDER
+  RECOGNITION
+  CHAT_MESSAGE
+  SITE_VISIT_ARRIVE
+  ACHIEVEMENT_MILESTONE
+  MONTHLY_ANALYTICS
+  MONTHLY_LEADERBOARD
+  MANAGER_TEAM_ALERT
+  PROJECT_ASSIGNED
+  COMMISSION_REMINDER
+  TASK_COMPLETED
+  INVENTORY_MILESTONE
+}
+
+enum ActivityType {
+  CALL
+  WHATSAPP_MESSAGE
+  FOLLOW_UP
+  SITE_VISIT
+  STATUS_CHANGE
+  NOTE_ADDED
+  ASSIGNMENT
+  BOOKING
+  PAYMENT
+  DOCUMENT_UPLOAD
+  NEGOTIATION
+  MEETING
+  SYSTEM
+}
+
+// ── WhatsApp ──
+
+enum WhatsAppMessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum WhatsAppMessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  RECEIVED
+}
+
+enum WhatsAppMessageType {
+  TEXT
+  TEMPLATE
+  IMAGE
+  DOCUMENT
+  VIDEO
+  AUDIO
+  LOCATION
+  CONTACT
+  INTERACTIVE
+}
+
+// enum WhatsAppTemplateCategory {
+//   MARKETING
+//   UTILITY
+//   AUTHENTICATION
+// }
+
+// ── Project & Inventory ──
+
+enum ProjectStatus {
+  UPCOMING
+  UNDER_CONSTRUCTION
+  READY_TO_MOVE
+  COMPLETED
+}
+
+enum ConstructionStatus {
+  NOT_STARTED
+  EXCAVATION
+  FOUNDATION
+  SUPER_STRUCTURE
+  BRICKWORK
+  PLASTERING
+  FINISHING
+  READY_FOR_POSSESSION
+  HANDOVER
+}
+
+enum ProjectType {
+  RESIDENTIAL
+  COMMERCIAL
+  MIXED
+}
+
+enum UnitStatus {
+  AVAILABLE
+  RESERVED
+  BLOCKED
+  SOLD
+}
+
+enum UnitType {
+  STUDIO
+  ONE_BHK
+  TWO_BHK
+  THREE_BHK
+  FOUR_BHK
+  PENTHOUSE
+  VILLA
+  SHOP
+  OFFICE
+}
+
+// ── Site Visit & Sales ──
+
+enum SiteVisitStatus {
+  ASSIGNED
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+  NO_SHOW
+}
+
+enum CustomerInterestLevel {
+  HIGH
+  MEDIUM
+  LOW
+  NOT_INTERESTED
+}
+
+enum NegotiationStatus {
+  OPEN
+  COUNTER_OFFERED
+  MANAGER_REVIEW
+  APPROVED
+  REJECTED
+  CLOSED
+}
+
+// ── Booking & Post-Sales ──
+
+enum BookingStatus {
+  CONFIRMED
+  DOCUMENTATION_PENDING
+  PAYMENT_PENDING
+  LOAN_IN_PROGRESS
+  AGREEMENT_PENDING
+  AGREEMENT_COMPLETED
+  POSSESSION_PENDING
+  HANDOVER_COMPLETED
+  CANCELLED
+}
+
+enum BookingSource {
+  DIRECT
+  CHANNEL_PARTNER
+}
+
+enum DocumentType {
+  AADHAAR
+  PAN
+  PASSPORT_PHOTO
+  ADDRESS_PROOF
+  INCOME_DOCUMENT
+  BOOKING_FORM
+  AGREEMENT_COPY
+  BANK_STATEMENT
+  OTHER
+}
+
+enum DocumentVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
+
+enum PaymentMode {
+  CASH
+  CHEQUE
+  NEFT
+  RTGS
+  UPI
+  DEMAND_DRAFT
+  OTHER
+}
+
+enum LoanStatus {
+  NOT_APPLIED
+  APPLIED
+  DOCUMENTS_SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  DISBURSED
+  REJECTED
+}
+
+enum AgreementStatus {
+  NOT_STARTED
+  DRAFT_PREPARED
+  STAMP_DUTY_PAID
+  REGISTERED
+  COMPLETED
+}
+
+enum PossessionStatus {
+  NOT_READY
+  READY
+  SCHEDULED
+  HANDED_OVER
+}
+
+// ── Channel Partner ──
+
+enum BrokerStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  INACTIVE
+  BLACKLISTED
+  NEW
+  CONTACTED
+  VISIT
+  DEAL
+}
+
+enum BrokerageStatus {
+  PENDING
+  APPROVED
+  PAID
+  DISPUTED
+  HELD
+}
+
+// ── Accounts ──
+
+enum ExpenseCategory {
+  SALARY
+  MARKETING
+  OFFICE
+  TRAVEL
+  COMMISSION
+  LEGAL
+  RENT
+  UTILITIES
+  OTHER
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ESCALATED
+}
+
+enum ApprovalType {
+  DISCOUNT
+  SPECIAL_PRICING
+  BROKERAGE_SETTLEMENT
+  EXPENSE
+  REFUND
+  BOOKING_CANCELLATION
+  BOOKING
+}
+
+enum ApprovalRequestStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  CLOSED
+}
+
+enum InboundCommissionStatus {
+  PENDING
+  RECEIVED
+}
+
+// ── Internal Communication ──
+
+enum ChatRoomType {
+  DIRECT
+  TEAM
+  DEPARTMENT
+}
+
+// ─────────────────────────────────────────────
+// 3. DOMAIN 1: IDENTITY & ACCESS
+// ─────────────────────────────────────────────
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users     User[]
+  roles     Role[]
+  chatRooms ChatRoom[]
+
+  distributionRules LeadDistributionRule[]
+
+  @@map("department")
+}
+
+model User {
+  id              String     @id @default(uuid())
+  name            String?
+  email           String?    @unique
+  emailVerified   Boolean    @default(false)
+  image           String?
+  username        String?    @unique
+  displayUsername String?
+  phoneNumber     String?    @unique
+  employeeCode    String?    @unique
+  status          UserStatus @default(ACTIVE)
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  roleId       String?
+  role         Role?       @relation(fields: [roleId], references: [id])
+  managerId    String?
+  manager      User?       @relation("UserManager", fields: [managerId], references: [id])
+  subordinates User[]      @relation("UserManager")
+
+  lastLatitude   Float?
+  lastLongitude  Float?
+  lastLocationAt DateTime?
+
+  expoPushToken String?
+
+  isOnCall Boolean @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  sessions Session[]
+  accounts Account[]
+
+  loginHistory             LoginHistory[]
+  assignedLeads            Lead[]                  @relation("AssignedUser")
+  createdLeads             Lead[]                  @relation("CreatedBy")
+  followUps                FollowUp[]
+  callRecords              CallRecord[]
+  siteVisitsAsExec         SiteVisit[]             @relation("SalesExec")
+  siteVisitsAsCreator      SiteVisit[]             @relation("SiteVisitCreator")
+  negotiations             Negotiation[]
+  tasks                    Task[]                  @relation("AssignedTo")
+  createdTasks             Task[]                  @relation("TaskCreator")
+  notifications            Notification[]
+  notes                    Note[]
+  targets                  EmployeeTarget[]
+  recognitions             EmployeeRecognition[]
+  attendance               Attendance[]
+  dailyPerformanceLogs     DailyPerformanceLog[]
+  auditLogs                AuditLog[]
+  projectAssignments       ProjectAssignment[]
+  towerAssignments         TowerAssignment[]
+  chatRoomMembers          ChatRoomMember[]
+  chatMessages             ChatMessage[]
+  whatsappConversations    WhatsAppConversation[]  @relation("ConversationAgent")
+  brokerMeetings           BrokerMeeting[]
+  managedBrokers           Broker[]                @relation("SourcingManager")
+  assignmentFrom           LeadAssignmentHistory[] @relation("AssignmentFrom")
+  assignmentTo             LeadAssignmentHistory[] @relation("AssignmentTo")
+  assignedByUser           LeadAssignmentHistory[] @relation("AssignedByUser")
+  blockedUnits             Unit[]                  @relation("UnitBlockedBy")
+  reservedUnits            Unit[]                  @relation("UnitReservedFor")
+  constructionUpdates      ConstructionUpdate[]
+  verifiedDocuments        CustomerDocument[]
+  salesExecBookings        Booking[]               @relation("BookingSalesExec")
+  closedBookings           Booking[]               @relation("BookingClosingManager")
+  paymentTransactions      PaymentTransaction[]
+  possessionHandovers      PossessionHandover[]
+  closedReferrals          BrokerReferral[]        @relation("ReferralClosingManager")
+  approvedBrokerageRecords BrokerageRecord[]       @relation("BrokerageRecordApprover")
+  assignedCollections      CollectionRecord[]      @relation("CollectionAssignedTo")
+  approvedSettlements      BrokerageSettlement[]   @relation("SettlementApprover")
+  processedSettlements     BrokerageSettlement[]   @relation("SettlementProcessor")
+  requestedExpenses        Expense[]               @relation("ExpenseRequester")
+  approvedExpenses         Expense[]               @relation("ExpenseApprover")
+  createdInvoices          Invoice[]
+  requestedApprovals       FinancialApproval[]     @relation("ApprovalRequester")
+  level1Approvals          FinancialApproval[]     @relation("ApprovalLevel1")
+  level2Approvals          FinancialApproval[]     @relation("ApprovalLevel2")
+  managerTasks             ManagerTask[]           @relation("ManagerTaskCreator")
+  taskAssignments          ManagerTaskUser[]       @relation("ManagerTaskAssignee")
+  createdAnnouncements     Announcement[]          @relation("AnnouncementCreator")
+
+  approvalRequestsMade       ApprovalRequest[]   @relation("ApprovalRequestExec")
+  approvalRequestsManaged    ApprovalRequest[]   @relation("ApprovalRequestManager")
+  approvalMessagesSent       ApprovalMessage[]   @relation("ApprovalMessageSender")
+  receivedInboundCommissions InboundCommission[] @relation("ReceivedInboundCommissions")
+  assignedPostSalesBookings  Booking[]           @relation("BookingPostSales")
+
+  @@index([departmentId])
+  @@index([roleId])
+  @@index([managerId])
+  @@index([status])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verification")
+}
+
+model Role {
+  id           String      @id @default(uuid())
+  name         String
+  code         String      @unique
+  description  String?
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  isSystemRole Boolean     @default(false)
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  permissions RolePermission[]
+  users       User[]
+
+  @@index([departmentId])
+  @@map("role")
+}
+
+model RolePermission {
+  id        String           @id @default(uuid())
+  roleId    String
+  role      Role             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  resource  String
+  action    PermissionAction
+  isAllowed Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([roleId, resource, action])
+  @@index([roleId])
+  @@map("role_permission")
+}
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id])
+  action      AuditAction
+  entityType  String
+  entityId    String
+  oldValue    Json?
+  newValue    Json?
+  ipAddress   String?
+  userAgent   String?
+  description String?
+  createdAt   DateTime    @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+model LoginHistory {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress String?
+  userAgent String?
+  device    String?
+  browser   String?
+  os        String?
+  loginAt   DateTime  @default(now())
+  logoutAt  DateTime?
+  isSuccess Boolean   @default(true)
+
+  @@index([userId])
+  @@index([loginAt])
+  @@map("login_history")
+}
+
+model EmployeeTarget {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  period           String
+  targetCalls      Int?
+  targetFollowUps  Int?
+  targetSiteVisits Int?
+  targetBookings   Int?
+  targetRevenue    Decimal?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([userId, period])
+  @@index([userId])
+  @@map("employee_target")
+}
+
+model EmployeeRecognition {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  awardType   String
+  period      String
+  metric      String?
+  metricValue Decimal?
+  awardedAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([awardType])
+  @@map("employee_recognition")
+}
+
+model Attendance {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime  @db.Date
+  checkIn   DateTime?
+  checkOut  DateTime?
+  status    String    @default("PRESENT")
+  remarks   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+  @@map("attendance")
+}
+
+model DailyPerformanceLog {
+  id     String   @id @default(uuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
+
+  // Cold Call tracking
+  coldCallTarget         Int @default(100)
+  coldCallsDone          Int @default(0)
+  coldCallBacklogIn      Int @default(0) // backlog carried into this day
+  coldCallBacklogCleared Int @default(0) // how many backlog calls cleared this day
+
+  // Follow-up tracking
+  followUpTarget    Int   @default(0)
+  followUpsDone     Int   @default(0)
+  missedFollowUpIds Json? // array of follow-up IDs that were missed this day
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+  @@map("daily_performance_log")
+}
+
+// ─────────────────────────────────────────────
+// 3b. MANAGER TASKS & ANNOUNCEMENTS
+// ─────────────────────────────────────────────
+
+/**
+ * A daily cold-call target task created by a PRE_SALES_MANAGER.
+ * Persists until the manager edits or deletes it.
+ * Replaces the old hardcoded COLD_CALL_DAILY_TARGET = 100 constant.
+ */
+model ManagerTask {
+  id             String            @id @default(uuid())
+  managerId      String
+  manager        User              @relation("ManagerTaskCreator", fields: [managerId], references: [id])
+  coldCallTarget Int
+  isActive       Boolean           @default(true)
+  assignees      ManagerTaskUser[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([managerId])
+  @@index([isActive])
+  @@map("manager_task")
+}
+
+/**
+ * Join table between ManagerTask and the employees it is assigned to.
+ * backlogOverride: when set by the manager, replaces the computed backlog for this employee.
+ */
+model ManagerTaskUser {
+  id              String      @id @default(uuid())
+  taskId          String
+  task            ManagerTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User        @relation("ManagerTaskAssignee", fields: [userId], references: [id])
+  backlogOverride Int? // null = use computed backlog; number = manager manually reduced it
+  targetOverride  Int? // Optional manual daily target override set by manager for today
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([taskId])
+  @@index([userId])
+  @@map("manager_task_user")
+}
+
+/**
+ * A broadcast message from a PRE_SALES_MANAGER to all their subordinates.
+ * Employees see active announcements at the top of their dashboard.
+ */
+model Announcement {
+  id          String   @id @default(uuid())
+  managerId   String
+  manager     User     @relation("AnnouncementCreator", fields: [managerId], references: [id])
+  title       String
+  description String   @db.Text
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([managerId])
+  @@index([isActive])
+  @@map("announcement")
+}
+
+// ─────────────────────────────────────────────
+// 4. DOMAIN 2: LEAD & CUSTOMER MANAGEMENT
+// ─────────────────────────────────────────────
+
+model LeadSource {
+  id        String         @id @default(uuid())
+  name      String         @unique
+  type      LeadSourceType
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  leads Lead[]
+
+  @@map("lead_source")
+}
+
+model Lead {
+  id             String  @id @default(uuid())
+  firstName      String
+  lastName       String?
+  phone          String
+  alternatePhone String?
+  email          String?
+  avatar         String?
+
+  sourceId    String?
+  source      LeadSource?      @relation(fields: [sourceId], references: [id])
+  status      LeadStatus       @default(NEW)
+  subStatus   String?          @default("PENDING")
+  temperature LeadTemperature?
+  score       Int?             @default(0)
+
+  interestedProjectId  String?
+  interestedProject    Project? @relation(fields: [interestedProjectId], references: [id])
+  interestedTowerId    String?
+  interestedTower      Tower?   @relation(fields: [interestedTowerId], references: [id])
+  interestedUnitId     String?
+  interestedUnit       Unit?    @relation(fields: [interestedUnitId], references: [id])
+  brokerId             String?
+  broker               Broker?  @relation(fields: [brokerId], references: [id])
+  budget               Decimal?
+  preferredConfig      String?
+  preferredLocation    String?
+  requirements         String?
+  customerSummary      String?  @db.Text
+  aiNextStepSuggestion String?  @db.Text
+
+  assignedUserId String?
+  assignedUser   User?   @relation("AssignedUser", fields: [assignedUserId], references: [id])
+  createdById    String?
+  createdBy      User?   @relation("CreatedBy", fields: [createdById], references: [id])
+
+  lastContactDate  DateTime?
+  nextFollowUpDate DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  assignmentHistory     LeadAssignmentHistory[]
+  followUps             FollowUp[]
+  callRecords           CallRecord[]
+  whatsappConversations WhatsAppConversation[]
+  siteVisits            SiteVisit[]
+  negotiations          Negotiation[]
+  notes                 Note[]                  @relation("LeadNotes")
+  activities            ActivityTimeline[]      @relation("LeadActivities")
+  customer              Customer?
+
+  @@index([status])
+  @@index([temperature])
+  @@index([assignedUserId])
+  @@index([sourceId])
+  @@index([interestedProjectId])
+  @@index([interestedTowerId])
+  @@index([interestedUnitId])
+  @@index([brokerId])
+  @@index([nextFollowUpDate])
+  @@index([createdAt])
+  @@index([phone])
+  @@map("lead")
+}
+
+model LeadAssignmentHistory {
+  id           String   @id @default(uuid())
+  leadId       String
+  lead         Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  fromUserId   String?
+  fromUser     User?    @relation("AssignmentFrom", fields: [fromUserId], references: [id])
+  toUserId     String
+  toUser       User     @relation("AssignmentTo", fields: [toUserId], references: [id])
+  reason       String?
+  assignedById String?
+  assignedBy   User?    @relation("AssignedByUser", fields: [assignedById], references: [id])
+  assignedAt   DateTime @default(now())
+
+  @@index([leadId])
+  @@index([toUserId])
+  @@index([assignedAt])
+  @@map("lead_assignment_history")
+}
+
+model LeadDistributionRule {
+  id              String             @id @default(uuid())
+  name            String
+  method          DistributionMethod
+  projectId       String?
+  project         Project?           @relation(fields: [projectId], references: [id])
+  departmentId    String?
+  department      Department?        @relation(fields: [departmentId], references: [id])
+  maxLeadsPerUser Int?
+  isActive        Boolean            @default(true)
+  roundRobinIndex Int                @default(0)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@map("lead_distribution_rule")
+}
+
+// ─────────────────────────────────────────────
+// 5. DOMAIN 3: ACTIVITY & COMMUNICATION
+// ─────────────────────────────────────────────
+
+model CallRecord {
+  id       String  @id @default(uuid())
+  leadId   String?
+  lead     Lead?   @relation(fields: [leadId], references: [id])
+  brokerId String?
+  broker   Broker? @relation(fields: [brokerId], references: [id])
+  userId   String
+  user     User    @relation(fields: [userId], references: [id])
+
+  phoneNumber String
+  direction   CallDirection
+  status      CallStatus
+  duration    Int?
+  startedAt   DateTime
+  endedAt     DateTime?
+
+  recordingUrl    String?
+  recordingSize   Int?
+  aiTranscript    String? @db.Text
+  aiSummary       String? @db.Text
+  aiSentiment     String?
+  aiExtractedData Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+  @@index([brokerId])
+  @@index([userId])
+  @@index([startedAt])
+  @@index([direction])
+  @@map("call_record")
+}
+
+model WhatsAppBusinessAccount {
+  id            String   @id @default(uuid())
+  businessName  String
+  phoneNumberId String   @unique
+  displayPhone  String
+  wabaId        String   @unique
+  accessToken   String
+  webhookSecret String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  templates     WhatsAppTemplate[]
+  conversations WhatsAppConversation[]
+
+  @@map("whatsapp_business_account")
+}
+
+model WhatsAppTemplate {
+  id            String                  @id @default(uuid())
+  accountId     String
+  account       WhatsAppBusinessAccount @relation(fields: [accountId], references: [id])
+  name          String
+  language      String                  @default("en")
+  // category      WhatsAppTemplateCategory
+  status        String                  @default("PENDING")
+  headerText    String?
+  bodyText      String
+  footerText    String?
+  buttons       Json?
+  exampleValues Json?
+  isActive      Boolean                 @default(true)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  messages WhatsAppMessage[]
+
+  @@unique([accountId, name, language])
+  @@map("whatsapp_template")
+}
+
+model WhatsAppConversation {
+  id           String                  @id @default(uuid())
+  accountId    String
+  account      WhatsAppBusinessAccount @relation(fields: [accountId], references: [id])
+  contactPhone String
+  contactName  String?
+
+  leadId     String?
+  lead       Lead?     @relation(fields: [leadId], references: [id])
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  brokerId   String?
+  broker     Broker?   @relation(fields: [brokerId], references: [id])
+
+  agentUserId String?
+  agent       User?   @relation("ConversationAgent", fields: [agentUserId], references: [id])
+
+  lastMessageAt DateTime?
+  unreadCount   Int       @default(0)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  messages WhatsAppMessage[]
+
+  @@index([leadId])
+  @@index([customerId])
+  @@index([brokerId])
+  @@index([contactPhone])
+  @@index([lastMessageAt])
+  @@map("whatsapp_conversation")
+}
+
+model WhatsAppMessage {
+  id             String               @id @default(uuid())
+  conversationId String
+  conversation   WhatsAppConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  waMessageId String?                  @unique
+  direction   WhatsAppMessageDirection
+  type        WhatsAppMessageType
+  status      WhatsAppMessageStatus
+
+  body    String? @db.Text
+  caption String?
+
+  templateId     String?
+  template       WhatsAppTemplate? @relation(fields: [templateId], references: [id])
+  templateValues Json?
+
+  mediaUrl  String?
+  mediaType String?
+  mediaSize Int?
+  fileName  String?
+
+  sentAt        DateTime?
+  deliveredAt   DateTime?
+  readAt        DateTime?
+  failedAt      DateTime?
+  failureReason String?
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+  @@index([waMessageId])
+  @@index([direction])
+  @@index([status])
+  @@index([createdAt])
+  @@map("whatsapp_message")
+}
+
+model FollowUp {
+  id         String    @id @default(uuid())
+  leadId     String?
+  lead       Lead?     @relation(fields: [leadId], references: [id])
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  brokerId   String?
+  broker     Broker?   @relation(fields: [brokerId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  scheduledDate    DateTime
+  scheduledTime    DateTime?
+  status           FollowUpStatus @default(SCHEDULED)
+  type             String?
+  remarks          String?        @db.Text
+  completedAt      DateTime?
+  completedRemarks String?        @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([leadId])
+  @@index([customerId])
+  @@index([brokerId])
+  @@index([userId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@map("follow_up")
+}
+
+model Note {
+  id         String    @id @default(uuid())
+  leadId     String?
+  lead       Lead?     @relation("LeadNotes", fields: [leadId], references: [id])
+  customerId String?
+  customer   Customer? @relation("CustomerNotes", fields: [customerId], references: [id])
+  brokerId   String?
+  broker     Broker?   @relation("BrokerNotes", fields: [brokerId], references: [id])
+  bookingId  String?
+  booking    Booking?  @relation("BookingNotes", fields: [bookingId], references: [id])
+
+  content            String      @db.Text
+  noteType           String? // e.g. 'NEGOTIATION', 'GENERAL'
+  isPinned           Boolean     @default(false)
+  statusAtTimeOfNote LeadStatus?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([leadId])
+  @@index([customerId])
+  @@index([brokerId])
+  @@index([bookingId])
+  @@index([userId])
+  @@map("note")
+}
+
+model Task {
+  id          String       @id @default(uuid())
+  title       String
+  description String?      @db.Text
+  type        String?
+  priority    TaskPriority @default(MEDIUM)
+  status      TaskStatus   @default(PENDING)
+  dueDate     DateTime?
+  completedAt DateTime?
+
+  assignedToId String
+  assignedTo   User   @relation("AssignedTo", fields: [assignedToId], references: [id])
+  createdById  String
+  createdBy    User   @relation("TaskCreator", fields: [createdById], references: [id])
+
+  leadId     String?
+  customerId String?
+  bookingId  String?
+
+  isAutoGenerated Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assignedToId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([priority])
+  @@map("task")
+}
+
+model Notification {
+  id         String           @id @default(uuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       NotificationType
+  title      String
+  body       String?
+  isRead     Boolean          @default(false)
+  readAt     DateTime?
+  entityType String?
+  entityId   String?
+  actionUrl  String?
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notification")
+}
+
+model ActivityTimeline {
+  id         String    @id @default(uuid())
+  leadId     String?
+  lead       Lead?     @relation("LeadActivities", fields: [leadId], references: [id])
+  customerId String?
+  customer   Customer? @relation("CustomerActivities", fields: [customerId], references: [id])
+  brokerId   String?
+  broker     Broker?   @relation("BrokerActivities", fields: [brokerId], references: [id])
+
+  type        ActivityType
+  title       String
+  description String?      @db.Text
+  metadata    Json?
+  userId      String?
+
+  createdAt DateTime @default(now())
+
+  @@index([leadId, createdAt])
+  @@index([customerId, createdAt])
+  @@index([brokerId, createdAt])
+  @@index([type])
+  @@map("activity_timeline")
+}
+
+// NOTE: Announcement and Reminder models removed.
+// Announcements → Notification with type: ANNOUNCEMENT
+// Reminders → Auto-generated from FollowUp/SiteVisit/PaymentSchedule dates
+
+// ─────────────────────────────────────────────
+// 6. DOMAIN 4: PROJECT & INVENTORY
+// ─────────────────────────────────────────────
+
+model Builder {
+  id            String   @id @default(uuid())
+  name          String
+  companyName   String?
+  reraNumber    String?
+  contactPerson String?
+  phone         String?
+  email         String?
+  address       String?  @db.Text
+  website       String?
+  logoUrl       String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  projects Project[]
+
+  @@map("builder")
+}
+
+model Project {
+  id                 String              @id @default(uuid())
+  name               String
+  slug               String?             @unique
+  isCpProject        Boolean             @default(false)
+  builderId          String
+  builder            Builder             @relation(fields: [builderId], references: [id])
+  type               ProjectType
+  status             ProjectStatus       @default(UPCOMING)
+  constructionStatus ConstructionStatus?
+  possessionTimeline Json?
+  reraNumber         String?
+  description        String?             @db.Text
+
+  address       String? @db.Text
+  city          String?
+  state         String?
+  pincode       String?
+  latitude      Float?
+  longitude     Float?
+  googleMapsUrl String?
+
+  amenities   String[]
+  totalTowers Int?
+  totalUnits  Int?
+  totalFloors Int?
+
+  thumbnailUrl String?
+  brochureUrl  String?
+  isVisible    Boolean @default(true)
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  towers               Tower[]
+  priceSheets          PriceSheet[]
+  floorPlans           FloorPlan[]
+  paymentPlanTemplates PaymentPlanTemplate[]
+  offers               Offer[]
+  constructionUpdates  ConstructionUpdate[]
+  projectDocuments     ProjectDocument[]
+  projectAssignments   ProjectAssignment[]
+  leads                Lead[]
+  siteVisits           SiteVisit[]
+  distributionRules    LeadDistributionRule[]
+  brokerAssignments    BrokerProjectAssignment[]
+  inboundCommissions   InboundCommission[]
+
+  @@index([builderId])
+  @@index([status])
+  @@index([type])
+  @@index([city])
+  @@map("project")
+}
+
+model Tower {
+  id                 String              @id @default(uuid())
+  projectId          String
+  project            Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name               String
+  totalFloors        Int?
+  totalUnits         Int?
+  constructionStatus ConstructionStatus?
+  possessionTimeline Json?
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  floors           Floor[]
+  projectDocuments ProjectDocument[]
+  towerAssignments TowerAssignment[]
+  leads            Lead[]
+
+  @@index([projectId])
+  @@map("tower")
+}
+
+model TowerAssignment {
+  id      String @id @default(uuid())
+  towerId String
+  tower   Tower  @relation(fields: [towerId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([towerId, userId])
+  @@index([towerId])
+  @@index([userId])
+  @@map("tower_assignment")
+}
+
+model Floor {
+  id          String   @id @default(uuid())
+  towerId     String
+  tower       Tower    @relation(fields: [towerId], references: [id], onDelete: Cascade)
+  floorNumber Int
+  name        String?
+  totalUnits  Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  units Unit[]
+
+  @@unique([towerId, floorNumber])
+  @@index([towerId])
+  @@map("floor")
+}
+
+model Unit {
+  id                   String              @id @default(uuid())
+  floorId              String
+  floor                Floor               @relation(fields: [floorId], references: [id], onDelete: Cascade)
+  unitNumber           String
+  type                 UnitType
+  status               UnitStatus          @default(AVAILABLE)
+  carpetArea           Decimal?
+  builtUpArea          Decimal?
+  superBuiltUpArea     Decimal?
+  basePrice            Decimal?
+  pricePerSqFt         Decimal?
+  totalPrice           Decimal?
+  commissionPercentage Decimal?
+  commissionAmount     Decimal?
+  facing               String?
+  balconies            Int?                @default(0)
+  parkingIncluded      Boolean             @default(false)
+  floorPlanUrl         String?
+  remarks              String?
+  constructionStatus   ConstructionStatus?
+  possessionTimeline   Json?
+
+  blockedAt     DateTime?
+  blockedById   String?
+  blockedBy     User?     @relation("UnitBlockedBy", fields: [blockedById], references: [id])
+  reservedAt    DateTime?
+  reservedForId String?
+  reservedFor   User?     @relation("UnitReservedFor", fields: [reservedForId], references: [id])
+  soldAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  negotiations       Negotiation[]
+  bookings           Booking[]
+  unitHistory        UnitStatusHistory[]
+  leads              Lead[]
+  inboundCommissions InboundCommission[]
+
+  @@unique([floorId, unitNumber])
+  @@index([floorId])
+  @@index([status])
+  @@index([type])
+  @@map("unit")
+}
+
+model UnitStatusHistory {
+  id          String     @id @default(uuid())
+  unitId      String
+  unit        Unit       @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  fromStatus  UnitStatus
+  toStatus    UnitStatus
+  changedById String
+  reason      String?
+  changedAt   DateTime   @default(now())
+
+  @@index([unitId])
+  @@index([changedAt])
+  @@map("unit_status_history")
+}
+
+model PriceSheet {
+  id            String    @id @default(uuid())
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version       String
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  priceData     Json
+  documentUrl   String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([projectId])
+  @@index([isActive])
+  @@map("price_sheet")
+}
+
+model FloorPlan {
+  id        String    @id @default(uuid())
+  projectId String
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unitType  UnitType?
+  title     String
+  fileUrl   String
+  fileType  String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([projectId])
+  @@map("floor_plan")
+}
+
+model PaymentPlanTemplate {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  milestones PaymentPlanMilestone[]
+
+  @@index([projectId])
+  @@map("payment_plan_template")
+}
+
+model PaymentPlanMilestone {
+  id             String              @id @default(uuid())
+  templateId     String
+  template       PaymentPlanTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  name           String
+  percentage     Decimal
+  dueDescription String?
+  sequenceOrder  Int
+  createdAt      DateTime            @default(now())
+
+  @@index([templateId])
+  @@map("payment_plan_milestone")
+}
+
+model Offer {
+  id            String   @id @default(uuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?  @db.Text
+  discountType  String?
+  discountValue Decimal?
+  validFrom     DateTime
+  validTo       DateTime
+  terms         String?  @db.Text
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([validFrom, validTo])
+  @@map("offer")
+}
+
+model ConstructionUpdate {
+  id              String   @id @default(uuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?  @db.Text
+  stage           String?
+  progressPercent Int?
+  imageUrls       String[]
+  updatedById     String
+  updatedBy       User     @relation(fields: [updatedById], references: [id])
+  publishedAt     DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([projectId])
+  @@index([publishedAt])
+  @@map("construction_update")
+}
+
+model ProjectDocument {
+  id        String   @id @default(uuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  towerId   String?
+  tower     Tower?   @relation(fields: [towerId], references: [id], onDelete: Cascade)
+  title     String
+  category  String
+  fileUrl   String
+  fileType  String?
+  fileSize  Int?
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([towerId])
+  @@index([category])
+  @@map("project_document")
+}
+
+model ProjectAssignment {
+  id         String   @id @default(uuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       String?
+  assignedAt DateTime @default(now())
+  isActive   Boolean  @default(true)
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+  @@map("project_assignment")
+}
+
+// ─────────────────────────────────────────────
+// 7. DOMAIN 5: SITE VISIT & SALES PIPELINE
+// ─────────────────────────────────────────────
+
+model SiteVisit {
+  id          String  @id @default(uuid())
+  leadId      String
+  lead        Lead    @relation(fields: [leadId], references: [id])
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id])
+  salesExecId String
+  salesExec   User    @relation("SalesExec", fields: [salesExecId], references: [id])
+  createdById String
+  createdBy   User    @relation("SiteVisitCreator", fields: [createdById], references: [id])
+
+  scheduledDate      DateTime
+  scheduledTime      DateTime?
+  actualDate         DateTime?
+  arrivedAt          DateTime?
+  arriveLatitude     Float?
+  arriveLongitude    Float?
+  arriveNotifSentAt  DateTime?
+  destinationUrl     String?
+  status             SiteVisitStatus        @default(ASSIGNED)
+  interestLevel      CustomerInterestLevel?
+  meetingNotes       String?                @db.Text
+  budgetConfirmed    Decimal?
+  configInterest     String?
+  customerReaction   String?
+  customerObjections String?                @db.Text
+  closingProbability String?
+  completedAt        DateTime?
+  nextAction         String?
+  nextFollowUpDate   DateTime?
+  cancelReason       String?
+  rescheduledFrom    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  verification SiteVisitVerification?
+
+  @@index([leadId])
+  @@index([projectId])
+  @@index([salesExecId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@map("site_visit")
+}
+
+model SiteVisitVerification {
+  id                  String    @id @default(uuid())
+  siteVisitId         String    @unique
+  siteVisit           SiteVisit @relation(fields: [siteVisitId], references: [id], onDelete: Cascade)
+  latitude            Float
+  longitude           Float
+  locationAccuracy    Float?
+  locationAddress     String?
+  siteVisitSelfieUrl  String
+  customerSelfieUrl   String?
+  additionalPhotoUrls String[]
+  gpsTrackingData     Json?
+  verifiedAt          DateTime  @default(now())
+
+  @@map("site_visit_verification")
+}
+
+model Negotiation {
+  id          String  @id @default(uuid())
+  leadId      String
+  lead        Lead    @relation(fields: [leadId], references: [id])
+  unitId      String?
+  unit        Unit?   @relation(fields: [unitId], references: [id])
+  salesExecId String
+  salesExec   User    @relation(fields: [salesExecId], references: [id])
+
+  askingPrice       Decimal?
+  offeredPrice      Decimal?
+  counterPrice      Decimal?
+  finalPrice        Decimal?
+  discountRequested Decimal?
+  discountType      String?
+  discountApproved  Decimal?
+
+  customerObjections String? @db.Text
+  managerSuggestion  String? @db.Text
+  negotiationNotes   String? @db.Text
+  nextActionPlan     String? @db.Text
+
+  status          NegotiationStatus @default(OPEN)
+  approvedById    String?
+  approvalRemarks String?
+  approvedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
+
+  @@index([leadId])
+  @@index([unitId])
+  @@index([salesExecId])
+  @@index([status])
+  @@map("negotiation")
+}
+
+// NOTE: BookingRequest model removed.
+// Sales Exec creates Booking directly. Discounts go through FinancialApproval.
+
+// ─────────────────────────────────────────────
+// 8. DOMAIN 6: BOOKING & POST-SALES
+// ─────────────────────────────────────────────
+
+model Customer {
+  id               String    @id @default(uuid())
+  leadId           String    @unique
+  lead             Lead      @relation(fields: [leadId], references: [id])
+  firstName        String
+  lastName         String?
+  phone            String
+  alternatePhone   String?
+  email            String?
+  aadhaarNumber    String?
+  panNumber        String?
+  dateOfBirth      DateTime?
+  currentAddress   String?   @db.Text
+  permanentAddress String?   @db.Text
+  city             String?
+  state            String?
+  pincode          String?
+  occupation       String?
+  companyName      String?
+  annualIncome     Decimal?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  bookings              Booking[]
+  documents             CustomerDocument[]
+  followUps             FollowUp[]
+  notes                 Note[]                 @relation("CustomerNotes")
+  activities            ActivityTimeline[]     @relation("CustomerActivities")
+  whatsappConversations WhatsAppConversation[]
+
+  @@index([phone])
+  @@index([leadId])
+  @@map("customer")
+}
+
+model Booking {
+  id                  String        @id @default(uuid())
+  bookingNumber       String        @unique
+  customerId          String
+  customer            Customer      @relation(fields: [customerId], references: [id])
+  unitId              String
+  unit                Unit          @relation(fields: [unitId], references: [id])
+  source              BookingSource
+  salesExecId         String?
+  salesExec           User?         @relation("BookingSalesExec", fields: [salesExecId], references: [id])
+  closingManagerId    String?
+  closingManager      User?         @relation("BookingClosingManager", fields: [closingManagerId], references: [id])
+  assignedPostSalesId String?
+  assignedPostSales   User?         @relation("BookingPostSales", fields: [assignedPostSalesId], references: [id])
+  negotiationId       String?
+  negotiation         Negotiation?  @relation(fields: [negotiationId], references: [id])
+
+  agreedPrice          Decimal
+  tokenAmount          Decimal?
+  discountAmount       Decimal?
+  gstAmount            Decimal?
+  stampDutyAmount      Decimal?
+  registrationAmount   Decimal?
+  totalPayable         Decimal
+  commissionPercentage Decimal?
+  commissionAmount     Decimal?
+
+  status         BookingStatus @default(CONFIRMED)
+  bookingDate    DateTime      @default(now())
+  agreementDate  DateTime?
+  possessionDate DateTime?
+  cancelledAt    DateTime?
+  cancelReason   String?
+  refundAmount   Decimal?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  documents          CustomerDocument[]
+  paymentSchedules   PaymentSchedule[]
+  loanCase           LoanCase?
+  agreement          Agreement?
+  possession         PossessionHandover?
+  brokerageRecords   BrokerageRecord[]
+  collectionRecords  CollectionRecord[]
+  notes              Note[]              @relation("BookingNotes")
+  inboundCommissions InboundCommission[]
+
+  invoices         Invoice[]
+  approvalRequests ApprovalRequest[]
+
+  @@index([customerId])
+  @@index([unitId])
+  @@index([status])
+  @@index([bookingDate])
+  @@index([source])
+  @@map("booking")
+}
+
+model CustomerDocument {
+  id                 String                     @id @default(uuid())
+  customerId         String
+  customer           Customer                   @relation(fields: [customerId], references: [id])
+  bookingId          String?
+  booking            Booking?                   @relation(fields: [bookingId], references: [id])
+  type               DocumentType
+  title              String
+  description        String?                    @db.Text
+  fileUrl            String
+  fileType           String?
+  fileSize           Int?
+  verificationStatus DocumentVerificationStatus @default(PENDING)
+  verifiedById       String?
+  verifiedBy         User?                      @relation(fields: [verifiedById], references: [id])
+  verifiedAt         DateTime?
+  rejectionReason    String?
+  expiryDate         DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([bookingId])
+  @@index([type])
+  @@index([verificationStatus])
+  @@map("customer_document")
+}
+
+model PaymentSchedule {
+  id              String        @id @default(uuid())
+  bookingId       String
+  booking         Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  milestoneName   String
+  sequenceOrder   Int
+  amount          Decimal
+  dueDate         DateTime
+  status          PaymentStatus @default(PENDING)
+  paidAmount      Decimal       @default(0)
+  remainingAmount Decimal
+  lastPaymentDate DateTime?
+  overdueBy       Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions PaymentTransaction[]
+
+  @@index([bookingId])
+  @@index([dueDate])
+  @@index([status])
+  @@map("payment_schedule")
+}
+
+model PaymentTransaction {
+  id                String          @id @default(uuid())
+  paymentScheduleId String
+  paymentSchedule   PaymentSchedule @relation(fields: [paymentScheduleId], references: [id], onDelete: Cascade)
+  amount            Decimal
+  paymentMode       PaymentMode
+  paymentDate       DateTime
+  referenceNumber   String?
+  receiptNumber     String?         @unique
+  receiptUrl        String?
+  bankName          String?
+  bankBranch        String?
+  remarks           String?
+  recordedById      String
+  recordedBy        User            @relation(fields: [recordedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([paymentScheduleId])
+  @@index([paymentDate])
+  @@map("payment_transaction")
+}
+
+model LoanCase {
+  id                    String     @id @default(uuid())
+  bookingId             String     @unique
+  booking               Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  loanApplicationNumber String?
+  dsaName               String?
+  dsaContact            String?
+  bankName              String?
+  bankBranch            String?
+  bankContactPerson     String?
+  bankContactPhone      String?
+  loanAmount            Decimal?
+  approvedAmount        Decimal?
+  interestRate          Decimal?
+  tenure                Int?
+  emiAmount             Decimal?
+  status                LoanStatus @default(NOT_APPLIED)
+  applicationDate       DateTime?
+  approvalDate          DateTime?
+  disbursementDate      DateTime?
+  rejectionDate         DateTime?
+  rejectionReason       String?
+  loanDocumentUrls      String[]
+  sanctionLetterUrl     String?
+  pendingActions        String?    @db.Text
+  internalNotes         String?    @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("loan_case")
+}
+
+model Agreement {
+  id                 String          @id @default(uuid())
+  bookingId          String          @unique
+  booking            Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  status             AgreementStatus @default(NOT_STARTED)
+  agreementNumber    String?
+  subRegistrarOffice String?
+  appointmentTime    DateTime?
+  draftDate          DateTime?
+  stampDutyDate      DateTime?
+  registrationDate   DateTime?
+  completionDate     DateTime?
+  stampDutyAmount    Decimal?
+  registrationFee    Decimal?
+  stampDutyPaid      Boolean         @default(false)
+  registrationDone   Boolean         @default(false)
+  draftDocumentUrl   String?
+  finalDocumentUrl   String?
+  lawyerName         String?
+  lawyerContact      String?
+  remarks            String?         @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("agreement")
+}
+
+model PossessionHandover {
+  id                     String           @id @default(uuid())
+  bookingId              String           @unique
+  booking                Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  status                 PossessionStatus @default(NOT_READY)
+  expectedDate           DateTime?
+  scheduledDate          DateTime?
+  actualDate             DateTime?
+  handoverNotes          String?          @db.Text
+  electricityMeterNumber String?
+  waterMeterNumber       String?
+  parkingSlotNumber      String?
+  snagList               Json?
+  snagResolved           Boolean          @default(false)
+  occupancyCertUrl       String?
+  completionCertUrl      String?
+  handoverDocUrl         String?
+  keysHandedOver         Boolean          @default(false)
+  keyHandoverDate        DateTime?
+  handoverById           String?
+  handoverBy             User?            @relation(fields: [handoverById], references: [id])
+  customerFeedback       String?          @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("possession_handover")
+}
+
+// ─────────────────────────────────────────────
+// 9. DOMAIN 7: CHANNEL PARTNER & BROKERAGE
+// ─────────────────────────────────────────────
+
+model Broker {
+  id                String       @id @default(uuid())
+  brokerCode        String       @unique
+  name              String
+  companyName       String?
+  phone             String
+  alternatePhone    String?
+  email             String?
+  reraNumber        String?
+  reraState         String?
+  gstNumber         String?
+  address           String?      @db.Text
+  city              String?
+  state             String?
+  pincode           String?
+  serviceAreas      String[]
+  status            BrokerStatus @default(NEW)
+  subStatus         String?      @default("PENDING")
+  sourcingManagerId String?
+  sourcingManager   User?        @relation("SourcingManager", fields: [sourcingManagerId], references: [id])
+  profilePhotoUrl   String?
+  experience        Int?
+  specialization    String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  documents             BrokerDocument[]
+  projectAssignments    BrokerProjectAssignment[]
+  meetings              BrokerMeeting[]
+  referrals             BrokerReferral[]
+  brokerageRecords      BrokerageRecord[]
+  callRecords           CallRecord[]
+  followUps             FollowUp[]
+  notes                 Note[]                    @relation("BrokerNotes")
+  activities            ActivityTimeline[]        @relation("BrokerActivities")
+  whatsappConversations WhatsAppConversation[]
+  leads                 Lead[]
+
+  invoices Invoice[]
+
+  @@index([sourcingManagerId])
+  @@index([status])
+  @@index([city])
+  @@map("broker")
+}
+
+model BrokerDocument {
+  id         String    @id @default(uuid())
+  brokerId   String
+  broker     Broker    @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  title      String
+  type       String
+  fileUrl    String
+  fileType   String?
+  isVerified Boolean   @default(false)
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([brokerId])
+  @@map("broker_document")
+}
+
+model BrokerProjectAssignment {
+  id               String   @id @default(uuid())
+  brokerId         String
+  broker           Broker   @relation(fields: [brokerId], references: [id], onDelete: Cascade)
+  projectId        String
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  towerId          String?
+  isLocked         Boolean  @default(false)
+  dealDocuments    String[]
+  brokeragePercent Decimal?
+  brokerageFlat    Decimal?
+  closingManagerId String?
+  assignedAt       DateTime @default(now())
+  isActive         Boolean  @default(true)
+
+  @@unique([brokerId, projectId])
+  @@index([brokerId])
+  @@index([projectId])
+  @@map("broker_project_assignment")
+}
+
+model BrokerMeeting {
+  id                String    @id @default(uuid())
+  brokerId          String
+  broker            Broker    @relation(fields: [brokerId], references: [id])
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  scheduledDate     DateTime
+  actualDate        DateTime?
+  meetingNotes      String?   @db.Text
+  brokerInterest    String?
+  projectsDiscussed String[]
+  latitude          Float?
+  longitude         Float?
+  arriveLatitude    Float?
+  arriveLongitude   Float?
+  arrivedAt         DateTime?
+  destinationUrl    String?
+  selfieUrl         String?
+  status            String    @default("SCHEDULED")
+  nextMeetingDate   DateTime?
+  nextFollowUpDate  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brokerId])
+  @@index([userId])
+  @@index([scheduledDate])
+  @@map("broker_meeting")
+}
+
+// ─────────────────────────────────────────────
+// NEW: TICKET-BASED APPROVAL SYSTEM
+// ─────────────────────────────────────────────
+
+model ApprovalRequest {
+  id          String                @id @default(uuid())
+  salesExecId String
+  salesExec   User                  @relation("ApprovalRequestExec", fields: [salesExecId], references: [id])
+  managerId   String
+  manager     User                  @relation("ApprovalRequestManager", fields: [managerId], references: [id])
+  status      ApprovalRequestStatus @default(REQUESTED)
+  type        ApprovalType          @default(DISCOUNT)
+  redoCount   Int                   @default(0)
+  bookingId   String?
+  booking     Booking?              @relation(fields: [bookingId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages ApprovalMessage[] @relation("RequestMessages")
+
+  @@index([salesExecId])
+  @@index([managerId])
+  @@index([status])
+  @@index([bookingId])
+  @@map("approval_request")
+}
+
+model ApprovalMessage {
+  id        String          @id @default(uuid())
+  requestId String
+  request   ApprovalRequest @relation("RequestMessages", fields: [requestId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User            @relation("ApprovalMessageSender", fields: [senderId], references: [id])
+
+  title       String
+  description String  @db.Text
+  fileUrl     String? // URL for the uploaded file/blob
+  metadata    Json? // Structured data for rich payloads (e.g. { documents: {name, url}[] })
+
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+  @@index([senderId])
+  @@map("approval_message")
+}
+
+model BrokerReferral {
+  id                String    @id @default(uuid())
+  brokerId          String
+  broker            Broker    @relation(fields: [brokerId], references: [id])
+  leadId            String?   @unique
+  customerName      String
+  customerPhone     String
+  customerEmail     String?
+  interestedProject String?
+  closingManagerId  String?
+  closingManager    User?     @relation("ReferralClosingManager", fields: [closingManagerId], references: [id])
+  status            String    @default("REFERRED")
+  bookingId         String?   @unique
+  referredAt        DateTime  @default(now())
+  contactedAt       DateTime?
+  bookedAt          DateTime?
+  remarks           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([brokerId])
+  @@index([closingManagerId])
+  @@index([status])
+  @@map("broker_referral")
+}
+
+model BrokerageRecord {
+  id               String          @id @default(uuid())
+  brokerId         String
+  broker           Broker          @relation(fields: [brokerId], references: [id])
+  bookingId        String
+  booking          Booking         @relation(fields: [bookingId], references: [id])
+  bookingValue     Decimal
+  brokeragePercent Decimal?
+  brokerageAmount  Decimal
+  gstOnBrokerage   Decimal?
+  tdsDeducted      Decimal?
+  netPayable       Decimal
+  status           BrokerageStatus @default(PENDING)
+  approvedById     String?
+  approvedBy       User?           @relation("BrokerageRecordApprover", fields: [approvedById], references: [id])
+  approvedAt       DateTime?
+  paidAmount       Decimal         @default(0)
+  paidAt           DateTime?
+  paymentReference String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  settlement BrokerageSettlement?
+
+  @@index([brokerId])
+  @@index([bookingId])
+  @@index([status])
+  @@map("brokerage_record")
+}
+
+// ─────────────────────────────────────────────
+// 10. DOMAIN 8: ACCOUNTS & COLLECTIONS
+// ─────────────────────────────────────────────
+
+model CollectionRecord {
+  id                   String        @id @default(uuid())
+  bookingId            String
+  booking              Booking       @relation(fields: [bookingId], references: [id])
+  totalPayable         Decimal
+  totalCollected       Decimal       @default(0)
+  outstanding          Decimal
+  status               PaymentStatus @default(PENDING)
+  lastCollectionDate   DateTime?
+  lastCollectionAmount Decimal?
+  overdueDays          Int?          @default(0)
+  overdueAmount        Decimal?      @default(0)
+  isOverdue            Boolean       @default(false)
+  nextFollowUpDate     DateTime?
+  collectionRemarks    String?       @db.Text
+  assignedToId         String?
+  assignedTo           User?         @relation("CollectionAssignedTo", fields: [assignedToId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([bookingId])
+  @@index([status])
+  @@index([isOverdue])
+  @@index([assignedToId])
+  @@map("collection_record")
+}
+
+model BrokerageSettlement {
+  id                String          @id @default(uuid())
+  brokerageRecordId String          @unique
+  brokerageRecord   BrokerageRecord @relation(fields: [brokerageRecordId], references: [id])
+  settlementAmount  Decimal
+  paymentMode       PaymentMode
+  paymentDate       DateTime?
+  paymentReference  String?
+  bankName          String?
+  accountNumber     String?
+  ifscCode          String?
+  accountHolderName String?
+  invoiceNumber     String?
+  invoiceUrl        String?
+  tdsAmount         Decimal?
+  otherDeductions   Decimal?
+  deductionRemarks  String?
+  status            BrokerageStatus @default(PENDING)
+  approvedById      String?
+  approvedBy        User?           @relation("SettlementApprover", fields: [approvedById], references: [id])
+  approvedAt        DateTime?
+  approvalRemarks   String?
+  processedById     String?
+  processedBy       User?           @relation("SettlementProcessor", fields: [processedById], references: [id])
+  processedAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([paymentDate])
+  @@map("brokerage_settlement")
+}
+
+model Expense {
+  id               String          @id @default(uuid())
+  category         ExpenseCategory
+  title            String
+  description      String?         @db.Text
+  amount           Decimal
+  expenseDate      DateTime
+  period           String?
+  vendorName       String?
+  vendorContact    String?
+  paymentMode      PaymentMode?
+  paymentReference String?
+  isPaid           Boolean         @default(false)
+  paidAt           DateTime?
+  receiptUrl       String?
+  approvalStatus   ApprovalStatus  @default(PENDING)
+  requestedById    String
+  requestedBy      User            @relation("ExpenseRequester", fields: [requestedById], references: [id])
+  approvedById     String?
+  approvedBy       User?           @relation("ExpenseApprover", fields: [approvedById], references: [id])
+  approvedAt       DateTime?
+  rejectionReason  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([expenseDate])
+  @@index([approvalStatus])
+  @@index([requestedById])
+  @@map("expense")
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique
+  type          String
+  bookingId     String?
+  booking       Booking?      @relation(fields: [bookingId], references: [id])
+  brokerId      String?
+  broker        Broker?       @relation(fields: [brokerId], references: [id])
+  amount        Decimal
+  gstAmount     Decimal?
+  totalAmount   Decimal
+  description   String?       @db.Text
+  lineItems     Json?
+  status        InvoiceStatus @default(DRAFT)
+  invoiceDate   DateTime      @default(now())
+  dueDate       DateTime?
+  paidDate      DateTime?
+  documentUrl   String?
+  createdById   String
+  createdBy     User          @relation(fields: [createdById], references: [id])
+  remarks       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([invoiceDate])
+  @@map("invoice")
+}
+
+model FinancialApproval {
+  id                 String          @id @default(uuid())
+  type               ApprovalType
+  entityType         String
+  entityId           String
+  title              String
+  description        String?         @db.Text
+  amount             Decimal?
+  requestedById      String
+  requestedBy        User            @relation("ApprovalRequester", fields: [requestedById], references: [id])
+  requestedAt        DateTime        @default(now())
+  requestRemarks     String?         @db.Text
+  status             ApprovalStatus  @default(PENDING)
+  currentLevel       Int             @default(1)
+  level1ApproverById String?
+  level1Approver     User?           @relation("ApprovalLevel1", fields: [level1ApproverById], references: [id])
+  level1Status       ApprovalStatus?
+  level1Remarks      String?
+  level1At           DateTime?
+  level2ApproverById String?
+  level2Approver     User?           @relation("ApprovalLevel2", fields: [level2ApproverById], references: [id])
+  level2Status       ApprovalStatus?
+  level2Remarks      String?
+  level2At           DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([requestedById])
+  @@index([entityType, entityId])
+  @@map("financial_approval")
+}
+
+// ─────────────────────────────────────────────
+// 11. DOMAIN 9: DASHBOARD CACHE
+// ─────────────────────────────────────────────
+
+model DashboardCache {
+  id            String   @id @default(uuid())
+  dashboardType String
+  widgetKey     String
+  period        String
+  value         Json
+  computedAt    DateTime @default(now())
+  expiresAt     DateTime
+
+  @@unique([dashboardType, widgetKey, period])
+  @@index([dashboardType])
+  @@index([expiresAt])
+  @@map("dashboard_cache")
+}
+
+// ─────────────────────────────────────────────
+// 12. DOMAIN 10: INTERNAL COMMUNICATION
+// ─────────────────────────────────────────────
+
+model ChatRoom {
+  id           String       @id @default(uuid())
+  type         ChatRoomType
+  name         String?
+  description  String?
+  departmentId String?
+  department   Department?  @relation(fields: [departmentId], references: [id])
+  avatarUrl    String?
+  isActive     Boolean      @default(true)
+  createdById  String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  members  ChatRoomMember[]
+  messages ChatMessage[]
+
+  @@index([type])
+  @@index([departmentId])
+  @@map("chat_room")
+}
+
+model ChatRoomMember {
+  id         String    @id @default(uuid())
+  chatRoomId String
+  chatRoom   ChatRoom  @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       String    @default("MEMBER")
+  lastReadAt DateTime?
+  isMuted    Boolean   @default(false)
+  joinedAt   DateTime  @default(now())
+  leftAt     DateTime?
+
+  @@unique([chatRoomId, userId])
+  @@index([chatRoomId])
+  @@index([userId])
+  @@map("chat_room_member")
+}
+
+model ChatMessage {
+  id             String        @id @default(uuid())
+  chatRoomId     String
+  chatRoom       ChatRoom      @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User          @relation(fields: [senderId], references: [id])
+  content        String        @db.Text
+  attachmentUrl  String?
+  attachmentType String?
+  attachmentName String?
+  replyToId      String?
+  replyTo        ChatMessage?  @relation("MessageReply", fields: [replyToId], references: [id])
+  replies        ChatMessage[] @relation("MessageReply")
+  isEdited       Boolean       @default(false)
+  isDeleted      Boolean       @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([chatRoomId, createdAt])
+  @@index([senderId])
+  @@map("chat_message")
+}
+
+// ─────────────────────────────────────────────
+// 13. DOMAIN 11: POST-SALES COMMISSIONS
+// ─────────────────────────────────────────────
+
+model InboundCommission {
+  id        String   @id @default(uuid())
+  unitId    String
+  unit      Unit     @relation(fields: [unitId], references: [id])
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+  bookingId String?
+  booking   Booking? @relation(fields: [bookingId], references: [id])
+
+  commissionAmount Decimal
+  status           InboundCommissionStatus @default(PENDING)
+
+  receivedAt   DateTime?
+  receivedById String?
+  receivedBy   User?     @relation("ReceivedInboundCommissions", fields: [receivedById], references: [id])
+  remarks      String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([unitId])
+  @@index([projectId])
+  @@index([bookingId])
+  @@index([status])
+  @@map("inbound_commission")
+}
