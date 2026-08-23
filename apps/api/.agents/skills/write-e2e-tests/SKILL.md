@@ -8,7 +8,7 @@ description: "Use this skill whenever the user asks to write, update, or manage 
 Whenever you are tasked with creating or modifying End-to-End (E2E) tests in the NestJS backend, you MUST follow this strict implementation guide.
 
 ## 1. Scope & Location
-- **One E2E file per major Controller:** If you are testing the `LeadsController`, the file should be `backend/test/leads.e2e-spec.ts`.
+- **One E2E file per major Controller:** If you are testing the `LeadsController`, the file should be `apps/api/test/leads.e2e-spec.ts`.
 - **Focus on the Flow:** E2E tests are meant to test the "happy path" (e.g., login -> create lead -> fetch lead) and major "failure paths" (e.g., unauthorized access, DTO validation failure). Do not test every minor permutation; leave that to the unit tests (`*.spec.ts`).
 
 ## 2. The Test Database (CRITICAL)
@@ -109,13 +109,13 @@ When building E2E tests, rely on these existing skills for architectural standar
 - **`prisma-client-api`**: For complex querying or seeding inside tests.
 
 ## 7. Execution
-To verify the E2E tests work, run:
+To verify the E2E tests work, run from the repo root:
 ```bash
-pnpm test:e2e
+pnpm --filter @brokeros/api test:e2e
 ```
 Or for a specific file:
 ```bash
-pnpm test:e2e test/leads.e2e-spec.ts
+pnpm --filter @brokeros/api test:e2e test/leads.e2e-spec.ts
 ```
 
 ## 8. Mocking External Services

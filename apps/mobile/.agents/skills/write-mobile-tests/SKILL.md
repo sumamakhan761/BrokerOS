@@ -19,17 +19,17 @@ The mobile app has three distinct testing layers. You must choose the right tool
 
 ### Unit & Component Tests (Jest) -> Co-location
 You MUST co-locate component and unit tests directly next to the file they are testing. Do not put them in a separate folder.
-- **Source:** `mobile/components/CallButton.tsx`
-- **Test:** `mobile/components/CallButton.test.tsx`
+- **Source:** `apps/mobile/components/CallButton.tsx`
+- **Test:** `apps/mobile/components/CallButton.test.tsx`
 
 ### E2E UI Tests (Maestro) -> Centralized
 Maestro E2E tests must be kept completely separate from the source code.
-- **Location:** `mobile/e2e/`
-- **Example:** `mobile/e2e/login-flow.yaml`
+- **Location:** `apps/mobile/e2e/`
+- **Example:** `apps/mobile/e2e/login-flow.yaml`
 
 ### Native Module Tests (JUnit) -> Native Structure
 Native Android tests must live inside the standard Android `src/test/java` or `src/androidTest/java` directories within the module.
-- **Location:** `mobile/modules/auto-dialer/android/src/test/java/expo/modules/autodialer/AutoDialerTest.kt`
+- **Location:** `apps/mobile/modules/auto-dialer/android/src/test/java/expo/modules/autodialer/AutoDialerTest.kt`
 
 ## 3. Mocking Expo APIs in Jest
 
@@ -59,7 +59,7 @@ jest.mock('expo-router', () => ({
 ## 4. Writing Maestro E2E Flows
 
 Maestro E2E flows are written in YAML. They run against the compiled `.apk` on an emulator. Do not write JS/TS for Maestro.
-Example `mobile/e2e/login-flow.yaml`:
+Example `apps/mobile/e2e/login-flow.yaml`:
 docs/role-password.md file has all passwords & users. use it.
 
 ```yaml
@@ -76,11 +76,11 @@ appId: com.brokeros.mobile
 
 ## 5. Execution
 
-- **Run Unit Tests:**
+- **Run Unit Tests (from repo root):**
   ```bash
-  npm run test
+  pnpm --filter @brokeros/mobile test
   ```
 - **Run Maestro E2E Tests (Requires Android Emulator running):**
   ```bash
-  maestro test e2e/login-flow.yaml
+  maestro test apps/mobile/e2e/login-flow.yaml
   ```
