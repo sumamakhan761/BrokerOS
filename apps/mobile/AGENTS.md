@@ -1,11 +1,11 @@
-# AGENTS.md — mobile/.
+# AGENTS.md — apps/mobile/
 
 ---
 
 ## Directory Structure
 
 ```
-mobile/
+apps/mobile/
   app/
     _layout.tsx        ← Root layout (expo-router entry, font loading, auth redirect)
     admin.tsx          ← Admin-specific entry
@@ -87,7 +87,7 @@ You **MUST** consult the appropriate skill before making changes, based on the t
 
 ## Scripts
 
-Run from `mobile/`:
+Run from `apps/mobile/` directory (or use `pnpm --filter @brokeros/mobile <cmd>` from root):
 
 ```bash
 npx expo start           # Expo dev server (Metro bundler)

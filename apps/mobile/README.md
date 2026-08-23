@@ -20,7 +20,7 @@ The mobile app is built with Expo 54 and Expo Router 6, targeting **Android only
 ## Directory Structure
 
 ```
-mobile/
+apps/mobile/
 ├── app/
 │   ├── _layout.tsx               Root layout (font loading, auth redirect)
 │   ├── admin.tsx                  Admin entry screen
@@ -89,16 +89,19 @@ The auto-dialer is a **custom native Android module** that enables pre-sales exe
 
 ### 1. Installation
 
+This project is part of a pnpm monorepo. Install dependencies from the root directory:
+
 ```bash
-cd mobile
+cd ../../  # Go to BrokerOS root
 pnpm install
 ```
 *(Note: Do not `npm install` the `auto-dialer` module separately; it is linked locally).*
 
 ### 2. Environment Setup
 
-You must configure your `mobile/.env` file properly before starting the Expo server.
+You must configure your `apps/mobile/.env` file properly before starting the Expo server.
 ```bash
+cd apps/mobile
 cp .env.example .env
 ```
 
@@ -107,7 +110,7 @@ Your phone or emulator cannot reach `localhost`. You must set `EXPO_PUBLIC_API_U
 - Windows: run `ipconfig` (look for IPv4 Address)
 - Mac/Linux: run `ifconfig`
 
-Update `mobile/.env`:
+Update `apps/mobile/.env`:
 ```env
 EXPO_PUBLIC_API_URL="http://192.168.x.x:3333"
 ```
@@ -118,7 +121,7 @@ The mobile app relies on Google Maps natively for GPS verification of site visit
 2. Enable the **Maps SDK for Android**.
 3. Generate an API key.
 4. **Important**: You must place this key in:
-   - `mobile/.env` as `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY="your-key"`
+   - `apps/mobile/.env` as `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY="your-key"`
 
 ### 3. Push Notifications & Expo Dashboard (CRITICAL)
 To enable background push notifications and the auto-dialer sync, you must configure Firebase Cloud Messaging (FCM) and link it to your Expo account:
@@ -126,7 +129,7 @@ To enable background push notifications and the auto-dialer sync, you must confi
 1. **Firebase Setup**:
    - Go to the [Firebase Console](https://console.firebase.google.com/) and create a project.
    - Add an Android App with the package name `com.anonymous.mobile` (from `app.json`).
-   - Download the `google-services.json` file and place it in the root of the `mobile/` directory.
+   - Download the `google-services.json` file and place it in the root of the `apps/mobile/` directory.
 
 2. **Generate Google Service Account Key**:
    - In Firebase, go to Project Settings -> Service Accounts.
