@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-jest.mock('../generated/prisma/client.js', () => ({
+jest.mock('@brokeros/prisma', () => ({
   NotificationType: {
     BOOKING_REQUEST: 'BOOKING_REQUEST',
     REQUEST_APPROVED: 'REQUEST_APPROVED',
@@ -13,7 +13,7 @@ jest.mock('expo-server-sdk', () => ({
   Expo: class { }
 }));
 
-jest.mock('../generated/prisma/client.js', () => ({
+jest.mock('@brokeros/prisma', () => ({
   NotificationType: {
     BOOKING_REQUEST: 'BOOKING_REQUEST',
     REQUEST_APPROVED: 'REQUEST_APPROVED',

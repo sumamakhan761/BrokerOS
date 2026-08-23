@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-jest.mock('../generated/prisma/client.js', () => ({ PrismaClient: class {} }));
+jest.mock('@brokeros/prisma', () => ({ PrismaClient: class {} }));
 jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 
 import { BrokerAiService } from './broker-ai.service.js';

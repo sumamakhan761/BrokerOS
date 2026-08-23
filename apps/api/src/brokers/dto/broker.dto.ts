@@ -41,6 +41,7 @@ export class CreateBrokerDto {
   gstNumber?: string;
 
   @IsOptional()
+  @IsString({ each: true })
   serviceAreas?: string | string[];
 
   @IsArray()
@@ -87,6 +88,7 @@ export class UpdateBrokerDto {
   gstNumber?: string;
 
   @IsOptional()
+  @IsString({ each: true })
   serviceAreas?: string | string[];
 
   @IsArray()
