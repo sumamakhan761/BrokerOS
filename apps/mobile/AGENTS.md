@@ -87,6 +87,8 @@ You **MUST** consult the appropriate skill before making changes, based on the t
 
 ## Scripts
 
+> **CRITICAL SCRIPTING RULE:** If you are creating a new utility, migration, or maintenance script, DO NOT put it inside `apps/mobile/`. Create it in the monorepo root at `scripts/` and execute it from the root using `pnpm run script scripts/your-script.ts`.
+
 Run from `apps/mobile/` directory (or use `pnpm --filter @brokeros/mobile <cmd>` from root):
 
 ```bash

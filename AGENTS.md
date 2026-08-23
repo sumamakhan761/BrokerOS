@@ -92,6 +92,16 @@ We are migrating shared business logic out of the apps and into the `packages/` 
 
 ---
 
+## Scripts Policy
+
+As BrokerOS grows to include background workers, 3rd-party integrations, and new documentation generators, all general utility, deployment, database migration, and syncing scripts must live at the root.
+
+- **Location:** `scripts/` (Repo root)
+- **Execution:** We use `tsx` mapped in the root `package.json`. To run a script, use: `pnpm run script scripts/your-script.ts`
+- **Rule:** Never create scripts locked inside `apps/api/scripts/` unless they are strictly bound to API-only internals that will never be used by other parts of the monorepo. When in doubt, put them in root `scripts/`.
+
+---
+
 ## Map
 
 - API modules (`apps/api/src/`): `auth`, `leads`, `inventory`, `brokers`, `approvals`, `chat`, `notifications`, `dashboard`.

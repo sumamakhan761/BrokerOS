@@ -7,12 +7,14 @@
     "dev:web": "pnpm --filter @brokeros/web dev",
     "dev:mobile": "pnpm --filter @brokeros/mobile start",
     "dev:workers": "pnpm --filter @brokeros/workers start:dev",
+    "script": "tsx",
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .gitignore"
   },
   "devDependencies": {
+    "tsx": "^4.19.3",
     "turbo": "^2.5.4",
     "prettier": "^3.9.5",
     "typescript": "^5.9.3"
