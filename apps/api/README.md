@@ -69,11 +69,8 @@ apps/api/src/
 │   └── employees/             Employee performance tracking
 │
 ├── lib/               Shared infrastructure
-│   ├── auth.ts                Better Auth server instance config
-│   ├── database/              PrismaModule + PrismaService singleton
+│   ├── database/              PrismaModule wrapper around @brokeros/prisma
 │   └── storage/               Vercel Blob upload/download helpers
-│
-└── generated/         Prisma client output — DO NOT EDIT
 ```
 
 ## Development
@@ -95,57 +92,37 @@ pnpm install
 
 ### 2. Environment Setup
 
-You must configure your `apps/api/.env` file properly before starting the server.
+This monorepo uses a **Split Environment Architecture**.
+
+#### A. Root Infrastructure (`/.env`)
+The heavy infrastructure secrets must be placed in the **root** `.env` file (at `../../.env`).
+```
+
+Populate these in the **root `.env`**:
+- **`DATABASE_URL`**: Use `postgresql://crm:crm@localhost:5432/crm` for local Docker, or a cloud Neon URL.
+- **`BETTER_AUTH_SECRET`**: Generate one with `openssl rand -hex 32`.
+- **`BLOB_READ_WRITE_TOKEN`**: From Vercel Storage.
+- **`GROQ_API_KEY`**: From Groq Console.
+
+#### B. API Local Overrides (`apps/api/.env`)
+The API-specific environment file is strictly for local routing.
+Create it:
 ```bash
-cd apps/api
 cp .env.example .env
 ```
 
-#### A. Database Configuration (`DATABASE_URL`)
-You have three options for your PostgreSQL database:
-
-*   **Option 1: Local Docker (Recommended)**
-    If you ran `docker compose up postgres` in the root folder, the database is ready. 
-    Use: `DATABASE_URL="postgresql://crm:crm@localhost:5432/crm"`
-    *(Note: If running the backend itself inside Docker, the host becomes `postgres` instead of `localhost`).*
-
-*   **Option 2: Cloud DB (Neon / Supabase)**
-    Create a free account on [Neon](https://neon.tech/).
-    Use: `DATABASE_URL="postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require"`
-
-*   **Option 3: Local Native Install**
-    Use: `DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/crm"`
-
-#### B. Authentication (`BETTER_AUTH_SECRET`)
-Better Auth requires a strong, randomly generated 32-character secret to sign sessions.
-Run this command in your terminal to generate one:
-```bash
-openssl rand -hex 32
-```
-Set in `.env`:
-`BETTER_AUTH_SECRET="your-generated-hash-here"`
-`BETTER_AUTH_URL="http://localhost:3333"` *(Keep this default for local dev)*
-
-#### C. External Cloud Services
-These power the file uploads and AI functionalities.
-
-*   **Vercel Blob (File Uploads)**: Go to [Vercel Storage](https://vercel.com/storage/blob) to get your token.
-    `BLOB_READ_WRITE_TOKEN="your_vercel_blob_token"`
-*   **Groq (AI Call Processing)**: Go to [Groq Console](https://console.groq.com/keys) to get a free API key.
-    `GROQ_API_KEY="gsk_your_key_here"`
-
-#### D. CORS & URLs
-*   `FRONTEND_URL="http://localhost:3000"`
-*   `MOBILE_URL="exp://192.168.x.x:8081"` *(CRITICAL: Replace with your actual LAN IP. Mobile physical devices cannot connect to `localhost`).*
+Populate these in `apps/api/.env`:
+- `FRONTEND_URL="http://localhost:3000"`
+- `MOBILE_URL="exp://192.168.x.x:8081"` *(CRITICAL: Replace with your actual LAN IP. Mobile physical devices cannot connect to `localhost`).*
 
 ### 3. Database Initialization
 
-Once your `.env` is configured, set up Prisma:
+Once your `.env` is configured, set up Prisma (now located in `@brokeros/prisma`):
 
 ```bash
-pnpm db:generate           # Generate Prisma client
-pnpm db:migrate            # Run migrations to create tables
-pnpm db:seed               # Populate database with sample data
+pnpm --filter @brokeros/prisma db:generate           # Generate Prisma client
+pnpm --filter @brokeros/prisma db:migrate            # Run migrations to create tables
+pnpm --filter @brokeros/prisma db:seed               # Populate database with sample data
 ```
 
 ### 4. Run & Test
@@ -154,26 +131,28 @@ pnpm db:seed               # Populate database with sample data
 pnpm start:dev             # Dev server with watch mode → http://localhost:3333
 pnpm start:prod            # Production mode (compile first with pnpm build)
 
-pnpm test                  # Jest unit tests
-pnpm test:e2e              # End-to-end tests
+# Testing & Typechecking
+npx tsc --noEmit           # Run strict TypeScript typechecking without compiling
+pnpm test                  # Run all Jest unit tests (*.spec.ts)
+pnpm test path/to/file     # Run a specific .spec.ts file
+pnpm test:e2e              # Run end-to-end tests
 ```
 
 ---
 
 ## Docker
 
-The backend has a multi-stage Dockerfile (`Dockerfile`) that:
+The backend uses a highly optimized multi-stage Dockerfile powered by Turborepo:
 
-1. **Stage 1 (deps):** Installs pnpm, copies lockfile + Prisma schema, runs `pnpm install --frozen-lockfile`
-2. **Stage 2 (build):** Generates Prisma client, compiles TypeScript to `dist/`
-3. **Stage 3 (runner):** Copies only `dist/`, `node_modules/`, and `prisma/` — runs `prisma migrate deploy` then starts the server
+1. **Stage 1 (Prune):** Runs `turbo prune @brokeros/api` to isolate only the backend code and its internal dependencies (like `@brokeros/prisma`).
+2. **Stage 2 (Installer):** Installs dependencies and runs the build.
+3. **Stage 3 (Runner):** A lightweight Alpine image that runs the compiled API.
+
+**Crucial Note:** Because it relies on Turborepo, the Dockerfile **must be built from the root context**, not from inside `apps/api/`.
 
 ```bash
 # Run via docker compose from the repo root (recommended):
-docker compose up backend
-
-# Or build standalone:
-docker build -t crm-backend .
+docker compose up --build backend
 ```
 
 The backend runs on port **3333** by default.
