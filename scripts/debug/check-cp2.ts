@@ -1,4 +1,4 @@
-import { prismaClient as prisma } from '../../apps/api/src/lib/database/prisma-client.js';
+import { prismaClient as prisma } from '@brokeros/prisma';
 
 async function main() {
     const leadsWithBroker = await prisma.lead.count({ where: { brokerId: { not: null } } });

@@ -1,4 +1,4 @@
-import { prismaClient as prisma } from '../../apps/api/src/lib/database/prisma-client.js';
+import { prismaClient as prisma } from '@brokeros/prisma';
 
 const projectId = 'e8c45a9a-8ef2-468f-be4b-4829a38160d6';
 

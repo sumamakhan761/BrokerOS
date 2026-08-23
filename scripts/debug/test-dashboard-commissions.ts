@@ -1,8 +1,7 @@
-import { prismaClient as prisma } from '../../apps/api/src/lib/database/prisma-client.js';
+import { prismaClient as prisma } from '@brokeros/prisma';
 import { BrokersService } from '../../apps/api/src/brokers/brokers.service.js';
 import { TranscriptionService } from '../../apps/api/src/leads/call-records/transcription.service.js';
 // import { HttpService } from '@nestjs/axios';
-// import { ConfigService } from '@nestjs/config';
 
 async function runTest() {
   console.log("Fetching Commissions for Sourcing Manager Dashboard...\n");

@@ -1,4 +1,4 @@
-import { prismaClient as prisma } from '../../apps/api/src/lib/database/prisma-client.js';
+import { prismaClient as prisma } from '@brokeros/prisma';
 import { ClosingManagerDashboardService } from '../../apps/api/src/dashboard/closing-manager/closing-manager-dashboard.service.js';
 import { ChannelPartnerDashboardService } from '../../apps/api/src/dashboard/channel-partner/channel-partner-dashboard.service.js';
 
