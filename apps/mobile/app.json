@@ -69,7 +69,8 @@
         }
       ],
       "expo-notifications",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "./plugins/withCmakeShortPath.js"
     ],
     "experiments": {
       "typedRoutes": true,
