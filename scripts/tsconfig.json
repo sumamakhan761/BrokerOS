@@ -6,7 +6,13 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "strict": false
+    "strict": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": ".",
+    "paths": {
+      "@brokeros/prisma": ["../packages/prisma/src/index.ts"]
+    }
   },
   "include": [
     "**/*.ts"

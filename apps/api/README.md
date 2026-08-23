@@ -132,7 +132,6 @@ These power the file uploads and AI functionalities.
 *   **Vercel Blob (File Uploads)**: Go to [Vercel Storage](https://vercel.com/storage/blob) to get your token.
     `BLOB_READ_WRITE_TOKEN="your_vercel_blob_token"`
 *   **Groq (AI Call Processing)**: Go to [Groq Console](https://console.groq.com/keys) to get a free API key.
-    `TRANSCRIPTION_PROVIDER="groq"`
     `GROQ_API_KEY="gsk_your_key_here"`
 
 #### D. CORS & URLs
