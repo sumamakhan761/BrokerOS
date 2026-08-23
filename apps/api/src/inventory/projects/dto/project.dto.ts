@@ -3,6 +3,8 @@ import { Transform } from 'class-transformer';
 
 export class ProjectQueryDto {
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
   isCpProject?: any; // The service logic explicitly handles 'true' or true
 }
 
@@ -20,6 +22,8 @@ export class CreateProjectDto {
   builderName?: string;
 
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
   isCpProject?: any; // Service logic: data.isCpProject === 'true' || data.isCpProject === true
 
   // Other project fields can be strictly added as needed when expanding the API
