@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
-import { Prisma, LeadStatus } from '../../generated/prisma/client.js';
+import { Prisma, LeadStatus } from '@brokeros/prisma';
 import { GetLeadsFilterDto } from './dto/lead.dto.js';
 
 const SE_VISIBLE_STATUSES: LeadStatus[] = [

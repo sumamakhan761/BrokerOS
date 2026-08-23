@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
-import { LeadStatus, NotificationType } from '../../generated/prisma/client.js';
+import { LeadStatus, NotificationType } from '@brokeros/prisma';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto.js';
 

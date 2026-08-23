@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsOptional, IsEmail, IsNumber, IsEnum, IsBoolean, IsArray } from 'class-validator';
-import { LeadStatus, LeadTemperature } from '../../../generated/prisma/client.js';
+import { LeadStatus, LeadTemperature } from '@brokeros/prisma';
 
 export class CreateLeadDto {
   @IsString()

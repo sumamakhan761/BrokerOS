@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
-import { FollowUpStatus } from '../../../generated/prisma/client.js';
+import { FollowUpStatus } from '@brokeros/prisma';
 
 export class CreateFollowUpDto {
   @IsString()

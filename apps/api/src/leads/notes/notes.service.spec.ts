@@ -10,7 +10,7 @@ jest.mock('../../generated/prisma/client.js', () => ({
 import { NotesService } from './notes.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { TranscriptionService } from '../call-records/transcription.service.js';
-import { LeadStatus } from '../../generated/prisma/client.js';
+import { LeadStatus } from '@brokeros/prisma';
 import { CreateNoteDto } from './dto/create-note.dto.js';
 
 jest.mock('../../lib/database/prisma.service.js', () => ({

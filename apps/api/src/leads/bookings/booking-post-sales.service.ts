@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
-import { put } from '@vercel/blob';
+import { StorageService } from '../../lib/storage/storage.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
-import { NotificationType } from '../../generated/prisma/client.js';
+import { NotificationType } from '@brokeros/prisma';
 
 @Injectable()
 export class BookingPostSalesService {
   constructor(
     private prisma: PrismaService,
-    private notificationsService: NotificationsService
+    private notificationsService: NotificationsService,
+    private storageService: StorageService
   ) { }
 
   async saveLoanCase(bookingId: string, data: Record<string, any>) {
@@ -190,10 +191,11 @@ export class BookingPostSalesService {
   }
 
   async uploadPostSalesFile(bookingId: string, type: 'loan' | 'agreement' | 'handover', fieldName: string, file: Express.Multer.File) {
-    const blob = await put(`bookings/${bookingId}/${type}/${fieldName}-${file.originalname}`, file.buffer, {
-      access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-    });
+    const blobUrl = await this.storageService.uploadFile(
+      file.buffer,
+      `bookings/${bookingId}/${type}/${fieldName}-${file.originalname}`,
+      file.mimetype
+    );
 
     if (type === 'loan') {
       if (fieldName === 'loanDocumentUrls') {
@@ -201,30 +203,30 @@ export class BookingPostSalesService {
         const existing = lc?.loanDocumentUrls || [];
         await this.prisma.loanCase.upsert({
           where: { bookingId },
-          create: { bookingId, loanDocumentUrls: [...existing, blob.url] },
-          update: { loanDocumentUrls: [...existing, blob.url] }
+          create: { bookingId, loanDocumentUrls: [...existing, blobUrl] },
+          update: { loanDocumentUrls: [...existing, blobUrl] }
         });
       } else {
         await this.prisma.loanCase.upsert({
           where: { bookingId },
-          create: { bookingId, [fieldName]: blob.url },
-          update: { [fieldName]: blob.url }
+          create: { bookingId, [fieldName]: blobUrl },
+          update: { [fieldName]: blobUrl }
         });
       }
     } else if (type === 'agreement') {
       await this.prisma.agreement.upsert({
         where: { bookingId },
-        create: { bookingId, [fieldName]: blob.url },
-        update: { [fieldName]: blob.url }
+        create: { bookingId, [fieldName]: blobUrl },
+        update: { [fieldName]: blobUrl }
       });
     } else if (type === 'handover') {
       await this.prisma.possessionHandover.upsert({
         where: { bookingId },
-        create: { bookingId, [fieldName]: blob.url },
-        update: { [fieldName]: blob.url }
+        create: { bookingId, [fieldName]: blobUrl },
+        update: { [fieldName]: blobUrl }
       });
     }
 
-    return { url: blob.url };
+    return { url: blobUrl };
   }
 }

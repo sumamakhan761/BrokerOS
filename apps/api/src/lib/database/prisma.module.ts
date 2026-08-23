@@ -1,6 +1,6 @@
 import { Module, Global, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaService } from './prisma.service.js';
-import { prismaClient } from './prisma-client.js';
+import { prismaClient } from '@brokeros/prisma';
 
 @Global()
 @Module({
