@@ -1,5 +1,5 @@
 {
-  "name": "mobile",
+  "name": "@brokeros/mobile",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -12,6 +12,9 @@
   },
   "dependencies": {
     "@better-auth/expo": "1.6.23",
+    "@brokeros/constants": "workspace:*",
+    "@brokeros/types": "workspace:*",
+    "@brokeros/validators": "workspace:*",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-picker/picker": "^2.11.4",

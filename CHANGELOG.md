@@ -9,8 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - Initial Open Source Release
 
+### Architecture (Monorepo)
+- Migrated the codebase to a strict `pnpm` monorepo using Turborepo.
+- Separated applications into `apps/api`, `apps/web`, `apps/mobile`, and `apps/workers`.
+- Created shared package structure under `packages/` for `@brokeros/types`, `@brokeros/validators`, and `@brokeros/constants` to facilitate future extraction of shared domain logic.
+
 ### Added
-- **Core CRM**: Built specifically for  real estate brokerages with two distinct business lines (Brokerage and Channel Partner) managed under one platform.
+- **Core CRM**: Built specifically for real estate brokerages with two distinct business lines (Brokerage and Channel Partner) managed under one platform.
 - **Backend (NestJS 11)**:
   - 8 domain modules (leads, inventory, brokers, approvals, chat, notifications, dashboard, auth).
   - Robust PostgreSQL database schema with 74 models and 43 enums (Prisma 7).

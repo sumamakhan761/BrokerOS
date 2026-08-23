@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Telegraph style. Root rules only. Read scoped `AGENTS.md` inside `backend/`, `frontend/`, or `mobile/` before touching that subtree. Skills own step-by-step workflows; root owns hard policy and business invariants.
+Telegraph style. Root rules only. Read scoped `AGENTS.md` inside `apps/api/`, `apps/web/`, or `apps/mobile/` before touching that subtree. Skills own step-by-step workflows; root owns hard policy and business invariants.
 
 ---
 
@@ -19,24 +19,26 @@ Stack: NestJS 11 backend · PostgreSQL + Prisma 7 · Next.js 16 frontend (App Ro
 
 ## Start
 
-- Repo root: `BrokerOS/`
-- Three subtrees: `backend/` (NestJS API), `frontend/` (Next.js web), `mobile/` (Expo RN app).
+- Repo root: `BrokerOS/` — **pnpm monorepo** with Turborepo.
+- Structure: `apps/` (deployable), `packages/` (shared), `integrations/` (external adapters).
+- Apps: `apps/api/` (NestJS API), `apps/web/` (Next.js), `apps/mobile/` (Expo RN), `apps/workers/` (BullMQ async).
+- Packages: `packages/types/` (@brokeros/types), `packages/validators/` (@brokeros/validators).
 - **CRITICAL**: Before you write any code or start any task, you **MUST** read the scoped `AGENTS.md` in the corresponding subtree:
-  - For ANY request related to the backend, use `view_file` to read `backend/AGENTS.md`
-  - For ANY request related to the frontend, use `view_file` to read `frontend/AGENTS.md`
-  - For ANY request related to the mobile app, use `view_file` to read `mobile/AGENTS.md`
+  - For ANY request related to the API, use `view_file` to read `apps/api/AGENTS.md`
+  - For ANY request related to the frontend, use `view_file` to read `apps/web/AGENTS.md`
+  - For ANY request related to the mobile app, use `view_file` to read `apps/mobile/AGENTS.md`
 - Before proposing any custom system, check if an existing service/module/hook already handles it.
 - Never hardcode env secrets. `.env.example` in each subtree is the source of truth for env vars.
 - Never print secrets or tokens in logs or responses.
-- Use repo-root-relative paths in all references: `backend/src/leads/leads.service.ts`, not absolute paths.
+- Use repo-root-relative paths in all references: `apps/api/src/leads/leads.service.ts`, not absolute paths.
 
 ---
 
 ## Auth Law
 
 - **Better Auth is the only auth system.** Do not implement custom JWT minting, custom session management, or custom password hashing.
-- Backend: `@thallesp/nestjs-better-auth`. Sessions validated via the `better-auth` server instance in `backend/src/auth/`.
-- Frontend: `better-auth` client in `frontend/lib/auth-client.ts`. Route protection via `frontend/middleware.ts`.
+- Backend: `@thallesp/nestjs-better-auth`. Sessions validated via the `better-auth` server instance in `apps/api/src/auth/`.
+- Frontend: `better-auth` client in `apps/web/lib/auth-client.ts`. Route protection via `apps/web/middleware.ts`.
 - Mobile: `@better-auth/expo` with `expo-secure-store` for token persistence.
 - Role is read from `session.user.role`. Never accept role from request body or query string.
 - Do not add any new passport strategy. Existing `passport-jwt` is legacy-only.
@@ -46,9 +48,9 @@ Stack: NestJS 11 backend · PostgreSQL + Prisma 7 · Next.js 16 frontend (App Ro
 ## Database Law
 
 - **Prisma only.** No raw SQL strings in application code. Use the Prisma query API.
-- Prisma client generated to `backend/src/generated/prisma`. Import from there, not from `@prisma/client`.
-- After any `schema.prisma` change: `pnpm db:generate` → `pnpm db:migrate`.
-- Schema file: `backend/prisma/schema.prisma` — single source of truth. Seed: `backend/prisma/seed.ts`.
+- Prisma client generated to `apps/api/src/generated/prisma`. Import from there, not from `@prisma/client`.
+- After any `schema.prisma` change: `pnpm --filter @brokeros/api db:generate` → `pnpm --filter @brokeros/api db:migrate`.
+- Schema file: `apps/api/prisma/schema.prisma` — single source of truth. Seed: `apps/api/prisma/seed.ts`.
 - Multi-model writes must use Prisma transactions (`prisma.$transaction`).
 - Never delete or edit applied migration files.
 - Soft-delete pattern: `deletedAt DateTime?`. Filter `deletedAt: null` in all list queries.
@@ -76,9 +78,12 @@ Stack: NestJS 11 backend · PostgreSQL + Prisma 7 · Next.js 16 frontend (App Ro
 
 ## Map
 
-- Backend modules: `auth`, `leads`, `inventory`, `brokers`, `approvals`, `chat`, `notifications`, `dashboard`.
-- Frontend routes: `app/login` (public), `app/dashboard` (role-protected shell + sub-routes per role).
-- Mobile route groups: `app/(auth)` (login/signup), `app/(dashboard)` (14 role-specific screen dirs).
-- Skills: `.agents/skills/` (root), `backend/.agents/skills/`, `frontend/.agents/skills/`, `mobile/.agents/skills/`.
+- API modules (`apps/api/src/`): `auth`, `leads`, `inventory`, `brokers`, `approvals`, `chat`, `notifications`, `dashboard`.
+- Web routes (`apps/web/app/`): `login` (public), `dashboard` (role-protected shell + sub-routes per role).
+- Mobile route groups (`apps/mobile/app/`): `(auth)` (login/signup), `(dashboard)` (14 role-specific screen dirs).
+- Workers (`apps/workers/src/`): BullMQ processors for async jobs (SMS, portal sync, AI callbacks).
+- Shared packages: `packages/types/` (TS interfaces), `packages/validators/` (Zod schemas).
+- Integrations: `integrations/` — one folder per external provider (telephony, messaging, portals, ads, payments, AI).
+- Skills: `.agents/skills/` (root), `apps/api/.agents/skills/`, `apps/web/.agents/skills/`, `apps/mobile/.agents/skills/`.
 
 ---

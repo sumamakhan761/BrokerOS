@@ -1,5 +1,5 @@
 # ============================================================
-# Root .gitignore — BrokerOS
+# Root .gitignore — BrokerOS monorepo
 # ============================================================
 
 # OS files
@@ -19,6 +19,24 @@ Thumbs.db
 *.log
 npm-debug.log*
 yarn-debug.log*
+
+# Monorepo: node_modules at every level
+node_modules/
+apps/*/node_modules/
+packages/*/node_modules/
+integrations/*/node_modules/
+
+# Build outputs
+apps/api/dist/
+apps/web/.next/
+apps/mobile/.expo/
+apps/workers/dist/
+
+# pnpm
+.pnpm-store/
+
+# Turbo cache
+.turbo/
 
 # Docs
 /docs/All-about-system/
