@@ -33,14 +33,15 @@ services:
   # ── NestJS Backend ──────────────────────────────────────────
   backend:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/api/Dockerfile
     container_name: crm-backend
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     env_file:
+      - .env                     # The crucial root env
       - ./apps/api/.env          # copy apps/api/.env.example → apps/api/.env and fill in
     environment:
       # Override DATABASE_URL to point at the postgres service (not localhost)
@@ -53,8 +54,8 @@ services:
   # ── Next.js Frontend ────────────────────────────────────────
   frontend:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/web/Dockerfile
       args:
         # NEXT_PUBLIC_* vars must be baked in at build time
         NEXT_PUBLIC_API_URL: /api/proxy
@@ -66,6 +67,7 @@ services:
     depends_on:
       - backend
     env_file:
+      - .env                    # The crucial root env
       - ./apps/web/.env         # copy apps/web/.env.example → apps/web/.env and fill in
     environment:
       # Server-side: hits the backend service by its docker-compose name

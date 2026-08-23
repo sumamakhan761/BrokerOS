@@ -22,14 +22,17 @@ Stack: NestJS 11 backend · PostgreSQL + Prisma 7 · Next.js 16 frontend (App Ro
 - Repo root: `BrokerOS/` — **pnpm monorepo** with Turborepo.
 - Structure: `apps/` (deployable), `packages/` (shared), `integrations/` (external adapters).
 - Apps: `apps/api/` (NestJS API), `apps/web/` (Next.js), `apps/mobile/` (Expo RN), `apps/workers/` (BullMQ async).
-- Packages: `packages/types/` (@brokeros/types), `packages/validators/` (@brokeros/validators).
+- Packages: `packages/types/` (@brokeros/types), `packages/validators/` (@brokeros/validators), `packages/prisma/` (@brokeros/prisma), `packages/storage/` (@brokeros/storage), `packages/constants/` (@brokeros/constants).
+
 - **CRITICAL**: Before you write any code or start any task, you **MUST** read the scoped `AGENTS.md` in the corresponding subtree:
   - For ANY request related to the API, use `view_file` to read `apps/api/AGENTS.md`
   - For ANY request related to the frontend, use `view_file` to read `apps/web/AGENTS.md`
   - For ANY request related to the mobile app, use `view_file` to read `apps/mobile/AGENTS.md`
 - Before proposing any custom system, check if an existing service/module/hook already handles it.
-- Never hardcode env secrets. `.env.example` in each subtree is the source of truth for env vars.
-- Never print secrets or tokens in logs or responses.
+
+- **Environment Law:** Never hardcode secrets. We use a split architecture:
+  - **Root `/.env`** is for heavy infrastructure: Database URLs, Better Auth secrets, Groq AI keys, Vercel Blob tokens.
+  - **App-level `.env`s** (`apps/web`, `apps/mobile`, `apps/api`) are ONLY for local routing URLs and specific client keys (like Google Maps).
 - Use repo-root-relative paths in all references: `apps/api/src/leads/leads.service.ts`, not absolute paths.
 
 ---
@@ -41,6 +44,8 @@ We are migrating shared business logic out of the apps and into the `packages/` 
 - **`@brokeros/constants`**: Pure TS constants, enums, UI colors, and pure utility functions (e.g., Lead Statuses, Role definitions).
 - **`@brokeros/types`**: Shared TypeScript interfaces and DTO definitions.
 - **`@brokeros/validators`**: Shared Zod schemas for form validation and API payloads.
+- **`@brokeros/prisma`**: The central Prisma ORM client, schema, and migrations.
+- **`@brokeros/storage`**: Centralized Vercel Blob storage wrappers.
 
 **CRITICAL RULES FOR AGENTS:**
 1. **Gradual Migration:** This is an ongoing, chunk-by-chunk migration. Many legacy types/constants still live locally in `apps/web/` and `apps/mobile/`. **Do NOT** perform massive sweeping refactors to move hundreds of files at once.
@@ -64,10 +69,11 @@ We are migrating shared business logic out of the apps and into the `packages/` 
 ## Database Law
 
 - **Prisma only.** No raw SQL strings in application code. Use the Prisma query API.
-- Prisma client generated to `apps/api/src/generated/prisma`. Import from there, not from `@prisma/client`.
-- After any `schema.prisma` change: `pnpm --filter @brokeros/api db:generate` → `pnpm --filter @brokeros/api db:migrate`.
-- Schema file: `apps/api/prisma/schema.prisma` — single source of truth. Seed: `apps/api/prisma/seed.ts`.
+- Prisma client generated to `packages/prisma/generated/client`. Import from there via `@brokeros/prisma`.
+- After any `schema.prisma` change: `pnpm --filter @brokeros/prisma db:generate` → `pnpm --filter @brokeros/prisma db:migrate`.
+- Schema file: `packages/prisma/schema.prisma` — single source of truth. Seed: `packages/prisma/seed.ts`.
 - Multi-model writes must use Prisma transactions (`prisma.$transaction`).
+- For syntax and query patterns, read the root skill: `.agents/skills/prisma-client-api/SKILL.md`.
 - Never delete or edit applied migration files.
 - Soft-delete pattern: `deletedAt DateTime?`. Filter `deletedAt: null` in all list queries.
 
@@ -108,7 +114,7 @@ As BrokerOS grows to include background workers, 3rd-party integrations, and new
 - Web routes (`apps/web/app/`): `login` (public), `dashboard` (role-protected shell + sub-routes per role).
 - Mobile route groups (`apps/mobile/app/`): `(auth)` (login/signup), `(dashboard)` (14 role-specific screen dirs).
 - Workers (`apps/workers/src/`): BullMQ processors for async jobs (SMS, portal sync, AI callbacks).
-- Shared packages: `packages/types/` (TS interfaces), `packages/validators/` (Zod schemas).
+- Shared packages: `packages/prisma/` (Schema & DB Client), `packages/storage/` (Blob wrappers), `packages/types/` (TS interfaces), `packages/validators/` (Zod schemas), `packages/constants/` (Pure constants).
 - Integrations: `integrations/` — one folder per external provider (telephony, messaging, portals, ads, payments, AI).
 - Skills: `.agents/skills/` (root), `apps/api/.agents/skills/`, `apps/web/.agents/skills/`, `apps/mobile/.agents/skills/`.
 

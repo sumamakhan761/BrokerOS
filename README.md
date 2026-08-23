@@ -145,6 +145,8 @@ BrokerOS/
 │   └── workers/      BullMQ async background processors (Coming soon)
 │
 ├── packages/
+│   ├── prisma/       Prisma ORM schema, migrations, and client (@brokeros/prisma)
+│   ├── storage/      Vercel Blob storage wrappers (@brokeros/storage)
 │   ├── types/        Shared TS interfaces (@brokeros/types)
 │   ├── validators/   Shared Zod schemas (@brokeros/validators)
 │   └── constants/    Shared constants and pure logic (@brokeros/constants)
@@ -192,13 +194,40 @@ cd BrokerOS
 # 2. Install dependencies via pnpm workspace
 pnpm install
 
-# 3. Copy the environment files
+# 3. Copy the environment files for the root and the apps
+cp .env.example .env
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 cp apps/mobile/.env.example apps/mobile/.env
 ```
 
-> **IMPORTANT:** You must configure these `.env` files before running the project. For detailed environment setup, refer to the comments inside each `.env` file and the respective subtree READMEs ([Backend](apps/api/README.md), [Frontend](apps/web/README.md), [Mobile](apps/mobile/README.md)).
+**Split Environment Architecture**
+We separate `.env` files to prevent backend secrets from leaking to the frontend.
+- **Root `/.env`**: Core infrastructure keys (DB, Auth, AI, Storage). You **must** configure this.
+- **App `.env`s**: Local routing URLs and client-specific keys (like Google Maps).
+
+**How to get these values?** 
+
+#### A. Authentication (`BETTER_AUTH_SECRET`)
+Better Auth requires a strong, randomly generated 32-character secret to sign sessions.
+Run this command in your terminal to generate one:
+```bash
+openssl rand -hex 32
+```
+Set in `.env`:
+`BETTER_AUTH_SECRET="your-generated-hash-here"`
+`BETTER_AUTH_URL="http://localhost:3333"` *(Keep this default for local dev)*
+
+#### B. External Cloud Services
+*   **Vercel Blob (File Uploads)**: Go to [Vercel Storage](https://vercel.com/storage/blob) to get your token.
+    `BLOB_READ_WRITE_TOKEN="your_vercel_blob_token"`
+*   **Groq (AI Call Processing)**: Go to [Groq Console](https://console.groq.com/keys) to get a free API key.
+    `GROQ_API_KEY="gsk_your_key_here"`
+
+ For deep-dive instructions on how to run, test, and build each individual piece of the stack, check their dedicated readmes:
+ - 🟢 **[Backend API Guide](apps/api/README.md)**
+ - 🔵 **[Frontend Web Guide](apps/web/README.md)**
+ - 📱 **[Mobile App Guide](apps/mobile/README.md)**
 
 ---
 
@@ -211,7 +240,7 @@ If you are using the **AI IDE / CLII**, you don't need to manually run the setup
 
 ---
 
-### Option B: Docker Setup
+### Option A: Docker Setup
 
 The fastest way to get the web platform running manually. This starts PostgreSQL, the NestJS API, and the Next.js Web App.
 
@@ -232,16 +261,17 @@ docker exec -it crm-backend npx prisma db seed
 
 ---
 
-### Option C: Manual Setup
+### Option B: Manual Setup
 
-Run each service individually for full development control. Ensure you have a PostgreSQL database running and configured in `apps/api/.env` and `apps/api/README.md`.
-
-#### 1. Backend (API)
+#### 1. Backend (API) & Database Setup
 ```bash
+# First, generate and seed the database using the Prisma package
+pnpm --filter @brokeros/prisma db:generate   # Generate Prisma client
+pnpm --filter @brokeros/prisma db:migrate    # Run pending migrations
+pnpm --filter @brokeros/prisma db:seed       # Populate database with sample data (🔑 View credentials: docs/role-password.md)
+
+# Start the API server
 cd apps/api
-pnpm db:generate            # Generate Prisma client
-pnpm db:migrate             # Run pending migrations
-pnpm db:seed                # Populate database with sample data (🔑 View credentials: docs/role-password.md)
 pnpm start:dev              # Start dev server → http://localhost:3333
 ```
 
@@ -256,21 +286,11 @@ pnpm dev                    # Start dev server → http://localhost:3000
 cd apps/mobile
 # Set EXPO_PUBLIC_API_URL in apps/mobile/.env to your machine's LAN IP before starting!
 
-npx expo start              # Start Metro bundler (press 'a' to run on Android)
-# OR
 npx expo run:android        # Build natively and run on emulator/device
+#OR
+npx expo start              # Start Metro bundler (press 'a' to run on Android)
 ```
 > For detailed instructions on setting up an Android emulator, connecting a physical device, and configuring Google Services for push notifications, read the **[Mobile README](apps/mobile/README.md)**.
-
----
-
-### Prisma Studio
-
-To inspect your database visually:
-```bash
-cd backend
-pnpm db:studio              # Open visual database browser → http://localhost:5555
-```
 
 ---
 
