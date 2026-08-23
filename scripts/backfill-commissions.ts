@@ -1,4 +1,4 @@
-import { prismaClient as prisma } from '../apps/api/src/lib/database/prisma-client.js';
+import { prismaClient as prisma } from '@brokeros/prisma';
 
 async function backfillCommissions() {
   console.log("Starting commission backfill for existing completed bookings...");

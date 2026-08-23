@@ -33,7 +33,7 @@ import { PrismaService } from '../lib/database/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { BookingStatusService } from '../leads/bookings/booking-status.service.js';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { NotificationType } from '../generated/prisma/client.js';
+import { NotificationType } from '@brokeros/prisma';
 import { CreateApprovalRequestDto, AddApprovalMessageDto } from './dto/approvals.dto.js';
 
 jest.mock('../lib/database/prisma.service.js', () => ({

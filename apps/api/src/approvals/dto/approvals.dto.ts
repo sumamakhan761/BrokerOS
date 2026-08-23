@@ -1,4 +1,4 @@
-import { ApprovalType } from '../../generated/prisma/client.js';
+import { ApprovalType } from '@brokeros/prisma';
 
 export class CreateApprovalRequestDto {
   title: string;

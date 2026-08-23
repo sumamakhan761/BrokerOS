@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../lib/database/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { BookingStatusService } from '../leads/bookings/booking-status.service.js';
-import { NotificationType, ApprovalType } from '../generated/prisma/client.js';
+import { NotificationType, ApprovalType } from '@brokeros/prisma';
 import { CreateApprovalRequestDto, AddApprovalMessageDto } from './dto/approvals.dto.js';
 
 @Injectable()
