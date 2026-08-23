@@ -33,6 +33,7 @@ COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
 
 # Generate Prisma client and build the API
+RUN pnpm --filter @brokeros/prisma db:generate
 RUN pnpm turbo run build --filter=@brokeros/api...
 
 # ── Stage 3: Production Image ──────────────────────────────────

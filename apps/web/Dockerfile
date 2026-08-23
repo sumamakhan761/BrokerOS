@@ -46,6 +46,8 @@ ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 ENV BACKEND_URL=$BACKEND_URL
 
+# Generate Prisma client first so types are available to frontend/packages
+RUN pnpm --filter @brokeros/prisma db:generate
 RUN pnpm turbo run build --filter=@brokeros/web...
 
 # ── Stage 3: Production Image ──────────────────────────────────
