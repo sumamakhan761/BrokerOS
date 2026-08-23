@@ -34,6 +34,22 @@ Stack: NestJS 11 backend · PostgreSQL + Prisma 7 · Next.js 16 frontend (App Ro
 
 ---
 
+## Packages & Shared Logic
+
+We are migrating shared business logic out of the apps and into the `packages/` directory using Turborepo workspaces.
+
+- **`@brokeros/constants`**: Pure TS constants, enums, UI colors, and pure utility functions (e.g., Lead Statuses, Role definitions).
+- **`@brokeros/types`**: Shared TypeScript interfaces and DTO definitions.
+- **`@brokeros/validators`**: Shared Zod schemas for form validation and API payloads.
+
+**CRITICAL RULES FOR AGENTS:**
+1. **Gradual Migration:** This is an ongoing, chunk-by-chunk migration. Many legacy types/constants still live locally in `apps/web/` and `apps/mobile/`. **Do NOT** perform massive sweeping refactors to move hundreds of files at once.
+2. **New Code:** When creating *new* shared constants, types, or Zod validators that are used across the API and frontend/mobile, put them in the respective `packages/` folder.
+3. **Importing:** Import them into apps using the package name (e.g., `import { LEAD_STATUS } from '@brokeros/constants'`).
+4. **No Side Effects:** Packages must be pure TypeScript. Do not include React, Next.js, or NestJS specific dependencies in `packages/`.
+
+---
+
 ## Auth Law
 
 - **Better Auth is the only auth system.** Do not implement custom JWT minting, custom session management, or custom password hashing.

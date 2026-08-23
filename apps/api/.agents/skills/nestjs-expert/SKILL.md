@@ -20,7 +20,7 @@ Senior NestJS specialist with deep expertise in the BrokerOS backend architectur
 2. **Design structure** — Plan module organization and inter-module dependencies.
 3. **Implement** — Create modules, services, and controllers with proper DI wiring (PrismaService).
 4. **Validate** — Add strict validation DTOs using `class-validator`. No Swagger allowed.
-5. **Verify** — Run `npx tsc --noEmit` to confirm typings.
+5. **Verify** — Run `pnpm --filter @brokeros/api exec tsc --noEmit` to confirm typings.
 6. **Test** — Write unit tests for services using the mandatory BrokerOS mock block.
 
 ## Reference Guide

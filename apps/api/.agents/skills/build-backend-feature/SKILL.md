@@ -38,8 +38,8 @@ You **MUST** follow the strict BrokerOS implementation patterns. Before writing 
 
 ## 6. Verification Loop
 Before concluding your task, you MUST run these terminal commands sequentially to prove the code is structurally sound:
-1. **Type Check**: Run `npx tsc --noEmit` from the `backend/` directory. Fix any type errors before proceeding.
-2. **Unit Tests**: Run `pnpm test src/<module-folder>` to ensure the spec files compile and pass. Fix any mocking errors.
-3. **E2E Tests**: If you modified or created E2E tests, run `pnpm test:e2e` (or the specific test file) to ensure they pass.
+1. **Type Check**: Run `pnpm --filter @brokeros/api exec tsc --noEmit` from the root directory. Fix any type errors before proceeding.
+2. **Unit Tests**: Run `pnpm --filter @brokeros/api test src/<module-folder>` to ensure the spec files compile and pass. Fix any mocking errors.
+3. **E2E Tests**: If you modified or created E2E tests, run `pnpm --filter @brokeros/api test:e2e` (or the specific test file) to ensure they pass.
 
 Do not ask the user for permission to run these verification commands. Run them proactively.

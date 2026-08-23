@@ -22,7 +22,7 @@ The backend is a modular NestJS 11 application written in TypeScript ESM. It ser
 ## Module Architecture
 
 ```
-backend/src/
+apps/api/src/
 ├── auth/              Authentication & authorization
 │   ├── auth.controller.ts     Auth endpoints (login, logout, session)
 │   ├── roles.guard.ts         RBAC guard — checks session.user.role
@@ -86,15 +86,18 @@ backend/src/
 
 ### 1. Installation
 
+This project is part of a pnpm monorepo. Install dependencies from the root directory:
+
 ```bash
-cd backend
+cd ../../  # Go to BrokerOS root
 pnpm install
 ```
 
 ### 2. Environment Setup
 
-You must configure your `backend/.env` file properly before starting the server.
+You must configure your `apps/api/.env` file properly before starting the server.
 ```bash
+cd apps/api
 cp .env.example .env
 ```
 
