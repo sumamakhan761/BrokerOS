@@ -1,4 +1,4 @@
-import { prismaClient as prisma } from '../../apps/api/src/lib/database/prisma-client.js';
+import { prismaClient as prisma } from '@brokeros/prisma';
 import { TranscriptionService } from '../../apps/api/src/leads/call-records/transcription.service.js';
 process.loadEnvFile();
 const transcriptionService = new TranscriptionService();

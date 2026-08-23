@@ -1,4 +1,4 @@
-import { prismaClient as prisma } from '../../apps/api/src/lib/database/prisma-client.js';
+import { prismaClient as prisma } from '@brokeros/prisma';
 
 async function main() {
   // Let's just find any booking and trace its relations

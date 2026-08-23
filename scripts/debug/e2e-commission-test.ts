@@ -1,4 +1,4 @@
-import { prismaClient as prisma } from '../../apps/api/src/lib/database/prisma-client.js';
+import { prismaClient as prisma } from '@brokeros/prisma';
 import { BookingCreationService } from '../../apps/api/src/leads/bookings/booking-creation.service.js';
 import { BookingStatusService } from '../../apps/api/src/leads/bookings/booking-status.service.js';
 
