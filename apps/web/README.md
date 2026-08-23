@@ -134,18 +134,17 @@ The frontend uses a proxy pattern to communicate with the backend:
 
 ## Docker
 
-The frontend has a multi-stage Dockerfile that produces a standalone Next.js build:
+The frontend uses a highly optimized multi-stage Dockerfile powered by Turborepo:
 
-1. **Stage 1 (deps):** Installs pnpm, runs `pnpm install --frozen-lockfile`
-2. **Stage 2 (build):** Bakes `NEXT_PUBLIC_*` env vars at build time, runs `pnpm build`
-3. **Stage 3 (runner):** Copies standalone output, runs as non-root `nextjs` user
+1. **Stage 1 (Prune):** Runs `turbo prune @brokeros/web` to isolate only the frontend code and its internal workspace dependencies (like `@brokeros/constants`).
+2. **Stage 2 (Installer):** Installs dependencies, bakes `NEXT_PUBLIC_*` env vars, and runs the Next.js standalone build.
+3. **Stage 3 (Runner):** A lightweight Alpine image that runs the compiled Next.js standalone server as a non-root user.
+
+**Crucial Note:** Because it relies on Turborepo, the Dockerfile **must be built from the monorepo root context**, not from inside `apps/web/`.
 
 ```bash
-# Via docker compose from repo root (recommended):
-docker compose up frontend
-
-# Or standalone:
-docker build -t crm-frontend .
+# Run via docker compose from the repo root (recommended):
+docker compose up --build frontend
 ```
 
 The frontend runs on port **3000** by default.

@@ -182,6 +182,7 @@ $env:JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"
 ### APK (for sideloading / GitHub Releases)
 
 ```bash
+cd apps/mobile
 eas build --platform android --profile preview
 # Download the .apk from the EAS dashboard
 # Attach to a GitHub Release for users to download
@@ -192,6 +193,7 @@ eas build --platform android --profile preview
 The `eas.json` already has a `preview` profile with `"distribution": "internal"`:
 
 ```bash
+cd apps/mobile
 eas build --platform android --profile preview
 # Generates a shareable link — anyone with the link can install
 ```

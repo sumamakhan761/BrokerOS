@@ -1,34 +1,41 @@
 # =============================================================
 # Frontend Dockerfile — Next.js 16 (App Router)
-# Multi-stage: deps → build → standalone production runner
+# Multi-stage: prune → install → build → standalone production runner
 # =============================================================
 
-# ── Stage 1: dependency install ────────────────────────────────
-FROM node:22-alpine AS deps
-
+FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
+RUN npm install -g turbo
 RUN apk add --no-cache libc6-compat
 
-# Install pnpm — exact version matching what generated the lockfile
-RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
+# ── Stage 1: Prune ─────────────────────────────────────────────
+FROM base AS builder
+WORKDIR /app
+COPY . .
+# Extract only the packages/apps needed for @brokeros/web
+RUN turbo prune @brokeros/web --docker
 
+# ── Stage 2: Install & Build ───────────────────────────────────
+FROM base AS installer
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Copy pruned json and lockfile first for layer caching
+COPY .gitignore .gitignore
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
-# Frontend uses pnpm — install with frozen lockfile
 RUN pnpm install --frozen-lockfile
 
-# ── Stage 2: build ─────────────────────────────────────────────
-FROM deps AS builder
+# Copy the full pruned source code
+COPY --from=builder /app/out/full/ .
+COPY turbo.json turbo.json
 
-WORKDIR /app
-
-COPY . .
-
-# Next.js standalone output — produces a self-contained server bundle
+# Next.js standalone output configuration
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Build args for public env vars (injected at build time)
+# Build args for public env vars
 ARG NEXT_PUBLIC_API_URL=/api/proxy
 ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
 ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=""
@@ -39,11 +46,10 @@ ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 ENV BACKEND_URL=$BACKEND_URL
 
-RUN pnpm build
+RUN pnpm turbo run build --filter=@brokeros/web...
 
-# ── Stage 3: production image ───────────────────────────────────
+# ── Stage 3: Production Image ──────────────────────────────────
 FROM node:22-alpine AS runner
-
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -53,9 +59,9 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy the standalone Next.js output
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=installer /app/apps/web/public ./apps/web/public
+COPY --from=installer --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=installer --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
 USER nextjs
 
@@ -64,4 +70,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# Note: standalone mode outputs server.js inside apps/web folder
+CMD ["node", "apps/web/server.js"]
