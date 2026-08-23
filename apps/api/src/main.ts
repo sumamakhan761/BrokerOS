@@ -2,7 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common';
 
-// Load .env if available (skipped in Docker where env vars come from compose)
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Load root .env (for shared secrets) and local .env (for API configs)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootEnv = path.resolve(__dirname, '../../../.env');
+try { process.loadEnvFile(rootEnv); } catch { }
 try { process.loadEnvFile(); } catch { }
 
 async function bootstrap() {
