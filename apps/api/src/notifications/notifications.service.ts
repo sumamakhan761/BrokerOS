@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { prismaClient as prisma } from '../lib/database/prisma-client.js';
 import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { NotificationsGateway } from './notifications.gateway.js';
-import { NotificationType } from '../../src/generated/prisma/client.js';
+import { NotificationType } from '@brokeros/prisma';
 import { CreateNotificationDto } from './dto/notifications.dto.js';
 
 @Injectable()
@@ -115,7 +115,7 @@ export class NotificationsService {
           if (lead && (lead.status === 'NEW' || lead.status === 'CONTACTED')) coldCallCount++;
         }
       }
-      
+
       const assignment = await prisma.managerTaskUser.findFirst({
         where: { userId, task: { isActive: true } },
         include: { task: true },
