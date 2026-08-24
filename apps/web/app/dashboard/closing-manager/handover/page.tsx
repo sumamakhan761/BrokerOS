@@ -4,6 +4,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ClosingManagerHandoverClient } from "@/features/leads/components/tables/ClosingManagerHandoverClient";
+import { Key, Loader2 } from "lucide-react";
 
 export default function ClosingManagerHandoverPage() {
   const router = useRouter();
@@ -20,8 +21,8 @@ export default function ClosingManagerHandoverPage() {
     if (user?.roleId) {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       fetch(`${baseUrl}/roles`)
-        .then(res => res.json())
-        .then(roles => {
+        .then((res) => res.json())
+        .then((roles) => {
           const role = roles.find((r: any) => r.id === user.roleId);
           if (role && ["CLOSING_MANAGER", "ADMIN"].includes(role.code)) {
             setIsAuthorized(true);
@@ -34,15 +35,29 @@ export default function ClosingManagerHandoverPage() {
   }, [session, isPending, router]);
 
   if (!isAuthorized) {
-    return <div className="p-8">Verifying access...</div>;
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-8 h-8 text-[var(--brand-600)] animate-spin" />
+        <p className="text-xs font-semibold text-[var(--text-muted)]">
+          Verifying closing access…
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 animate-enter">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Lead Handover</h1>
-          <p className="text-slate-500 text-sm mt-1">Manage leads ready to be handed over after completing the closing process.</p>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight flex items-center gap-2.5 m-0">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+              <Key size={18} />
+            </div>
+            <span>Lead Handover & Registration Finalization</span>
+          </h1>
+          <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5 m-0">
+            Finalize closed CP bookings and transition customer files to post-sales handover
+          </p>
         </div>
       </div>
 
