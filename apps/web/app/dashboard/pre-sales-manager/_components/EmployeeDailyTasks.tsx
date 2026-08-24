@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { CircleProgress } from "./CircleProgress";
 import { EmployeeDashboardData } from "./types";
@@ -9,34 +11,53 @@ interface EmployeeDailyTasksProps {
   onEditTask: () => void;
 }
 
-export function EmployeeDailyTasks({ tasks, hasBacklog, onEditTask }: EmployeeDailyTasksProps) {
+export function EmployeeDailyTasks({
+  tasks,
+  hasBacklog,
+  onEditTask,
+}: EmployeeDailyTasksProps) {
   return (
-    <div className={`relative rounded-2xl p-6 shadow-sm border ${hasBacklog ? 'bg-amber-50/50 border-amber-200' : 'bg-white border-slate-100'}`}>
+    <div
+      className={`relative rounded-3xl p-6 shadow-2xs border ${
+        hasBacklog
+          ? "bg-amber-50/40 border-amber-200/80"
+          : "bg-white border-slate-200/80"
+      }`}
+    >
       {hasBacklog && (
-        <div className="absolute top-0 left-0 right-0 bg-amber-100/80 rounded-t-2xl px-5 py-2.5 flex items-center gap-2 border-b border-amber-200">
-          <AlertCircle className="w-4 h-4 text-amber-600" />
-          <span className="text-[12px] font-bold text-amber-700">Employee has backlogs</span>
+        <div className="mb-4 bg-amber-100/70 rounded-2xl px-3.5 py-1.5 flex items-center gap-2 border border-amber-200">
+          <AlertCircle size={13} className="text-amber-700 shrink-0" />
+          <span className="text-[10px] font-extrabold text-amber-800 uppercase tracking-wider">
+            Employee has pending backlogs
+          </span>
         </div>
       )}
-      <div className={hasBacklog ? "mt-10" : ""}>
+
+      <div>
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
-            <ListTodo className="w-5 h-5 text-indigo-500" />
-            <h2 className="text-lg font-bold text-slate-900 m-0">Daily Tasks</h2>
+            <div className="w-7 h-7 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+              <ListTodo size={14} />
+            </div>
+            <h2 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+              Daily Call Goals
+            </h2>
           </div>
           <button
             onClick={onEditTask}
-            className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-none rounded-lg px-3 py-1.5 text-xs font-bold cursor-pointer transition-colors"
+            className="flex items-center gap-1.5 bg-purple-50 hover:bg-purple-100 text-[var(--brand-700)] border border-purple-200/60 rounded-xl px-2.5 py-1 text-xs font-bold cursor-pointer transition-all active:scale-[0.96] press-effect shadow-2xs"
           >
-            <Edit2 className="w-3.5 h-3.5" /> Edit Task
+            <Edit2 size={12} />
+            <span>Edit Target</span>
           </button>
         </div>
+
         <div className="flex justify-around items-start">
           <CircleProgress
             done={tasks.coldCall.done}
             target={tasks.coldCall.target}
             label="Cold Calls"
-            color="#6366f1"
+            color="#9333ea"
           />
           <CircleProgress
             done={tasks.followUp.done}

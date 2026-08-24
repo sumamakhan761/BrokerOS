@@ -1,10 +1,25 @@
 import React from "react";
 
-export function StatChip({ label, value, color }: { label: string; value: number; color: string }) {
+export function StatChip({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-      <div style={{ fontSize: 18, fontWeight: 800, color }}>{value}</div>
-      <div style={{ fontSize: 10, color: "#505e71ff", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+    <div className="flex flex-col items-center gap-0.5">
+      <div
+        className="text-base font-extrabold tabular-nums"
+        style={{ color }}
+      >
+        {value}
+      </div>
+      <div className="text-[9px] text-[var(--text-muted)] font-extrabold uppercase tracking-wider">
+        {label}
+      </div>
     </div>
   );
 }
