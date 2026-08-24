@@ -20,13 +20,14 @@ export default function SiteVisitEditMode({ svId, editForm, setEditForm, saving,
           <Picker
             selectedValue={editForm.interestLevel}
             onValueChange={(itemValue) => setEditForm({ ...editForm, interestLevel: itemValue })}
-            style={{ height: 50 }}
+            style={{ height: 50, color: '#0f172a' }}
+            dropdownIconColor="#0f172a"
           >
-            <Picker.Item label="Select..." value="" />
-            <Picker.Item label="High" value="HIGH" />
-            <Picker.Item label="Medium" value="MEDIUM" />
-            <Picker.Item label="Low" value="LOW" />
-            <Picker.Item label="Not Interested" value="NOT_INTERESTED" />
+            <Picker.Item label="Select..." value="" color="#94a3b8" />
+            <Picker.Item label="High" value="HIGH" color="#0f172a" />
+            <Picker.Item label="Medium" value="MEDIUM" color="#0f172a" />
+            <Picker.Item label="Low" value="LOW" color="#0f172a" />
+            <Picker.Item label="Not Interested" value="NOT_INTERESTED" color="#0f172a" />
           </Picker>
         </View>
       </View>
@@ -58,13 +59,14 @@ export default function SiteVisitEditMode({ svId, editForm, setEditForm, saving,
           <Picker
             selectedValue={editForm.customerReaction}
             onValueChange={(itemValue) => setEditForm({ ...editForm, customerReaction: itemValue })}
-            style={{ height: 50 }}
+            style={{ height: 50, color: '#0f172a' }}
+            dropdownIconColor="#0f172a"
           >
-            <Picker.Item label="Select..." value="" />
-            <Picker.Item label="Very Positive" value="VERY_POSITIVE" />
-            <Picker.Item label="Positive" value="POSITIVE" />
-            <Picker.Item label="Neutral" value="NEUTRAL" />
-            <Picker.Item label="Negative" value="NEGATIVE" />
+            <Picker.Item label="Select..." value="" color="#94a3b8" />
+            <Picker.Item label="Very Positive" value="VERY_POSITIVE" color="#0f172a" />
+            <Picker.Item label="Positive" value="POSITIVE" color="#0f172a" />
+            <Picker.Item label="Neutral" value="NEUTRAL" color="#0f172a" />
+            <Picker.Item label="Negative" value="NEGATIVE" color="#0f172a" />
           </Picker>
         </View>
       </View>
@@ -75,13 +77,14 @@ export default function SiteVisitEditMode({ svId, editForm, setEditForm, saving,
           <Picker
             selectedValue={editForm.closingProbability}
             onValueChange={(itemValue) => setEditForm({ ...editForm, closingProbability: itemValue })}
-            style={{ height: 50 }}
+            style={{ height: 50, color: '#0f172a' }}
+            dropdownIconColor="#0f172a"
           >
-            <Picker.Item label="Select..." value="" />
-            <Picker.Item label="Very High" value="VERY_HIGH" />
-            <Picker.Item label="High" value="HIGH" />
-            <Picker.Item label="Medium" value="MEDIUM" />
-            <Picker.Item label="Low" value="LOW" />
+            <Picker.Item label="Select..." value="" color="#94a3b8" />
+            <Picker.Item label="Very High" value="VERY_HIGH" color="#0f172a" />
+            <Picker.Item label="High" value="HIGH" color="#0f172a" />
+            <Picker.Item label="Medium" value="MEDIUM" color="#0f172a" />
+            <Picker.Item label="Low" value="LOW" color="#0f172a" />
           </Picker>
         </View>
       </View>
