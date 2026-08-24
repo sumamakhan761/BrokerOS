@@ -1,14 +1,24 @@
-import React, { useState } from 'react';
-import { FileText, Download, Upload, CheckCircle, Landmark, XCircle, FileCheck, Send } from 'lucide-react';
-import { toast } from 'sonner';
+import React, { useState } from "react";
+import {
+  FileText,
+  Download,
+  Upload,
+  CheckCircle2,
+  Landmark,
+  XCircle,
+  FileCheck,
+  Send,
+  Edit2,
+} from "lucide-react";
+import { toast } from "sonner";
 
 const DOC_TYPES = [
-  { key: 'AADHAAR', label: 'Aadhaar Card' },
-  { key: 'PAN', label: 'PAN Card' },
-  { key: 'PASSPORT_PHOTO', label: 'Passport Photo' },
-  { key: 'BOOKING_FORM', label: 'Signed Booking Form' },
-  { key: 'INCOME_DOCUMENT', label: 'Income Proof (optional)' },
-  { key: 'OTHER', label: 'Other Document' },
+  { key: "AADHAAR", label: "Aadhaar Card Copy" },
+  { key: "PAN", label: "PAN Card Copy" },
+  { key: "PASSPORT_PHOTO", label: "Passport Photograph" },
+  { key: "BOOKING_FORM", label: "Signed Booking Application Form" },
+  { key: "INCOME_DOCUMENT", label: "Income & Banking Proof" },
+  { key: "OTHER", label: "Other Documents" },
 ];
 
 interface BookingData {
@@ -35,27 +45,39 @@ interface BookingSummaryProps {
   userRole?: string;
 }
 
-export function BookingSummary({ booking, leadId, onRefresh, onEdit, userRole }: BookingSummaryProps) {
+export function BookingSummary({
+  booking,
+  leadId,
+  onRefresh,
+  onEdit,
+  userRole,
+}: BookingSummaryProps) {
   const [saving, setSaving] = useState(false);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
 
-  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>, docType: string) => {
+  const handleDocumentUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    docType: string
+  ) => {
     const file = e.target.files?.[0];
     if (!file || !booking) return;
 
     setUploadingType(docType);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('docType', docType);
-      formData.append('bookingId', booking.id);
+      formData.append("file", file);
+      formData.append("docType", docType);
+      formData.append("bookingId", booking.id);
 
       await fetch(`${apiUrl}/api/leads/${leadId}/booking/documents`, {
-        method: 'POST',
+        method: "POST",
         body: formData,
       });
+      toast.success("Document uploaded successfully");
       onRefresh();
+    } catch {
+      toast.error("Failed to upload document");
     } finally {
       setUploadingType(null);
     }
@@ -65,27 +87,27 @@ export function BookingSummary({ booking, leadId, onRefresh, onEdit, userRole }:
     if (!booking) return;
     setSaving(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       const res = await fetch(`${apiUrl}/api/approvals`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: `Booking Approval: Lead`,
-          description: `Please approve the booking. Agreed Price: ₹${booking.agreedPrice}, Booking Amount: ₹${booking.bookingAmount}`,
-          type: 'BOOKING',
+          title: `Booking Approval: Unit Booking Confirmation`,
+          description: `Please approve the booking. Agreed Price: ₹${booking.agreedPrice}, Booking Token: ₹${booking.bookingAmount}`,
+          type: "BOOKING",
           bookingId: booking.id,
         }),
       });
-      
+
       if (!res.ok) {
-        toast.error('Failed to send approval request');
+        toast.error("Failed to send approval request");
         return;
       }
-      
-      toast.success('Booking approval request sent to manager.');
+
+      toast.success("Booking approval request sent to manager.");
       onRefresh();
-    } catch (e) {
-      toast.error('An error occurred');
+    } catch {
+      toast.error("An error occurred");
     } finally {
       setSaving(false);
     }
@@ -95,130 +117,186 @@ export function BookingSummary({ booking, leadId, onRefresh, onEdit, userRole }:
     if (!booking) return;
     setSaving(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       const res = await fetch(`${apiUrl}/api/leads/${leadId}/booking/done`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId: booking.id }),
       });
-      
+
       if (!res.ok) {
-        toast.error('Failed to mark booking as done');
+        toast.error("Failed to mark booking as done");
         return;
       }
-      
-      toast.success('Booking marked as done.');
+
+      toast.success("Booking marked as complete.");
       onRefresh();
-    } catch (e) {
-      toast.error('An error occurred');
+    } catch {
+      toast.error("An error occurred");
     } finally {
       setSaving(false);
     }
   };
 
+  const isConfirmed = booking.status === "CONFIRMED";
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-gray-100 flex items-center gap-4">
-        <div className={`w-11 h-11 rounded-xl ${booking.status === 'CONFIRMED' ? 'bg-emerald-50/80 border border-emerald-100/50' : 'bg-amber-50/80 border border-amber-100/50'} flex items-center justify-center`}>
-          {booking.status === 'CONFIRMED' ? (
-            <CheckCircle className="w-5.5 h-5.5 text-emerald-600" />
-          ) : (
-            <FileText className="w-5.5 h-5.5 text-amber-600" />
-          )}
-        </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-bold text-gray-900">Booking Details</h3>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            {booking.status === 'CONFIRMED' ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold tracking-wider uppercase text-emerald-700 bg-emerald-100/50 px-2.5 py-0.5 rounded-full">
-                <CheckCircle className="w-3 h-3" /> Booking Confirmed
-              </span>
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      {/* Header */}
+      <div className="p-5 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/50">
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center border ${isConfirmed
+              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+              : "bg-amber-50 border-amber-200 text-amber-800"
+              }`}
+          >
+            {isConfirmed ? (
+              <CheckCircle2 size={20} />
             ) : (
-              <span className="inline-flex items-center gap-1 text-[8px] font-bold tracking-wider uppercase text-amber-700 bg-amber-100/50 px-2.5 py-0.5 rounded-full">
-                Documentation Pending
-              </span>
+              <FileText size={20} />
             )}
           </div>
+          <div>
+            <h3 className="text-[11px] font-bold text-[var(--text-primary)] m-0">
+              Unit Booking Record
+            </h3>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              {isConfirmed ? (
+                <span className="inline-flex items-center gap-1 text-[8px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  <CheckCircle2 size={10} /> Booking Confirmed
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[8px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                  Approval Pending
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-        {booking.status !== 'CONFIRMED' && userRole !== 'CHANNEL_PARTNER' && (
-          <div className="flex gap-2">
+
+        {/* Action Controls */}
+        {!isConfirmed && userRole !== "CHANNEL_PARTNER" && (
+          <div className="flex items-center gap-2">
             {onEdit && (
               <button
                 onClick={onEdit}
                 disabled={saving}
-                className="text-xs bg-white text-gray-700 border border-gray-300 px-3 py-2 rounded-xl font-medium hover:bg-gray-50 disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5"
+                className="text-xs bg-white text-slate-700 border border-slate-200 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-50 disabled:opacity-50 transition-all shadow-2xs active:scale-[0.96] press-effect flex items-center gap-1.25 cursor-pointer"
               >
-                Edit Booking
+                <Edit2 size={12} />
+                <span>Edit</span>
               </button>
             )}
-            {userRole === 'CLOSING_MANAGER' ? (
+            {userRole === "CLOSING_MANAGER" ? (
               <button
                 onClick={handleMarkAsDone}
                 disabled={saving}
-                className="text-xs bg-emerald-600 text-white px-3 py-2 rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5"
+                className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl font-bold disabled:opacity-50 transition-all shadow-xs active:scale-[0.96] press-effect flex items-center gap-1.5 cursor-pointer"
               >
-                {saving ? 'Saving...' : <><CheckCircle className="w-3.5 h-3.5" /> Mark as Done</>}
+                <CheckCircle2 size={13} />
+                <span>{saving ? "Saving…" : "Mark Done"}</span>
               </button>
             ) : (
               <button
                 onClick={handleRequestApproval}
                 disabled={saving}
-                className="text-xs bg-indigo-600 text-white px-3 py-2 rounded-xl font-medium hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5"
+                className="text-xs bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white px-3.5 py-1.5 rounded-xl font-bold disabled:opacity-50 transition-all shadow-xs active:scale-[0.96] press-effect flex items-center gap-1.25 cursor-pointer"
               >
-                {saving ? 'Sending...' : <><Send className="w-3.5 h-3.5" /> Send for Approval</>}
+                <Send size={12} />
+                <span className="text-[10px]">{saving ? "Sending…" : "Request"}</span>
               </button>
             )}
           </div>
         )}
       </div>
 
-      <div className="p-6 space-y-6">
-        {/* Financial Summary */}
-        <div className="grid grid-cols-2 gap-4">
+      <div className="p-5 space-y-5">
+        {/* Financial KPI Summary */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
           {booking.unitDescription && (
-            <div className="col-span-2 bg-gray-50/80 rounded-xl p-4 border border-gray-100/50">
-              <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-1">Unit</p>
-              <p className="text-sm font-semibold text-gray-900">{booking.unitDescription}</p>
+            <div className="sm:col-span-2 md:col-span-3 bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] m-0">
+                Booked Property Unit
+              </p>
+              <p className="text-xs font-bold text-[var(--text-primary)] mt-0.5 m-0">
+                {booking.unitDescription}
+              </p>
             </div>
           )}
+
           {booking.agreedPrice && (
-            <div className="bg-emerald-50/80 rounded-xl p-4 border border-emerald-100/50">
-              <p className="text-[11px] uppercase tracking-wider text-emerald-700 font-bold mb-1">Agreed Price</p>
-              <p className="text-xl font-bold text-emerald-900">₹{Number(booking.agreedPrice).toLocaleString('en-IN')}</p>
+            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3.5">
+              <p className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-800 m-0">
+                Agreed Sale Price
+              </p>
+              <p className="text-[13px] font-extrabold text-emerald-950 tabular-nums mt-0.5 m-0">
+                ₹{Number(booking.agreedPrice).toLocaleString("en-IN")}
+              </p>
             </div>
           )}
+
           {booking.bookingAmount && (
-            <div className="bg-blue-50/80 rounded-xl p-4 border border-blue-100/50">
-              <p className="text-[11px] uppercase tracking-wider text-blue-700 font-bold mb-1">Booking Amount</p>
-              <p className="text-xl font-bold text-blue-900">₹{Number(booking.bookingAmount).toLocaleString('en-IN')}</p>
+            <div className="bg-sky-50/70 border border-sky-200/80 rounded-xl p-3.5">
+              <p className="text-[9px] font-extrabold uppercase tracking-wider text-sky-800 m-0">
+                Booking Token Paid
+              </p>
+              <p className="text-[13px] font-extrabold text-sky-950 tabular-nums mt-0.5 m-0">
+                ₹{Number(booking.bookingAmount).toLocaleString("en-IN")}
+              </p>
             </div>
           )}
+
           {booking.commissionPercentage && (
-            <div className="bg-purple-50/80 rounded-xl p-4 border border-purple-100/50">
-              <p className="text-[11px] uppercase tracking-wider text-purple-700 font-bold mb-1">Commission</p>
-              <p className="text-xl font-bold text-purple-900">{booking.commissionPercentage}% <span className="text-sm font-medium text-purple-600 ml-1">(₹{Number(booking.commissionAmount).toLocaleString('en-IN')})</span></p>
+            <div className="bg-purple-50/70 border border-purple-200/80 rounded-xl p-3.5">
+              <p className="text-[9px] font-extrabold uppercase tracking-wider text-purple-800 m-0">
+                Total Brokerage
+              </p>
+              <p className="text-[13px] font-extrabold text-purple-950 tabular-nums mt-0.5 m-0">
+                {booking.commissionPercentage}%{" "}
+                <span className="text-xs font-bold text-purple-700">
+                  (₹{Number(booking.commissionAmount).toLocaleString("en-IN")})
+                </span>
+              </p>
             </div>
           )}
+
           {booking.paymentMode && (
-            <div className="bg-gray-50/80 rounded-xl p-4 border border-gray-100/50">
-              <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-1">Payment Mode</p>
-              <p className="text-sm font-semibold text-gray-900">{booking.paymentMode}</p>
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3">
+              <p className="text-[9px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] m-0">
+                Token Payment Mode
+              </p>
+              <p className="text-xs font-bold text-[var(--text-primary)] mt-0.5 m-0">
+                {booking.paymentMode}
+              </p>
             </div>
           )}
+
           {booking.transactionRef && (
-            <div className="bg-gray-50/80 rounded-xl p-4 border border-gray-100/50">
-              <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-1">Reference</p>
-              <p className="text-sm font-semibold text-gray-900">{booking.transactionRef}</p>
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3">
+              <p className="text-[9px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] m-0">
+                Transaction / UTR Ref
+              </p>
+              <p className="text-xs font-bold text-[var(--text-primary)] tabular-nums mt-0.5 m-0 truncate">
+                {booking.transactionRef}
+              </p>
             </div>
           )}
+
           {booking.loanRequired !== undefined && (
-            <div className="bg-gray-50/80 rounded-xl p-4 border border-gray-100/50 flex flex-col justify-center">
-              <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-1">Home Loan</p>
-              <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] m-0">
+                Home Loan Status
+              </p>
+              <p className="text-xs font-bold text-[var(--text-primary)] mt-0.5 flex items-center gap-1 m-0">
                 {booking.loanRequired ? (
-                  <><Landmark className="w-4 h-4 text-amber-600" /> Required</>
+                  <>
+                    <span>Loan Assistance Required</span>
+                  </>
                 ) : (
-                  <><XCircle className="w-4 h-4 text-gray-400" /> Not Required</>
+                  <>
+                    <span>Self-Financed</span>
+                  </>
                 )}
               </p>
             </div>
@@ -226,51 +304,77 @@ export function BookingSummary({ booking, leadId, onRefresh, onEdit, userRole }:
         </div>
 
         {booking.remarks && (
-          <div className="bg-amber-50/80 rounded-xl p-4 border border-amber-100/50">
-            <p className="text-[11px] uppercase tracking-wider text-amber-700 font-bold mb-1">Remarks</p>
-            <p className="text-sm text-amber-900 leading-relaxed">{booking.remarks}</p>
+          <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-3.5 space-y-0.5">
+            <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 m-0">
+              Commercial Remarks
+            </p>
+            <p className="text-xs text-amber-950 leading-relaxed m-0">
+              {booking.remarks}
+            </p>
           </div>
         )}
 
         {/* Documents Section */}
         <div className="pt-2">
-          <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <FileCheck className="w-4.5 h-4.5 text-gray-400" /> Required Documents
+          <h4 className="text-xs font-extrabold text-[var(--text-primary)] mb-3 flex items-center gap-2 m-0">
+            <FileCheck size={16} className="text-[var(--brand-600)]" />
+            <span>Booking Documents & Client Proofs</span>
           </h4>
-          <div className="space-y-3">
-            {DOC_TYPES.map(doc => {
-              const existing = booking.documents?.find(d => d.type === doc.key);
+
+          <div className="space-y-2.5">
+            {DOC_TYPES.map((doc) => {
+              const existing = booking.documents?.find(
+                (d) => d.type === doc.key
+              );
               return (
-                <div key={doc.key} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50/80 transition-all shadow-sm">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${existing ? 'bg-emerald-50 border-emerald-100/50' : 'bg-gray-50 border-gray-200'}`}>
-                      {existing ? <CheckCircle className="w-4.5 h-4.5 text-emerald-600" /> : <FileText className="w-4.5 h-4.5 text-gray-400" />}
+                <div
+                  key={doc.key}
+                  className="flex items-center justify-between p-3 border border-slate-200/80 rounded-xl hover:bg-slate-50/80 transition-all shadow-2xs bg-white"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center border ${existing
+                        ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                        : "bg-slate-50 border-slate-200 text-slate-400"
+                        }`}
+                    >
+                      {existing ? (
+                        <CheckCircle2 size={16} />
+                      ) : (
+                        <FileText size={16} />
+                      )}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{doc.label}</p>
-                      {existing && <p className="text-xs text-gray-500 font-medium mt-0.5">{existing.title || 'Document'}</p>}
+                      <p className="text-xs font-bold text-[var(--text-primary)] m-0">
+                        {doc.label}
+                      </p>
                     </div>
                   </div>
+
                   <div className="flex items-center gap-2">
                     {existing ? (
                       <a
                         href={existing.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-xs bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium px-2 py-2 rounded-lg transition-all"
+                        className="inline-flex items-center gap-1.25 text-xs bg-purple-50 text-[var(--brand-700)] hover:bg-purple-100 border border-purple-200 px-3 py-1.2 rounded-lg font-bold transition-all active:scale-[0.96] press-effect"
                       >
-                        <Download className="w-4 h-4" />
-                        View File
+                        <Download size={15} />
+                        <span className="text-[9px]">View File</span>
                       </a>
-                    ) : userRole !== 'CHANNEL_PARTNER' ? (
-                      <label className="cursor-pointer flex items-center gap-1.5 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium px-4 py-2 rounded-lg transition-all">
-                        <Upload className="w-4 h-4" />
-                        {uploadingType === doc.key ? 'Uploading...' : 'Upload'}
+                    ) : userRole !== "CHANNEL_PARTNER" ? (
+                      <label className="cursor-pointer inline-flex items-center gap-1.5 text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 px-3 py-1.5 rounded-lg font-bold transition-all active:scale-[0.96] press-effect">
+                        <Upload size={13} />
+                        <span>
+                          {uploadingType === doc.key
+                            ? "Uploading…"
+                            : "Upload"}
+                        </span>
                         <input
                           type="file"
                           className="hidden"
                           accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={e => handleDocumentUpload(e, doc.key)}
+                          onChange={(e) => handleDocumentUpload(e, doc.key)}
                           disabled={uploadingType !== null}
                         />
                       </label>
@@ -285,4 +389,3 @@ export function BookingSummary({ booking, leadId, onRefresh, onEdit, userRole }:
     </div>
   );
 }
-
