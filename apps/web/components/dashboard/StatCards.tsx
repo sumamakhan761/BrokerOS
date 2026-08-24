@@ -1,16 +1,13 @@
-/* ── Shared StatCards ───────────────────────────────────────────────
-   Replaces: DashboardWidgets in pre-sales, sales-exec, PSM, SM,
-             post-sales, channel-partner, sourcing-mgr, closing-mgr
-   ------------------------------------------------------------------ */
+import React from "react";
 import { LucideIcon } from "lucide-react";
 
 export interface StatCardItem {
   label: string;
   value: string | number;
   icon: LucideIcon;
-  /** Hex color or CSS var for the icon and accent */
+  /** Hex color, OKLCH or CSS var for the icon and accent */
   accent: string;
-  /** Optional background tint. Defaults to a 10% opacity of accent */
+  /** Optional background tint */
   bg?: string;
   /** Optional subtitle under the value */
   sub?: string;
@@ -21,108 +18,52 @@ export function StatCards({
   cols,
 }: {
   items: StatCardItem[];
-  /** grid columns override — defaults to auto-fit minmax(200px) */
+  /** grid columns override — defaults to auto-fit minmax(190px) */
   cols?: number;
 }) {
-  const gridStyle: React.CSSProperties = cols
-    ? {
-      display: "grid",
-      gridTemplateColumns: `repeat(${cols}, 1fr)`,
-      gap: 16,
-    }
-    : {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-      gap: 16,
-    };
+  const gridClasses = cols
+    ? `grid grid-cols-1 sm:grid-cols-${cols} gap-4`
+    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4";
 
   return (
-    <div style={gridStyle}>
+    <div className={gridClasses}>
       {items.map((item, i) => {
         const Icon = item.icon;
-        const bgColor = item.bg ?? item.accent + "12";
         return (
           <div
             key={item.label}
-            style={{
-              position: "relative",
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-              borderRadius: "var(--radius-xl)",
-              padding: "20px 22px",
-              overflow: "hidden",
-              boxShadow: "var(--shadow-sm)",
-              transition: "box-shadow 200ms cubic-bezier(0.16,1,0.3,1), transform 200ms cubic-bezier(0.16,1,0.3,1)",
-              cursor: "default",
-              animation: "enter 0.5s cubic-bezier(0.16,1,0.3,1) both",
-              animationDelay: `${i * 0.06}s`,
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-md)";
-              (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-sm)";
-              (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-            }}
+            className="relative bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover-lift overflow-hidden transition-all duration-200 cursor-default animate-enter"
+            style={{ animationDelay: `${i * 0.05}s` }}
           >
-            {/* Background accent circle */}
-            <div style={{
-              position: "absolute",
-              top: -16,
-              right: -16,
-              width: 80,
-              height: 80,
-              borderRadius: "50%",
-              background: bgColor,
-              pointerEvents: "none",
-            }} />
+            {/* Background Ambient Glow */}
+            <div
+              className="absolute -top-6 -right-6 w-24 h-24 rounded-full pointer-events-none opacity-10"
+              style={{ background: item.accent }}
+            />
 
-            {/* Icon */}
-            <div style={{
-              width: 38,
-              height: 38,
-              borderRadius: "var(--radius-md)",
-              background: bgColor,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 14,
-              position: "relative",
-            }}>
-              <Icon size={18} strokeWidth={2} style={{ color: item.accent }} />
+            {/* Icon Header */}
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center mb-3.5 relative"
+              style={{
+                background: item.bg || `color-mix(in oklch, ${item.accent} 12%, transparent)`,
+              }}
+            >
+              <Icon size={18} strokeWidth={2.2} style={{ color: item.accent }} />
             </div>
 
-            {/* Value */}
-            <div style={{
-              fontSize: "var(--text-3xl)",
-              fontWeight: 800,
-              letterSpacing: "-0.03em",
-              color: "var(--text-primary)",
-              lineHeight: 1,
-              marginBottom: 6,
-            }}>
+            {/* Metric Value */}
+            <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] tabular-nums leading-none mb-1.5">
               {item.value}
             </div>
 
             {/* Label */}
-            <div style={{
-              fontSize: "var(--text-sm)",
-              fontWeight: 600,
-              color: "var(--text-tertiary)",
-              letterSpacing: "-0.01em",
-            }}>
+            <div className="text-xs font-bold text-[var(--text-secondary)] tracking-tight">
               {item.label}
             </div>
 
-            {/* Optional sub */}
+            {/* Optional Subtitle */}
             {item.sub && (
-              <div style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: "var(--text-muted)",
-                marginTop: 4,
-              }}>
+              <div className="text-[11px] font-medium text-[var(--text-muted)] mt-1">
                 {item.sub}
               </div>
             )}

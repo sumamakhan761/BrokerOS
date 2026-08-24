@@ -1,11 +1,7 @@
-/* ── Shared FollowUpList ────────────────────────────────────────────
-   Replaces: pre-sales/components/TodayFollowUps.tsx
-             pre-sales-manager/_components/TodayFollowUps.tsx
-             post-sales/components/PostSalesFollowUps.tsx
-   ------------------------------------------------------------------ */
 "use client";
+
 import Link from "next/link";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle2, PhoneCall, Calendar } from "lucide-react";
 import { Avatar } from "./Avatar";
 
 export interface FollowUpItem {
@@ -27,10 +23,10 @@ export interface FollowUpItem {
   };
 }
 
-const TEMP_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  HOT: { bg: "#fee2e2", text: "#b91c1c", label: "Hot" },
-  WARM: { bg: "#fef3c7", text: "#b45309", label: "Warm" },
-  COLD: { bg: "#dbeafe", text: "#1e40af", label: "Cold" },
+const TEMP_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  HOT: { bg: "bg-rose-50 border-rose-200", text: "text-rose-700", label: "Hot" },
+  WARM: { bg: "bg-amber-50 border-amber-200", text: "text-amber-700", label: "Warm" },
+  COLD: { bg: "bg-sky-50 border-sky-200", text: "text-sky-700", label: "Cold" },
 };
 
 export function FollowUpList({
@@ -45,154 +41,73 @@ export function FollowUpList({
   title?: string;
 }) {
   return (
-    <div style={{
-      background: "var(--bg-surface)",
-      border: "1px solid var(--border-subtle)",
-      borderRadius: "var(--radius-xl)",
-      padding: "24px",
-      boxShadow: "var(--shadow-sm)",
-      display: "flex",
-      flexDirection: "column",
-      height: "100%",
-    }}>
+    <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs flex flex-col justify-between h-full">
       {/* Header */}
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 18,
-      }}>
-        <div style={{
-          fontSize: "var(--text-sm)",
-          fontWeight: 700,
-          color: "var(--text-primary)",
-          letterSpacing: "-0.01em",
-        }}>
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-xs font-bold text-[var(--text-primary)] tracking-tight">
           {title}
         </div>
-        <span style={{
-          padding: "3px 10px",
-          borderRadius: "var(--radius-full)",
-          background: "var(--success-bg)",
-          color: "var(--success-fg)",
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
-          border: "1px solid #bbf7d0",
-        }}>
+        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">
           Today
         </span>
       </div>
 
       {/* Body */}
       {!items || items.length === 0 ? (
-        <div style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "var(--text-sm)",
-          color: "var(--text-muted)",
-          fontWeight: 500,
-        }}>
+        <div className="flex-1 flex items-center justify-center py-8 text-xs font-medium text-[var(--text-muted)]">
           No follow-ups scheduled for today.
         </div>
       ) : (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          {items.map((fu, i) => {
+        <div className="flex-1 divide-y divide-slate-100">
+          {items.map((fu) => {
             const name = fu.lead
               ? `${fu.lead.firstName ?? ""} ${fu.lead.lastName ?? ""}`.trim()
               : fu.customer
-                ? `${fu.customer.firstName ?? ""} ${fu.customer.lastName ?? ""}`.trim()
-                : "Unknown";
+              ? `${fu.customer.firstName ?? ""} ${fu.customer.lastName ?? ""}`.trim()
+              : "Unknown";
             const temp = fu.lead?.temperature;
-            const tempStyle = temp ? TEMP_COLORS[temp] : null;
+            const tempStyle = temp ? TEMP_STYLES[temp] : null;
             const isActionable = ["SCHEDULED", "RESCHEDULED", "MISSED"].includes(fu.status);
 
             return (
               <div
                 key={fu.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px 0",
-                  borderBottom: i < items.length - 1 ? "1px solid var(--border-subtle)" : "none",
-                  transition: "background 150ms ease",
-                }}
+                className="flex items-center justify-between py-3 gap-3 first:pt-0 last:pb-0"
               >
-                {/* Left: avatar + name */}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-                  <Avatar name={name.split(" ")[0]} size={34} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{
-                      fontSize: "var(--text-sm)",
-                      fontWeight: 700,
-                      color: "var(--text-primary)",
-                      letterSpacing: "-0.01em",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}>
+                {/* Left: Avatar + Details */}
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <Avatar name={name.split(" ")[0]} size={32} />
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-[var(--text-primary)] truncate">
                       {name || "—"}
                     </div>
-                    <div style={{
-                      fontSize: 11,
-                      fontWeight: 500,
-                      color: "var(--text-muted)",
-                      marginTop: 2,
-                    }}>
+                    <div className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5 truncate">
                       {fu.lead?.status ?? fu.lead?.phone ?? "—"}
                     </div>
                   </div>
                 </div>
 
-                {/* Right: temp badge + confirm/done */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                {/* Right: Temp Badge + Action */}
+                <div className="flex items-center gap-2.5 flex-shrink-0">
                   {tempStyle && (
-                    <span style={{
-                      padding: "2px 8px",
-                      borderRadius: "var(--radius-full)",
-                      background: tempStyle.bg,
-                      color: tempStyle.text,
-                      fontSize: 10,
-                      fontWeight: 700,
-                    }}>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${tempStyle.bg} ${tempStyle.text}`}
+                    >
                       {tempStyle.label}
                     </span>
                   )}
                   {onConfirm && isActionable ? (
                     <button
                       onClick={() => onConfirm(fu.id)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                        padding: "4px 10px",
-                        borderRadius: "var(--radius-md)",
-                        background: "var(--success-bg)",
-                        border: "1px solid #a7f3d0",
-                        color: "var(--success-fg)",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        transition: "background 150ms ease",
-                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[11px] font-bold transition-all active:scale-[0.96] press-effect cursor-pointer"
                     >
-                      <CheckCircle size={12} />
-                      Confirm
+                      <CheckCircle2 size={12} />
+                      <span>Confirm</span>
                     </button>
                   ) : (
-                    <span style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: "var(--success-fg)",
-                    }}>
-                      <CheckCircle size={13} /> Done
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+                      <CheckCircle2 size={12} />
+                      <span>Done</span>
                     </span>
                   )}
                 </div>
@@ -202,26 +117,14 @@ export function FollowUpList({
         </div>
       )}
 
-      {/* Footer link */}
+      {/* Footer Link */}
       {viewAllHref && (
-        <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border-subtle)" }}>
+        <div className="mt-4 pt-4 border-t border-slate-100">
           <Link
             href={viewAllHref}
-            style={{
-              display: "block",
-              textAlign: "center",
-              fontSize: "var(--text-sm)",
-              fontWeight: 700,
-              color: "var(--brand-600)",
-              background: "var(--brand-50)",
-              padding: "10px",
-              borderRadius: "var(--radius-md)",
-              textDecoration: "none",
-              transition: "background 150ms ease",
-              border: "1px solid var(--brand-100)",
-            }}
+            className="block text-center text-xs font-bold text-[var(--brand-700)] bg-purple-50 hover:bg-purple-100/80 border border-purple-200/70 py-2 rounded-xl transition-all active:scale-[0.98] press-effect text-decoration-none"
           >
-            See all follow-ups
+            See All Scheduled Follow-ups
           </Link>
         </div>
       )}

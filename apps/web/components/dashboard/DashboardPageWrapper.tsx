@@ -1,7 +1,5 @@
-/* ── Shared DashboardPageWrapper ────────────────────────────────────
-   Handles loading state, error state, and page header for all pages.
-   Replaces: Inline loading/error/header code in every page.tsx
-   ------------------------------------------------------------------ */
+import React from "react";
+import { AlertCircle } from "lucide-react";
 
 export function DashboardPageWrapper({
   loading,
@@ -22,134 +20,57 @@ export function DashboardPageWrapper({
 }) {
   if (loading) {
     return (
-      <div style={{
-        minHeight: "50vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 14,
-      }}>
-        <div style={{ position: "relative", width: 36, height: 36 }}>
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "50%",
-            border: "2.5px solid var(--brand-100)",
-          }} />
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "50%",
-            border: "2.5px solid transparent",
-            borderTopColor: "var(--brand-600)",
-            animation: "dash-spin 0.75s linear infinite",
-          }} />
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3.5">
+        <div className="relative w-9 h-9">
+          <div className="absolute inset-0 rounded-full border-2 border-purple-100" />
+          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--brand-600)] animate-spin" />
         </div>
-        <p style={{
-          fontSize: "var(--text-sm)",
-          color: "var(--text-muted)",
-          fontWeight: 500,
-        }}>
-          Loading…
+        <p className="text-xs font-semibold text-[var(--text-tertiary)] tracking-tight">
+          Loading workspace data…
         </p>
-        <style>{`@keyframes dash-spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{
-        background: "var(--danger-bg)",
-        border: "1px solid #fecaca",
-        borderRadius: "var(--radius-xl)",
-        padding: "20px 24px",
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-        maxWidth: 560,
-        margin: "32px auto",
-      }}>
-        <div style={{
-          width: 36,
-          height: 36,
-          borderRadius: "50%",
-          background: "#fee2e2",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          fontSize: 18,
-        }}>
-          ⚠
+      <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5 flex items-center gap-3.5 max-w-lg mx-auto my-8">
+        <div className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0 text-rose-700">
+          <AlertCircle size={20} />
         </div>
         <div>
-          <div style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "#991b1b", marginBottom: 4 }}>
-            Failed to load
+          <div className="text-xs font-extrabold text-rose-900 mb-0.5">
+            Unable to Load Workspace Data
           </div>
-          <div style={{ fontSize: "var(--text-sm)", color: "var(--danger-fg)" }}>{error}</div>
+          <div className="text-xs text-rose-700">{error}</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      gap: 28,
-      maxWidth: 1400,
-      width: "100%",
-      animation: "enter 0.45s cubic-bezier(0.16,1,0.3,1) both",
-    }}>
-      {/* Page header */}
+    <div className="flex flex-col gap-6 max-w-7xl w-full mx-auto animate-enter">
+      {/* Header Section */}
       {(userName || title) && (
-        <div style={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 12,
-        }}>
+        <div className="flex flex-wrap items-end justify-between gap-3 pb-2">
           <div>
-            {userName && (
-              <h1 style={{
-                fontSize: "clamp(1.5rem, 3vw, 2rem)",
-                fontWeight: 800,
-                letterSpacing: "-0.035em",
-                color: "var(--text-primary)",
-                margin: 0,
-                lineHeight: 1.1,
-              }}>
-                {title ? title : <>Welcome back, {userName.split(" ")[0]} <span>👋</span></>}
-              </h1>
-            )}
-            {!userName && title && (
-              <h1 style={{
-                fontSize: "clamp(1.5rem, 3vw, 2rem)",
-                fontWeight: 800,
-                letterSpacing: "-0.035em",
-                color: "var(--text-primary)",
-                margin: 0,
-                lineHeight: 1.1,
-              }}>
-                {title}
-              </h1>
-            )}
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight m-0 text-balance">
+              {title ? (
+                title
+              ) : (
+                <>
+                  Welcome back, {userName?.split(" ")[0] || "Agent"}{" "}
+                  <span className="inline-block hover:animate-bounce">👋</span>
+                </>
+              )}
+            </h1>
             {subtitle && (
-              <p style={{
-                fontSize: "var(--text-sm)",
-                fontWeight: 500,
-                color: "var(--text-tertiary)",
-                marginTop: 6,
-                marginBottom: 0,
-              }}>
+              <p className="text-xs sm:text-sm font-medium text-[var(--text-tertiary)] mt-1.5 mb-0 text-pretty">
                 {subtitle}
               </p>
             )}
           </div>
-          {headerRight}
+          {headerRight && <div className="flex items-center gap-2">{headerRight}</div>}
         </div>
       )}
       {children}

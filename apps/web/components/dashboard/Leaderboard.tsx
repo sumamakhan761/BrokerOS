@@ -1,16 +1,10 @@
-/* ── Shared Leaderboard ─────────────────────────────────────────────
-   Replaces: pre-sales/components/MonthlyLeaderboard.tsx
-             sales-executive/components/MonthlyLeaderboard.tsx
-             pre-sales-manager/_components/Leaderboard.tsx
-             sales-manager/_components/TeamLeaderboard.tsx
-             sourcing-manager/components/BrokerLeaderboard.tsx
-   ------------------------------------------------------------------ */
+import React from "react";
 import { Avatar } from "./Avatar";
+import { Trophy } from "lucide-react";
 
 export interface LeaderboardColumn {
   key: string;
   label: string;
-  /** optional formatter */
   format?: (val: any) => string | number;
 }
 
@@ -25,11 +19,6 @@ export interface LeaderboardEntry {
 }
 
 const RANK_MEDALS = ["🥇", "🥈", "🥉"];
-const RANK_BG: Record<number, string> = {
-  1: "rgba(251,191,36,0.1)",
-  2: "rgba(148,163,184,0.1)",
-  3: "rgba(251,146,60,0.1)",
-};
 
 export function Leaderboard({
   title = "Monthly Leaderboard",
@@ -47,145 +36,89 @@ export function Leaderboard({
   maxHeight?: number;
 }) {
   return (
-    <div style={{
-      background: "var(--bg-surface)",
-      border: "1px solid var(--border-subtle)",
-      borderRadius: "var(--radius-xl)",
-      padding: "24px",
-      boxShadow: "var(--shadow-sm)",
-      display: "flex",
-      flexDirection: "column",
-      height: "100%",
-    }}>
-      {/* Title */}
-      <div style={{
-        fontSize: "var(--text-sm)",
-        fontWeight: 700,
-        color: "var(--text-primary)",
-        letterSpacing: "-0.01em",
-        marginBottom: 16,
-      }}>
-        {title}
+    <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs flex flex-col justify-between h-full">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-4">
+        <Trophy size={16} className="text-amber-500 flex-shrink-0" />
+        <div className="text-xs font-bold text-[var(--text-primary)] tracking-tight">
+          {title}
+        </div>
       </div>
 
-      {/* Header row */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        padding: "0 10px 10px",
-        borderBottom: "1px solid var(--border-subtle)",
-        marginBottom: 6,
-      }}>
-        <div style={{ width: 36, fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          Rank
-        </div>
-        <div style={{ flex: 1, fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          Name
-        </div>
-        {columns.map(col => (
-          <div key={col.key} style={{
-            width: 56,
-            fontSize: 10,
-            fontWeight: 700,
-            color: "var(--text-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            textAlign: "right",
-          }}>
+      {/* Column Headers */}
+      <div className="flex items-center px-3 pb-2.5 border-b border-slate-100 mb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)]">
+        <div className="w-9">Rank</div>
+        <div className="flex-1">Member</div>
+        {columns.map((col) => (
+          <div key={col.key} className="w-14 text-right">
             {col.label}
           </div>
         ))}
       </div>
 
-      {/* Rows */}
-      <div style={{
-        flex: 1,
-        overflowY: "auto",
-        maxHeight,
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-      }}>
-        {(!entries || entries.length === 0) ? (
-          <div style={{
-            textAlign: "center",
-            color: "var(--text-muted)",
-            fontSize: "var(--text-sm)",
-            padding: "32px 0",
-          }}>
-            No entries yet.
+      {/* Row List */}
+      <div
+        className="flex-1 space-y-1 overflow-y-auto pr-1"
+        style={{ maxHeight }}
+      >
+        {!entries || entries.length === 0 ? (
+          <div className="text-center text-xs font-medium text-[var(--text-muted)] py-8">
+            No leaderboard entries recorded yet.
           </div>
-        ) : entries.map((entry, idx) => {
-          const rank = entry.rank ?? idx + 1;
-          const isMe = !!currentUserId && (entry.userId === currentUserId || entry.id === currentUserId);
-          const rankLabel = rank <= 3 ? RANK_MEDALS[rank - 1] : `${rank}`;
-          const rowBg = isMe
-            ? "rgba(124,58,237,0.06)"
-            : RANK_BG[rank] ?? "transparent";
+        ) : (
+          entries.map((entry, idx) => {
+            const rank = entry.rank ?? idx + 1;
+            const isMe =
+              !!currentUserId &&
+              (entry.userId === currentUserId || entry.id === currentUserId);
+            const rankLabel = rank <= 3 ? RANK_MEDALS[rank - 1] : `#${rank}`;
 
-          return (
-            <div
-              key={entry.userId ?? entry.id ?? idx}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "9px 10px",
-                borderRadius: "var(--radius-md)",
-                background: rowBg,
-                outline: isMe ? "1px solid rgba(124,58,237,0.15)" : "none",
-                transition: "background 150ms ease",
-              }}
-              onMouseEnter={e => {
-                if (!RANK_BG[rank] && !isMe)
-                  (e.currentTarget as HTMLElement).style.background = "var(--bg-subtle)";
-              }}
-              onMouseLeave={e => {
-                if (!RANK_BG[rank] && !isMe)
-                  (e.currentTarget as HTMLElement).style.background = "transparent";
-              }}
-            >
-              {/* Rank */}
-              <div style={{ width: 36, fontSize: 16, fontWeight: 700, color: "var(--text-secondary)" }}>
-                {rankLabel}
-              </div>
-
-              {/* Name + Avatar */}
-              <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                <Avatar name={entry.name} image={entry.image} size={28} />
-                <span style={{
-                  fontSize: "var(--text-sm)",
-                  fontWeight: isMe ? 700 : 600,
-                  color: isMe ? accentColor : "var(--text-secondary)",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}>
-                  {entry.name || "—"}
-                  {isMe && (
-                    <span style={{ fontSize: 10, fontWeight: 600, color: accentColor, marginLeft: 6, opacity: 0.7 }}>
-                      You
-                    </span>
-                  )}
-                </span>
-              </div>
-
-              {/* Data columns */}
-              {columns.map(col => (
-                <div key={col.key} style={{
-                  width: 56,
-                  fontSize: "var(--text-sm)",
-                  fontWeight: col.key === "score" ? 800 : 600,
-                  color: col.key === "score"
-                    ? (isMe ? accentColor : "var(--text-primary)")
-                    : "var(--text-tertiary)",
-                  textAlign: "right",
-                }}>
-                  {col.format ? col.format(entry[col.key]) : (entry[col.key] ?? "—")}
+            return (
+              <div
+                key={entry.userId ?? entry.id ?? idx}
+                className={`flex items-center px-3 py-2 rounded-xl text-xs transition-colors ${
+                  isMe
+                    ? "bg-purple-50/80 border border-purple-200/80 font-bold"
+                    : rank <= 3
+                    ? "bg-slate-50/80 hover:bg-slate-100/70"
+                    : "hover:bg-slate-50"
+                }`}
+              >
+                {/* Rank */}
+                <div className="w-9 font-extrabold text-[var(--text-secondary)] tabular-nums">
+                  {rankLabel}
                 </div>
-              ))}
-            </div>
-          );
-        })}
+
+                {/* Avatar + Name */}
+                <div className="flex-1 flex items-center gap-2.5 min-w-0 pr-2">
+                  <Avatar name={entry.name} image={entry.image} size={26} />
+                  <span className="truncate font-semibold text-[var(--text-primary)]">
+                    {entry.name || "—"}
+                    {isMe && (
+                      <span className="ml-1.5 text-[10px] uppercase font-bold text-[var(--brand-700)] bg-purple-100 px-1.5 py-0.5 rounded">
+                        You
+                      </span>
+                    )}
+                  </span>
+                </div>
+
+                {/* Data Columns */}
+                {columns.map((col) => (
+                  <div
+                    key={col.key}
+                    className={`w-14 text-right tabular-nums ${
+                      col.key === "score"
+                        ? "font-extrabold text-[var(--brand-700)]"
+                        : "font-semibold text-[var(--text-secondary)]"
+                    }`}
+                  >
+                    {col.format ? col.format(entry[col.key]) : entry[col.key] ?? "—"}
+                  </div>
+                ))}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

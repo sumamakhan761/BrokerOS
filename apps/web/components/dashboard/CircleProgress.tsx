@@ -1,6 +1,4 @@
-/* ── Shared CircleProgress ──────────────────────────────────────────
-   Replaces: pre-sales/components/CircleProgress.tsx
-   ------------------------------------------------------------------ */
+import React from "react";
 
 export function CircleProgress({
   done,
@@ -19,60 +17,41 @@ export function CircleProgress({
   const offset = circ - (pct / 100) * circ;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-      <div style={{ position: "relative", width: 96, height: 96 }}>
-        <svg width={96} height={96} style={{ transform: "rotate(-90deg)" }}>
+    <div className="flex flex-col items-center gap-2.5">
+      <div className="relative w-24 h-24">
+        <svg width={96} height={96} className="-rotate-90">
           <circle
-            cx={48} cy={48} r={r}
+            cx={48}
+            cy={48}
+            r={r}
             fill="none"
-            stroke="var(--bg-subtle)"
-            strokeWidth={8}
+            className="stroke-slate-100"
+            strokeWidth={7}
           />
           <circle
-            cx={48} cy={48} r={r}
+            cx={48}
+            cy={48}
+            r={r}
             fill="none"
             stroke={color}
-            strokeWidth={8}
+            strokeWidth={7}
             strokeDasharray={circ}
             strokeDashoffset={offset}
             strokeLinecap="round"
-            style={{ transition: "stroke-dashoffset 1s cubic-bezier(0.16,1,0.3,1)" }}
+            className="transition-all duration-700 ease-out"
           />
         </svg>
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-        }}>
-          <span style={{
-            fontSize: 18,
-            fontWeight: 800,
-            letterSpacing: "-0.03em",
-            color: "var(--text-primary)",
-            lineHeight: 1,
-          }}>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-base font-extrabold tracking-tight text-[var(--text-primary)] tabular-nums leading-none">
             {pct}%
           </span>
         </div>
       </div>
-      <div style={{ textAlign: "center" }}>
-        <div style={{
-          fontSize: "var(--text-sm)",
-          fontWeight: 650,
-          color: "var(--text-secondary)",
-          letterSpacing: "-0.01em",
-        }}>
+      <div className="text-center">
+        <div className="text-xs font-bold text-[var(--text-secondary)] tracking-tight">
           {label}
         </div>
-        <div style={{
-          fontSize: 11,
-          fontWeight: 500,
-          color: "var(--text-muted)",
-          marginTop: 2,
-        }}>
+        <div className="text-[11px] font-semibold text-[var(--text-muted)] tabular-nums mt-0.5">
           {done} / {target}
         </div>
       </div>
