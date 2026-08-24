@@ -65,12 +65,13 @@ export default function LeadFilters({
               <Picker
                 selectedValue={status}
                 onValueChange={(val) => setStatus(val)}
-                style={{ height: 56 }}
+                style={{ height: 56, color: '#0f172a' }}
                 itemStyle={{ fontSize: 16 }}
+                dropdownIconColor="#0f172a"
               >
                 <Picker.Item label="All Statuses" value="" color="#64748b" />
                 {availableStatuses.map(s => (
-                  <Picker.Item key={s.value} label={s.label} value={s.value} />
+                  <Picker.Item key={s.value} label={s.label} value={s.value} color="#0f172a" />
                 ))}
               </Picker>
             </View>
@@ -82,13 +83,14 @@ export default function LeadFilters({
               <Picker
                 selectedValue={scoreRange}
                 onValueChange={(val) => setScoreRange(val)}
-                style={{ height: 56 }}
+                style={{ height: 56, color: '#0f172a' }}
                 itemStyle={{ fontSize: 16 }}
+                dropdownIconColor="#0f172a"
               >
                 <Picker.Item label="All Scores" value="" color="#64748b" />
-                <Picker.Item label="Low (0-60)" value="0-60" />
-                <Picker.Item label="Medium (60-80)" value="60-80" />
-                <Picker.Item label="High (80-100)" value="80-100" />
+                <Picker.Item label="Low (0-60)" value="0-60" color="#0f172a" />
+                <Picker.Item label="Medium (60-80)" value="60-80" color="#0f172a" />
+                <Picker.Item label="High (80-100)" value="80-100" color="#0f172a" />
               </Picker>
             </View>
           </View>
