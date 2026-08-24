@@ -127,15 +127,21 @@ pnpm --filter @brokeros/prisma db:seed               # Populate database with sa
 
 ### 4. Run & Test
 
+All commands should be executed from the **monorepo root**:
+
 ```bash
-pnpm start:dev             # Dev server with watch mode → http://localhost:3333
-pnpm start:prod            # Production mode (compile first with pnpm build)
+# Start API dev server (from root)
+pnpm dev:api                                  # Dev server with watch mode → http://localhost:3333
+# OR using workspace filter directly:
+pnpm --filter @brokeros/api start:dev
+
+# Production build & start
+pnpm --filter @brokeros/api build             # Compile to dist/
+pnpm --filter @brokeros/api start:prod        # Run production build
 
 # Testing & Typechecking
-npx tsc --noEmit           # Run strict TypeScript typechecking without compiling
-pnpm test                  # Run all Jest unit tests (*.spec.ts)
-pnpm test path/to/file     # Run a specific .spec.ts file
-pnpm test:e2e              # Run end-to-end tests
+pnpm --filter @brokeros/api test              # Run all Jest unit tests (*.spec.ts)
+pnpm --filter @brokeros/api test:e2e          # Run end-to-end tests
 ```
 
 ---

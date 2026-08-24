@@ -71,7 +71,7 @@ cp apps/web/.env.example apps/web/.env
 docker compose up --build
 
 # Once running, open a new terminal to seed the database with demo users:
-docker exec -it crm-backend npx prisma db seed
+docker exec -it crm-backend pnpm db:seed
 # 🔑 View all demo users & passwords created: docs/role-password.md
 ```
 
@@ -97,27 +97,27 @@ cp apps/mobile/.env.example apps/mobile/.env
 
 **2. Backend (API) & Database Setup:**
 ```bash
-# First, generate and seed the database using the Prisma package
-pnpm --filter @brokeros/prisma db:generate
-pnpm --filter @brokeros/prisma db:migrate
-pnpm --filter @brokeros/prisma db:seed       # Populate database with sample data (🔑 View credentials: docs/role-password.md)
+# Generate and seed the database using Prisma (run from root)
+pnpm db:generate
+pnpm db:migrate
+pnpm db:seed                 # Populate database with sample data (🔑 View credentials: docs/role-password.md)
 
-# Start the API server
-cd apps/api
-pnpm start:dev                # → http://localhost:3333
+# Start the API server (run from root)
+pnpm dev:api                 # → http://localhost:3333
 ```
 
 **3. Frontend (Web):**
 ```bash
-cd apps/web
-pnpm dev                      # → http://localhost:3000
+# Start the Next.js web dashboard (run from root)
+pnpm dev:web                 # → http://localhost:3000
 ```
 
 **4. Mobile (Android Only):**
 ```bash
-cd apps/mobile
-# Do NOT use Expo Go. You must compile the custom native client:
-npx expo run:android
+# Start Metro bundler (run from root)
+pnpm dev:mobile
+# Or compile and run custom native client:
+cd apps/mobile && npx expo run:android
 ```
 
 > 💡 **Where do I get the API keys?** 

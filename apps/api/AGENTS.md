@@ -34,17 +34,18 @@ You **MUST** consult the appropriate skill before making changes, based on the t
 
 > **CRITICAL SCRIPTING RULE:** If you are creating a new utility, database migration, or maintenance script, DO NOT put it inside `apps/api/scripts/`. Create it in the monorepo root at `scripts/` and execute it from the root using `pnpm run script scripts/your-script.ts`.
 
-Run from `apps/api/` directory (or use `pnpm --filter @brokeros/api <cmd>` from root):
+Run from repository root:
 
 ```bash
-pnpm start:dev          # dev server (watch mode)
-pnpm build              # compile to dist/
-pnpm test               # Jest unit tests
-pnpm test:e2e           # e2e tests
+pnpm dev:api                     # dev server (watch mode) (or pnpm --filter @brokeros/api start:dev)
+pnpm --filter @brokeros/api build # compile to dist/
+pnpm --filter @brokeros/api test  # Jest unit tests
+pnpm --filter @brokeros/api test:e2e # e2e tests
 
 # Database commands now belong to the @brokeros/prisma package. Run from root:
-pnpm --filter @brokeros/prisma db:generate
-pnpm --filter @brokeros/prisma db:migrate
+pnpm db:generate                 # or pnpm --filter @brokeros/prisma db:generate
+pnpm db:migrate                  # or pnpm --filter @brokeros/prisma db:migrate
+pnpm db:seed                     # or pnpm --filter @brokeros/prisma db:seed
 pnpm --filter @brokeros/prisma db:studio
 pnpm --filter @brokeros/prisma db:format
 ```
