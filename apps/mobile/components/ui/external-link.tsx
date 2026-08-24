@@ -1,23 +1,40 @@
+import React, { ComponentProps } from 'react';
 import { Href, Link } from 'expo-router';
 import { openBrowserAsync, WebBrowserPresentationStyle } from 'expo-web-browser';
-import { type ComponentProps } from 'react';
+import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
 
-type Props = Omit<ComponentProps<typeof Link>, 'href'> & { href: Href & string };
+type Props = Omit<ComponentProps<typeof Link>, 'href'> & {
+  href: Href & string;
+  enableHaptics?: boolean;
+};
 
-export function ExternalLink({ href, ...rest }: Props) {
+export function ExternalLink({ href, enableHaptics = true, ...rest }: Props) {
   return (
     <Link
       target="_blank"
+      accessibilityRole="link"
+      accessibilityHint="Opens in external browser"
       {...rest}
       href={href}
       onPress={async (event) => {
-        if (process.env.EXPO_OS !== 'web') {
-          // Prevent the default behavior of linking to the default browser on native.
+        if (enableHaptics) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+
+        if (Platform.OS !== 'web') {
+          // Prevent standard linking and open in in-app browser
           event.preventDefault();
-          // Open the link in an in-app browser.
-          await openBrowserAsync(href, {
-            presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
-          });
+          try {
+            await openBrowserAsync(href, {
+              presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
+              toolbarColor: '#2563eb',
+              showTitle: true,
+              enableBarCollapsing: true,
+            });
+          } catch (err) {
+            console.error('Failed to open external browser link', err);
+          }
         }
       }}
     />

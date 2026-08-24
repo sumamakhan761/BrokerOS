@@ -1,88 +1,129 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { BaseToast, ErrorToast, BaseToastProps } from 'react-native-toast-message';
-import { X, CheckCircle2, XCircle, Info } from 'lucide-react-native';
+import { View, Text, Pressable, StyleSheet, ViewStyle } from 'react-native';
+import { BaseToastProps } from 'react-native-toast-message';
+import { X, CheckCircle2, AlertCircle, AlertTriangle, Info } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 // ─── Shared card style ────────────────────────────────────────────────────────
-const BASE_CARD: any = {
-  borderRadius: 12,
+const BASE_CARD: ViewStyle = {
+  borderRadius: 16,
   backgroundColor: '#ffffff',
-  shadowColor: '#000',
-  shadowOpacity: 0.08,
-  shadowRadius: 12,
-  shadowOffset: { width: 0, height: 4 },
-  elevation: 6,
-  height: 'auto',
-  minHeight: 60,
+  shadowColor: '#0f172a',
+  shadowOpacity: 0.12,
+  shadowRadius: 16,
+  shadowOffset: { width: 0, height: 6 },
+  elevation: 8,
+  minHeight: 64,
   paddingVertical: 12,
-  paddingRight: 12,
-  borderLeftWidth: 4,
+  paddingHorizontal: 14,
+  borderWidth: 1,
+  borderColor: 'rgba(226, 232, 240, 0.9)',
+  borderLeftWidth: 5,
+  width: '92%',
   alignItems: 'center',
+  justifyContent: 'center',
 };
 
 // ─── Custom toast renderer ────────────────────────────────────────────────────
 interface ToastCardProps extends BaseToastProps {
   accentColor: string;
-  Icon: React.FC<{ size: number; color: string }>;
+  bgLightColor: string;
+  Icon: React.FC<{ size: number; color: string; strokeWidth?: number }>;
 }
 
-function ToastCard({ text1, text2, onPress, accentColor, Icon, hide }: ToastCardProps & { hide?: () => void }) {
+function ToastCard({
+  text1,
+  text2,
+  accentColor,
+  bgLightColor,
+  Icon,
+  hide,
+}: ToastCardProps & { hide?: () => void }) {
   return (
     <View style={[BASE_CARD, { borderLeftColor: accentColor }]}>
       <View style={styles.row}>
-        {/* Icon */}
-        <View style={styles.iconWrap}>
-          <Icon size={22} color={accentColor} />
+        {/* Icon with light badge background */}
+        <View style={[styles.iconWrap, { backgroundColor: bgLightColor }]}>
+          <Icon size={20} color={accentColor} strokeWidth={2.4} />
         </View>
 
-        {/* Text */}
+        {/* Text Area */}
         <View style={styles.textWrap}>
           {text1 ? (
-            <Text style={styles.text1} numberOfLines={2}>
+            <Text
+              style={styles.text1}
+              numberOfLines={2}
+              maxFontSizeMultiplier={1.25}
+            >
               {text1}
             </Text>
           ) : null}
           {text2 ? (
-            <Text style={styles.text2} numberOfLines={3}>
+            <Text
+              style={styles.text2}
+              numberOfLines={3}
+              maxFontSizeMultiplier={1.25}
+            >
               {text2}
             </Text>
           ) : null}
         </View>
 
-        {/* Close button */}
-        <TouchableOpacity
-          onPress={hide}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.closeBtn}
-        >
-          <X size={16} color="#9ca3af" />
-        </TouchableOpacity>
+        {/* Tactile Close button */}
+        {hide && (
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              hide();
+            }}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss notification"
+            style={({ pressed }) => [
+              styles.closeBtn,
+              pressed && { opacity: 0.6, transform: [{ scale: 0.92 }] },
+            ]}
+          >
+            <X size={16} color="#64748b" strokeWidth={2.2} />
+          </Pressable>
+        )}
       </View>
     </View>
   );
 }
 
-// ─── Export config ────────────────────────────────────────────────────────────
+// ─── Export toast config ───────────────────────────────────────────────────────
 export const toastConfig = {
   success: (props: BaseToastProps) => (
     <ToastCard
       {...props}
-      accentColor="#22c55e"
-      Icon={({ size, color }) => <CheckCircle2 size={size} color={color} />}
+      accentColor="#16a34a"
+      bgLightColor="#f0fdf4"
+      Icon={CheckCircle2}
     />
   ),
   error: (props: BaseToastProps) => (
     <ToastCard
       {...props}
-      accentColor="#ef4444"
-      Icon={({ size, color }) => <XCircle size={size} color={color} />}
+      accentColor="#e11d48"
+      bgLightColor="#fff1f2"
+      Icon={AlertCircle}
+    />
+  ),
+  warning: (props: BaseToastProps) => (
+    <ToastCard
+      {...props}
+      accentColor="#d97706"
+      bgLightColor="#fffbeb"
+      Icon={AlertTriangle}
     />
   ),
   info: (props: BaseToastProps) => (
     <ToastCard
       {...props}
-      accentColor="#3b82f6"
-      Icon={({ size, color }) => <Info size={size} color={color} />}
+      accentColor="#2563eb"
+      bgLightColor="#eff6ff"
+      Icon={Info}
     />
   ),
 };
@@ -92,33 +133,44 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
     width: '100%',
-    paddingHorizontal: 4,
   },
   iconWrap: {
-    marginLeft: 10,
-    marginRight: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
     flexShrink: 0,
   },
   textWrap: {
     flex: 1,
+    justifyContent: 'center',
   },
   text1: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#111827',
-    lineHeight: 20,
+    fontWeight: '800',
+    color: '#0f172a',
+    lineHeight: 19,
+    includeFontPadding: false,
   },
   text2: {
-    fontSize: 13,
-    color: '#6b7280',
+    fontSize: 12.5,
+    fontWeight: '500',
+    color: '#475569',
     marginTop: 2,
-    lineHeight: 18,
+    lineHeight: 17,
+    includeFontPadding: false,
   },
   closeBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: 8,
-    padding: 2,
     flexShrink: 0,
   },
 });
