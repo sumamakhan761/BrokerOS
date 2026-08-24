@@ -6,8 +6,11 @@ import {
 import Toast from 'react-native-toast-message';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { UserPlus, CalendarCheck, AlertTriangle, MapPin } from 'lucide-react-native';
 import { authClient } from '../../../../lib/auth-client';
 import { EmployeeAnalyticsView } from '../../../../components/analytics/EmployeeAnalyticsView';
+import { SharedWidgetsGrid, WidgetItem } from '../../../../components/shared/SharedWidgetsGrid';
+import { PipelinePyramid, PipelineStageData } from '../../../../components/analytics/PipelinePyramid';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -159,20 +162,14 @@ export default function EmployeeDashboardViewScreen() {
           {dashData && (
             <>
               {/* Widgets Grid */}
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-                {[
-                  { label: "New Leads", value: dashData.widgets.newLeads, icon: "✦", accent: "#6366f1" },
-                  { label: "Follow-ups", value: dashData.widgets.todayFollowUps, icon: "📋", accent: "#10b981" },
-                  { label: "Missed", value: dashData.widgets.missedFollowUps, icon: "⚠️", accent: "#f59e0b" },
-                  { label: "Site Visits", value: dashData.widgets.siteVisitsScheduled, icon: "📍", accent: "#8b5cf6" },
-                ].map((w, i) => (
-                  <View key={i} style={[styles.card, { width: '48%', padding: 16 }]}>
-                    <Text style={{ fontSize: 24, marginBottom: 8 }}>{w.icon}</Text>
-                    <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#0f172a' }}>{w.value}</Text>
-                    <Text style={{ fontSize: 13, color: '#64748b' }}>{w.label}</Text>
-                  </View>
-                ))}
-              </View>
+              <SharedWidgetsGrid
+                widgets={[
+                  { label: "New Leads", value: dashData.widgets.newLeads, icon: UserPlus, accent: "indigo" },
+                  { label: "Follow-ups", value: dashData.widgets.todayFollowUps, icon: CalendarCheck, accent: "emerald" },
+                  { label: "Missed", value: dashData.widgets.missedFollowUps, icon: AlertTriangle, accent: "amber" },
+                  { label: "Site Visits", value: dashData.widgets.siteVisitsScheduled, icon: MapPin, accent: "violet" },
+                ]}
+              />
 
               {/* Tasks */}
               <View style={[styles.card, { padding: 20, marginBottom: 20, backgroundColor: hasBacklog ? '#fffbeb' : '#fff', borderColor: hasBacklog ? '#fcd34d' : '#f1f5f9', borderWidth: 1 }]}>
@@ -204,24 +201,16 @@ export default function EmployeeDashboardViewScreen() {
                 </View>
               </View>
 
-              {/* Pipeline */}
+              {/* Pipeline Pyramid */}
               <View style={[styles.card, { padding: 20, marginBottom: 20 }]}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 16, color: '#0f172a' }}>Pipeline Status</Text>
-                {PIPELINE_STAGES.map((stage) => {
-                  const count = dashData.pipeline[stage.key] || 0;
-                  const w = `${(count / maxPipeline) * 100}%` as DimensionValue;
-                  return (
-                    <View key={stage.key} style={{ marginBottom: 12 }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <Text style={{ fontSize: 13, color: '#64748b' }}>{stage.label}</Text>
-                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#0f172a' }}>{count}</Text>
-                      </View>
-                      <View style={{ height: 6, backgroundColor: '#f1f5f9', borderRadius: 3 }}>
-                        <View style={{ height: '100%', width: w, backgroundColor: stage.color, borderRadius: 3 }} />
-                      </View>
-                    </View>
-                  );
-                })}
+                <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 12, color: '#0f172a' }}>Pipeline Status</Text>
+                <PipelinePyramid
+                  data={PIPELINE_STAGES.map((stage) => ({
+                    stage: stage.label,
+                    count: dashData.pipeline[stage.key] || 0,
+                    color: stage.color,
+                  }))}
+                />
               </View>
 
             </>

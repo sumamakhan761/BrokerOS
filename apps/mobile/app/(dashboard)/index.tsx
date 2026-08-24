@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { authClient } from '../../lib/auth-client';
+import { Building2 } from 'lucide-react-native';
 
 export default function DashboardIndex() {
   const { data: session, isPending } = authClient.useSession();
@@ -15,8 +16,8 @@ export default function DashboardIndex() {
       if (user?.roleId) {
         const baseUrl = process.env.EXPO_PUBLIC_API_URL as string;
         fetch(`${baseUrl}/roles`)
-          .then(res => res.json())
-          .then(roles => {
+          .then((res) => res.json())
+          .then((roles) => {
             const role = roles.find((r: any) => r.id === user.roleId);
             if (role) {
               const code = role.code;
@@ -45,9 +46,17 @@ export default function DashboardIndex() {
   );
 
   return (
-    <View className="flex-1 bg-[#f8fafc] justify-center items-center">
+    <View className="flex-1 bg-slate-50 justify-center items-center p-6">
+      <View className="w-14 h-14 rounded-2xl bg-blue-50 items-center justify-center border border-blue-200/80 mb-4 shadow-xs">
+        <Building2 size={28} color="#2563eb" />
+      </View>
       <ActivityIndicator size="large" color="#2563eb" />
-      <Text className="mt-4 text-gray-500 font-medium">Loading your department...</Text>
+      <Text className="mt-3 text-sm font-bold text-slate-800 tracking-tight">
+        Connecting to Department Workspace…
+      </Text>
+      <Text className="text-xs text-slate-400 font-medium mt-0.5">
+        Configuring role permissions and active pipeline
+      </Text>
     </View>
   );
 }
