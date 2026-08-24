@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Bot, Send, Loader2, RefreshCcw, Save } from 'lucide-react';
-import { toast } from 'sonner';
-import { UnitGrid } from '@/features/inventory/components/units/UnitGrid';
-import { UnitDetailsDrawer } from '@/features/inventory/components/units/UnitDetailsDrawer';
+import React, { useState } from "react";
+import { Bot, Send, Loader2, RefreshCcw, Save, X } from "lucide-react";
+import { toast } from "sonner";
+import { UnitGrid } from "@/features/inventory/components/units/UnitGrid";
+import { UnitDetailsDrawer } from "@/features/inventory/components/units/UnitDetailsDrawer";
 
 interface AiTowerGeneratorProps {
   projectId: string;
@@ -12,13 +12,16 @@ interface AiTowerGeneratorProps {
   onCancel: () => void;
 }
 
-export function AiTowerGenerator({ projectId, onSuccess, onCancel }: AiTowerGeneratorProps) {
-  const [prompt, setPrompt] = useState('');
+export function AiTowerGenerator({
+  projectId,
+  onSuccess,
+  onCancel,
+}: AiTowerGeneratorProps) {
+  const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [generatedData, setGeneratedData] = useState<any>(null);
 
-  // For manual editing of AI generated units before saving
   const [selectedUnit, setSelectedUnit] = useState<any>(null);
 
   const handleGenerate = async (e: React.FormEvent) => {
@@ -28,15 +31,19 @@ export function AiTowerGenerator({ projectId, onSuccess, onCancel }: AiTowerGene
     try {
       setIsGenerating(true);
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
-      const res = await fetch(`${baseUrl}/api/inventory/projects/${projectId}/towers/ai-generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
-      });
+      const res = await fetch(
+        `${baseUrl}/api/inventory/projects/${projectId}/towers/ai-generate`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        }
+      );
 
       if (!res.ok) throw new Error("AI Generation failed");
       const data = await res.json();
       setGeneratedData(data);
+      toast.success("Tower structure generated!");
     } catch (err: any) {
       toast.error(err?.message || "Failed to generate tower");
     } finally {
@@ -49,13 +56,17 @@ export function AiTowerGenerator({ projectId, onSuccess, onCancel }: AiTowerGene
     try {
       setIsSaving(true);
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
-      const res = await fetch(`${baseUrl}/api/inventory/projects/${projectId}/towers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(generatedData)
-      });
+      const res = await fetch(
+        `${baseUrl}/api/inventory/projects/${projectId}/towers`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(generatedData),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to save generated tower");
+      toast.success("Tower saved to project inventory");
       onSuccess();
     } catch (err: any) {
       toast.error(err?.message || "Failed to save tower");
@@ -65,12 +76,12 @@ export function AiTowerGenerator({ projectId, onSuccess, onCancel }: AiTowerGene
   };
 
   const handleManualUnitUpdate = async (unitId: string, updates: any) => {
-    // In preview mode, unitId is usually undefined or just index based since it's not saved yet.
-    // We update the local generatedData state.
     setGeneratedData((prev: any) => {
       const newData = { ...prev };
       for (const floor of newData.floors) {
-        const unitIndex = floor.units.findIndex((u: any) => (u.id || u.unitNumber) === unitId);
+        const unitIndex = floor.units.findIndex(
+          (u: any) => (u.id || u.unitNumber) === unitId
+        );
         if (unitIndex !== -1) {
           floor.units[unitIndex] = { ...floor.units[unitIndex], ...updates };
         }
@@ -81,40 +92,61 @@ export function AiTowerGenerator({ projectId, onSuccess, onCancel }: AiTowerGene
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden flex flex-col h-[80vh] max-h-[800px] w-full max-w-3xl mx-auto">
-      <div className="p-6 border-b border-slate-100 bg-indigo-50/50 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
-            <Bot className="w-6 h-6" />
+    <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col h-[85vh] max-h-[800px] w-full max-w-4xl mx-auto animate-enter">
+      {/* Header */}
+      <div className="p-5 border-b border-slate-100 bg-slate-50/70 flex justify-between items-center">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+            <Bot size={16} />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900">AI Tower Generator</h2>
-            <p className="text-sm text-slate-500">Describe the tower structure naturally.</p>
+            <h2 className="text-base font-extrabold text-[var(--text-primary)] tracking-tight m-0">
+              AI Tower Generator
+            </h2>
+            <p className="text-[11px] text-[var(--text-muted)] font-medium mt-0.5 m-0">
+              Describe the architectural tower configuration in plain English
+            </p>
           </div>
         </div>
-        <button onClick={onCancel} className="text-slate-400 hover:text-slate-600 font-medium text-sm">
-          Cancel
+        <button
+          onClick={onCancel}
+          className="w-7 h-7 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full flex items-center justify-center transition-all cursor-pointer"
+        >
+          <X size={15} />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+      {/* Body / Preview */}
+      <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 space-y-4">
         {!generatedData ? (
-          <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-            <Bot className="w-16 h-16 text-slate-300" />
-            <div className="max-w-sm">
-              <h3 className="text-slate-700 font-medium mb-2">Try saying something like:</h3>
-              <p className="text-sm text-slate-500 italic bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                "Create a 10 floor tower named Tower B. The ground floor has 4 shops at $200k base price. Floors 2 through 10 have two 2BHKs and two 3BHKs facing East."
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-3 py-12">
+            <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)] border border-purple-200 shadow-2xs">
+              <Bot size={28} />
+            </div>
+            <div className="max-w-md space-y-1.5">
+              <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+                Example Generation Prompt
+              </h3>
+              <p className="text-xs text-[var(--text-secondary)] italic bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs leading-relaxed m-0">
+                &ldquo;Create a 12 floor tower named Tower Horizon. Ground floor has 4 retail shops at ₹25L base price. Floors 2 through 12 have three 2BHKs and one 3BHK facing East at ₹85L base price with 2% brokerage.&rdquo;
               </p>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-bold text-slate-800">Preview: {generatedData.name}</h3>
-              <span className="text-xs font-semibold px-2 py-1 bg-amber-100 text-amber-700 rounded-md">Draft Mode</span>
+          <div className="space-y-3.5">
+            <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <div>
+                <h3 className="text-sm font-extrabold text-[var(--text-primary)] m-0">
+                  Preview: {generatedData.name}
+                </h3>
+                <p className="text-[11px] text-[var(--text-muted)] mt-0.5 m-0 font-medium">
+                  {generatedData.floors?.length || 0} floors generated • Click any unit to tweak parameters
+                </p>
+              </div>
+              <span className="text-[10px] font-extrabold px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-full uppercase tracking-wider">
+                Draft Preview
+              </span>
             </div>
-            <p className="text-sm text-slate-500 mb-4">You can click any unit below to manually edit its properties before saving.</p>
 
             <UnitGrid
               tower={generatedData}
@@ -124,22 +156,28 @@ export function AiTowerGenerator({ projectId, onSuccess, onCancel }: AiTowerGene
         )}
       </div>
 
-      <div className="p-4 bg-white border-t border-slate-100 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+      {/* Input & Action Bar */}
+      <div className="p-4 bg-white border-t border-slate-100 flex flex-col gap-3">
         {generatedData && (
-          <div className="flex gap-3 mb-4">
+          <div className="flex gap-2.5">
             <button
               onClick={() => setGeneratedData(null)}
-              className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 text-sm"
+              className="flex-1 h-9 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-all active:scale-[0.96] press-effect flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <RefreshCcw className="w-4 h-4" /> Start Over
+              <RefreshCcw size={13} />
+              <span>Start Over</span>
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex-[2] py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-70"
+              className="flex-[2] h-9 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition-all active:scale-[0.96] press-effect shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
             >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Finalize & Save Tower
+              {isSaving ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Save size={13} />
+              )}
+              <span>Finalize & Save Tower</span>
             </button>
           </div>
         )}
@@ -148,17 +186,25 @@ export function AiTowerGenerator({ projectId, onSuccess, onCancel }: AiTowerGene
           <input
             type="text"
             value={prompt}
-            onChange={e => setPrompt(e.target.value)}
-            placeholder={generatedData ? "Refine the generated tower..." : "Describe the tower..."}
-            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-slate-700 placeholder-slate-400"
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder={
+              generatedData
+                ? "Refine tower structure..."
+                : "Type instructions to generate tower floors and units..."
+            }
+            className="flex-1 h-10 bg-slate-50 border border-slate-200 rounded-xl px-3.5 pr-10 text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:bg-white focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all"
             disabled={isGenerating || isSaving}
           />
           <button
             type="submit"
             disabled={!prompt.trim() || isGenerating || isSaving}
-            className="absolute right-2 top-2 p-1.5 bg-indigo-600 text-white rounded-lg disabled:bg-slate-300 disabled:cursor-not-allowed hover:bg-indigo-700 transition-colors"
+            className="absolute right-1.5 top-1.5 w-7 h-7 bg-[var(--brand-600)] text-white rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--brand-700)] transition-all flex items-center justify-center cursor-pointer shadow-2xs"
           >
-            {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            {isGenerating ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Send size={13} />
+            )}
           </button>
         </form>
       </div>

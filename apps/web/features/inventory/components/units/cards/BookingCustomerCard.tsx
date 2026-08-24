@@ -1,5 +1,6 @@
-import Link from 'next/link';
-import { User, Phone, MapPin } from 'lucide-react';
+import React from "react";
+import Link from "next/link";
+import { User, Phone, MapPin } from "lucide-react";
 
 interface BookingCustomerCardProps {
   customer: any;
@@ -7,28 +8,36 @@ interface BookingCustomerCardProps {
 
 export function BookingCustomerCard({ customer }: BookingCustomerCardProps) {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-      <div className="bg-slate-50/80 border-b border-slate-100 px-4 py-3 flex items-center gap-2">
-        <User className="w-4 h-4 text-indigo-600" />
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Customer Details</h3>
+    <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">
+      <div className="bg-slate-50/80 border-b border-slate-100 px-4 py-2.5 flex items-center gap-2">
+        <div className="w-6 h-6 rounded-lg bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+          <User size={13} />
+        </div>
+        <h3 className="text-[10px] font-extrabold text-[var(--text-primary)] uppercase tracking-wider m-0">
+          Customer Identity
+        </h3>
       </div>
-      <div className="p-4 space-y-4">
-        <div className="flex justify-between items-start">
-          <div>
-            <Link href={`/dashboard/sales-manager/leads/${customer?.leadId}`} className="text-lg font-bold text-slate-900 hover:text-indigo-600 hover:underline">
-              {customer?.firstName} {customer?.lastName}
-            </Link>
-            <div className="flex items-center gap-2 mt-1 text-slate-600">
-              <Phone className="w-3.5 h-3.5" />
-              <p className="text-sm font-medium">{customer?.phone}</p>
-            </div>
+      <div className="p-4 space-y-3">
+        <div>
+          <Link
+            href={`/dashboard/sales-manager/leads/${customer?.leadId}`}
+            className="text-sm font-extrabold text-[var(--text-primary)] hover:text-[var(--brand-700)] hover:underline no-underline"
+          >
+            {customer?.firstName} {customer?.lastName}
+          </Link>
+          <div className="flex items-center gap-1.5 mt-1 text-xs text-[var(--text-secondary)] font-semibold tabular-nums">
+            <Phone size={12} className="text-slate-400" />
+            <span>{customer?.phone}</span>
           </div>
         </div>
+
         {(customer?.city || customer?.currentAddress) && (
-          <div className="flex items-start gap-2 text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100">
-            <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" />
-            <p className="text-sm font-medium leading-relaxed">
-              {[customer?.currentAddress, customer?.city].filter(Boolean).join(', ')}
+          <div className="flex items-start gap-2 text-xs text-[var(--text-secondary)] bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+            <MapPin size={13} className="mt-0.5 shrink-0 text-slate-400" />
+            <p className="font-medium leading-relaxed m-0">
+              {[customer?.currentAddress, customer?.city]
+                .filter(Boolean)
+                .join(", ")}
             </p>
           </div>
         )}
