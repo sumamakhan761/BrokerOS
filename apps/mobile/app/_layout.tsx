@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import '@/global.css';
 import * as TaskManager from 'expo-task-manager';
 import * as Notifications from 'expo-notifications';
@@ -28,7 +30,7 @@ TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => 
   }
   if (data) {
     const notification = (data as any).notification;
-    const payload = notification?.request?.content?.data || notification?.data; // Depends on OS/foreground/background
+    const payload = notification?.request?.content?.data || notification?.data;
     if (payload?.type === 'DAILY_PROGRESS' && payload?.progressString) {
       Notifications.scheduleNotificationAsync({
         identifier: 'daily_progress_tracker',
@@ -68,7 +70,7 @@ function RootLayoutNav() {
   }, [session, isPending, segments]);
 
   return (
-    <Stack screenOptions={{ headerShown: false }} initialRouteName="(auth)">
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#f8fafc' } }} initialRouteName="(auth)">
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
     </Stack>
@@ -77,9 +79,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <RootLayoutNav />
-      <Toast config={toastConfig} />
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+        <StatusBar style="dark" />
+        <RootLayoutNav />
+        <Toast config={toastConfig} />
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
