@@ -1,8 +1,10 @@
+"use client";
+
 import { Calendar, PhoneCall, AlertCircle, ArrowRight, Key } from "lucide-react";
 import Link from "next/link";
 
 function formatDate(dateString: string) {
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("en-IN", {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -14,191 +16,102 @@ function formatDate(dateString: string) {
 export function CPActionTasks({ tasks }: { tasks: any[] }) {
   if (!tasks || tasks.length === 0) {
     return (
-      <div style={{
-        background: "var(--bg-surface)",
-        borderRadius: "var(--radius-xl)",
-        padding: 24,
-        border: "1px solid var(--border-subtle)",
-        boxShadow: "var(--shadow-sm)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: 300,
-      }}>
-        <div style={{
-          width: 64,
-          height: 64,
-          background: "var(--bg-subtle)",
-          borderRadius: "50%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 16
-        }}>
-          <AlertCircle size={32} style={{ color: "var(--text-muted)", opacity: 0.5 }} />
+      <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs flex flex-col items-center justify-center min-h-[260px] text-center">
+        <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mb-3 border border-slate-100">
+          <AlertCircle size={24} className="text-slate-400" />
         </div>
-        <h3 style={{
-          fontSize: "var(--text-lg)",
-          fontWeight: 800,
-          color: "var(--text-primary)",
-          margin: 0
-        }}>All Caught Up!</h3>
-        <p style={{
-          fontSize: "var(--text-sm)",
-          color: "var(--text-secondary)",
-          textAlign: "center",
-          marginTop: 8,
-          marginBottom: 0
-        }}>No pending follow-ups, site visits, or handovers in your broker network.</p>
+        <h3 className="text-sm font-extrabold text-[var(--text-primary)] m-0">
+          All Caught Up!
+        </h3>
+        <p className="text-xs text-[var(--text-muted)] font-medium mt-1 max-w-sm m-0">
+          No pending follow-ups, site visits, or handovers in your channel partner network.
+        </p>
       </div>
     );
   }
 
   const getIconData = (type: string) => {
     switch (type) {
-      case 'SITE_VISIT': return { icon: Calendar, color: "#2563eb", bg: "#eff6ff" };
-      case 'FOLLOW_UP': return { icon: PhoneCall, color: "#d97706", bg: "#fffbeb" };
-      case 'HANDOVER': return { icon: Key, color: "#059669", bg: "#ecfdf5" };
-      default: return { icon: AlertCircle, color: "var(--text-secondary)", bg: "var(--bg-subtle)" };
+      case "SITE_VISIT":
+        return {
+          icon: Calendar,
+          color: "text-blue-600",
+          bg: "bg-blue-50",
+          border: "border-blue-100",
+        };
+      case "FOLLOW_UP":
+        return {
+          icon: PhoneCall,
+          color: "text-amber-600",
+          bg: "bg-amber-50",
+          border: "border-amber-100",
+        };
+      case "HANDOVER":
+        return {
+          icon: Key,
+          color: "text-emerald-600",
+          bg: "bg-emerald-50",
+          border: "border-emerald-100",
+        };
+      default:
+        return {
+          icon: AlertCircle,
+          color: "text-slate-600",
+          bg: "bg-slate-50",
+          border: "border-slate-100",
+        };
     }
   };
 
   return (
-    <div style={{
-      background: "var(--bg-surface)",
-      borderRadius: "var(--radius-xl)",
-      padding: 24,
-      border: "1px solid var(--border-subtle)",
-      boxShadow: "var(--shadow-sm)",
-      height: "100%",
-    }}>
-      <h2 style={{
-        fontSize: "var(--text-lg)",
-        fontWeight: 700,
-        color: "var(--text-primary)",
-        letterSpacing: "-0.01em",
-        marginBottom: 24,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        margin: "0 0 24px 0"
-      }}>
-        <span>Broker Network Action Feed</span>
-        <span style={{
-          background: "var(--brand-50)",
-          color: "var(--brand-600)",
-          fontSize: 11,
-          fontWeight: 800,
-          padding: "4px 12px",
-          borderRadius: "var(--radius-full)",
-        }}>
+    <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-2xs h-full">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+          Broker Network Action Feed
+        </h2>
+        <span className="bg-purple-50 text-[var(--brand-700)] text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-purple-200/60 tabular-nums">
           {tasks.length} Pending
         </span>
-      </h2>
+      </div>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-        gap: 16
-      }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pr-1">
         {tasks.map((task) => {
-          const { icon: Icon, color, bg } = getIconData(task.type);
-          const linkHref = task.leadId 
+          const { icon: Icon, color, bg, border } = getIconData(task.type);
+          const linkHref = task.leadId
             ? `/dashboard/channel-partner/customer-management/${task.leadId}`
-            : task.brokerId 
-              ? `/dashboard/channel-partner/broker-management/${task.brokerId}` 
-              : "#";
+            : task.brokerId
+            ? `/dashboard/channel-partner/broker-management/${task.brokerId}`
+            : "#";
           return (
-            <div key={task.id} style={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              padding: 16,
-              borderRadius: "var(--radius-lg)",
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
-              boxShadow: "var(--shadow-xs)",
-              transition: "transform 200ms ease, box-shadow 200ms ease",
-              cursor: "pointer"
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
-              (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-sm)";
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-              (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-xs)";
-            }}
+            <div
+              key={task.id}
+              className="flex items-start justify-between p-3.5 rounded-2xl bg-slate-50/50 hover:bg-slate-100/60 border border-slate-100 transition-all group"
             >
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                <div style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "var(--radius-md)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  background: bg
-                }}>
-                  <Icon size={18} style={{ color }} />
+              <div className="flex items-start gap-3 min-w-0">
+                <div
+                  className={`w-9 h-9 rounded-xl ${bg} ${border} border flex items-center justify-center shrink-0 ${color}`}
+                >
+                  <Icon size={16} />
                 </div>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{
-                    fontWeight: 700,
-                    fontSize: "var(--text-sm)",
-                    color: "var(--text-primary)",
-                    letterSpacing: "-0.01em",
-                  }}>{task.title}</span>
-                  <span style={{
-                    fontSize: 11,
-                    color: "var(--text-muted)",
-                    fontWeight: 600,
-                    marginTop: 4
-                  }}>
+                <div className="min-w-0">
+                  <span className="font-bold text-xs text-[var(--text-primary)] truncate block group-hover:text-[var(--brand-700)] transition-colors">
+                    {task.title}
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)] font-semibold mt-0.5 block tabular-nums">
                     {formatDate(task.date)}
                   </span>
                   {task.metadata && task.metadata.project && (
-                    <span style={{
-                      fontSize: 10,
-                      color: "var(--brand-600)",
-                      fontWeight: 800,
-                      marginTop: 6,
-                      background: "var(--brand-50)",
-                      width: "fit-content",
-                      padding: "2px 8px",
-                      borderRadius: "var(--radius-sm)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em"
-                    }}>
+                    <span className="text-[9px] text-[var(--brand-700)] font-extrabold mt-1.5 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200/60 inline-block uppercase tracking-wider">
                       {task.metadata.project}
                     </span>
                   )}
                 </div>
               </div>
-              <Link href={linkHref} style={{
-                padding: 8,
-                borderRadius: "var(--radius-md)",
-                background: "var(--bg-subtle)",
-                color: "var(--text-secondary)",
-                transition: "background 150ms ease, color 150ms ease",
-                flexShrink: 0,
-                textDecoration: "none",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = color;
-                (e.currentTarget as HTMLElement).style.color = "#fff";
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = "var(--bg-subtle)";
-                (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
-              }}
+              <Link
+                href={linkHref}
+                className="p-2 rounded-xl bg-white border border-slate-200/80 text-slate-400 hover:text-[var(--brand-700)] hover:border-purple-200 hover:bg-purple-50 transition-all shrink-0 no-underline shadow-2xs"
               >
-                <ArrowRight size={16} />
+                <ArrowRight size={13} />
               </Link>
             </div>
           );

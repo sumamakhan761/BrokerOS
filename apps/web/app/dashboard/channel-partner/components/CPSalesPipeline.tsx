@@ -1,17 +1,24 @@
-export function CPSalesPipeline({ pipeline }: { pipeline: Record<string, number> }) {
+"use client";
+
+export function CPSalesPipeline({
+  pipeline,
+}: {
+  pipeline: Record<string, number>;
+}) {
   if (!pipeline) return null;
 
   const stages = [
     { key: "NEW", label: "New Leads", color: "#3b82f6" },
-    { key: "SITE_VISIT_SCHEDULED", label: "Site Visits", color: "#a855f7" },
+    { key: "SITE_VISIT_SCHEDULED", label: "Site Visits", color: "#9333ea" },
     { key: "NEGOTIATION", label: "In Negotiation", color: "#f97316" },
     { key: "BOOKED", label: "Booked", color: "#10b981" },
   ];
 
-  // Map other statuses into these buckets if needed
   const pipelineData = {
     NEW: (pipeline["NEW"] || 0) + (pipeline["CONTACTED"] || 0),
-    SITE_VISIT_SCHEDULED: (pipeline["SITE_VISIT_SCHEDULED"] || 0) + (pipeline["SITE_VISIT_CONDUCTED"] || 0),
+    SITE_VISIT_SCHEDULED:
+      (pipeline["SITE_VISIT_SCHEDULED"] || 0) +
+      (pipeline["SITE_VISIT_CONDUCTED"] || 0),
     NEGOTIATION: pipeline["NEGOTIATION"] || 0,
     BOOKED: pipeline["BOOKED"] || 0,
   };
@@ -19,93 +26,68 @@ export function CPSalesPipeline({ pipeline }: { pipeline: Record<string, number>
   const total = Object.values(pipelineData).reduce((a, b) => a + b, 0);
 
   return (
-    <div style={{
-      background: "var(--bg-surface)",
-      border: "1px solid var(--border-subtle)",
-      boxShadow: "var(--shadow-sm)",
-      borderRadius: "var(--radius-xl)",
-      padding: 24,
-      position: "relative",
-      overflow: "hidden",
-      transition: "box-shadow 200ms ease",
-    }}
-    onMouseEnter={e => {
-      (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-md)";
-    }}
-    onMouseLeave={e => {
-      (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-sm)";
-    }}
-    >
-      <h2 style={{
-        fontSize: "var(--text-lg)",
-        fontWeight: 700,
-        color: "var(--text-primary)",
-        letterSpacing: "-0.01em",
-        marginBottom: 24,
-        margin: "0 0 24px 0"
-      }}>Sales Pipeline</h2>
-      
+    <div className="bg-white border border-slate-200/80 shadow-2xs rounded-3xl p-5 relative overflow-hidden transition-shadow hover:shadow-md">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+          Channel Partner Sales Funnel
+        </h2>
+        <span className="text-[10px] font-extrabold text-[var(--text-muted)] bg-slate-100 px-2 py-0.5 rounded-full tabular-nums">
+          {total} Active Opportunities
+        </span>
+      </div>
+
       {total === 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 0" }}>
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", fontWeight: 500, margin: 0 }}>No leads in the pipeline yet.</p>
+        <div className="py-8 flex items-center justify-center text-xs font-semibold text-[var(--text-muted)] text-center">
+          No broker leads in the pipeline yet.
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-          <div style={{
-            display: "flex",
-            height: 24,
-            borderRadius: "var(--radius-full)",
-            overflow: "hidden",
-            boxShadow: "inset 0 2px 4px rgba(0,0,0,0.06)"
-          }}>
+        <div className="space-y-4">
+          <div className="flex h-5 rounded-full overflow-hidden shadow-inner bg-slate-100">
             {stages.map((stage) => {
-              const count = pipelineData[stage.key as keyof typeof pipelineData] || 0;
+              const count =
+                pipelineData[stage.key as keyof typeof pipelineData] || 0;
               const percentage = total > 0 ? (count / total) * 100 : 0;
               if (percentage === 0) return null;
               return (
                 <div
                   key={stage.key}
                   style={{
-                    background: stage.color,
-                    height: "100%",
-                    transition: "width 1000ms cubic-bezier(0.16, 1, 0.3, 1)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: `${percentage}%`
+                    backgroundColor: stage.color,
+                    width: `${percentage}%`,
                   }}
+                  className="h-full transition-all duration-700 flex items-center justify-center"
                 >
-                  {percentage > 10 && <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.9)" }}>{count}</span>}
+                  {percentage > 8 && (
+                    <span className="text-[9px] font-extrabold text-white tabular-nums drop-shadow-xs">
+                      {count}
+                    </span>
+                  )}
                 </div>
               );
             })}
           </div>
 
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-            gap: 16
-          }}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {stages.map((stage) => {
-              const count = pipelineData[stage.key as keyof typeof pipelineData] || 0;
+              const count =
+                pipelineData[stage.key as keyof typeof pipelineData] || 0;
               return (
-                <div key={stage.key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: stage.color }} />
-                    <span style={{
-                      fontSize: 10,
-                      fontWeight: 800,
-                      color: "var(--text-muted)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em"
-                    }}>{stage.label}</span>
+                <div
+                  key={stage.key}
+                  className="bg-slate-50/70 p-2.5 rounded-2xl border border-slate-100 flex flex-col justify-between"
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: stage.color }}
+                    />
+                    <span className="text-[9px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider truncate">
+                      {stage.label}
+                    </span>
                   </div>
-                  <span style={{
-                    fontSize: 24,
-                    fontWeight: 900,
-                    color: "var(--text-primary)",
-                    paddingLeft: 20
-                  }}>{count}</span>
+                  <span className="text-lg font-black text-[var(--text-primary)] tabular-nums pl-4">
+                    {count}
+                  </span>
                 </div>
               );
             })}
