@@ -45,7 +45,15 @@ export default function ClosingManagerHandoverScreen() {
   };
 
   useEffect(() => {
-    fetchLeads();
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) fetchLeads();
+    }, 300);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [activeTab]);
 
   const renderLead = ({ item }: { item: any }) => (
