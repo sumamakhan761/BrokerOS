@@ -153,7 +153,7 @@ export default function ApprovalTicket({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 h-full flex flex-col transition-all overflow-hidden">
+    <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 h-[750px] min-h-[600px] max-h-[85vh] flex flex-col transition-all overflow-hidden">
       <ApprovalTicketHeader
         ticket={ticket}
         role={role}
