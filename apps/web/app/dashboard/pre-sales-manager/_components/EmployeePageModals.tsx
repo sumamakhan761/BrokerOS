@@ -1,14 +1,10 @@
+"use client";
+
 import React from "react";
 import { Modal } from "./Modal";
 import { Employee, Announcement, ManagerTask } from "./types";
 import { Avatar } from "@/components/dashboard/Avatar";
-
-const inputClasses = "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[14px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400";
-const labelClasses = "block text-[13px] font-bold text-slate-700 mb-2";
-const btnPrimary = "w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white border-none rounded-xl py-3 px-6 text-[14px] font-bold cursor-pointer transition-all shadow-sm hover:shadow-md active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed";
-const btnGhostActive = "bg-indigo-50 text-indigo-600 border-2 border-indigo-500 hover:bg-indigo-100";
-const btnGhostInactive = "bg-white text-slate-600 border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50";
-const btnGhostBase = "flex-1 py-2.5 px-4 rounded-xl text-[13px] font-bold transition-all cursor-pointer";
+import { Loader2 } from "lucide-react";
 
 interface ModalsProps {
   // Create Task Modal
@@ -49,56 +45,105 @@ export function EmployeePageModals(props: ModalsProps) {
     <>
       {/* ── Create Task Modal ── */}
       {props.showTaskModal && (
-        <Modal title="Create Daily Call Task" onClose={() => props.setShowTaskModal(false)}>
-          <div className="flex flex-col gap-5">
+        <Modal
+          title="Create Daily Cold Call Target"
+          onClose={() => props.setShowTaskModal(false)}
+        >
+          <div className="flex flex-col gap-4">
             <div>
-              <label className={labelClasses}>Daily Cold Call Target</label>
-              <input id="task-target-input" type="number" min={1} value={props.taskTarget} onChange={(e) => props.setTaskTarget(e.target.value)} className={inputClasses} placeholder="e.g. 90" />
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+                Daily Cold Call Target
+              </label>
+              <input
+                id="task-target-input"
+                type="number"
+                min={1}
+                value={props.taskTarget}
+                onChange={(e) => props.setTaskTarget(e.target.value)}
+                className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 tabular-nums transition-all"
+                placeholder="e.g. 90"
+              />
             </div>
             <div>
-              <label className={labelClasses}>Assign To</label>
-              <div className="flex gap-3 mb-4">
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+                Assign Scope
+              </label>
+              <div className="grid grid-cols-2 gap-2 mb-3">
                 <button
                   id="assign-all-btn"
                   onClick={() => props.setTaskAssignAll(true)}
-                  className={`${btnGhostBase} ${props.taskAssignAll ? btnGhostActive : btnGhostInactive}`}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    props.taskAssignAll
+                      ? "bg-purple-50 text-[var(--brand-700)] border-purple-300 shadow-2xs"
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                  }`}
                 >
                   All Employees
                 </button>
                 <button
                   id="assign-specific-btn"
                   onClick={() => props.setTaskAssignAll(false)}
-                  className={`${btnGhostBase} ${!props.taskAssignAll ? btnGhostActive : btnGhostInactive}`}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    !props.taskAssignAll
+                      ? "bg-purple-50 text-[var(--brand-700)] border-purple-300 shadow-2xs"
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                  }`}
                 >
                   Select Specific
                 </button>
               </div>
               {!props.taskAssignAll && (
-                <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
                   {props.availableEmployees.map((emp) => {
                     const isSelected = props.taskSelectedUsers.includes(emp.id);
                     return (
-                      <label key={emp.id} className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl transition-all border-2 ${isSelected ? 'bg-indigo-50/50 border-indigo-200' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
-                        <div className="relative flex items-center">
-                          <input type="checkbox" className="peer sr-only" checked={isSelected} onChange={(e) => {
-                            if (e.target.checked) props.setTaskSelectedUsers((p) => [...p, emp.id]);
-                            else props.setTaskSelectedUsers((p) => p.filter((id) => id !== emp.id));
-                          }} />
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-slate-300'}`}>
-                            {isSelected && <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                          </div>
-                        </div>
-                        <Avatar name={emp.name || emp.username} size={32} />
-                        <span className="text-[14px] font-bold text-slate-700">{emp.name || emp.username}</span>
+                      <label
+                        key={emp.id}
+                        className={`flex items-center gap-3 cursor-pointer p-2 rounded-xl transition-all border ${
+                          isSelected
+                            ? "bg-purple-50/60 border-purple-200"
+                            : "bg-white border-slate-100 hover:border-slate-200"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="rounded text-[var(--brand-600)] focus:ring-0"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (e.target.checked)
+                              props.setTaskSelectedUsers((p) => [...p, emp.id]);
+                            else
+                              props.setTaskSelectedUsers((p) =>
+                                p.filter((id) => id !== emp.id)
+                              );
+                          }}
+                        />
+                        <Avatar
+                          name={emp.name || emp.username}
+                          size={28}
+                        />
+                        <span className="text-xs font-bold text-slate-700">
+                          {emp.name || emp.username}
+                        </span>
                       </label>
                     );
                   })}
-                  {props.availableEmployees.length === 0 && <p className="text-[13px] text-slate-400 p-2 text-center bg-slate-50 rounded-lg border border-slate-100">All employees already have a task assigned.</p>}
+                  {props.availableEmployees.length === 0 && (
+                    <p className="text-xs text-slate-400 p-3 text-center bg-slate-50 rounded-xl border border-slate-100 font-medium m-0">
+                      All employees already have a task assigned.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
-            <button id="save-task-btn" onClick={props.handleCreateTask} disabled={props.taskSaving} className={`${btnPrimary} mt-2`}>
-              {props.taskSaving ? "Creating…" : "Create Task"}
+            <button
+              id="save-task-btn"
+              onClick={props.handleCreateTask}
+              disabled={props.taskSaving}
+              className="w-full py-2 bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.96] press-effect disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer mt-2"
+            >
+              {props.taskSaving && <Loader2 size={13} className="animate-spin" />}
+              <span>{props.taskSaving ? "Creating…" : "Create Task Target"}</span>
             </button>
           </div>
         </Modal>
@@ -106,14 +151,32 @@ export function EmployeePageModals(props: ModalsProps) {
 
       {/* ── Edit Task Modal ── */}
       {props.editTask && (
-        <Modal title="Edit Task Target" onClose={() => props.setEditTask(null)}>
-          <div className="flex flex-col gap-6">
+        <Modal
+          title="Edit Daily Call Target"
+          onClose={() => props.setEditTask(null)}
+        >
+          <div className="flex flex-col gap-4">
             <div>
-              <label className={labelClasses}>New Daily Cold Call Target</label>
-              <input id="edit-task-target-input" type="number" min={1} value={props.editTarget} onChange={(e) => props.setEditTarget(e.target.value)} className={inputClasses} />
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+                New Daily Cold Call Target
+              </label>
+              <input
+                id="edit-task-target-input"
+                type="number"
+                min={1}
+                value={props.editTarget}
+                onChange={(e) => props.setEditTarget(e.target.value)}
+                className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 tabular-nums transition-all"
+              />
             </div>
-            <button id="save-edit-task-btn" onClick={props.handleEditTask} disabled={props.taskSaving} className={btnPrimary}>
-              {props.taskSaving ? "Saving…" : "Save Changes"}
+            <button
+              id="save-edit-task-btn"
+              onClick={props.handleEditTask}
+              disabled={props.taskSaving}
+              className="w-full py-2 bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.96] press-effect disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              {props.taskSaving && <Loader2 size={13} className="animate-spin" />}
+              <span>{props.taskSaving ? "Saving…" : "Save Target"}</span>
             </button>
           </div>
         </Modal>
@@ -121,18 +184,52 @@ export function EmployeePageModals(props: ModalsProps) {
 
       {/* ── Announcement Modal ── */}
       {props.showAnnModal && (
-        <Modal title={props.editAnn ? "Edit Announcement" : "New Announcement"} onClose={() => { props.setShowAnnModal(false); props.setEditAnn(null); }}>
-          <div className="flex flex-col gap-5">
+        <Modal
+          title={props.editAnn ? "Edit Announcement" : "New Team Broadcast"}
+          onClose={() => {
+            props.setShowAnnModal(false);
+            props.setEditAnn(null);
+          }}
+        >
+          <div className="flex flex-col gap-4">
             <div>
-              <label className={labelClasses}>Title</label>
-              <input id="ann-title-input" value={props.annTitle} onChange={(e) => props.setAnnTitle(e.target.value)} className={inputClasses} placeholder="e.g. Team Meeting Tomorrow at 10am" />
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+                Title / Headline
+              </label>
+              <input
+                id="ann-title-input"
+                value={props.annTitle}
+                onChange={(e) => props.setAnnTitle(e.target.value)}
+                className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all"
+                placeholder="e.g. Sales Briefing Tomorrow at 10 AM"
+              />
             </div>
             <div>
-              <label className={labelClasses}>Description</label>
-              <textarea id="ann-desc-input" value={props.annDesc} onChange={(e) => props.setAnnDesc(e.target.value)} className={`${inputClasses} min-h-[120px] resize-y`} placeholder="Full announcement text…" />
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+                Announcement Body
+              </label>
+              <textarea
+                id="ann-desc-input"
+                value={props.annDesc}
+                onChange={(e) => props.setAnnDesc(e.target.value)}
+                className="w-full p-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 min-h-[100px] resize-y transition-all"
+                placeholder="Broadcast details for the team…"
+              />
             </div>
-            <button id="save-ann-btn" onClick={props.handleSaveAnn} disabled={props.annSaving} className={`${btnPrimary} mt-2`}>
-              {props.annSaving ? "Saving…" : props.editAnn ? "Save Changes" : "Post Announcement"}
+            <button
+              id="save-ann-btn"
+              onClick={props.handleSaveAnn}
+              disabled={props.annSaving}
+              className="w-full py-2 bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-[0.96] press-effect disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer mt-2"
+            >
+              {props.annSaving && <Loader2 size={13} className="animate-spin" />}
+              <span>
+                {props.annSaving
+                  ? "Saving…"
+                  : props.editAnn
+                  ? "Save Changes"
+                  : "Broadcast Announcement"}
+              </span>
             </button>
           </div>
         </Modal>

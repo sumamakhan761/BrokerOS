@@ -1,33 +1,57 @@
 import React from "react";
 
-export function CircleProgress({ done, target, label, color }: { done: number; target: number; label: string; color: string }) {
-  const r = 40;
+export function CircleProgress({
+  done,
+  target,
+  label,
+  color,
+}: {
+  done: number;
+  target: number;
+  label: string;
+  color: string;
+}) {
+  const r = 38;
   const circ = 2 * Math.PI * r;
   const pct = target === 0 ? 0 : Math.round(Math.min(1, done / target) * 100);
   const offset = circ - (pct / 100) * circ;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-      <div style={{ position: "relative", width: 96, height: 96 }}>
-        <svg width={96} height={96} style={{ transform: "rotate(-90deg)" }}>
-          <circle cx={48} cy={48} r={r} fill="none" stroke="#e2e8f0" strokeWidth={8} />
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative w-24 h-24">
+        <svg width={96} height={96} className="-rotate-90">
           <circle
-            cx={48} cy={48} r={r} fill="none" stroke={color} strokeWidth={8}
-            strokeDasharray={circ} strokeDashoffset={offset}
+            cx={48}
+            cy={48}
+            r={r}
+            fill="none"
+            stroke="#f1f5f9"
+            strokeWidth={7}
+          />
+          <circle
+            cx={48}
+            cy={48}
+            r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth={7}
+            strokeDasharray={circ}
+            strokeDashoffset={offset}
             strokeLinecap="round"
-            style={{ transition: "stroke-dashoffset 0.8s ease" }}
+            className="transition-all duration-700 ease-out"
           />
         </svg>
-        <div style={{
-          position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-          alignItems: "center", justifyContent: "center",
-        }}>
-          <span style={{ fontSize: 18, fontWeight: 700, color: "#0f172a" }}>{pct}%</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-base font-extrabold text-[var(--text-primary)] tabular-nums">
+            {pct}%
+          </span>
         </div>
       </div>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 13, color: "#475569", fontWeight: 500 }}>{label}</div>
-        <div style={{ fontSize: 12, color: "#374353ff", marginTop: 2 }}>{done} / {target}</div>
+      <div className="text-center">
+        <div className="text-xs text-slate-700 font-bold">{label}</div>
+        <div className="text-[11px] text-[var(--text-muted)] font-semibold tabular-nums mt-0.5">
+          {done} / {target}
+        </div>
       </div>
     </div>
   );
