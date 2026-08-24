@@ -87,7 +87,7 @@ export default function SourcingManagerProjectInventory() {
   return (
     <View className="flex-1 bg-slate-50">
       {/* Header */}
-      <View className="p-4 pt-12 bg-white border-b border-slate-200">
+      <View className="p-4 bg-white border-b border-slate-200">
         <View className="flex-row justify-between items-center">
           <TouchableOpacity onPress={() => router.push('/sourcing-manager/inventory')} className="p-2">
             <Feather name="arrow-left" size={24} color="#0f172a" />

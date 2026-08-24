@@ -18,19 +18,27 @@ export default function SourcingManagerScreen() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
-        const res = await authClient.$fetch('/api/dashboard/sourcing-manager', { baseURL });
-        if (res.error) throw new Error(res.error.message || "Failed");
-        setData(res.data);
-      } catch (err: any) {
-        setError(err?.response?.status === 403 ? "Access Denied (403)" : "Connection Error");
-      } finally {
-        setLoading(false);
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      async function fetchData() {
+        try {
+          const baseURL = process.env.EXPO_PUBLIC_API_URL as string;
+          const res = await authClient.$fetch('/api/dashboard/sourcing-manager', { baseURL });
+          if (res.error) throw new Error(res.error.message || "Failed");
+          if (isMounted) setData(res.data);
+        } catch (err: any) {
+          if (isMounted) setError(err?.response?.status === 403 ? "Access Denied (403)" : "Connection Error");
+        } finally {
+          if (isMounted) setLoading(false);
+        }
       }
-    }
-    fetchData();
+      fetchData();
+    }, 100);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, []);
 
   if (loading) {
