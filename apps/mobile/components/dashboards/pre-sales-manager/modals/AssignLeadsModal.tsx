@@ -33,11 +33,12 @@ export function AssignLeadsModal({
             <Picker
               selectedValue={assignTarget}
               onValueChange={(itemValue) => setAssignTarget(itemValue)}
-              style={{ backgroundColor: '#fff' }}
+              style={{ backgroundColor: '#fff', color: '#0f172a' }}
+              dropdownIconColor="#0f172a"
             >
               <Picker.Item label="Select Employee..." value="" color="#9CA3AF" />
               {subordinates.map((sub) => (
-                <Picker.Item key={sub.id} label={sub.name || sub.username} value={sub.id} />
+                <Picker.Item key={sub.id} label={sub.name || sub.username} value={sub.id} color="#0f172a" />
               ))}
             </Picker>
           </View>
