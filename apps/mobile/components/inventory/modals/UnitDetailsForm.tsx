@@ -34,11 +34,13 @@ export function UnitDetailsForm({
           <Picker
             selectedValue={formData.status}
             onValueChange={(itemValue) => setFormData({ ...formData, status: itemValue })}
+            style={{ color: '#0f172a' }}
+            dropdownIconColor="#0f172a"
           >
-            <Picker.Item label="AVAILABLE" value="AVAILABLE" />
-            <Picker.Item label="RESERVED" value="RESERVED" />
-            <Picker.Item label="SOLD" value="SOLD" />
-            <Picker.Item label="BLOCKED" value="BLOCKED" />
+            <Picker.Item label="AVAILABLE" value="AVAILABLE" color="#0f172a" />
+            <Picker.Item label="RESERVED" value="RESERVED" color="#0f172a" />
+            <Picker.Item label="SOLD" value="SOLD" color="#0f172a" />
+            <Picker.Item label="BLOCKED" value="BLOCKED" color="#0f172a" />
           </Picker>
         </View>
       </View>

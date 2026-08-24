@@ -111,13 +111,16 @@ export function BookingModal({ unit, visible, onClose, onSuccess }: BookingModal
                 <Picker
                   selectedValue={selectedLeadId}
                   onValueChange={setSelectedLeadId}
+                  style={{ color: '#0f172a' }}
+                  dropdownIconColor="#0f172a"
                 >
-                  <Picker.Item label="-- Select Customer --" value="" />
+                  <Picker.Item label="-- Select Customer --" value="" color="#94a3b8" />
                   {leads.map((lead: any) => (
                     <Picker.Item 
                       key={lead.id} 
                       label={`${lead.firstName} ${lead.lastName} ${lead.phone ? `(${lead.phone})` : ''}`} 
                       value={lead.id} 
+                      color="#0f172a"
                     />
                   ))}
                 </Picker>
@@ -152,10 +155,12 @@ export function BookingModal({ unit, visible, onClose, onSuccess }: BookingModal
                   <Picker
                     selectedValue={formData.paymentMode}
                     onValueChange={(val) => setFormData({...formData, paymentMode: val})}
+                    style={{ color: '#0f172a' }}
+                    dropdownIconColor="#0f172a"
                   >
-                    <Picker.Item label="Card" value="CARD" />
-                    <Picker.Item label="Bank" value="BANK_TRANSFER" />
-                    <Picker.Item label="Cash" value="CASH" />
+                    <Picker.Item label="Card" value="CARD" color="#0f172a" />
+                    <Picker.Item label="Bank" value="BANK_TRANSFER" color="#0f172a" />
+                    <Picker.Item label="Cash" value="CASH" color="#0f172a" />
                   </Picker>
                 </View>
               </View>
