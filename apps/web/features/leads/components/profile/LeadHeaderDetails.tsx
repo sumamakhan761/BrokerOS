@@ -1,5 +1,16 @@
-import React from 'react';
-import { Phone, Mail, MapPin, Clock, Zap, Loader2 } from 'lucide-react';
+import React from "react";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+  Zap,
+  Flame,
+  Snowflake,
+  Loader2,
+  MessageSquare,
+  ChevronDown,
+} from "lucide-react";
 
 interface LeadHeaderDetailsProps {
   lead: any;
@@ -15,13 +26,45 @@ interface LeadHeaderDetailsProps {
   isAiAdvancing?: boolean;
 }
 
-/* ── temperature color map ────────────────────────────── */
-function tempStyle(temp: string): React.CSSProperties {
-  if (temp === 'HOT') return { background: 'var(--danger-bg)', color: 'var(--danger-fg)', border: '1px solid #fca5a5' };
-  if (temp === 'WARM') return { background: 'var(--warning-bg)', color: 'var(--warning-fg)', border: '1px solid #fcd34d' };
-  if (temp === 'COLD') return { background: 'var(--info-bg)', color: 'var(--info-fg)', border: '1px solid #7dd3fc' };
-  return { background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' };
-}
+const TEMP_CONFIG: Record<
+  string,
+  { bg: string; text: string; border: string; icon: React.ElementType }
+> = {
+  HOT: {
+    bg: "bg-rose-50",
+    text: "text-rose-700",
+    border: "border-rose-200",
+    icon: Flame,
+  },
+  WARM: {
+    bg: "bg-amber-50",
+    text: "text-amber-800",
+    border: "border-amber-200",
+    icon: Zap,
+  },
+  COLD: {
+    bg: "bg-sky-50",
+    text: "text-sky-700",
+    border: "border-sky-200",
+    icon: Snowflake,
+  },
+};
+
+const STATUS_CLASSES: Record<string, { bg: string; text: string; border: string }> = {
+  NEW: { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
+  CONTACTED: { bg: "bg-sky-50", text: "text-sky-700", border: "border-sky-200" },
+  INTERESTED: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+  QUALIFIED: { bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200" },
+  SITE_VISIT_SCHEDULED: { bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200" },
+  SITE_VISIT_COMPLETED: { bg: "bg-indigo-50", text: "text-indigo-700", border: "border-indigo-200" },
+  NEGOTIATION: { bg: "bg-orange-50", text: "text-orange-800", border: "border-orange-200" },
+  BOOKING: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+  DOCUMENT: { bg: "bg-amber-50", text: "text-amber-900", border: "border-amber-300" },
+  LOAN: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
+  AGREEMENT: { bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-200" },
+  HANDOVER: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200" },
+  LOST: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200" },
+};
 
 export function LeadHeaderDetails({
   lead,
@@ -34,324 +77,249 @@ export function LeadHeaderDetails({
   openFollowUpModal,
   openSiteVisitModal,
   handleAiAutoAdvance,
-  isAiAdvancing
+  isAiAdvancing,
 }: LeadHeaderDetailsProps) {
-  const isHot = lead.temperature === 'HOT';
+  const currentTemp = lead.temperature as string;
+  const tempConf = TEMP_CONFIG[currentTemp] || {
+    bg: "bg-slate-50",
+    text: "text-slate-700",
+    border: "border-slate-200",
+    icon: Flame,
+  };
+  const TempIcon = tempConf.icon;
+
+  const currentStatusConf = STATUS_CLASSES[lead.status] || {
+    bg: "bg-purple-50",
+    text: "text-[var(--brand-700)]",
+    border: "border-purple-200/90",
+  };
 
   return (
     <>
-      {/* Name + Status + Temp row */}
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{displayName}</h2>
+      {/* Name + Status + Temperature Row */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight m-0">
+          {displayName}
+        </h2>
 
-        {/* Status pill */}
-        <select
-          value={lead.status}
-          onChange={(e) => handleStatusChange(e.target.value)}
-          style={{
-            padding: '3px 12px',
-            background: 'var(--brand-50)',
-            color: 'var(--brand-700)',
-            fontSize: 'var(--text-xs)',
-            fontWeight: 700,
-            borderRadius: 'var(--radius-full)',
-            border: '1px solid var(--brand-200)',
-            cursor: 'pointer',
-            outline: 'none',
-            letterSpacing: '0.02em',
-            transition: 'background var(--duration-fast)',
-          }}
-        >
-          {(() => {
-            const allStatuses = ['NEW', 'CONTACTED', 'INTERESTED', 'QUALIFIED', 'SITE_VISIT_SCHEDULED', 'SITE_VISIT_COMPLETED', 'BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER', 'LOST'];
-            let availableStatuses = allStatuses;
-
-            if (isPreSales) {
-              availableStatuses = allStatuses.filter(s => s !== 'SITE_VISIT_COMPLETED' && s !== 'BOOKING' && !['DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'].includes(s));
-            } else if (isPostSales || (typeof window !== 'undefined' && window.location.pathname.includes('/closing-manager'))) {
-              availableStatuses = ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'];
-            } else {
-              availableStatuses = allStatuses.filter(s => !['DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'].includes(s));
-            }
-
-            if (!availableStatuses.includes(lead.status)) {
-              availableStatuses = [lead.status, ...availableStatuses];
-            }
-
-            return availableStatuses.map(s => (
-              <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
-            ));
-          })()}
-        </select>
-
-        {/* Temperature pill with animated HOT pulse */}
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 5 }}>
-          {isHot && (
-            <span style={{
-              position: 'absolute',
-              left: 6,
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: 'var(--danger-fg)',
-              animation: 'pulse-ring 1.4s ease-out infinite',
-              pointerEvents: 'none',
-            }} />
-          )}
+        {/* Status Dropdown */}
+        <div className="relative inline-flex items-center">
           <select
-            value={lead.temperature || ''}
-            onChange={(e) => handleTemperatureChange(e.target.value)}
-            style={{
-              paddingLeft: isHot ? 20 : 12,
-              paddingRight: 12,
-              paddingTop: 3,
-              paddingBottom: 3,
-              borderRadius: 'var(--radius-full)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 700,
-              cursor: 'pointer',
-              outline: 'none',
-              transition: 'background var(--duration-fast)',
-              letterSpacing: '0.02em',
-              ...tempStyle(lead.temperature || ''),
-            }}
+            value={lead.status}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            className={`h-7 pl-3 pr-7 rounded-full text-xs font-bold ${currentStatusConf.bg} hover:opacity-90 ${currentStatusConf.text} border ${currentStatusConf.border} outline-none cursor-pointer appearance-none transition-all shadow-2xs`}
           >
-            <option value="" disabled>Temp</option>
-            {['HOT', 'WARM', 'COLD'].map(t => (
-              <option key={t} value={t}>{t}</option>
-            ))}
+            {(() => {
+              const allStatuses = [
+                "NEW",
+                "CONTACTED",
+                "INTERESTED",
+                "QUALIFIED",
+                "SITE_VISIT_SCHEDULED",
+                "SITE_VISIT_COMPLETED",
+                "BOOKING",
+                "DOCUMENT",
+                "LOAN",
+                "AGREEMENT",
+                "HANDOVER",
+                "LOST",
+              ];
+              let availableStatuses = allStatuses;
+
+              if (isPreSales) {
+                availableStatuses = allStatuses.filter(
+                  (s) =>
+                    s !== "SITE_VISIT_COMPLETED" &&
+                    s !== "BOOKING" &&
+                    !["DOCUMENT", "LOAN", "AGREEMENT", "HANDOVER"].includes(s)
+                );
+              } else if (
+                isPostSales ||
+                (typeof window !== "undefined" &&
+                  window.location.pathname.includes("/closing-manager"))
+              ) {
+                availableStatuses = [
+                  "BOOKING",
+                  "DOCUMENT",
+                  "LOAN",
+                  "AGREEMENT",
+                  "HANDOVER",
+                ];
+              } else {
+                availableStatuses = allStatuses.filter(
+                  (s) =>
+                    !["DOCUMENT", "LOAN", "AGREEMENT", "HANDOVER"].includes(s)
+                );
+              }
+
+              if (!availableStatuses.includes(lead.status)) {
+                availableStatuses = [lead.status, ...availableStatuses];
+              }
+
+              return availableStatuses.map((s) => (
+                <option key={s} value={s}>
+                  {s.replace(/_/g, " ")}
+                </option>
+              ));
+            })()}
           </select>
+          <ChevronDown
+            size={12}
+            className={`absolute right-2.5 pointer-events-none ${currentStatusConf.text} opacity-70`}
+          />
         </div>
 
-        {/* Sub-Status (Post-Sales stages) */}
-        {['DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'].includes(lead.status) && (
-          <select
-            value={lead.subStatus || ''}
-            onChange={(e) => handleSubStatusChange && handleSubStatusChange(e.target.value)}
-            style={{
-              padding: '3px 12px',
-              background: 'var(--bg-subtle)',
-              color: 'var(--text-secondary)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 700,
-              borderRadius: 'var(--radius-full)',
-              border: '1px solid var(--border-default)',
-              cursor: 'pointer',
-              outline: 'none',
-            }}
+        {/* Temperature Badge / Selector with Lucide Icon */}
+        <div className="relative inline-flex items-center">
+          <div
+            className={`h-7 pl-2.5 pr-7 rounded-full text-xs font-bold border ${tempConf.bg} ${tempConf.text} ${tempConf.border} flex items-center gap-1.5 shadow-2xs relative`}
           >
-            <option value="PENDING">Pending</option>
-            <option value="DONE">Done</option>
-          </select>
+            <TempIcon size={13} className="shrink-0" />
+            <select
+              value={lead.temperature || ""}
+              onChange={(e) => handleTemperatureChange(e.target.value)}
+              className="bg-transparent border-none outline-none cursor-pointer appearance-none font-bold text-inherit pr-1"
+            >
+              <option value="" disabled>
+                Temp
+              </option>
+              <option value="HOT">HOT</option>
+              <option value="WARM">WARM</option>
+              <option value="COLD">COLD</option>
+            </select>
+            <ChevronDown
+              size={12}
+              className="absolute right-2.5 pointer-events-none opacity-70"
+            />
+          </div>
+        </div>
+
+        {/* Sub-Status (Post-Sales Lifecycle Stages) */}
+        {["DOCUMENT", "LOAN", "AGREEMENT", "HANDOVER"].includes(lead.status) && (
+          <div className="relative inline-flex items-center">
+            <select
+              value={lead.subStatus || ""}
+              onChange={(e) =>
+                handleSubStatusChange && handleSubStatusChange(e.target.value)
+              }
+              className="h-7 pl-3 pr-7 rounded-full text-xs font-bold bg-slate-100 hover:bg-slate-200/80 text-slate-700 border border-slate-200 outline-none cursor-pointer appearance-none transition-all shadow-2xs"
+            >
+              <option value="PENDING">Pending</option>
+              <option value="DONE">Done</option>
+            </select>
+            <ChevronDown
+              size={12}
+              className="absolute right-2.5 pointer-events-none text-slate-500 opacity-70"
+            />
+          </div>
         )}
 
-        {/* AI Auto-Advance */}
+        {/* AI Auto-Advance Button */}
         {isPreSales && (
           <button
             onClick={handleAiAutoAdvance}
-            disabled={isAiAdvancing || lead.status === 'QUALIFIED'}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              padding: '3px 12px',
-              background: '#faf5ff',
-              color: '#6d28d9',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 700,
-              borderRadius: 'var(--radius-full)',
-              border: '1px solid #ddd6fe',
-              cursor: isAiAdvancing || lead.status === 'QUALIFIED' ? 'not-allowed' : 'pointer',
-              opacity: isAiAdvancing || lead.status === 'QUALIFIED' ? 0.5 : 1,
-              transition: 'all var(--duration-fast)',
-            }}
+            disabled={isAiAdvancing || lead.status === "QUALIFIED"}
+            className="h-7 px-3 rounded-full text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 inline-flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.96] press-effect cursor-pointer"
             title="Automatically determine next status and generate a summary note based on recent calls"
           >
             {isAiAdvancing ? (
-              <Loader2 style={{ width: 13, height: 13, animation: 'spin 0.8s linear infinite' }} />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Zap style={{ width: 13, height: 13 }} />
+              <Zap className="w-3.5 h-3.5 text-purple-600" />
             )}
-            Auto-Advance
+            <span>AI Advance</span>
           </button>
         )}
       </div>
 
-      {/* Possession info (Post-Sales) */}
+      {/* Possession Badges for Post-Sales */}
       {isPostSales && (lead.processionStatus || lead.processionTimeline) && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 4 }}>
+        <div className="flex flex-wrap gap-2 pt-1">
           {lead.processionStatus && (
-            <span style={{
-              padding: '2px 8px',
-              background: 'var(--info-bg)',
-              color: 'var(--info-fg)',
-              border: '1px solid #bae6fd',
-              borderRadius: 'var(--radius-md)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 600,
-            }}>
-              Status: {lead.processionStatus.replace(/_/g, ' ')}
+            <span className="px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+              Possession: {lead.processionStatus.replace(/_/g, " ")}
             </span>
           )}
           {lead.processionTimeline && (
-            <span style={{
-              padding: '2px 8px',
-              background: '#faf5ff',
-              color: '#6d28d9',
-              border: '1px solid #ddd6fe',
-              borderRadius: 'var(--radius-md)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 600,
-              display: 'flex', alignItems: 'center', gap: 4,
-            }}>
-              <Clock style={{ width: 11, height: 11 }} />
-              Possession in {lead.processionTimeline.value} {lead.processionTimeline.unit.toLowerCase()}
+            <span className="px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 inline-flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              <span>
+                {lead.processionTimeline.value}{" "}
+                {lead.processionTimeline.unit.toLowerCase()} remaining
+              </span>
             </span>
           )}
         </div>
       )}
 
-      {/* Contact info row */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <Phone style={{ width: 14, height: 14, color: 'var(--text-muted)' }} />
-          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-secondary)' }}>
-            {lead.phone}
-          </span>
+      {/* Contact Quick Info Row */}
+      <div className="flex flex-wrap items-center gap-y-1.5 gap-x-5 text-xs text-[var(--text-secondary)]">
+        <div className="flex items-center gap-1.5 font-bold tabular-nums">
+          <Phone className="w-3.5 h-3.5 text-slate-400" />
+          <span>{lead.phone || "No phone"}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <Mail style={{ width: 14, height: 14, color: 'var(--text-muted)' }} />
-          <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>
-            {lead.email || <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>No email</span>}
-          </span>
+        <div className="flex items-center gap-1.5 font-medium">
+          <Mail className="w-3.5 h-3.5 text-slate-400" />
+          <span>{lead.email || <em className="text-slate-400">No email</em>}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <MapPin style={{ width: 14, height: 14, color: 'var(--text-muted)' }} />
-          <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>
-            {lead.preferredLocation || <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>No location</span>}
+        <div className="flex items-center gap-1.5 font-medium">
+          <MapPin className="w-3.5 h-3.5 text-slate-400" />
+          <span>
+            {lead.preferredLocation || (
+              <em className="text-slate-400">No location set</em>
+            )}
           </span>
         </div>
       </div>
 
-      {/* Action buttons */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingTop: 2 }}>
+      {/* Action Buttons Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 pt-1">
         {/* Call */}
         <button
-          style={{
-            padding: '7px 16px',
-            background: 'var(--success-bg)',
-            color: 'var(--success-fg)',
-            border: '1px solid #86efac',
-            borderRadius: 'var(--radius-lg)',
-            fontWeight: 600,
-            fontSize: 'var(--text-sm)',
-            display: 'flex', alignItems: 'center', gap: 7,
-            cursor: 'pointer',
-            transition: 'all var(--duration-base) var(--ease-out-expo)',
+          onClick={() => {
+            if (lead.phone) window.open(`tel:${lead.phone}`, "_self");
           }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-          }}
+          className="h-8 px-3.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.96] press-effect shadow-2xs cursor-pointer"
         >
-          <Phone style={{ width: 14, height: 14 }} />
-          Call
+          <Phone className="w-3.5 h-3.5" />
+          <span>Direct Call</span>
         </button>
 
         {/* WhatsApp */}
         <button
-          style={{
-            padding: '7px 16px',
-            background: '#f0fdf4',
-            color: '#15803d',
-            border: '1px solid #bbf7d0',
-            borderRadius: 'var(--radius-lg)',
-            fontWeight: 600,
-            fontSize: 'var(--text-sm)',
-            display: 'flex', alignItems: 'center', gap: 7,
-            cursor: 'pointer',
-            transition: 'all var(--duration-base) var(--ease-out-expo)',
+          onClick={() => {
+            if (lead.phone) {
+              const cleanPhone = lead.phone.replace(/[^0-9]/g, "");
+              window.open(`https://wa.me/${cleanPhone}`, "_blank");
+            }
           }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-          }}
+          className="h-8 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.96] press-effect shadow-xs cursor-pointer"
         >
-          <svg style={{ width: 14, height: 14, fill: 'currentColor' }} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
-          </svg>
-          WhatsApp
+          <MessageSquare className="w-3.5 h-3.5" />
+          <span>WhatsApp</span>
         </button>
 
-        {/* Follow-up */}
+        {/* Schedule Follow-up */}
         <button
           onClick={() => openFollowUpModal()}
-          style={{
-            padding: '7px 16px',
-            background: 'var(--brand-600)',
-            color: '#fff',
-            border: '1px solid var(--brand-700)',
-            borderRadius: 'var(--radius-lg)',
-            fontWeight: 600,
-            fontSize: 'var(--text-sm)',
-            display: 'flex', alignItems: 'center', gap: 7,
-            cursor: 'pointer',
-            transition: 'all var(--duration-base) var(--ease-out-expo)',
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = 'var(--brand-700)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-brand)';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = 'var(--brand-600)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-          }}
+          className="h-8 px-3.5 rounded-xl bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.96] press-effect shadow-xs cursor-pointer"
         >
-          <Clock style={{ width: 14, height: 14 }} />
-          Follow-up
+          <Clock className="w-3.5 h-3.5" />
+          <span>Schedule Follow-up</span>
         </button>
 
         {/* Site Visit */}
-        {typeof window !== 'undefined' && !window.location.pathname.includes('/post-sales') && !window.location.pathname.includes('/closing-manager') && (
-          <button
-            onClick={() => openSiteVisitModal()}
-            style={{
-              padding: '7px 16px',
-              background: 'var(--brand-50)',
-              color: 'var(--brand-700)',
-              border: '1px solid var(--brand-200)',
-              borderRadius: 'var(--radius-lg)',
-              fontWeight: 600,
-              fontSize: 'var(--text-sm)',
-              display: 'flex', alignItems: 'center', gap: 7,
-              cursor: 'pointer',
-              transition: 'all var(--duration-base) var(--ease-out-expo)',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.background = 'var(--brand-100)';
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-              (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = 'var(--brand-50)';
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-            }}
-          >
-            <MapPin style={{ width: 14, height: 14 }} />
-            Site Visit
-          </button>
-        )}
+        {typeof window !== "undefined" &&
+          !window.location.pathname.includes("/post-sales") &&
+          !window.location.pathname.includes("/closing-manager") && (
+            <button
+              onClick={() => openSiteVisitModal()}
+              className="h-8 px-3.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-[var(--brand-700)] border border-purple-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.96] press-effect shadow-2xs cursor-pointer"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Log Site Visit</span>
+            </button>
+          )}
       </div>
     </>
   );

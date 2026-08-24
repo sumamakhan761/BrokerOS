@@ -1,7 +1,7 @@
-import React from 'react';
-import { Edit2, Check, X, Briefcase, Globe, User, UserCheck, IndianRupee, Building2, MapPin, Calendar, AlertCircle } from 'lucide-react';
-import { LeadInformationDisplay } from '@/features/leads/components/profile/LeadInformationDisplay';
-import { LeadInformationEdit } from '@/features/leads/components/profile/LeadInformationEdit';
+import React from "react";
+import { Edit2, Check, X, Briefcase } from "lucide-react";
+import { LeadInformationDisplay } from "@/features/leads/components/profile/LeadInformationDisplay";
+import { LeadInformationEdit } from "@/features/leads/components/profile/LeadInformationEdit";
 
 interface LeadInformationCardProps {
   lead: any;
@@ -25,56 +25,22 @@ export function LeadInformationCard({
   availableProjects,
 }: LeadInformationCardProps) {
   return (
-    <div style={{
-      background: 'var(--bg-surface)',
-      border: '1px solid var(--border-subtle)',
-      borderRadius: 'var(--radius-xl)',
-      boxShadow: 'var(--shadow-sm)',
-      padding: 24,
-      animation: 'enter 350ms var(--ease-out-expo) both',
-      animationDelay: '80ms',
-    }}>
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 flex flex-col justify-between">
       {/* Header */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: 24,
-      }}>
-        <h3 style={{
-          margin: 0,
-          fontSize: 'var(--text-base)',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          letterSpacing: '-0.01em',
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          <Briefcase size={17} style={{ color: 'var(--brand-600)' }} />
-          Lead Information
+      <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+        <h3 className="text-xs font-bold text-[var(--text-primary)] tracking-tight m-0 flex items-center gap-2">
+          <Briefcase size={15} className="text-[var(--brand-600)]" />
+          <span>Lead Parameters</span>
         </h3>
 
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div className="flex items-center gap-1.5">
           {!isEditingLeadInfo ? (
             <button
               onClick={() => setIsEditingLeadInfo(true)}
-              title="Edit"
-              style={{
-                width: 30, height: 30, borderRadius: 'var(--radius-full)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'var(--bg-subtle)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                transition: 'all var(--duration-fast)',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.background = 'var(--brand-50)';
-                (e.currentTarget as HTMLElement).style.color = 'var(--brand-600)';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.background = 'var(--bg-subtle)';
-                (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)';
-              }}
+              title="Edit parameters"
+              className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-[var(--brand-700)] flex items-center justify-center transition-all active:scale-[0.96] press-effect cursor-pointer"
             >
-              <Edit2 size={13} />
+              <Edit2 size={12} />
             </button>
           ) : (
             <>
@@ -82,34 +48,32 @@ export function LeadInformationCard({
                 onClick={() => {
                   setIsEditingLeadInfo(false);
                   setLeadInfoData({
-                    budget: lead.budget || '',
-                    lastContactDate: lead.lastContactDate ? new Date(lead.lastContactDate).toISOString().split('T')[0] : '',
-                    nextFollowUpDate: lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toISOString().split('T')[0] : '',
-                    sourceId: lead.sourceId || '',
-                    interestedProjectId: lead.interestedProjectId || '',
-                    preferredLocation: lead.preferredLocation || '',
-                    requirements: lead.requirements || '',
+                    budget: lead.budget || "",
+                    lastContactDate: lead.lastContactDate
+                      ? new Date(lead.lastContactDate).toISOString().split("T")[0]
+                      : "",
+                    nextFollowUpDate: lead.nextFollowUpDate
+                      ? new Date(lead.nextFollowUpDate)
+                          .toISOString()
+                          .split("T")[0]
+                      : "",
+                    sourceId: lead.sourceId || "",
+                    interestedProjectId: lead.interestedProjectId || "",
+                    preferredLocation: lead.preferredLocation || "",
+                    requirements: lead.requirements || "",
                   });
                 }}
-                style={{
-                  width: 30, height: 30, borderRadius: 'var(--radius-full)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--danger-bg)', border: '1px solid #fca5a5',
-                  color: 'var(--danger-fg)', cursor: 'pointer',
-                }}
+                className="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 flex items-center justify-center transition-all active:scale-[0.96] press-effect cursor-pointer"
+                title="Cancel"
               >
-                <X size={13} />
+                <X size={12} />
               </button>
               <button
                 onClick={handleLeadInfoSave}
-                style={{
-                  width: 30, height: 30, borderRadius: 'var(--radius-full)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--success-bg)', border: '1px solid #86efac',
-                  color: 'var(--success-fg)', cursor: 'pointer',
-                }}
+                className="w-7 h-7 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition-all active:scale-[0.96] press-effect shadow-xs cursor-pointer"
+                title="Save parameters"
               >
-                <Check size={13} />
+                <Check size={12} />
               </button>
             </>
           )}

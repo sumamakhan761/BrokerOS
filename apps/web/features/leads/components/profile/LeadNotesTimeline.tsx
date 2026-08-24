@@ -1,6 +1,6 @@
-import React from 'react';
-import { Card } from '@/components/ui/Card';
-import { Plus } from 'lucide-react';
+import React from "react";
+import { Card } from "@/components/ui/Card";
+import { Plus, MessageSquare } from "lucide-react";
 
 interface LeadNotesTimelineProps {
   notes: any[];
@@ -11,43 +11,67 @@ interface LeadNotesTimelineProps {
 export function LeadNotesTimeline({
   notes,
   setPendingStatusChange,
-  setIsNoteModalOpen
+  setIsNoteModalOpen,
 }: LeadNotesTimelineProps) {
   return (
-    <Card className="p-0 flex flex-col h-[500px]">
-      <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
-        <h3 className="text-lg font-semibold text-gray-900">Notes & Timeline</h3>
+    <Card className="p-0 flex flex-col h-[520px] rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      {/* Header */}
+      <div className="p-2 px-5 border-b border-slate-100 flex justify-between items-center">
+        <h3 className="text-xs font-bold text-[var(--text-primary)] tracking-tight m-0 flex items-center gap-2">
+          <MessageSquare size={15} className="text-[var(--brand-600)]" />
+          <span>Notes & Timeline</span>
+        </h3>
         <button
           onClick={() => {
             setPendingStatusChange(null);
             setIsNoteModalOpen(true);
           }}
-          className="p-2 bg-white text-blue-600 rounded-full shadow-sm border border-gray-200 hover:bg-blue-50 transition-colors"
+          className="w-7 h-7 bg-white text-[var(--brand-700)] rounded-full shadow-xs border border-slate-200 hover:bg-purple-50 flex items-center justify-center transition-all active:scale-[0.96] press-effect cursor-pointer"
+          title="Add Note"
         >
           <Plus className="w-4 h-4" />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-50/30">
+
+      {/* Notes Feed */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {notes.length === 0 ? (
-          <div className="text-center text-gray-400 text-sm py-8">No notes yet. Add one to keep track of this lead.</div>
+          <div className="text-center text-[var(--text-muted)] text-xs font-medium py-16">
+            No notes logged yet. Add one to document conversations with this lead.
+          </div>
         ) : (
           notes.map((note) => (
-            <div key={note.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900">
-                    {note.user?.displayUsername || note.user?.username || 'Unknown User'}
+            <div
+              key={note.id}
+              className="bg-white p-4 rounded-xl shadow-xs border border-slate-200/70 hover:border-purple-200 transition-all space-y-2 animate-enter"
+            >
+              <div className="flex justify-between items-start">
+                <span className="text-xs font-bold text-[var(--text-primary)]">
+                  {note.user?.displayUsername ||
+                    note.user?.username ||
+                    note.user?.name ||
+                    "Agent"}
+                </span>
+                <span className="text-[11px] font-medium text-[var(--text-muted)] tabular-nums">
+                  {new Date(note.createdAt).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+
+              <p className="text-xs text-[var(--text-secondary)] whitespace-pre-wrap leading-relaxed m-0">
+                {note.content}
+              </p>
+
+              {note.statusAtTimeOfNote && (
+                <div className="pt-1">
+                  <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                    Status: {note.statusAtTimeOfNote.replace(/_/g, " ")}
                   </span>
                 </div>
-                <span className="flex text-xs text-gray-500">{new Date(note.createdAt).toLocaleString()}
-                </span>
-
-              </div>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.content}</p>
-              {note.statusAtTimeOfNote && (
-                <span className="items-center py-1 px-2 my-2 rounded text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                  {note.statusAtTimeOfNote.replace(/_/g, ' ')}
-                </span>
               )}
             </div>
           ))

@@ -1,44 +1,52 @@
-import React from 'react';
-import { Card } from '@/components/ui/Card';
-import { Phone, MapPin, ClipboardList, CheckCircle, User, History } from 'lucide-react';
+import React, { useState } from "react";
+import { Card } from "@/components/ui/Card";
+import {
+  Phone,
+  MapPin,
+  ClipboardList,
+  CheckCircle,
+  User,
+  History,
+  Sparkles,
+} from "lucide-react";
 
 interface CallRecordingsCardProps {
   lead: any;
 }
 
 export function CallRecordingsCard({ lead }: CallRecordingsCardProps) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
 
   // Gather all events from the lead object
   const events: any[] = [];
 
   if (lead.createdAt) {
     events.push({
-      id: 'created-' + lead.id,
-      type: 'CREATED',
+      id: "created-" + lead.id,
+      type: "CREATED",
       date: new Date(lead.createdAt),
-      title: 'Lead Created',
-      description: `Lead was added to the CRM.`,
+      title: "Lead Created & Ingested",
+      description: "Lead was registered into BrokerOS CRM.",
       icon: User,
-      dotColor: 'var(--success-fg)',
-      dotBg: 'var(--success-bg)',
-      dotBorder: '#86efac',
+      dotColor: "text-emerald-700",
+      dotBg: "bg-emerald-50",
+      dotBorder: "border-emerald-200",
     });
   }
 
   if (lead.callRecords) {
     lead.callRecords.forEach((call: any) => {
       events.push({
-        id: 'call-' + call.id,
-        type: 'CALL',
+        id: "call-" + call.id,
+        type: "CALL",
         date: new Date(call.startedAt),
-        title: 'Outgoing Call',
-        description: call.aiSummary || 'No summary available.',
+        title: "Telephony Call Record",
+        description: call.aiSummary || "Telephony call logged.",
         data: call,
         icon: Phone,
-        dotColor: 'var(--info-fg)',
-        dotBg: 'var(--info-bg)',
-        dotBorder: '#7dd3fc',
+        dotColor: "text-sky-700",
+        dotBg: "bg-sky-50",
+        dotBorder: "border-sky-200",
       });
     });
   }
@@ -46,16 +54,18 @@ export function CallRecordingsCard({ lead }: CallRecordingsCardProps) {
   if (lead.siteVisits) {
     lead.siteVisits.forEach((sv: any) => {
       events.push({
-        id: 'sv-' + sv.id,
-        type: 'SITE_VISIT',
+        id: "sv-" + sv.id,
+        type: "SITE_VISIT",
         date: new Date(sv.scheduledDate),
         title: `Site Visit — ${sv.status}`,
-        description: sv.project ? `Scheduled for project: ${sv.project.name}` : 'Site visit scheduled.',
+        description: sv.project
+          ? `Scheduled for project: ${sv.project.name}`
+          : "Site visit logged.",
         data: sv,
         icon: MapPin,
-        dotColor: '#6d28d9',
-        dotBg: '#faf5ff',
-        dotBorder: '#ddd6fe',
+        dotColor: "text-purple-700",
+        dotBg: "bg-purple-50",
+        dotBorder: "border-purple-200",
       });
     });
   }
@@ -63,16 +73,16 @@ export function CallRecordingsCard({ lead }: CallRecordingsCardProps) {
   if (lead.followUps) {
     lead.followUps.forEach((fu: any) => {
       events.push({
-        id: 'fu-' + fu.id,
-        type: 'FOLLOW_UP',
+        id: "fu-" + fu.id,
+        type: "FOLLOW_UP",
         date: new Date(fu.scheduledDate),
         title: `Follow-up — ${fu.status}`,
-        description: fu.notes || 'Follow-up scheduled.',
+        description: fu.notes || "Follow-up schedule created.",
         data: fu,
         icon: ClipboardList,
-        dotColor: 'var(--warning-fg)',
-        dotBg: 'var(--warning-bg)',
-        dotBorder: '#fcd34d',
+        dotColor: "text-amber-800",
+        dotBg: "bg-amber-50",
+        dotBorder: "border-amber-200",
       });
     });
   }
@@ -80,86 +90,50 @@ export function CallRecordingsCard({ lead }: CallRecordingsCardProps) {
   if (lead.customer?.bookings) {
     lead.customer.bookings.forEach((booking: any) => {
       events.push({
-        id: 'booking-' + booking.id,
-        type: 'BOOKING',
+        id: "booking-" + booking.id,
+        type: "BOOKING",
         date: new Date(booking.createdAt),
-        title: `Booking — ${booking.status}`,
-        description: booking.unit ? `Unit booked: ${booking.unit.unitNumber}` : 'Booking created.',
+        title: `Unit Booking Confirmed — ${booking.status}`,
+        description: booking.unit
+          ? `Unit confirmed: ${booking.unit.unitNumber}`
+          : "Booking created.",
         data: booking,
         icon: CheckCircle,
-        dotColor: '#be185d',
-        dotBg: '#fdf2f8',
-        dotBorder: '#f9a8d4',
+        dotColor: "text-rose-700",
+        dotBg: "bg-rose-50",
+        dotBorder: "border-rose-200",
       });
     });
   }
 
-  // Sort events by date descending
+  // Sort events descending
   events.sort((a, b) => b.date.getTime() - a.date.getTime());
 
   return (
-    <Card className="p-0 flex flex-col mb-8 shadow-sm">
-      {/* Header */}
-      <div style={{
-        padding: '14px 20px',
-        borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        background: 'var(--bg-subtle)',
-        borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0',
-      }}>
-        <History style={{ width: 16, height: 16, color: 'var(--brand-600)' }} />
-        <h3 style={{
-          margin: 0,
-          fontSize: 'var(--text-base)',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          letterSpacing: '-0.01em',
-        }}>
-          History &amp; Timeline
+    <Card className="p-0 flex flex-col mb-8 rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      {/* Card Header */}
+      <div className="p-4 px-6 border-b border-slate-100 flex items-center gap-2 bg-slate-50/80">
+        <History size={16} className="text-[var(--brand-600)]" />
+        <h3 className="text-xs font-bold text-[var(--text-primary)] tracking-tight m-0">
+          Activity History & Telephony Recordings
         </h3>
       </div>
 
-      <div style={{ padding: '24px 24px 24px 32px' }}>
+      <div className="p-6 pl-8">
         {events.length === 0 ? (
-          /* Empty state */
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 10,
-            padding: '32px 0',
-          }}>
-            <div style={{
-              width: 48,
-              height: 48,
-              borderRadius: 'var(--radius-xl)',
-              background: 'var(--bg-subtle)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <History style={{ width: 24, height: 24, color: 'var(--text-muted)' }} />
+          <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
+              <History size={20} />
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ margin: 0, fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                No history yet
-              </p>
-              <p style={{ margin: '3px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                Events like calls, site visits, and notes will appear here.
-              </p>
-            </div>
+            <p className="text-xs font-semibold text-[var(--text-secondary)] m-0">
+              No activity logs recorded
+            </p>
+            <p className="text-[11px] text-[var(--text-muted)] m-0">
+              Calls, scheduled site visits, and updates will be logged here.
+            </p>
           </div>
         ) : (
-          <div style={{
-            position: 'relative',
-            borderLeft: '2px solid var(--border-default)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 28,
-            paddingBottom: 8,
-          }}>
+          <div className="relative border-l-2 border-slate-200 flex flex-col gap-6 pl-6 pb-2 ml-3">
             {events.map((event) => (
               <TimelineEvent key={event.id} event={event} apiUrl={apiUrl} />
             ))}
@@ -171,140 +145,68 @@ export function CallRecordingsCard({ lead }: CallRecordingsCardProps) {
 }
 
 function TimelineEvent({ event, apiUrl }: { event: any; apiUrl: string }) {
-  const [hovered, setHovered] = React.useState(false);
   const Icon = event.icon;
 
   return (
-    <div
-      style={{ position: 'relative', paddingLeft: 28 }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {/* Timeline dot */}
-      <div style={{
-        position: 'absolute',
-        left: -20,
-        top: 10,
-        width: 36,
-        height: 36,
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: event.dotBg,
-        border: `2px solid ${event.dotBorder}`,
-        boxShadow: 'var(--shadow-sm)',
-        color: event.dotColor,
-        flexShrink: 0,
-      }}>
-        <Icon style={{ width: 16, height: 16 }} />
+    <div className="relative group">
+      {/* Timeline Dot Indicator */}
+      <div
+        className={`absolute -left-[37px] top-1.5 w-8 h-8 rounded-full flex items-center justify-center ${event.dotBg} border-2 ${event.dotBorder} shadow-xs ${event.dotColor} shrink-0`}
+      >
+        <Icon size={14} />
       </div>
 
-      {/* Event content card */}
-      <div style={{
-        background: 'var(--bg-surface)',
-        padding: '14px 16px',
-        borderRadius: 'var(--radius-lg)',
-        border: hovered ? '1px solid var(--border-default)' : '1px solid var(--border-subtle)',
-        boxShadow: hovered ? 'var(--shadow-md)' : 'var(--shadow-xs)',
-        transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
-        transition: 'all var(--duration-base) var(--ease-out-expo)',
-      }}>
-        {/* Title + date row */}
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 8,
-          marginBottom: 8,
-        }}>
-          <h4 style={{
-            margin: 0,
-            fontSize: 'var(--text-sm)',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-          }}>
+      {/* Event Card */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200/80 hover:border-purple-200 shadow-2xs hover:shadow-xs transition-all space-y-2">
+        {/* Title and Date */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h4 className="text-xs font-bold text-[var(--text-primary)] m-0">
             {event.title}
           </h4>
-          <span style={{
-            fontSize: 'var(--text-xs)',
-            fontWeight: 500,
-            color: 'var(--text-muted)',
-            background: 'var(--bg-subtle)',
-            border: '1px solid var(--border-subtle)',
-            padding: '2px 8px',
-            borderRadius: 'var(--radius-md)',
-            whiteSpace: 'nowrap',
-          }}>
-            {event.date.toLocaleString()}
+          <span className="text-[11px] font-semibold text-[var(--text-muted)] bg-slate-50 border border-slate-200/80 px-2 py-0.5 rounded-md tabular-nums">
+            {event.date.toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </span>
         </div>
 
-        {/* Content */}
-        {event.type === 'CALL' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Call Specific Audio Player & AI Note */}
+        {event.type === "CALL" ? (
+          <div className="space-y-2.5 pt-1">
             {event.data.recordingUrl ? (
               <audio
                 controls
-                src={event.data.recordingUrl.startsWith('/') ? `${apiUrl}${event.data.recordingUrl}` : event.data.recordingUrl}
-                style={{ height: 36, width: '100%', maxWidth: 320, marginTop: 4, borderRadius: 'var(--radius-md)' }}
+                src={
+                  event.data.recordingUrl.startsWith("/")
+                    ? `${apiUrl}${event.data.recordingUrl}`
+                    : event.data.recordingUrl
+                }
+                className="h-8 w-full max-w-sm rounded-lg"
               />
             ) : (
-              <span style={{
-                display: 'inline-block',
-                fontSize: 'var(--text-xs)',
-                fontWeight: 600,
-                padding: '3px 8px',
-                background: 'var(--danger-bg)',
-                color: 'var(--danger-fg)',
-                border: '1px solid #fca5a5',
-                borderRadius: 'var(--radius-md)',
-                width: 'fit-content',
-              }}>
-                Missed / Unrecorded
+              <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-md">
+                Unrecorded / Missed
               </span>
             )}
+
             {event.data.aiSummary && (
-              <div style={{
-                background: 'var(--brand-50)',
-                border: '1px solid var(--brand-200)',
-                borderRadius: 'var(--radius-md)',
-                padding: '10px 12px',
-              }}>
-                <p style={{
-                  margin: '0 0 4px',
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 700,
-                  color: 'var(--brand-600)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                }}>
-                  <svg style={{ width: 11, height: 11 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  AI Summary
-                </p>
-                <p style={{
-                  margin: 0,
-                  fontSize: 'var(--text-sm)',
-                  color: 'var(--text-secondary)',
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: 1.55,
-                }}>
+              <div className="bg-purple-50/80 border border-purple-200/80 rounded-xl p-3 space-y-1">
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-purple-900 flex items-center gap-1">
+                  <Sparkles size={11} className="text-purple-700" />
+                  <span>AI Conversation Transcript Summary</span>
+                </div>
+                <p className="text-xs text-purple-950 whitespace-pre-wrap leading-relaxed m-0">
                   {event.data.aiSummary}
                 </p>
               </div>
             )}
           </div>
         ) : (
-          <p style={{
-            margin: 0,
-            fontSize: 'var(--text-sm)',
-            color: 'var(--text-secondary)',
-            lineHeight: 1.55,
-          }}>
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed m-0">
             {event.description}
           </p>
         )}
