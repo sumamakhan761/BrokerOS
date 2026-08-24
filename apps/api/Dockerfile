@@ -50,5 +50,5 @@ COPY --from=installer /app/package.json ./package.json
 
 EXPOSE 3333
 
-# Run pending migrations then start the server
-CMD ["sh", "-c", "pnpm --filter @brokeros/prisma db:migrate && cd apps/api && node dist/main"]
+# Run production migrations then start the server
+CMD ["sh", "-c", "cd packages/prisma && npx prisma migrate deploy && cd ../../apps/api && node dist/main"]
