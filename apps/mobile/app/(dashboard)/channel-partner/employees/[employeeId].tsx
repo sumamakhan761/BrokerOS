@@ -2,9 +2,11 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, FontAwesome5 } from '@expo/vector-icons';
+import { UserCheck, UserPlus, CalendarCheck, Clock, CheckCircle2, Home } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { authClient } from '../../../../lib/auth-client';
 import LiveTrackingMap from '@/components/maps/LiveTrackingMap';
+import { SharedWidgetsGrid } from '../../../../components/shared/SharedWidgetsGrid';
 
 export default function ChannelPartnerViewAsEmployee() {
   const router = useRouter();
@@ -78,36 +80,14 @@ export default function ChannelPartnerViewAsEmployee() {
 
         {role === 'sourcing' && data && (
           <View>
-            <View className="flex-row flex-wrap justify-between gap-y-4 mb-6 mt-2">
-              <View className="w-[48%] bg-white rounded-3xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-                <View className="w-10 h-10 bg-emerald-100 rounded-xl items-center justify-center mb-4">
-                  <Feather name="user-check" size={20} color="#10b981" />
-                </View>
-                <Text className="text-xs font-bold text-slate-500 mb-1">Active Brokers</Text>
-                <Text className="text-2xl font-black text-slate-900">{data.activeBrokers || 0}</Text>
-              </View>
-              <View className="w-[48%] bg-white rounded-3xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-                <View className="w-10 h-10 bg-blue-100 rounded-xl items-center justify-center mb-4">
-                  <Feather name="user-plus" size={20} color="#3b82f6" />
-                </View>
-                <Text className="text-xs font-bold text-slate-500 mb-1">New Brokers</Text>
-                <Text className="text-2xl font-black text-slate-900">{data.newBrokers || 0}</Text>
-              </View>
-              <View className="w-[48%] bg-white rounded-3xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-                <View className="w-10 h-10 bg-purple-100 rounded-xl items-center justify-center mb-4">
-                  <Feather name="calendar" size={20} color="#9333ea" />
-                </View>
-                <Text className="text-xs font-bold text-slate-500 mb-1">Meetings Today</Text>
-                <Text className="text-2xl font-black text-slate-900">{data.todayMeetings || 0}</Text>
-              </View>
-              <View className="w-[48%] bg-white rounded-3xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-                <View className="w-10 h-10 bg-orange-100 rounded-xl items-center justify-center mb-4">
-                  <Feather name="clock" size={20} color="#f97316" />
-                </View>
-                <Text className="text-xs font-bold text-slate-500 mb-1">Follow-ups Today</Text>
-                <Text className="text-2xl font-black text-slate-900">{data.todayFollowUps || 0}</Text>
-              </View>
-            </View>
+            <SharedWidgetsGrid
+              widgets={[
+                { label: "Active Brokers", value: data.activeBrokers || 0, icon: UserCheck, accent: "emerald" },
+                { label: "New Brokers", value: data.newBrokers || 0, icon: UserPlus, accent: "blue" },
+                { label: "Meetings Today", value: data.todayMeetings || 0, icon: CalendarCheck, accent: "purple" },
+                { label: "Follow-ups Today", value: data.todayFollowUps || 0, icon: Clock, accent: "orange" },
+              ]}
+            />
 
             <Text className="text-lg font-bold text-slate-900 mb-4 px-1">Revenue Overview</Text>
 
@@ -146,22 +126,12 @@ export default function ChannelPartnerViewAsEmployee() {
 
         {role === 'closing' && data && (
           <View>
-            <View className="flex-row flex-wrap justify-between gap-y-4 mb-6 mt-2">
-              <View className="w-[48%] bg-white rounded-3xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-                <View className="w-10 h-10 bg-emerald-100 rounded-xl items-center justify-center mb-4">
-                  <Feather name="check-circle" size={20} color="#10b981" />
-                </View>
-                <Text className="text-xs font-bold text-slate-500 mb-1">Total Bookings</Text>
-                <Text className="text-2xl font-black text-slate-900">{data.widgets?.totalBookings || 0}</Text>
-              </View>
-              <View className="w-[48%] bg-white rounded-3xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
-                <View className="w-10 h-10 bg-blue-100 rounded-xl items-center justify-center mb-4">
-                  <Feather name="home" size={20} color="#3b82f6" />
-                </View>
-                <Text className="text-xs font-bold text-slate-500 mb-1">Units Sold</Text>
-                <Text className="text-2xl font-black text-slate-900">{data.widgets?.totalUnitsSold || 0}</Text>
-              </View>
-            </View>
+            <SharedWidgetsGrid
+              widgets={[
+                { label: "Total Bookings", value: data.widgets?.totalBookings || 0, icon: CheckCircle2, accent: "emerald" },
+                { label: "Units Sold", value: data.widgets?.totalUnitsSold || 0, icon: Home, accent: "blue" },
+              ]}
+            />
 
             <Text className="text-lg font-bold text-slate-900 mb-4 px-1">Revenue Overview</Text>
 
