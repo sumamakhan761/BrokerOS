@@ -1,277 +1,175 @@
+"use client";
+
 import React, { useState } from "react";
-import { ClipboardList, Calendar, PhoneForwarded, ChevronRight } from "lucide-react";
+import {
+  ClipboardList,
+  Calendar,
+  PhoneForwarded,
+  ChevronRight,
+} from "lucide-react";
 
 export function SourcingManagerTasks({ dashData }: { dashData: any }) {
-  const [activeTab, setActiveTab] = useState<"MEETINGS" | "FOLLOW_UPS">("MEETINGS");
+  const [activeTab, setActiveTab] = useState<"MEETINGS" | "FOLLOW_UPS">(
+    "MEETINGS"
+  );
 
   const todayMeetings = dashData.todayMeetingList || [];
   const followUps = dashData.todayFollowUpList || [];
 
   return (
-    <div style={{
-      background: "var(--bg-surface)",
-      border: "1px solid var(--border-subtle)",
-      borderRadius: "var(--radius-xl)",
-      boxShadow: "var(--shadow-sm)",
-      display: "flex",
-      flexDirection: "column",
-      height: "100%",
-      overflow: "hidden"
-    }}>
-      <div style={{ padding: "24px 24px 0" }}>
-        <h3 style={{
-          fontSize: "var(--text-sm)",
-          fontWeight: 700,
-          color: "var(--text-primary)",
-          letterSpacing: "-0.01em",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          margin: 0
-        }}>
-          <ClipboardList size={18} style={{ color: "var(--brand-500)" }} /> Daily Tasks
-        </h3>
-        <p style={{
-          fontSize: 12,
-          fontWeight: 500,
-          color: "var(--text-muted)",
-          marginTop: 4,
-          marginBottom: 0
-        }}>Manage your meetings and follow-ups with brokers</p>
-      </div>
+    <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-2xs flex flex-col justify-between h-full">
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+              <ClipboardList size={16} />
+            </div>
+            <h2 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+              Daily Partner Tasks
+            </h2>
+          </div>
+        </div>
+        <p className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5 mb-3 m-0">
+          Scheduled meetings and broker check-ins for today
+        </p>
 
-      <div style={{
-        display: "flex",
-        padding: "20px 24px 0",
-        gap: 24,
-        borderBottom: "1px solid var(--border-subtle)",
-        overflowX: "auto",
-      }} className="no-scrollbar">
-        {[
-          { id: "MEETINGS", label: `Meetings (${todayMeetings.length})`, color: "var(--brand-600)" },
-          { id: "FOLLOW_UPS", label: `Follow-ups (${followUps.length})`, color: "#059669" },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            style={{
-              paddingBottom: 12,
-              fontSize: "var(--text-sm)",
-              fontWeight: 700,
-              whiteSpace: "nowrap",
-              color: activeTab === tab.id ? tab.color : "var(--text-tertiary)",
-              background: "transparent",
-              border: "none",
-              borderBottom: activeTab === tab.id ? `3px solid ${tab.color}` : "3px solid transparent",
-              cursor: "pointer",
-              transition: "color 150ms ease"
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+        <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200/60 w-fit mb-4">
+          {[
+            {
+              id: "MEETINGS",
+              label: `Meetings (${todayMeetings.length})`,
+            },
+            {
+              id: "FOLLOW_UPS",
+              label: `Follow-ups (${followUps.length})`,
+            },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                activeTab === tab.id
+                  ? "bg-white text-[var(--text-primary)] shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 24, maxHeight: 400 }}>
-        {activeTab === "MEETINGS" && (
-          <ListMeetings items={todayMeetings} emptyMsg="No meetings scheduled for today." iconColor="var(--brand-600)" iconBg="var(--brand-50)" />
-        )}
-        {activeTab === "FOLLOW_UPS" && (
-          <ListFollowUps items={followUps} emptyMsg="No follow-ups scheduled for today." />
-        )}
+        <div className="max-h-[380px] overflow-y-auto pr-1">
+          {activeTab === "MEETINGS" && (
+            <ListMeetings
+              items={todayMeetings}
+              emptyMsg="No broker meetings scheduled for today."
+            />
+          )}
+          {activeTab === "FOLLOW_UPS" && (
+            <ListFollowUps
+              items={followUps}
+              emptyMsg="No broker follow-ups scheduled for today."
+            />
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function ListMeetings({ items, emptyMsg, iconColor, iconBg }: { items: any[], emptyMsg: string, iconColor: string, iconBg: string }) {
+function ListMeetings({
+  items,
+  emptyMsg,
+}: {
+  items: any[];
+  emptyMsg: string;
+}) {
   if (items.length === 0) {
     return (
-      <div style={{
-        fontSize: "var(--text-sm)",
-        fontWeight: 500,
-        color: "var(--text-muted)",
-        textAlign: "center",
-        padding: "32px 0",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 8
-      }}>
-        <Calendar size={32} style={{ color: "var(--bg-subtle)", opacity: 0.8 }} />
-        {emptyMsg}
+      <div className="py-12 flex flex-col items-center justify-center text-xs font-semibold text-[var(--text-muted)] text-center gap-2">
+        <Calendar size={24} className="text-slate-300" />
+        <span>{emptyMsg}</span>
       </div>
     );
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div className="space-y-2">
       {items.map((meeting) => (
-        <div key={meeting.id} style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: 16,
-          border: "1px solid var(--border-subtle)",
-          borderRadius: "var(--radius-lg)",
-          transition: "background 150ms ease, box-shadow 150ms ease"
-        }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = "var(--bg-subtle)";
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = "transparent";
-          }}
+        <div
+          key={meeting.id}
+          className="flex items-center justify-between p-3 border border-slate-100 rounded-2xl bg-slate-50/50 hover:bg-slate-100/60 transition-colors"
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              background: iconBg,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0
-            }}>
-              <Calendar size={18} style={{ color: iconColor }} />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0 text-[var(--brand-700)]">
+              <Calendar size={16} />
             </div>
-            <div>
-              <div style={{
-                fontSize: "var(--text-sm)",
-                fontWeight: 700,
-                color: "var(--text-primary)",
-                letterSpacing: "-0.01em",
-              }}>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-[var(--text-primary)] truncate">
                 Broker: {meeting.broker?.name || "Unknown"}
               </div>
-              <div style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "var(--text-muted)",
-                marginTop: 4,
-                display: "flex",
-                alignItems: "center",
-                gap: 6
-              }}>
-                <span style={{
-                  background: "var(--bg-subtle)",
-                  color: "var(--text-secondary)",
-                  padding: "2px 6px",
-                  borderRadius: "var(--radius-sm)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em"
-                }}>
+              <div className="text-[10px] font-semibold text-[var(--text-muted)] flex items-center gap-1.5 mt-0.5">
+                <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-extrabold uppercase tracking-wider text-[8px] border border-emerald-200/60">
                   Scheduled
                 </span>
                 <span>•</span>
-                <span>{new Date(meeting.scheduledDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
+                <span className="tabular-nums">
+                  {new Date(meeting.scheduledDate).toLocaleString("en-IN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  })}
+                </span>
               </div>
             </div>
           </div>
-          <button style={{
-            width: 32,
-            height: 32,
-            borderRadius: "var(--radius-md)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "var(--text-muted)",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer"
-          }}>
-            <ChevronRight size={18} />
-          </button>
+          <ChevronRight size={14} className="text-slate-400 shrink-0" />
         </div>
       ))}
     </div>
   );
 }
 
-function ListFollowUps({ items, emptyMsg }: { items: any[], emptyMsg: string }) {
+function ListFollowUps({
+  items,
+  emptyMsg,
+}: {
+  items: any[];
+  emptyMsg: string;
+}) {
   if (items.length === 0) {
     return (
-      <div style={{
-        fontSize: "var(--text-sm)",
-        fontWeight: 500,
-        color: "var(--text-muted)",
-        textAlign: "center",
-        padding: "32px 0",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 8
-      }}>
-        <PhoneForwarded size={32} style={{ color: "var(--bg-subtle)", opacity: 0.8 }} />
-        {emptyMsg}
+      <div className="py-12 flex flex-col items-center justify-center text-xs font-semibold text-[var(--text-muted)] text-center gap-2">
+        <PhoneForwarded size={24} className="text-slate-300" />
+        <span>{emptyMsg}</span>
       </div>
     );
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div className="space-y-2">
       {items.map((fup) => (
-        <div key={fup.id} style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: 16,
-          border: "1px solid var(--border-subtle)",
-          borderRadius: "var(--radius-lg)",
-          transition: "background 150ms ease"
-        }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = "var(--bg-subtle)";
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = "transparent";
-          }}
+        <div
+          key={fup.id}
+          className="flex items-center justify-between p-3 border border-slate-100 rounded-2xl bg-slate-50/50 hover:bg-slate-100/60 transition-colors"
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              background: "#ecfdf5",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0
-            }}>
-              <PhoneForwarded size={18} style={{ color: "#10b981" }} />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0 text-emerald-600">
+              <PhoneForwarded size={16} />
             </div>
-            <div>
-              <div style={{
-                fontSize: "var(--text-sm)",
-                fontWeight: 700,
-                color: "var(--text-primary)",
-                letterSpacing: "-0.01em",
-              }}>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-[var(--text-primary)] truncate">
                 Broker: {fup.broker?.name || "Unknown"}
               </div>
-              <div style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: "var(--text-muted)",
-                marginTop: 4,
-              }}>
-                Scheduled: {new Date(fup.scheduledDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+              <div className="text-[10px] font-semibold text-[var(--text-muted)] mt-0.5 tabular-nums">
+                Scheduled:{" "}
+                {new Date(fup.scheduledDate).toLocaleString("en-IN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                })}
               </div>
             </div>
           </div>
-          <button style={{
-            width: 32,
-            height: 32,
-            borderRadius: "var(--radius-md)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "var(--text-muted)",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer"
-          }}>
-            <ChevronRight size={18} />
-          </button>
+          <ChevronRight size={14} className="text-slate-400 shrink-0" />
         </div>
       ))}
     </div>
