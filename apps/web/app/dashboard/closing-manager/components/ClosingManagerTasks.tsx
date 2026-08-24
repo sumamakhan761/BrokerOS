@@ -1,10 +1,21 @@
 "use client";
+
 import React, { useState } from "react";
-import { ClipboardList, FileText, Banknote, Handshake, PhoneForwarded, ChevronRight, Key } from "lucide-react";
+import {
+  ClipboardList,
+  FileText,
+  Banknote,
+  Handshake,
+  PhoneForwarded,
+  ChevronRight,
+  Key,
+} from "lucide-react";
 import Link from "next/link";
 
 export function ClosingManagerTasks({ dashData }: { dashData: any }) {
-  const [activeTab, setActiveTab] = useState<"DOCUMENTS" | "LOANS" | "AGREEMENTS" | "HANDOVERS" | "FOLLOW_UPS">("DOCUMENTS");
+  const [activeTab, setActiveTab] = useState<
+    "DOCUMENTS" | "LOANS" | "AGREEMENTS" | "HANDOVERS" | "FOLLOW_UPS"
+  >("DOCUMENTS");
 
   const lists = dashData?.lists || {};
   const documents = lists.documentPending || [];
@@ -14,285 +25,219 @@ export function ClosingManagerTasks({ dashData }: { dashData: any }) {
   const followUps = lists.todayFollowups || [];
 
   return (
-    <div style={{
-      background: "var(--bg-surface)",
-      border: "1px solid var(--border-subtle)",
-      borderRadius: "var(--radius-xl)",
-      boxShadow: "var(--shadow-sm)",
-      display: "flex",
-      flexDirection: "column",
-      height: "100%",
-      marginTop: 32,
-      overflow: "hidden"
-    }}>
-      <div style={{ padding: "24px 24px 0" }}>
-        <h3 style={{
-          fontSize: "var(--text-sm)",
-          fontWeight: 700,
-          color: "var(--text-primary)",
-          letterSpacing: "-0.01em",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          margin: 0
-        }}>
-          <ClipboardList size={18} style={{ color: "var(--brand-500)" }} /> Pending Tasks & Follow-ups
-        </h3>
-        <p style={{
-          fontSize: 12,
-          fontWeight: 500,
-          color: "var(--text-muted)",
-          marginTop: 4,
-          marginBottom: 0
-        }}>Manage pending bookings and today's follow-ups</p>
-      </div>
+    <div className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-2xs flex flex-col justify-between h-full mt-4">
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+              <ClipboardList size={16} />
+            </div>
+            <h2 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+              Pending Pipeline Milestones & Follow-ups
+            </h2>
+          </div>
+        </div>
+        <p className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5 mb-3 m-0">
+          Manage deal closing tasks, loan sanctions, registration agreements and customer touchpoints
+        </p>
 
-      <div style={{
-        display: "flex",
-        padding: "20px 24px 0",
-        gap: 24,
-        borderBottom: "1px solid var(--border-subtle)",
-        overflowX: "auto",
-      }} className="no-scrollbar">
-        {[
-          { id: "DOCUMENTS", label: `Documents (${documents.length})`, color: "var(--brand-600)" },
-          { id: "LOANS", label: `Loans (${loans.length})`, color: "#2563eb" },
-          { id: "AGREEMENTS", label: `Agreements (${agreements.length})`, color: "#9333ea" },
-          { id: "HANDOVERS", label: `Handovers (${handovers.length})`, color: "#d97706" },
-          { id: "FOLLOW_UPS", label: `Follow-ups (${followUps.length})`, color: "#059669" },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            style={{
-              paddingBottom: 12,
-              fontSize: "var(--text-sm)",
-              fontWeight: 700,
-              whiteSpace: "nowrap",
-              color: activeTab === tab.id ? tab.color : "var(--text-tertiary)",
-              background: "transparent",
-              border: "none",
-              borderBottom: activeTab === tab.id ? `3px solid ${tab.color}` : "3px solid transparent",
-              cursor: "pointer",
-              transition: "color 150ms ease"
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+        <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200/60 w-fit mb-4 overflow-x-auto">
+          {[
+            {
+              id: "DOCUMENTS",
+              label: `Documents (${documents.length})`,
+            },
+            { id: "LOANS", label: `Loans (${loans.length})` },
+            {
+              id: "AGREEMENTS",
+              label: `Agreements (${agreements.length})`,
+            },
+            {
+              id: "HANDOVERS",
+              label: `Handovers (${handovers.length})`,
+            },
+            {
+              id: "FOLLOW_UPS",
+              label: `Follow-ups (${followUps.length})`,
+            },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === tab.id
+                  ? "bg-white text-[var(--text-primary)] shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 24, maxHeight: 500 }}>
-        {activeTab === "DOCUMENTS" && (
-          <ListBookings items={documents} emptyMsg="No documents pending." iconColor="#6366f1" iconBg="#eef2ff" Icon={FileText} />
-        )}
-        {activeTab === "LOANS" && (
-          <ListBookings items={loans} emptyMsg="No loans pending." iconColor="#3b82f6" iconBg="#eff6ff" Icon={Banknote} />
-        )}
-        {activeTab === "AGREEMENTS" && (
-          <ListBookings items={agreements} emptyMsg="No agreements pending." iconColor="#a855f7" iconBg="#faf5ff" Icon={Handshake} />
-        )}
-        {activeTab === "HANDOVERS" && (
-          <ListBookings items={handovers} emptyMsg="No handovers pending." iconColor="#f59e0b" iconBg="#fffbeb" Icon={Key} />
-        )}
-        {activeTab === "FOLLOW_UPS" && (
-          <ListFollowUps items={followUps} emptyMsg="No follow-ups scheduled for today." />
-        )}
+        <div className="max-h-[460px] overflow-y-auto pr-1">
+          {activeTab === "DOCUMENTS" && (
+            <ListBookings
+              items={documents}
+              emptyMsg="No documents pending."
+              iconColor="#9333ea"
+              iconBg="bg-purple-50"
+              borderAccent="border-purple-100"
+              Icon={FileText}
+            />
+          )}
+          {activeTab === "LOANS" && (
+            <ListBookings
+              items={loans}
+              emptyMsg="No loans pending."
+              iconColor="#3b82f6"
+              iconBg="bg-blue-50"
+              borderAccent="border-blue-100"
+              Icon={Banknote}
+            />
+          )}
+          {activeTab === "AGREEMENTS" && (
+            <ListBookings
+              items={agreements}
+              emptyMsg="No agreements pending."
+              iconColor="#9333ea"
+              iconBg="bg-purple-50"
+              borderAccent="border-purple-100"
+              Icon={Handshake}
+            />
+          )}
+          {activeTab === "HANDOVERS" && (
+            <ListBookings
+              items={handovers}
+              emptyMsg="No handovers pending."
+              iconColor="#f59e0b"
+              iconBg="bg-amber-50"
+              borderAccent="border-amber-100"
+              Icon={Key}
+            />
+          )}
+          {activeTab === "FOLLOW_UPS" && (
+            <ListFollowUps
+              items={followUps}
+              emptyMsg="No follow-ups scheduled for today."
+            />
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function ListBookings({ items, emptyMsg, iconColor, iconBg, Icon }: { items: any[], emptyMsg: string, iconColor: string, iconBg: string, Icon: any }) {
+function ListBookings({
+  items,
+  emptyMsg,
+  iconColor,
+  iconBg,
+  borderAccent,
+  Icon,
+}: {
+  items: any[];
+  emptyMsg: string;
+  iconColor: string;
+  iconBg: string;
+  borderAccent: string;
+  Icon: any;
+}) {
   if (items.length === 0) {
     return (
-      <div style={{
-        fontSize: "var(--text-sm)",
-        fontWeight: 500,
-        color: "var(--text-muted)",
-        textAlign: "center",
-        padding: "32px 0",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 8
-      }}>
-        <Icon size={32} style={{ color: "var(--bg-subtle)", opacity: 0.8 }} />
-        {emptyMsg}
+      <div className="py-12 flex flex-col items-center justify-center text-xs font-semibold text-[var(--text-muted)] text-center gap-2">
+        <Icon size={24} className="text-slate-300" />
+        <span>{emptyMsg}</span>
       </div>
     );
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div className="space-y-2">
       {items.map((booking) => (
-        <Link 
-          key={booking.id} 
-          href={booking.customer?.leadId ? `/dashboard/closing-manager/lead-management/${booking.customer.leadId}` : "#"}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: 16,
-            border: "1px solid var(--border-subtle)",
-            borderRadius: "var(--radius-lg)",
-            textDecoration: "none",
-            transition: "background 150ms ease, box-shadow 150ms ease"
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = "var(--bg-subtle)";
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = "transparent";
-          }}
+        <Link
+          key={booking.id}
+          href={
+            booking.customer?.leadId
+              ? `/dashboard/closing-manager/lead-management/${booking.customer.leadId}`
+              : "#"
+          }
+          className="flex items-center justify-between p-3 border border-slate-100 rounded-2xl bg-slate-50/50 hover:bg-slate-100/60 transition-colors no-underline group"
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              background: iconBg,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0
-            }}>
-              <Icon size={18} style={{ color: iconColor }} />
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className={`w-9 h-9 rounded-xl ${iconBg} border ${borderAccent} flex items-center justify-center shrink-0`}
+              style={{ color: iconColor }}
+            >
+              <Icon size={16} />
             </div>
-            <div>
-              <div style={{
-                fontSize: "var(--text-sm)",
-                fontWeight: 700,
-                color: "var(--text-primary)",
-                letterSpacing: "-0.01em",
-              }}>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-[var(--text-primary)] truncate group-hover:text-[var(--brand-700)] transition-colors">
                 {booking.customer?.firstName} {booking.customer?.lastName}
               </div>
-              <div style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "var(--text-muted)",
-                marginTop: 4,
-                display: "flex",
-                alignItems: "center",
-                gap: 6
-              }}>
-                <span style={{
-                  background: "var(--bg-subtle)",
-                  color: "var(--text-secondary)",
-                  padding: "2px 6px",
-                  borderRadius: "var(--radius-sm)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em"
-                }}>
-                  {booking.status.replace(/_/g, ' ')}
+              <div className="text-[10px] font-semibold text-[var(--text-muted)] flex items-center gap-1.5 mt-0.5">
+                <span className="px-1.5 py-0.5 rounded bg-purple-50 text-[var(--brand-700)] font-extrabold uppercase tracking-wider text-[8px] border border-purple-200/60">
+                  {booking.status.replace(/_/g, " ")}
                 </span>
                 <span>•</span>
-                <span>Unit: {booking.unit?.unitNumber || "N/A"}</span>
+                <span className="tabular-nums">
+                  Unit: {booking.unit?.unitNumber || "N/A"}
+                </span>
               </div>
             </div>
           </div>
-          <div style={{
-            width: 32,
-            height: 32,
-            borderRadius: "var(--radius-md)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "var(--text-muted)",
-          }}>
-            <ChevronRight size={18} />
-          </div>
+          <ChevronRight size={14} className="text-slate-400 shrink-0 group-hover:text-slate-600 transition-colors" />
         </Link>
       ))}
     </div>
   );
 }
 
-function ListFollowUps({ items, emptyMsg }: { items: any[], emptyMsg: string }) {
+function ListFollowUps({
+  items,
+  emptyMsg,
+}: {
+  items: any[];
+  emptyMsg: string;
+}) {
   if (items.length === 0) {
     return (
-      <div style={{
-        fontSize: "var(--text-sm)",
-        fontWeight: 500,
-        color: "var(--text-muted)",
-        textAlign: "center",
-        padding: "32px 0",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 8
-      }}>
-        <PhoneForwarded size={32} style={{ color: "var(--bg-subtle)", opacity: 0.8 }} />
-        {emptyMsg}
+      <div className="py-12 flex flex-col items-center justify-center text-xs font-semibold text-[var(--text-muted)] text-center gap-2">
+        <PhoneForwarded size={24} className="text-slate-300" />
+        <span>{emptyMsg}</span>
       </div>
     );
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+    <div className="space-y-2">
       {items.map((fup) => (
-        <Link 
-          key={fup.id} 
-          href={fup.customer?.leadId ? `/dashboard/closing-manager/lead-management/${fup.customer.leadId}` : "#"}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: 16,
-            border: "1px solid var(--border-subtle)",
-            borderRadius: "var(--radius-lg)",
-            textDecoration: "none",
-            transition: "background 150ms ease"
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = "var(--bg-subtle)";
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = "transparent";
-          }}
+        <Link
+          key={fup.id}
+          href={
+            fup.customer?.leadId
+              ? `/dashboard/closing-manager/lead-management/${fup.customer.leadId}`
+              : "#"
+          }
+          className="flex items-center justify-between p-3 border border-slate-100 rounded-2xl bg-slate-50/50 hover:bg-slate-100/60 transition-colors no-underline group"
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              background: "#ecfdf5",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0
-            }}>
-              <PhoneForwarded size={18} style={{ color: "#10b981" }} />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0 text-emerald-600">
+              <PhoneForwarded size={16} />
             </div>
-            <div>
-              <div style={{
-                fontSize: "var(--text-sm)",
-                fontWeight: 700,
-                color: "var(--text-primary)",
-                letterSpacing: "-0.01em",
-              }}>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-[var(--text-primary)] truncate group-hover:text-[var(--brand-700)] transition-colors">
                 {fup.customer?.firstName} {fup.customer?.lastName}
               </div>
-              <div style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: "var(--text-muted)",
-                marginTop: 4,
-              }}>
-                Scheduled: {new Date(fup.scheduledDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+              <div className="text-[10px] font-semibold text-[var(--text-muted)] mt-0.5 tabular-nums">
+                Scheduled:{" "}
+                {new Date(fup.scheduledDate).toLocaleString("en-IN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                })}
               </div>
             </div>
           </div>
-          <div style={{
-            width: 32,
-            height: 32,
-            borderRadius: "var(--radius-md)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "var(--text-muted)",
-          }}>
-             <ChevronRight size={18} />
-          </div>
+          <ChevronRight size={14} className="text-slate-400 shrink-0 group-hover:text-slate-600 transition-colors" />
         </Link>
       ))}
     </div>
