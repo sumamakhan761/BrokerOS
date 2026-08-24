@@ -1,3 +1,6 @@
+import React from "react";
+import { Search } from "lucide-react";
+
 interface InventoryFiltersProps {
   searchQuery: string;
   setSearchQuery: (val: string) => void;
@@ -16,29 +19,34 @@ export function InventoryFilters({
   setFilterType,
 }: InventoryFiltersProps) {
   return (
-    <div className="flex flex-col md:flex-row gap-4 mb-6">
-      <input
-        type="text"
-        placeholder="Search Unit # (e.g. 101)"
-        className="px-4 py-2 border border-slate-300 rounded-xl flex-1 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-        value={searchQuery}
-        onChange={e => setSearchQuery(e.target.value)}
-      />
+    <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="relative flex-1">
+        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+        <input
+          type="text"
+          placeholder="Search Unit # (e.g. 101, 402)..."
+          className="w-full h-9 pl-9 pr-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all tabular-nums"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
       <select
-        className="px-4 py-2 border border-slate-300 rounded-xl bg-white shadow-sm"
+        className="h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all cursor-pointer"
         value={filterStatus}
-        onChange={e => setFilterStatus(e.target.value)}
+        onChange={(e) => setFilterStatus(e.target.value)}
       >
-        <option value="ALL">All Status</option>
+        <option value="ALL">All Statuses</option>
         <option value="AVAILABLE">Available</option>
         <option value="RESERVED">Reserved</option>
         <option value="SOLD">Sold</option>
         <option value="BLOCKED">Blocked</option>
       </select>
+
       <select
-        className="px-4 py-2 border border-slate-300 rounded-xl bg-white shadow-sm"
+        className="h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all cursor-pointer"
         value={filterType}
-        onChange={e => setFilterType(e.target.value)}
+        onChange={(e) => setFilterType(e.target.value)}
       >
         <option value="ALL">All Types</option>
         <option value="SHOP">Shop</option>
