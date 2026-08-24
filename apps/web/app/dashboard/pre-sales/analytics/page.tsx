@@ -1,14 +1,24 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import PremiumBarChart from '@/components/analytics/PremiumBarChart';
-import { CircularPercentage } from '@/components/analytics/CircularPercentage';
-import { StatCard } from '@/components/analytics/StatCard';
-import { CallOutcomes } from '@/components/analytics/CallOutcomes';
-import { LeadSourceChart } from '@/components/analytics/LeadSourceChart';
-import { PhoneOutgoing, PhoneIncoming, Target, CheckCircle2, TrendingUp, XCircle, AlertCircle, PhoneCall, UserPlus, Heart, Calendar, Building2, ListChecks, Clock, XSquare, Target as TargetIcon } from 'lucide-react';
-import { authClient } from '@/lib/auth-client';
-import { Loader2 } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import PremiumBarChart from "@/components/analytics/PremiumBarChart";
+import { CircularPercentage } from "@/components/analytics/CircularPercentage";
+import { StatCard } from "@/components/analytics/StatCard";
+import { CallOutcomes } from "@/components/analytics/CallOutcomes";
+import { LeadSourceChart } from "@/components/analytics/LeadSourceChart";
+import {
+  PhoneOutgoing,
+  PhoneIncoming,
+  Target,
+  XCircle,
+  AlertCircle,
+  ListChecks,
+  Clock,
+  Download,
+  BarChart3,
+  Loader2,
+} from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 interface AnalyticsData {
   pipeline: {
@@ -49,26 +59,29 @@ export default function PreSalesAnalytics() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState('monthly');
+  const [timeRange, setTimeRange] = useState("monthly");
 
   useEffect(() => {
     async function load() {
       try {
         setLoading(true);
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
-        const res = await authClient.$fetch<AnalyticsData>('/api/dashboard/pre-sales/analytics', {
-          baseURL: baseUrl,
-          query: { timeRange }
-        });
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
+        const res = await authClient.$fetch<AnalyticsData>(
+          "/api/dashboard/pre-sales/analytics",
+          {
+            baseURL: baseUrl,
+            query: { timeRange },
+          }
+        );
 
         if (res.data) {
           setData(res.data);
         }
         if (res.error) {
-          throw new Error(res.error.message || 'Failed to load analytics');
+          throw new Error(res.error.message || "Failed to load analytics");
         }
       } catch (e: any) {
-        setError(e?.message || 'Failed to load analytics');
+        setError(e?.message || "Failed to load analytics");
       } finally {
         setLoading(false);
       }
@@ -78,65 +91,71 @@ export default function PreSalesAnalytics() {
 
   if (loading && !data) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center">
-        <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-        <p className="text-sm text-default-500 font-medium">Crunching the numbers...</p>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-8 h-8 text-[var(--brand-600)] animate-spin" />
+        <p className="text-xs font-semibold text-[var(--text-muted)]">
+          Aggregating pre-sales analytics…
+        </p>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="bg-danger-50 border border-danger-200 rounded-2xl p-6 m-4 flex items-center gap-3">
-        <AlertCircle className="w-6 h-6 text-danger shrink-0" />
+      <div className="bg-rose-50 border border-rose-200 rounded-3xl p-6 m-4 flex items-center gap-3 animate-enter">
+        <AlertCircle size={20} className="text-rose-600 shrink-0" />
         <div>
-          <h3 className="text-sm font-bold text-danger-900">Error loading analytics</h3>
-          <p className="text-sm text-danger-700 mt-1">{error || 'Unknown error'}</p>
+          <h3 className="text-sm font-extrabold text-rose-900 m-0">
+            Error loading pre-sales analytics
+          </h3>
+          <p className="text-xs text-rose-700 mt-1 m-0">
+            {error || "Unknown error occurred while fetching metrics."}
+          </p>
         </div>
       </div>
     );
   }
 
   const pipelineStages = [
-    { name: 'Total Leads', value: data.pipeline.totalLeads },
-    { name: 'New Leads', value: data.pipeline.newLeads },
-    { name: 'Contacted', value: data.pipeline.contacted },
-    { name: 'Interested', value: data.pipeline.interested },
-    { name: 'Qualified', value: data.pipeline.qualified },
-    { name: 'Site Visits', value: data.pipeline.siteVisits },
-    { name: 'Booked', value: data.pipeline.booked },
+    { name: "Total Leads", value: data.pipeline.totalLeads },
+    { name: "New Leads", value: data.pipeline.newLeads },
+    { name: "Contacted", value: data.pipeline.contacted },
+    { name: "Interested", value: data.pipeline.interested },
+    { name: "Qualified", value: data.pipeline.qualified },
+    { name: "Site Visits", value: data.pipeline.siteVisits },
+    { name: "Booked", value: data.pipeline.booked },
   ];
 
   const ranges = [
-    { id: 'weekly', label: 'Weekly' },
-    { id: 'monthly', label: 'Monthly' },
-    { id: 'yearly', label: 'Yearly' },
-    { id: 'all-time', label: 'All Time' },
+    { id: "weekly", label: "Weekly" },
+    { id: "monthly", label: "Monthly" },
+    { id: "yearly", label: "Yearly" },
+    { id: "all-time", label: "All Time" },
   ];
 
   const exportToCSV = () => {
     if (!data) return;
-    
-    // Create simple CSV
+
     const rows = [
-      ['Metric', 'Value'],
-      ['Total Leads', data.pipeline.totalLeads],
-      ['New Leads', data.pipeline.newLeads],
-      ['Contacted', data.pipeline.contacted],
-      ['Interested', data.pipeline.interested],
-      ['Qualified', data.pipeline.qualified],
-      ['Site Visits', data.pipeline.siteVisits],
-      ['Booked', data.pipeline.booked],
-      ['Lost', data.pipeline.lost],
-      [''],
-      ['Calls Made', data.calls.made],
-      ['Calls Connected', data.calls.connected],
-      ['Connected Rate %', data.calls.connectedPercentage],
-      [''],
-      ['Follow-ups Done', data.followUps.completed],
+      ["Metric", "Value"],
+      ["Total Leads", data.pipeline.totalLeads],
+      ["New Leads", data.pipeline.newLeads],
+      ["Contacted", data.pipeline.contacted],
+      ["Interested", data.pipeline.interested],
+      ["Qualified", data.pipeline.qualified],
+      ["Site Visits", data.pipeline.siteVisits],
+      ["Booked", data.pipeline.booked],
+      ["Lost", data.pipeline.lost],
+      [""],
+      ["Calls Made", data.calls.made],
+      ["Calls Connected", data.calls.connected],
+      ["Connected Rate %", data.calls.connectedPercentage],
+      [""],
+      ["Follow-ups Done", data.followUps.completed],
     ];
-    
-    const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," + rows.map((e) => e.join(",")).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -147,109 +166,121 @@ export default function PreSalesAnalytics() {
   };
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-8 animate-[fadeUp_0.4s_ease_forwards]">
-      <style>{`
-        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-      `}</style>
-
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 animate-enter">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-default-900 tracking-tight">Pre-Sales Analytics</h1>
-          <p className="text-sm font-medium text-default-500 mt-1.5">
-            Deep dive into your pipeline progression, call performance, and conversion rates.
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight flex items-center gap-2.5 m-0">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+              <BarChart3 size={18} />
+            </div>
+            <span>Pre-Sales Performance Analytics</span>
+          </h1>
+          <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5 m-0">
+            Pipeline velocity, telephonic efficiency, and qualification conversions.
           </p>
         </div>
 
-        {/* Time Range Segmented Control & Export */}
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="flex bg-default-100 dark:bg-default-100/50 p-1.5 rounded-full w-fit">
-            {ranges.map(r => (
+        {/* Time Range & Export */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200/60 shadow-2xs">
+            {ranges.map((r) => (
               <button
                 key={r.id}
                 onClick={() => setTimeRange(r.id)}
-                className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${timeRange === r.id
-                  ? 'bg-white dark:bg-default-200 shadow-sm text-default-900'
-                  : 'text-default-500 hover:text-default-700'
-                  }`}
+                className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  timeRange === r.id
+                    ? "bg-white text-[var(--text-primary)] shadow-xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
               >
                 {r.label}
               </button>
             ))}
           </div>
-          <button 
+          <button
             onClick={exportToCSV}
-            className="px-5 py-2 rounded-full text-sm font-semibold bg-indigo-500 text-white hover:bg-indigo-600 transition-colors shadow-sm flex items-center gap-2"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all active:scale-[0.96] press-effect shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
-            Export CSV
+            <Download size={13} />
+            <span>Export CSV</span>
           </button>
         </div>
       </div>
 
-      <h2 className="text-xl font-bold text-default-900 mt-2 mb-4">Overview</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
+      {/* KPI Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
         <StatCard
-          title="Total Leads"
+          title="Total Pipeline"
           value={data.pipeline.totalLeads}
           icon={Target}
-          delay={0.1}
+          delay={0.05}
         />
         <StatCard
           title="Calls Made"
           value={data.calls.made}
           subtitle="Outbound dials"
           icon={PhoneOutgoing}
-          delay={0.15}
+          delay={0.1}
         />
         <StatCard
-          title="Calls Connected"
+          title="Connected"
           value={data.calls.connected}
-          subtitle="Conversations"
+          subtitle="Direct talks"
           icon={PhoneIncoming}
-          delay={0.2}
+          delay={0.15}
         />
         <StatCard
           title="Follow-ups Done"
           value={data.followUps.completed}
-          subtitle="Completed successfully"
+          subtitle="Scheduled callbacks"
           icon={ListChecks}
-          delay={0.25}
+          delay={0.2}
         />
         <StatCard
-          title="Lost Leads"
+          title="Lost / Dropped"
           value={data.pipeline.lost}
           icon={XCircle}
           trend="down"
-          trendValue="Requires attention"
-          delay={0.45}
+          trendValue="Requires audit"
+          delay={0.25}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mt-8">
-
-        {/* Pipeline Bar Chart */}
-        <div className="lg:col-span-2">
+      {/* Analytics Bento Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Pipeline Bar Chart & Calls */}
+        <div className="lg:col-span-2 space-y-6">
           <PremiumBarChart
             data={pipelineStages}
-            title="Pipeline Progression"
-            description="Cumulative historical progression"
+            title="Pipeline Stage Progression"
+            description="Cumulative lead advancement through stages"
             dataKey="value"
             categoryKey="name"
-            color="#6366F1"
+            color="#9333ea"
           />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start my-12">
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Call Outcomes */}
-            <div className="bg-white dark:bg-default-100/50 rounded-2xl p-5 sm:p-6 shadow-sm overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div>
-                  <h3 className="text-base font-bold text-default-900 uppercase">Call Outcomes</h3>
-                  <p className="text-[11px] font-medium text-default-500 mt-1">What happens when you dial?</p>
+                  <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+                    Call Outcomes
+                  </h3>
+                  <p className="text-[11px] text-[var(--text-muted)] font-medium mt-0.5 m-0">
+                    Disposition breakdown
+                  </p>
                 </div>
-                <div className="flex items-center gap-3 bg-default-100/50 dark:bg-default-200/30 px-3 py-1.5 rounded-lg">
-                  <Clock className="w-4 h-4 text-indigo-500" />
-                  <div>
-                    <p className="text-[9px] uppercase font-bold text-default-500">Avg Talk Time</p>
-                    <p className="text-sm font-bold text-default-900">{data.calls.avgTalkTimeSeconds} sec</p>
+                <div className="flex items-center gap-2 bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200/60">
+                  <Clock size={13} className="text-[var(--brand-700)]" />
+                  <div className="text-right">
+                    <span className="text-[9px] uppercase font-bold text-[var(--brand-700)] block">
+                      Avg Talk Time
+                    </span>
+                    <span className="text-xs font-extrabold text-purple-950 tabular-nums">
+                      {data.calls.avgTalkTimeSeconds}s
+                    </span>
                   </div>
                 </div>
               </div>
@@ -257,44 +288,49 @@ export default function PreSalesAnalytics() {
             </div>
 
             {/* Call Performance */}
-            <div className="bg-white dark:bg-default-100/50 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col items-center justify-center overflow-hidden">
-              <h3 className="text-sm font-bold text-default-900 uppercase mb-6 w-full text-left">Call Performance</h3>
+            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs flex flex-col items-center justify-center space-y-3">
+              <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider w-full text-left m-0">
+                Call Connection Ratio
+              </h3>
               <CircularPercentage
                 percentage={data.calls.connectedPercentage}
                 label="Connected Rate"
-                subLabel={`${data.calls.connected} / ${data.calls.made} Calls`}
-                color={data.calls.connectedPercentage > 30 ? 'success' : 'warning'}
-                delay={0.5}
+                subLabel={`${data.calls.connected} of ${data.calls.made} calls`}
+                color={data.calls.connectedPercentage > 30 ? "success" : "warning"}
+                delay={0.3}
               />
             </div>
-
           </div>
         </div>
 
         {/* Circular Metrics & Lead Sources */}
-        <div className="lg:col-span-1 space-y-8">
-
-          <div className="bg-white dark:bg-default-100/50 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col items-center justify-center overflow-hidden">
-            <h3 className="text-sm font-bold text-default-900 uppercase tracking-widest mb-6 w-full text-left">Lead Conversion</h3>
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs flex flex-col items-center justify-center space-y-3">
+            <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider w-full text-left m-0">
+              Pipeline Health
+            </h3>
             <CircularPercentage
               percentage={data.conversions.leadToSiteVisitPercentage}
               label="Lead to Site Visit"
-              subLabel="Overall pipeline health"
+              subLabel="Overall pipeline conversion rate"
               color="primary"
-              delay={0.7}
+              delay={0.35}
             />
           </div>
 
-          <div className="bg-white dark:bg-default-100/50 rounded-2xl p-5 sm:p-6 shadow-sm overflow-hidden">
-            <h3 className="text-sm font-bold text-default-900 uppercase tracking-widest mb-1">Best Lead Sources</h3>
-            <p className="text-[11px] font-medium text-default-500 mb-5">Sources driving site visits</p>
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs space-y-3">
+            <div>
+              <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+                Top Lead Channels
+              </h3>
+              <p className="text-[11px] text-[var(--text-muted)] font-medium mt-0.5 m-0">
+                Source attribution for site visits
+              </p>
+            </div>
             <LeadSourceChart data={data.sources} />
           </div>
-
         </div>
       </div>
-
-
     </div>
   );
 }

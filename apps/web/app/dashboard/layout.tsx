@@ -3,48 +3,114 @@
 import { authClient } from "@/lib/auth-client";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  LogOut, LayoutDashboard, Building2, Briefcase, ShieldCheck,
-  DollarSign, Handshake, Users, TrendingUp, BarChart2, Star,
-  List, CheckSquare, Calendar, Package, Settings, ChevronRight,
+  LogOut,
+  LayoutDashboard,
+  Building2,
+  Briefcase,
+  ShieldCheck,
+  DollarSign,
+  Handshake,
+  Users,
+  TrendingUp,
+  BarChart2,
+  Star,
+  List,
+  CheckSquare,
+  Calendar,
+  Package,
+  Settings,
+  ChevronRight,
+  Radio,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 
-/* ─── Role color mapping (each role gets a tinted sidebar accent) ─ */
-const ROLE_COLORS: Record<string, { accent: string; bg: string }> = {
-  PRE_SALES: { accent: "#7c3aed", bg: "rgba(124,58,237,0.06)" },
-  PRE_SALES_MANAGER: { accent: "#6d28d9", bg: "rgba(109,40,217,0.06)" },
-  SALES_EXECUTIVE: { accent: "#0369a1", bg: "rgba(3,105,161,0.06)" },
-  SALES_MANAGER: { accent: "#0e7490", bg: "rgba(14,116,144,0.06)" },
-  POST_SALES: { accent: "#15803d", bg: "rgba(21,128,61,0.06)" },
-  POST_SALES_MANAGER: { accent: "#166534", bg: "rgba(22,101,52,0.06)" },
-  SOURCING_MANAGER: { accent: "#b45309", bg: "rgba(180,83,9,0.06)" },
-  CLOSING_MANAGER: { accent: "#be123c", bg: "rgba(190,18,60,0.06)" },
-  CHANNEL_PARTNER: { accent: "#7c3aed", bg: "rgba(124,58,237,0.06)" },
-  FINANCE: { accent: "#0f766e", bg: "rgba(15,118,110,0.06)" },
-  BUSINESS_MANAGER: { accent: "#6d28d9", bg: "rgba(109,40,217,0.06)" },
-  DIRECTOR: { accent: "#1e40af", bg: "rgba(30,64,175,0.06)" },
-  ADMIN: { accent: "#991b1b", bg: "rgba(153,27,27,0.06)" },
-};
-
-/* ─── Role display names ─────────────────────────────────────────── */
-const ROLE_DISPLAY: Record<string, string> = {
-  PRE_SALES: "Pre-Sales",
-  PRE_SALES_MANAGER: "Pre-Sales Manager",
-  SALES_EXECUTIVE: "Sales Executive",
-  SALES_MANAGER: "Sales Manager",
-  POST_SALES: "Post-Sales",
-  POST_SALES_MANAGER: "Post-Sales Manager",
-  SOURCING_MANAGER: "Sourcing Manager",
-  CLOSING_MANAGER: "Closing Manager",
-  CHANNEL_PARTNER: "Channel Partner",
-  FINANCE: "Finance",
-  BUSINESS_MANAGER: "Business Manager",
-  DIRECTOR: "Director",
-  ADMIN: "Administrator",
+/* ─── Role color mapping (Perceptual OKLCH) ────────────────────────── */
+const ROLE_CONFIG: Record<
+  string,
+  { accent: string; bg: string; border: string; label: string }
+> = {
+  PRE_SALES: {
+    accent: "oklch(0.535 0.235 275)",
+    bg: "oklch(0.975 0.015 275)",
+    border: "oklch(0.895 0.075 275)",
+    label: "Pre-Sales",
+  },
+  PRE_SALES_MANAGER: {
+    accent: "oklch(0.455 0.215 275)",
+    bg: "oklch(0.975 0.015 275)",
+    border: "oklch(0.895 0.075 275)",
+    label: "Pre-Sales Manager",
+  },
+  SALES_EXECUTIVE: {
+    accent: "oklch(0.48 0.18 240)",
+    bg: "oklch(0.965 0.035 240)",
+    border: "oklch(0.88 0.06 240)",
+    label: "Sales Executive",
+  },
+  SALES_MANAGER: {
+    accent: "oklch(0.45 0.16 230)",
+    bg: "oklch(0.965 0.035 230)",
+    border: "oklch(0.88 0.06 230)",
+    label: "Sales Manager",
+  },
+  POST_SALES: {
+    accent: "oklch(0.42 0.16 145)",
+    bg: "oklch(0.965 0.035 145)",
+    border: "oklch(0.88 0.06 145)",
+    label: "Post-Sales",
+  },
+  POST_SALES_MANAGER: {
+    accent: "oklch(0.38 0.14 145)",
+    bg: "oklch(0.965 0.035 145)",
+    border: "oklch(0.88 0.06 145)",
+    label: "Post-Sales Manager",
+  },
+  SOURCING_MANAGER: {
+    accent: "oklch(0.50 0.17 80)",
+    bg: "oklch(0.975 0.04 85)",
+    border: "oklch(0.88 0.08 85)",
+    label: "Sourcing Manager",
+  },
+  CLOSING_MANAGER: {
+    accent: "oklch(0.46 0.20 25)",
+    bg: "oklch(0.965 0.035 25)",
+    border: "oklch(0.88 0.07 25)",
+    label: "Closing Manager",
+  },
+  CHANNEL_PARTNER: {
+    accent: "oklch(0.535 0.235 275)",
+    bg: "oklch(0.975 0.015 275)",
+    border: "oklch(0.895 0.075 275)",
+    label: "Channel Partner",
+  },
+  FINANCE: {
+    accent: "oklch(0.45 0.14 180)",
+    bg: "oklch(0.965 0.035 180)",
+    border: "oklch(0.88 0.06 180)",
+    label: "Finance",
+  },
+  BUSINESS_MANAGER: {
+    accent: "oklch(0.455 0.215 275)",
+    bg: "oklch(0.975 0.015 275)",
+    border: "oklch(0.895 0.075 275)",
+    label: "Business Manager",
+  },
+  DIRECTOR: {
+    accent: "oklch(0.38 0.18 260)",
+    bg: "oklch(0.965 0.03 260)",
+    border: "oklch(0.88 0.06 260)",
+    label: "Director Suite",
+  },
+  ADMIN: {
+    accent: "oklch(0.46 0.20 25)",
+    bg: "oklch(0.965 0.035 25)",
+    border: "oklch(0.88 0.07 25)",
+    label: "Administrator",
+  },
 };
 
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
@@ -67,10 +133,12 @@ export default function DashboardLayout({
     if (user?.roleId) {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       fetch(`${baseUrl}/roles`)
-        .then(res => res.json())
-        .then(roles => {
-          const role = roles.find((r: any) => r.id === user.roleId);
-          if (role) setRoleCode(role.code);
+        .then((res) => res.json())
+        .then((roles) => {
+          if (Array.isArray(roles)) {
+            const role = roles.find((r: any) => r.id === user.roleId);
+            if (role) setRoleCode(role.code);
+          }
         })
         .catch(console.error)
         .finally(() => setFetchingRoles(false));
@@ -85,64 +153,28 @@ export default function DashboardLayout({
     router.push("/login");
   };
 
-  /* ── Loading state ─────────────────────────────────── */
+  /* ── Loading State ───────────────────────────────────────────────── */
   if (isPending || fetchingRoles) {
     return (
-      <div style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--bg-base)",
-        gap: 16,
-      }}>
-        {/* Branded spinner — not a plain blue ring */}
-        <div style={{ position: "relative", width: 40, height: 40 }}>
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "50%",
-            border: "2.5px solid var(--brand-100)",
-          }} />
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "50%",
-            border: "2.5px solid transparent",
-            borderTopColor: "var(--brand-600)",
-            animation: "spin 0.75s linear infinite",
-          }} />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-base)] gap-4">
+        <div className="relative w-10 h-10">
+          <div className="absolute inset-0 rounded-full border-2 border-purple-100" />
+          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--brand-600)] animate-spin" />
         </div>
-        <p style={{
-          fontSize: "var(--text-sm)",
-          color: "var(--text-muted)",
-          fontWeight: 500,
-          letterSpacing: "0.01em",
-        }}>
-          Loading your workspace…
+        <p className="text-xs font-semibold text-[var(--text-tertiary)] tracking-tight">
+          Authenticating workspace…
         </p>
       </div>
     );
   }
 
-  /* ── Nav link definitions ─────────────────────────── */
-  const allNavLinks = [
-    { name: "Pre-Sales", href: "/dashboard/pre-sales", icon: Users, roles: ["PRE_SALES", "PRE_SALES_MANAGER", "DIRECTOR", "ADMIN"] },
-    { name: "Sales", href: "/dashboard/sales", icon: Briefcase, roles: ["SALES_EXECUTIVE", "SALES_MANAGER", "DIRECTOR", "ADMIN"] },
-    { name: "Post-Sales", href: "/dashboard/post-sales", icon: Handshake, roles: ["POST_SALES", "POST_SALES_MANAGER", "DIRECTOR", "ADMIN"] },
-    { name: "Finance", href: "/dashboard/finance", icon: DollarSign, roles: ["FINANCE", "BUSINESS_MANAGER", "DIRECTOR", "ADMIN"] },
-    { name: "Business Mgr", href: "/dashboard/business-manager", icon: Building2, roles: ["BUSINESS_MANAGER", "DIRECTOR", "ADMIN"] },
-    { name: "Director", href: "/dashboard/director", icon: ShieldCheck, roles: ["DIRECTOR", "ADMIN"] },
-    { name: "Admin", href: "/dashboard/admin", icon: ShieldCheck, roles: ["ADMIN"] },
-    { name: "Sourcing Mgr", href: "/dashboard/sourcing-manager", icon: Users, roles: ["SOURCING_MANAGER", "DIRECTOR", "ADMIN"] },
-    { name: "Closing Mgr", href: "/dashboard/closing-manager", icon: Handshake, roles: ["CLOSING_MANAGER", "DIRECTOR", "ADMIN"] },
-    { name: "Channel Partner", href: "/dashboard/channel-partner", icon: Users, roles: ["CHANNEL_PARTNER", "DIRECTOR", "ADMIN"] },
-  ];
-
   const userRole = roleCode || "UNKNOWN";
-  let navLinks = allNavLinks.filter(link => link.roles.includes("*") || link.roles.includes(userRole));
+  const roleConfig = ROLE_CONFIG[userRole] || ROLE_CONFIG["PRE_SALES"];
+
+  /* ── Nav Links Configuration ─────────────────────────────────────── */
+  let navLinks = [
+    { name: "Overview", href: "/dashboard/pre-sales", icon: LayoutDashboard, roles: ["*"] },
+  ];
 
   if (userRole === "PRE_SALES") {
     navLinks = [
@@ -239,325 +271,151 @@ export default function DashboardLayout({
       { name: "Employees", href: "/dashboard/business-manager/employees", icon: Briefcase, roles: ["BUSINESS_MANAGER"] },
       { name: "Analytics", href: "/dashboard/business-manager/analytics", icon: BarChart2, roles: ["BUSINESS_MANAGER"] },
     ];
+  } else if (userRole === "DIRECTOR") {
+    navLinks = [
+      { name: "Overview", href: "/dashboard/director", icon: LayoutDashboard, roles: ["DIRECTOR"] },
+      { name: "Pre-Sales", href: "/dashboard/pre-sales", icon: Users, roles: ["DIRECTOR"] },
+      { name: "Sales", href: "/dashboard/sales", icon: Briefcase, roles: ["DIRECTOR"] },
+      { name: "Post-Sales", href: "/dashboard/post-sales", icon: Handshake, roles: ["DIRECTOR"] },
+      { name: "Finance", href: "/dashboard/finance", icon: DollarSign, roles: ["DIRECTOR"] },
+    ];
   }
 
-  const roleColors = ROLE_COLORS[userRole] || ROLE_COLORS["PRE_SALES"];
-  const roleDisplayName = ROLE_DISPLAY[userRole] || userRole;
   const userEmail = session?.user?.email || "";
-  const userInitials = userEmail.slice(0, 2).toUpperCase();
+  const userInitials = userEmail.slice(0, 2).toUpperCase() || "US";
 
-  /* ── Active page title ─────────────────────────────── */
-  const activeLink = navLinks.find(link => {
+  /* ── Active Page Title ───────────────────────────────────────────── */
+  const activeLink = navLinks.find((link) => {
     if (link.name === "Overview") return pathname === link.href;
     return pathname === link.href || pathname.startsWith(link.href + "/");
   });
   const pageTitle = activeLink?.name || "Dashboard";
 
   return (
-    <div style={{
-      display: "flex",
-      minHeight: "100vh",
-      background: "var(--bg-base)",
-      overflow: "hidden",
-    }}>
-      {/* ── Sidebar ────────────────────────────────── */}
-      <aside style={{
-        width: 252,
-        flexShrink: 0,
-        background: "var(--bg-surface)",
-        borderRight: "1px solid var(--border-subtle)",
-        display: "flex",
-        flexDirection: "column",
-        position: "relative",
-        zIndex: 20,
-      }}>
-
-        {/* Sidebar top — brand */}
-        <div style={{
-          padding: "20px 20px 16px",
-          borderBottom: "1px solid var(--border-subtle)",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              width: 28,
-              height: 28,
-              borderRadius: "var(--radius-md)",
-              background: roleColors.accent,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}>
-              <div style={{
-                width: 12,
-                height: 12,
-                borderRadius: 2,
-                border: "2px solid rgba(255,255,255,0.85)",
-                background: "transparent",
-              }} />
+    <div className="flex min-h-screen bg-[var(--bg-base)] overflow-hidden font-sans text-[var(--text-primary)]">
+      {/* ── Sidebar ──────────────────────────────────────────────────── */}
+      <aside className="w-64 flex-shrink-0 bg-white border-r border-slate-200/80 flex flex-col relative z-20 shadow-xs">
+        {/* Sidebar Brand Header */}
+        <div className="p-3 border-b border-slate-100 flex items-center justify-between">
+          <Link href="/dashboard" className="flex items-center gap-3 text-decoration-none group">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-sm transition-transform duration-200 group-hover:scale-105"
+              style={{ background: roleConfig.accent }}
+            >
+              <Building2 className="w-4 h-4 text-white" strokeWidth={2.2} />
             </div>
             <div>
-              <div style={{
-                fontSize: "var(--text-sm)",
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-                color: "var(--text-primary)",
-                lineHeight: 1.2,
-              }}>
-                BrokerOS
+              <div className="text-xs font-extrabold tracking-tight text-[var(--text-primary)] leading-none">
+                Broker<span style={{ color: roleConfig.accent }}>OS</span>
               </div>
-              <div style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: "var(--text-muted)",
-                letterSpacing: "0.01em",
-              }}>
-                {roleDisplayName}
+              <div className="text-[10px] font-bold text-[var(--text-muted)] mt-1 tracking-tight">
+                {roleConfig.label}
               </div>
             </div>
-          </div>
+          </Link>
+
+          {/* System Live Dot */}
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          </span>
         </div>
 
-        {/* Nav links */}
-        <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }} className="scrollbar-hide">
-          {navLinks.map((link, i) => {
+        {/* Nav Links List */}
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-hide">
+          {navLinks.map((link) => {
             const Icon = link.icon;
-            const isActive = link.name === "Overview"
-              ? pathname === link.href
-              : (pathname === link.href || pathname.startsWith(link.href + "/"));
+            const isActive =
+              link.name === "Overview"
+                ? pathname === link.href
+                : pathname === link.href || pathname.startsWith(link.href + "/");
 
             return (
-              <motion.div
+              <Link
                 key={link.name}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.04, duration: 0.35, ease: EASE_OUT_EXPO }}
+                href={link.href}
+                className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 active:scale-[0.98] ${isActive
+                  ? "text-[var(--text-primary)] shadow-xs"
+                  : "text-[var(--text-tertiary)] hover:bg-slate-50 hover:text-[var(--text-primary)]"
+                  }`}
+                style={{
+                  background: isActive ? roleConfig.bg : "transparent",
+                  color: isActive ? roleConfig.accent : undefined,
+                }}
               >
-                <Link
-                  href={link.href}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "8px 12px",
-                    borderRadius: "var(--radius-md)",
-                    marginBottom: 2,
-                    textDecoration: "none",
-                    position: "relative",
-                    transition: `
-                      background var(--duration-base) var(--ease-out-expo),
-                      color var(--duration-base) var(--ease-out-expo)
-                    `,
-                    background: isActive ? roleColors.bg : "transparent",
-                    color: isActive ? roleColors.accent : "var(--text-tertiary)",
-                  }}
-                  onMouseEnter={e => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.background = "var(--bg-subtle)";
-                      (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.background = "transparent";
-                      (e.currentTarget as HTMLElement).style.color = "var(--text-tertiary)";
-                    }
-                  }}
-                >
-                  {/* Active indicator line */}
-                  {isActive && (
-                    <motion.div
-                      layoutId="sidebar-active-indicator"
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        top: "20%",
-                        bottom: "20%",
-                        width: 3,
-                        borderRadius: "0 var(--radius-full) var(--radius-full) 0",
-                        background: roleColors.accent,
-                      }}
-                      transition={{ duration: 0.3, ease: EASE_OUT_EXPO }}
-                    />
-                  )}
-                  <Icon
-                    size={15}
-                    strokeWidth={isActive ? 2.2 : 1.8}
-                    style={{ flexShrink: 0, color: "inherit" }}
+                {/* Active Indicator Bar */}
+                {isActive && (
+                  <motion.div
+                    layoutId="sidebar-active-indicator"
+                    className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full"
+                    style={{ background: roleConfig.accent }}
+                    transition={{ duration: 0.25, ease: EASE_OUT_EXPO }}
                   />
-                  <span style={{
-                    fontSize: "var(--text-sm)",
-                    fontWeight: isActive ? 650 : 500,
-                    letterSpacing: "-0.01em",
-                    color: "inherit",
-                  }}>
-                    {link.name}
-                  </span>
-                </Link>
-              </motion.div>
+                )}
+                <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />
+                <span className="truncate">{link.name}</span>
+              </Link>
             );
           })}
         </nav>
 
-        {/* User footer */}
-        <div style={{
-          padding: "12px 10px",
-          borderTop: "1px solid var(--border-subtle)",
-        }}>
-          {/* User info row */}
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "8px 12px",
-            borderRadius: "var(--radius-md)",
-            marginBottom: 8,
-            background: "var(--bg-subtle)",
-          }}>
-            {/* Avatar */}
-            <div style={{
-              width: 28,
-              height: 28,
-              borderRadius: "50%",
-              background: roleColors.accent,
-              color: "white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.05em",
-              flexShrink: 0,
-            }}>
+        {/* User Footer Profile */}
+        <div className="p-3 border-t border-slate-100">
+          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50/80 mb-2 border border-slate-100">
+            <div
+              className="w-7 h-7 rounded-full text-white flex items-center justify-center text-[10px] font-extrabold flex-shrink-0"
+              style={{ background: roleConfig.accent }}
+            >
               {userInitials}
             </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "var(--text-secondary)",
-                letterSpacing: "-0.01em",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-bold text-[var(--text-primary)] truncate">
                 {userEmail}
               </div>
-              <div style={{
-                fontSize: 10,
-                fontWeight: 500,
-                color: "var(--text-muted)",
-                marginTop: 1,
-              }}>
-                {roleDisplayName}
+              <div className="text-[10px] text-[var(--text-muted)] font-medium truncate">
+                {roleConfig.label}
               </div>
             </div>
           </div>
 
-          {/* Sign out */}
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "8px 12px",
-              borderRadius: "var(--radius-md)",
-              border: "none",
-              background: "transparent",
-              color: "var(--text-muted)",
-              fontSize: "var(--text-sm)",
-              fontWeight: 500,
-              cursor: "pointer",
-              transition: `
-                background var(--duration-base) var(--ease-out-expo),
-                color var(--duration-base) var(--ease-out-expo)
-              `,
-              opacity: isLoggingOut ? 0.5 : 1,
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.background = "var(--danger-bg)";
-              (e.currentTarget as HTMLElement).style.color = "var(--danger-fg)";
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = "transparent";
-              (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
-            }}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-[11px] font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all active:scale-[0.96] press-effect disabled:opacity-50"
           >
-            <LogOut size={14} strokeWidth={2} />
+            <LogOut className="w-3.5 h-3.5" strokeWidth={2} />
             <span>{isLoggingOut ? "Signing out…" : "Sign Out"}</span>
           </button>
         </div>
       </aside>
 
-      {/* ── Main content ───────────────────────────── */}
-      <div style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        minWidth: 0,
-        height: "100vh",
-        overflow: "hidden",
-      }}>
-        {/* Top header bar */}
-        <header style={{
-          height: 56,
-          background: "var(--bg-surface)",
-          borderBottom: "1px solid var(--border-subtle)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 28px",
-          flexShrink: 0,
-          position: "relative",
-          zIndex: 20,
-        }}>
-          {/* Page title with breadcrumb */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{
-              fontSize: "var(--text-xs)",
-              fontWeight: 500,
-              color: "var(--text-muted)",
-              letterSpacing: "0.01em",
-            }}>
-              Dashboard
-            </span>
-            <ChevronRight size={12} style={{ color: "var(--text-muted)" }} />
-            <span style={{
-              fontSize: "var(--text-sm)",
-              fontWeight: 650,
-              color: "var(--text-primary)",
-              letterSpacing: "-0.01em",
-            }}>
-              {pageTitle}
-            </span>
+      {/* ── Main Content Shell ───────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {/* Top Header Bar */}
+        <header className="h-14 bg-white border-b border-slate-200/80 flex items-center justify-between px-7 flex-shrink-0 z-20">
+          {/* Breadcrumb Navigation */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-[var(--text-muted)] font-medium">Workspace</span>
+            <ChevronRight className="w-3 h-3 text-slate-300" />
+            <span className="font-extrabold text-[var(--text-primary)]">{pageTitle}</span>
           </div>
 
-          {/* Right actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Header Actions */}
+          <div className="flex items-center gap-3">
             <NotificationBell />
           </div>
         </header>
 
-        {/* Page content — animated on route change */}
-        <main
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: "28px 32px",
-          }}
-          className="scrollbar-hide"
-        >
+        {/* Dynamic Page Content View */}
+        <main className="flex-1 overflow-y-auto p-7 scrollbar-hide">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.3, ease: EASE_OUT_EXPO }}
-              style={{ minHeight: "100%" }}
+              transition={{ duration: 0.25, ease: EASE_OUT_EXPO }}
+              className="min-h-full"
             >
               {children}
             </motion.div>
@@ -565,7 +423,7 @@ export default function DashboardLayout({
         </main>
       </div>
 
-      {/* Global floating chat widget */}
+      {/* Real-time Global Team Chat Widget */}
       <ChatWidget />
     </div>
   );
