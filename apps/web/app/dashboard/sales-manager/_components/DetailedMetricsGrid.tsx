@@ -1,6 +1,22 @@
-import React from 'react';
-import { Target, CheckCircle, Clock, FileText, Banknote, IndianRupee, PieChart, Activity, CheckSquare } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+"use client";
+
+import React from "react";
+import {
+  Target,
+  CheckCircle,
+  Clock,
+  FileText,
+  Banknote,
+  IndianRupee,
+  PieChart,
+  CheckSquare,
+} from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export function DetailedMetricsGrid({ metrics }: { metrics: any }) {
   if (!metrics) return null;
@@ -8,150 +24,138 @@ export function DetailedMetricsGrid({ metrics }: { metrics: any }) {
   const { salesFunnel, teamAnalytics, revenueAnalytics } = metrics;
 
   return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-      gap: 24,
-      marginBottom: 32,
-      marginTop: 32
-    }}>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 my-6">
       {/* Sales Funnel Analytics */}
-      <div style={{
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-subtle)",
-        boxShadow: "var(--shadow-sm)",
-        borderRadius: "var(--radius-xl)",
-        padding: 24,
-        display: "flex",
-        flexDirection: "column",
-        height: "100%"
-      }}>
-        <h3 style={{
-          fontSize: "var(--text-lg)",
-          fontWeight: 700,
-          color: "var(--text-primary)",
-          letterSpacing: "-0.01em",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginBottom: 24,
-          margin: "0 0 24px 0"
-        }}>
-          <PieChart size={20} style={{ color: "var(--brand-500)" }} />
-          Sales Funnel Analytics
-        </h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <MetricRow icon={<Target size={16} style={{ color: "var(--brand-500)" }} />} label="Assigned Customers" value={salesFunnel.assignedCustomers} />
-          <MetricRow icon={<Clock size={16} style={{ color: "#f59e0b" }} />} label="Site Visits Scheduled" value={salesFunnel.siteVisitsScheduled} />
-          <MetricRow icon={<CheckCircle size={16} style={{ color: "#10b981" }} />} label="Site Visits Completed" value={salesFunnel.siteVisitsCompleted} />
-          <MetricRow icon={<FileText size={16} style={{ color: "#3b82f6" }} />} label="Negotiations" value={salesFunnel.negotiations} />
-          <MetricRow icon={<CheckSquare size={16} style={{ color: "#8b5cf6" }} />} label="Follow-ups Completed" value={teamAnalytics.followUpsCompleted} />
-          <MetricRow icon={<Banknote size={16} style={{ color: "#059669" }} />} label="Confirmed Bookings" value={salesFunnel.confirmedBookings} />
-          <div style={{
-            paddingTop: 16,
-            borderTop: "1px solid var(--border-subtle)",
-            marginTop: 8
-          }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--text-secondary)" }}>Booking Conversion Rate</span>
-              <span style={{ fontSize: "var(--text-lg)", fontWeight: 800, color: "var(--text-primary)" }}>{salesFunnel.conversionRate}%</span>
+      <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xs flex flex-col justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-7 h-7 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+              <PieChart size={15} />
             </div>
+            <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+              Sales Pipeline Throughput
+            </h3>
           </div>
+          <div className="space-y-2.5">
+            <MetricRow
+              icon={<Target size={14} className="text-purple-600" />}
+              label="Assigned Customers"
+              value={salesFunnel.assignedCustomers}
+            />
+            <MetricRow
+              icon={<Clock size={14} className="text-amber-600" />}
+              label="Site Visits Scheduled"
+              value={salesFunnel.siteVisitsScheduled}
+            />
+            <MetricRow
+              icon={<CheckCircle size={14} className="text-emerald-600" />}
+              label="Site Visits Completed"
+              value={salesFunnel.siteVisitsCompleted}
+            />
+            <MetricRow
+              icon={<FileText size={14} className="text-blue-600" />}
+              label="Negotiations"
+              value={salesFunnel.negotiations}
+            />
+            <MetricRow
+              icon={<CheckSquare size={14} className="text-indigo-600" />}
+              label="Follow-ups Done"
+              value={teamAnalytics.followUpsCompleted}
+            />
+            <MetricRow
+              icon={<Banknote size={14} className="text-emerald-700" />}
+              label="Confirmed Bookings"
+              value={salesFunnel.confirmedBookings}
+            />
+          </div>
+        </div>
+
+        <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
+          <span className="text-xs font-bold text-[var(--text-muted)]">
+            Booking Win Rate
+          </span>
+          <span className="text-base font-extrabold text-emerald-700 tabular-nums">
+            {salesFunnel.conversionRate}%
+          </span>
         </div>
       </div>
 
       {/* Revenue Analytics */}
-      <div style={{
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-subtle)",
-        boxShadow: "var(--shadow-sm)",
-        borderRadius: "var(--radius-xl)",
-        padding: 24,
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        gridColumn: "span 2"
-      }}>
-        <h3 style={{
-          fontSize: "var(--text-lg)",
-          fontWeight: 700,
-          color: "var(--text-primary)",
-          letterSpacing: "-0.01em",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginBottom: 24,
-          margin: "0 0 24px 0"
-        }}>
-          <IndianRupee size={20} style={{ color: "#f59e0b" }} />
-          Revenue Analytics
-        </h3>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          gap: 16,
-          marginBottom: 24
-        }}>
-          <RevenueCard label="Daily Revenue" value={revenueAnalytics.daily} />
-          <RevenueCard label="Weekly Revenue" value={revenueAnalytics.weekly} />
-          <RevenueCard label="Monthly Revenue" value={revenueAnalytics.monthly} />
-          <RevenueCard label="Quarterly Revenue" value={revenueAnalytics.quarterly} />
+      <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xs flex flex-col justify-between lg:col-span-2 space-y-5">
+        <div>
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-7 h-7 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700">
+              <IndianRupee size={15} />
+            </div>
+            <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+              Revenue Analytics & Projections
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <RevenueCard label="Daily Revenue" value={revenueAnalytics.daily} />
+            <RevenueCard label="Weekly Revenue" value={revenueAnalytics.weekly} />
+            <RevenueCard
+              label="Monthly Revenue"
+              value={revenueAnalytics.monthly}
+            />
+            <RevenueCard
+              label="Quarterly Revenue"
+              value={revenueAnalytics.quarterly}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-3 bg-purple-50/50 rounded-2xl border border-purple-100">
+            <span className="text-[10px] font-extrabold text-[var(--brand-700)] uppercase tracking-wider">
+              Avg Deal Value
+            </span>
+            <span className="text-xs font-extrabold text-purple-950 tabular-nums">
+              {new Intl.NumberFormat("en-IN", {
+                style: "currency",
+                currency: "INR",
+                maximumFractionDigits: 0,
+              }).format(revenueAnalytics.averageBookingValue)}
+            </span>
+          </div>
         </div>
 
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: 12,
-          background: "var(--bg-subtle)",
-          borderRadius: "var(--radius-lg)",
-          marginBottom: 16,
-          border: "1px solid var(--border-subtle)"
-        }}>
-          <span style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: "var(--text-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em"
-          }}>Avg Booking Value</span>
-          <span style={{ fontSize: "var(--text-sm)", fontWeight: 800, color: "var(--text-primary)" }}>
-            {new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(revenueAnalytics.averageBookingValue)}
+        <div className="space-y-2">
+          <span className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider">
+            Revenue Velocity (Last 7 Days)
           </span>
-        </div>
-
-        <div style={{ flex: 1, minHeight: 150, display: "flex", flexDirection: "column" }}>
-          <span style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: "var(--text-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            marginBottom: 8,
-            display: "block"
-          }}>Revenue Trend (Last 7 Days)</span>
-          <div style={{ flex: 1, position: "relative" }}>
-            <ResponsiveContainer width="100%" height="100%" minHeight={150}>
+          <div className="h-32 w-full">
+            <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueAnalytics.trend}>
                 <defs>
                   <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#9333ea" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#9333ea" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <Tooltip
-                  formatter={(value: any) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value)}
-                  labelFormatter={(label) => `Date: ${label}`}
+                  formatter={(value: any) =>
+                    new Intl.NumberFormat("en-IN", {
+                      style: "currency",
+                      currency: "INR",
+                      maximumFractionDigits: 0,
+                    }).format(value)
+                  }
                   contentStyle={{
-                    borderRadius: "8px",
-                    border: "1px solid var(--border-subtle)",
-                    boxShadow: "var(--shadow-sm)",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "var(--text-primary)",
+                    borderRadius: "16px",
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                    fontSize: "11px",
+                    fontWeight: 700,
                   }}
                 />
-                <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorTrend)" />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#9333ea"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#colorTrend)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -161,86 +165,44 @@ export function DetailedMetricsGrid({ metrics }: { metrics: any }) {
   );
 }
 
-function MetricRow({ icon, label, value }: { icon: React.ReactNode, label: string, value: number }) {
+function MetricRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+}) {
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: 12,
-      borderRadius: "var(--radius-lg)",
-      transition: "background 150ms ease",
-      cursor: "default"
-    }}
-    onMouseEnter={e => {
-      (e.currentTarget as HTMLElement).style.background = "var(--bg-subtle)";
-    }}
-    onMouseLeave={e => {
-      (e.currentTarget as HTMLElement).style.background = "transparent";
-    }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{
-          padding: 8,
-          background: "var(--bg-subtle)",
-          borderRadius: "var(--radius-md)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: "background 150ms ease"
-        }}>
-          {icon}
-        </div>
-        <span style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--text-secondary)" }}>{label}</span>
+    <div className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors">
+      <div className="flex items-center gap-2">
+        <div className="p-1 rounded-lg bg-slate-100">{icon}</div>
+        <span className="text-xs font-semibold text-slate-700">{label}</span>
       </div>
-      <span style={{
-        fontSize: "var(--text-sm)",
-        fontWeight: 800,
-        color: "var(--text-primary)",
-        background: "var(--bg-subtle)",
-        padding: "4px 12px",
-        borderRadius: "var(--radius-full)"
-      }}>
+      <span className="text-xs font-extrabold text-[var(--text-primary)] tabular-nums bg-slate-100 px-2 py-0.5 rounded-full">
         {value.toLocaleString()}
       </span>
     </div>
   );
 }
 
-function RevenueCard({ label, value }: { label: string, value: number }) {
+function RevenueCard({ label, value }: { label: string; value: number }) {
   return (
-    <div style={{
-      padding: 16,
-      background: "var(--bg-subtle)",
-      borderRadius: "var(--radius-lg)",
-      border: "1px solid var(--border-subtle)",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center"
-    }}>
-      <span style={{
-        fontSize: 11,
-        fontWeight: 700,
-        color: "var(--text-muted)",
-        textTransform: "uppercase",
-        letterSpacing: "0.05em",
-        marginBottom: 4,
-        display: "block"
-      }}>{label}</span>
-      <span style={{
-        fontSize: "var(--text-lg)",
-        fontWeight: 800,
-        color: "var(--text-primary)",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis"
-      }}>
+    <div className="p-3 bg-slate-50/70 border border-slate-100 rounded-2xl flex flex-col justify-center">
+      <span className="text-[9px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">
+        {label}
+      </span>
+      <span className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums truncate">
         {value >= 10000000
           ? `₹${(value / 10000000).toFixed(2)} Cr`
           : value >= 100000
-            ? `₹${(value / 100000).toFixed(2)} L`
-            : new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value)
-        }
+          ? `₹${(value / 100000).toFixed(2)} L`
+          : new Intl.NumberFormat("en-IN", {
+              style: "currency",
+              currency: "INR",
+              maximumFractionDigits: 0,
+            }).format(value)}
       </span>
     </div>
   );
