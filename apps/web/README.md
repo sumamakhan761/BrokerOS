@@ -109,15 +109,19 @@ The CRM relies on Mapbox for GPS-verified field meetings (Sourcing Managers) and
 
 ### 3. Run & Build
 
+All commands should be executed from the **monorepo root**:
+
 #### Development
 ```bash
-pnpm dev                      # Dev server → http://localhost:3000
-
+pnpm dev:web                                  # Dev server → http://localhost:3000
+# OR using workspace filter directly:
+pnpm --filter @brokeros/web dev
 ```
+
 #### Production
 ```bash
-pnpm build                    # Production build
-pnpm start                    # Serve production build
+pnpm --filter @brokeros/web build             # Production build
+pnpm --filter @brokeros/web start             # Serve production build
 ```
 
 ---

@@ -249,7 +249,7 @@ The fastest way to get the web platform running manually. This starts PostgreSQL
 docker compose up --build
 
 # Once running, open a new terminal to seed the database with demo users:
-docker exec -it crm-backend npx prisma db seed
+docker exec -it crm-backend pnpm db:seed
 # 🔑 View all demo users & passwords created: docs/role-password.md
 
 # Open in your browser:
@@ -263,32 +263,32 @@ docker exec -it crm-backend npx prisma db seed
 
 ### Option B: Manual Setup
 
+All development commands should be executed from the **monorepo root**:
+
 #### 1. Backend (API) & Database Setup
 ```bash
-# First, generate and seed the database using the Prisma package
-pnpm --filter @brokeros/prisma db:generate   # Generate Prisma client
-pnpm --filter @brokeros/prisma db:migrate    # Run pending migrations
-pnpm --filter @brokeros/prisma db:seed       # Populate database with sample data (🔑 View credentials: docs/role-password.md)
+# Generate, migrate, and seed the database
+pnpm db:generate             # Generate Prisma client
+pnpm db:migrate              # Run pending migrations
+pnpm db:seed                 # Populate database with sample data (🔑 View credentials: docs/role-password.md)
 
-# Start the API server
-cd apps/api
-pnpm start:dev              # Start dev server → http://localhost:3333
+# Start the API server (from root)
+pnpm dev:api                 # Start dev server → http://localhost:3333
 ```
 
 #### 2. Frontend (Web)
 ```bash
-cd apps/web
-pnpm dev                    # Start dev server → http://localhost:3000
+# Start the Next.js web dashboard (from root)
+pnpm dev:web                 # Start dev server → http://localhost:3000
 ```
 
 #### 3. Mobile (Android Only)
 ```bash
-cd apps/mobile
 # Set EXPO_PUBLIC_API_URL in apps/mobile/.env to your machine's LAN IP before starting!
-
-npx expo run:android        # Build natively and run on emulator/device
-#OR
-npx expo start              # Start Metro bundler (press 'a' to run on Android)
+pnpm dev:mobile              # Start Metro bundler (press 'a' to run on Android)
+# OR to compile and run natively on Android emulator/device:
+cd apps/mobile
+npx expo run:android
 ```
 > For detailed instructions on setting up an Android emulator, connecting a physical device, and configuring Google Services for push notifications, read the **[Mobile README](apps/mobile/README.md)**.
 

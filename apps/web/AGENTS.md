@@ -67,11 +67,11 @@ You **MUST** consult the appropriate skill before making changes, based on the t
 
 > **CRITICAL SCRIPTING RULE:** If you are creating a new utility, migration, or maintenance script, DO NOT put it inside `apps/web/`. Create it in the monorepo root at `scripts/` and execute it from the root using `pnpm run script scripts/your-script.ts`.
 
-Run from `apps/web/` directory (or use `pnpm --filter @brokeros/web <cmd>` from root):
+Run from repository root:
 
 ```bash
-pnpm dev        # Next.js dev server (port 3000)
-pnpm build      # production build
-pnpm start      # serve production build
-pnpm lint       # ESLint
+pnpm dev:web                     # Next.js dev server (port 3000) (or pnpm --filter @brokeros/web dev)
+pnpm --filter @brokeros/web build  # production build
+pnpm --filter @brokeros/web start  # serve production build
+pnpm --filter @brokeros/web lint   # ESLint
 ```
