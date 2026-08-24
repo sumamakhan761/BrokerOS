@@ -48,12 +48,13 @@ export default function BrokerFilters({
               <Picker
                 selectedValue={status}
                 onValueChange={(val) => setStatus(val)}
-                style={{ height: 56 }}
+                style={{ height: 56, color: '#0f172a' }}
                 itemStyle={{ fontSize: 16 }}
+                dropdownIconColor="#0f172a"
               >
                 <Picker.Item label="All Statuses" value="" color="#64748b" />
                 {allStatuses.map(s => (
-                  <Picker.Item key={s.value} label={s.label} value={s.value} />
+                  <Picker.Item key={s.value} label={s.label} value={s.value} color="#0f172a" />
                 ))}
               </Picker>
             </View>

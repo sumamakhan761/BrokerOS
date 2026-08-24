@@ -21,13 +21,14 @@ export default function BrokerMeetingEditMode({ svId, editForm, setEditForm, sav
           <Picker
             selectedValue={editForm.satisfactionLevel}
             onValueChange={(itemValue) => setEditForm({ ...editForm, satisfactionLevel: itemValue })}
-            style={{ height: 50 }}
+            style={{ height: 50, color: '#0f172a' }}
+            dropdownIconColor="#0f172a"
           >
-            <Picker.Item label="Select..." value="" />
-            <Picker.Item label="Very Positive" value="VERY_POSITIVE" />
-            <Picker.Item label="Positive" value="POSITIVE" />
-            <Picker.Item label="Neutral" value="NEUTRAL" />
-            <Picker.Item label="Negative" value="NEGATIVE" />
+            <Picker.Item label="Select..." value="" color="#94a3b8" />
+            <Picker.Item label="Very Positive" value="VERY_POSITIVE" color="#0f172a" />
+            <Picker.Item label="Positive" value="POSITIVE" color="#0f172a" />
+            <Picker.Item label="Neutral" value="NEUTRAL" color="#0f172a" />
+            <Picker.Item label="Negative" value="NEGATIVE" color="#0f172a" />
           </Picker>
         </View>
       </View>

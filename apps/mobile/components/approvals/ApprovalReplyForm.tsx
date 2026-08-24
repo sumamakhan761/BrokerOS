@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { View, Text, Pressable, TextInput, ActivityIndicator } from 'react-native';
+import { CheckCircle2, XCircle, RotateCcw, Paperclip, Send, X } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 interface ApprovalReplyFormProps {
   ticketStatus: string;
@@ -33,83 +34,143 @@ export function ApprovalReplyForm({
 }: ApprovalReplyFormProps) {
   if (ticketStatus === 'CLOSED') return null;
 
+  const onInstantAction = (action: 'APPROVE' | 'REJECT') => {
+    if (action === 'APPROVE') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    }
+    handleInstantAction(action);
+  };
+
+  const onSendReply = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    handleReply();
+  };
+
+  const onRedoAction = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    handleRedo();
+  };
+
+  const onAttach = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    handleSelectFile();
+  };
+
+  const canSend = Boolean(replyDesc.trim() || replyFile);
+
   return (
-    <View className="p-4 bg-white border-t border-slate-200">
+    <View className="p-4 bg-white border-t border-slate-200/80 shadow-xs">
       {/* Manager Instant Action Buttons */}
       {role === 'SALES_MANAGER' && ticketStatus === 'REQUESTED' && (
-        <View className="flex-row justify-center gap-2 mb-3">
-          <TouchableOpacity
-            className="flex-1 bg-green-600 p-2.5 rounded-xl flex-row justify-center items-center"
-            onPress={() => handleInstantAction('APPROVE')}
+        <View className="flex-row justify-center gap-2.5 mb-3">
+          <Pressable
+            className="flex-1 bg-emerald-600 p-3 rounded-2xl flex-row justify-center items-center gap-1.5 active:scale-[0.98] transition-transform shadow-xs"
+            onPress={() => onInstantAction('APPROVE')}
             disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Approve Ticket"
           >
-            <Feather name="check-circle" size={16} color="white" />
-            <Text className="text-white font-bold ml-1.5 text-sm">Approve</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 bg-red-600 p-2.5 rounded-xl flex-row justify-center items-center"
-            onPress={() => handleInstantAction('REJECT')}
+            <CheckCircle2 size={18} color="white" strokeWidth={2.5} />
+            <Text
+              className="text-white font-extrabold text-sm"
+              style={{ includeFontPadding: false }}
+            >
+              Approve
+            </Text>
+          </Pressable>
+
+          <Pressable
+            className="flex-1 bg-rose-600 p-3 rounded-2xl flex-row justify-center items-center gap-1.5 active:scale-[0.98] transition-transform shadow-xs"
+            onPress={() => onInstantAction('REJECT')}
             disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Reject Ticket"
           >
-            <Feather name="x-circle" size={16} color="white" />
-            <Text className="text-white font-bold ml-1.5 text-sm">Reject</Text>
-          </TouchableOpacity>
+            <XCircle size={18} color="white" strokeWidth={2.5} />
+            <Text
+              className="text-white font-extrabold text-sm"
+              style={{ includeFontPadding: false }}
+            >
+              Reject
+            </Text>
+          </Pressable>
         </View>
       )}
 
+      {/* Redo Decision Button */}
       {role === 'SALES_MANAGER' && (ticketStatus === 'APPROVED' || ticketStatus === 'REJECTED') && ticket.redoCount < 2 && (
         <View className="flex-row justify-center mb-3">
-          <TouchableOpacity
-            className="flex-1 bg-yellow-500 p-2.5 rounded-xl flex-row justify-center items-center"
-            onPress={handleRedo}
+          <Pressable
+            className="flex-1 bg-amber-500 p-3 rounded-2xl flex-row justify-center items-center gap-1.5 active:scale-[0.98] transition-transform"
+            onPress={onRedoAction}
             disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Redo Decision"
           >
-            <Feather name="rotate-ccw" size={16} color="white" />
-            <Text className="text-white font-bold ml-1.5 text-sm">Redo Decision ({2 - ticket.redoCount} left)</Text>
-          </TouchableOpacity>
+            <RotateCcw size={16} color="white" strokeWidth={2.5} />
+            <Text
+              className="text-white font-extrabold text-sm"
+              style={{ includeFontPadding: false }}
+            >
+              Redo Decision ({2 - ticket.redoCount} left)
+            </Text>
+          </Pressable>
         </View>
       )}
 
       {/* Chat Input Area */}
-      <View className="flex-col gap-2">
+      <View className="gap-2">
         {replyFile && (
-          <View className="flex-row items-center bg-indigo-50 border border-indigo-100 rounded-lg p-2 self-start">
-            <Feather name="paperclip" size={14} color="#4338ca" />
-            <Text className="text-indigo-700 font-semibold text-xs ml-1 mr-2" numberOfLines={1} style={{ maxWidth: 200 }}>
+          <View className="flex-row items-center bg-blue-50 border border-blue-200/80 rounded-xl p-2.5 self-start">
+            <Paperclip size={14} color="#2563eb" />
+            <Text
+              className="text-blue-700 font-bold text-xs ml-1.5 mr-2"
+              numberOfLines={1}
+              style={{ maxWidth: 220, includeFontPadding: false }}
+            >
               {replyFile.name}
             </Text>
-            <TouchableOpacity onPress={() => setReplyFile(null)}>
-              <Feather name="x-circle" size={16} color="#818cf8" />
-            </TouchableOpacity>
+            <Pressable
+              onPress={() => setReplyFile(null)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <X size={14} color="#64748b" />
+            </Pressable>
           </View>
         )}
 
         <View className="flex-row items-center gap-2">
-          <TouchableOpacity
-            onPress={handleSelectFile}
-            className="p-2 rounded-full bg-slate-50 border border-slate-200"
+          <Pressable
+            onPress={onAttach}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            className="w-11 h-11 rounded-2xl bg-slate-50 border border-slate-200/80 items-center justify-center active:scale-95 transition-transform"
           >
-            <Feather name="paperclip" size={20} color="#64748b" />
-          </TouchableOpacity>
+            <Paperclip size={18} color="#64748b" />
+          </Pressable>
 
           <TextInput
-            placeholder="Type a message..."
+            placeholder="Type a message or rationale…"
+            placeholderTextColor="#94a3b8"
             value={replyDesc}
             onChangeText={setReplyDesc}
-            className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 h-11 text-slate-800"
+            className="flex-1 bg-slate-50/80 border border-slate-200/80 rounded-2xl px-4 h-11 text-slate-900 text-sm font-medium"
           />
 
-          <TouchableOpacity
-            onPress={handleReply}
-            disabled={loading || (!replyDesc.trim() && !replyFile)}
-            className={`p-2.5 rounded-full flex justify-center items-center ${(loading || (!replyDesc.trim() && !replyFile)) ? 'bg-indigo-300' : 'bg-indigo-600'}`}
+          <Pressable
+            onPress={onSendReply}
+            disabled={loading || !canSend}
+            className={`w-11 h-11 rounded-2xl items-center justify-center active:scale-95 transition-transform shadow-xs ${
+              !canSend || loading ? 'bg-blue-300' : 'bg-blue-600'
+            }`}
           >
             {loading ? (
               <ActivityIndicator color="white" size="small" />
             ) : (
-              <Feather name="send" size={18} color="white" />
+              <Send size={18} color="white" strokeWidth={2.2} />
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </View>
