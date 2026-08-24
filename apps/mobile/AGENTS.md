@@ -70,6 +70,8 @@ You **MUST** consult the appropriate skill before making changes, based on the t
   `.agents/skills/expo-router-expert/SKILL.md`
 - **General UI & Components**: If you are asked to build or modify UI components, surfaces, icons, or touch interactions, read:
   `.agents/skills/mobile-ui/SKILL.md`
+- **UX Patterns & Interaction Architecture**: For Floating Action Buttons (FAB), bottom sheets, pull-to-refresh feeds, and empty states, read:
+  `.agents/skills/mobile-interface/SKILL.md`
 - **Layouts & Spacing**: When structuring screens with Flexbox, `SafeAreaView`, `FlatList`, `ScrollView`, or `KeyboardAvoidingView`, read:
   `.agents/skills/mobile-layout/SKILL.md`
 - **Colors & Theming**: When applying colors, NativeWind classes, or dark mode theming, read:
