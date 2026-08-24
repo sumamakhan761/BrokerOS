@@ -58,7 +58,8 @@ export default function SiteVisitModal({
                 <Picker
                   selectedValue={siteVisitData.projectId}
                   onValueChange={(itemValue) => setSiteVisitData({ ...siteVisitData, projectId: itemValue })}
-                  style={{ backgroundColor: 'transparent' }}
+                  style={{ backgroundColor: 'transparent', color: '#111827' }}
+                  dropdownIconColor="#111827"
                   enabled={!isSaving}
                 >
                   <Picker.Item label="Select Project" value="" color="#9ca3af" />

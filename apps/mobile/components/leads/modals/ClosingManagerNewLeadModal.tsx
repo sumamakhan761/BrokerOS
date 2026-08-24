@@ -200,10 +200,12 @@ export default function ClosingManagerNewLeadModal({ isVisible, onClose, onSucce
               <Picker
                 selectedValue={formData.interestedProjectId}
                 onValueChange={(val) => setFormData({ ...formData, interestedProjectId: val })}
+                style={{ color: '#0f172a' }}
+                dropdownIconColor="#0f172a"
               >
                 <Picker.Item label="Select Project..." value="" color="#94a3b8" />
                 {projects.map((p) => (
-                  <Picker.Item key={p.id} label={p.name} value={p.id} />
+                  <Picker.Item key={p.id} label={p.name} value={p.id} color="#0f172a" />
                 ))}
               </Picker>
             </View>
@@ -216,10 +218,12 @@ export default function ClosingManagerNewLeadModal({ isVisible, onClose, onSucce
                     selectedValue={formData.interestedTowerId}
                     onValueChange={(val) => setFormData({ ...formData, interestedTowerId: val })}
                     enabled={!!formData.interestedProjectId}
+                    style={{ color: '#0f172a' }}
+                    dropdownIconColor="#0f172a"
                   >
                     <Picker.Item label="Select Tower..." value="" color="#94a3b8" />
                     {towers.map((t) => (
-                      <Picker.Item key={t.id} label={t.name} value={t.id} />
+                      <Picker.Item key={t.id} label={t.name} value={t.id} color="#0f172a" />
                     ))}
                   </Picker>
                 </View>
@@ -231,10 +235,12 @@ export default function ClosingManagerNewLeadModal({ isVisible, onClose, onSucce
                     selectedValue={formData.interestedUnitId}
                     onValueChange={(val) => setFormData({ ...formData, interestedUnitId: val })}
                     enabled={!!formData.interestedTowerId}
+                    style={{ color: '#0f172a' }}
+                    dropdownIconColor="#0f172a"
                   >
                     <Picker.Item label="Select Unit..." value="" color="#94a3b8" />
                     {units.map((u) => (
-                      <Picker.Item key={u.id} label={u.unitNumber} value={u.id} />
+                      <Picker.Item key={u.id} label={u.unitNumber} value={u.id} color="#0f172a" />
                     ))}
                   </Picker>
                 </View>
@@ -247,10 +253,12 @@ export default function ClosingManagerNewLeadModal({ isVisible, onClose, onSucce
                 selectedValue={formData.brokerId}
                 onValueChange={(val) => setFormData({ ...formData, brokerId: val })}
                 enabled={!!formData.interestedProjectId}
+                style={{ color: '#0f172a' }}
+                dropdownIconColor="#0f172a"
               >
                 <Picker.Item label="Select Broker..." value="" color="#94a3b8" />
                 {brokers.map((b) => (
-                  <Picker.Item key={b.id} label={`${b.name} (${b.brokerCode})`} value={b.id} />
+                  <Picker.Item key={b.id} label={`${b.name} (${b.brokerCode})`} value={b.id} color="#0f172a" />
                 ))}
               </Picker>
             </View>
