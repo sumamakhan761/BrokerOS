@@ -1,8 +1,19 @@
-import React from 'react';
+import React from "react";
 
-export function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+export function Card({
+  children,
+  className = "",
+  hoverable = true,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  hoverable?: boolean;
+}) {
   return (
-    <div className={`bg-white rounded-[16px] p-[24px] shadow-sm border border-gray-100 ${className}`}>
+    <div
+      className={`bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm ${hoverable ? "hover-lift" : ""
+        } ${className}`}
+    >
       {children}
     </div>
   );
