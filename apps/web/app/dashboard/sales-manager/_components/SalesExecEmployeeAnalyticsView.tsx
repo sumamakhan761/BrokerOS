@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { Loader2, TrendingUp } from "lucide-react";
 import { FinancialOverview } from "../../sales-executive/analytics/components/FinancialOverview";
@@ -7,7 +9,11 @@ import { TowerHeatmap } from "../../sales-executive/analytics/components/TowerHe
 import { ProjectAnalytics } from "../../sales-executive/analytics/components/ProjectAnalytics";
 import { DailyActivityHeatmap } from "../../sales-executive/analytics/components/DailyActivityHeatmap";
 
-export function SalesExecEmployeeAnalyticsView({ employeeId }: { employeeId: string }) {
+export function SalesExecEmployeeAnalyticsView({
+  employeeId,
+}: {
+  employeeId: string;
+}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -17,9 +23,12 @@ export function SalesExecEmployeeAnalyticsView({ employeeId }: { employeeId: str
       try {
         setLoading(true);
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
-        
-        const res = await authClient.$fetch<any>(`/api/dashboard/sales-manager/employees/${employeeId}/analytics`, { baseURL: baseUrl });
-        
+
+        const res = await authClient.$fetch<any>(
+          `/api/dashboard/sales-manager/employees/${employeeId}/analytics`,
+          { baseURL: baseUrl }
+        );
+
         if (res.data) setAnalyticsData(res.data);
       } catch (e: any) {
         setError(e?.message || "Failed to load analytics");
@@ -32,49 +41,55 @@ export function SalesExecEmployeeAnalyticsView({ employeeId }: { employeeId: str
 
   if (loading) {
     return (
-      <div className="min-h-[40vh] flex flex-col items-center justify-center bg-white rounded-2xl border border-slate-200 shadow-sm">
-        <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
-        <p className="text-sm text-slate-500 font-medium">Crunching the numbers...</p>
+      <div className="min-h-[40vh] flex flex-col items-center justify-center bg-white rounded-3xl border border-slate-200/80 shadow-2xs gap-3">
+        <Loader2 className="w-8 h-8 text-[var(--brand-600)] animate-spin" />
+        <p className="text-xs font-semibold text-[var(--text-muted)] m-0">
+          Calculating executive analytics…
+        </p>
       </div>
     );
   }
 
   if (error || !analyticsData) {
     return (
-      <div className="bg-red-50 text-red-700 p-6 rounded-2xl border border-red-100 font-medium">
+      <div className="bg-rose-50 text-rose-700 p-6 rounded-3xl border border-rose-200 text-xs font-bold">
         {error || "Failed to load analytics data"}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-8 w-full animate-[fadeUp_0.4s_ease_forwards]">
-      <style>{`
-        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-      `}</style>
-      
+    <div className="space-y-8">
       <FinancialOverview financialData={analyticsData.financial} />
-      
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
-        <div className="xl:col-span-1">
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
           <ConversionFunnelChart funnelData={analyticsData.funnel} />
         </div>
-        <div className="xl:col-span-2">
-          {/* Note: Removed Leaderboard from individual analytics view since it's an individual, not the whole team */}
-          <div className="h-full bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col items-center justify-center min-h-[400px]">
-             <TrendingUp className="w-12 h-12 text-slate-200 mb-4" />
-             <h3 className="text-lg font-bold text-slate-800">Conversion Funnel</h3>
-             <p className="text-slate-500 text-sm mt-2 text-center max-w-sm">
-               Review this employee's pipeline efficiency from initial contact to final booking.
-             </p>
+        <div className="lg:col-span-2">
+          <div className="h-full bg-white rounded-3xl border border-slate-200/80 shadow-2xs p-6 flex flex-col items-center justify-center min-h-[360px] text-center">
+            <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)] mb-3">
+              <TrendingUp size={22} />
+            </div>
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)] m-0">
+              Deal Progression Analysis
+            </h3>
+            <p className="text-xs text-[var(--text-muted)] font-medium mt-1 max-w-sm m-0">
+              Audit this executive's site visits, negotiation discount velocity & final booking closure rates.
+            </p>
           </div>
         </div>
       </div>
 
-      <TowerHeatmap inventoryData={analyticsData.inventory} />
-      
+      <div className="space-y-3">
+        <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0 px-1">
+          Project Inventory Velocity
+        </h3>
+        <TowerHeatmap inventoryData={analyticsData.inventory} />
+      </div>
+
       <DailyActivityHeatmap activityData={analyticsData.activity} />
-      
+
       <ProjectAnalytics projectData={analyticsData.project} />
     </div>
   );

@@ -4,6 +4,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SalesExecLeadTableClient } from "@/features/leads/components/tables/SalesExecLeadTableClient";
+import { Users2, Loader2 } from "lucide-react";
 
 export default function SalesManagerLeadManagement() {
   const router = useRouter();
@@ -21,10 +22,10 @@ export default function SalesManagerLeadManagement() {
     if (user?.roleId) {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       fetch(`${baseUrl}/roles`)
-        .then(res => res.json())
-        .then(roles => {
+        .then((res) => res.json())
+        .then((roles) => {
           const role = roles.find((r: any) => r.id === user.roleId);
-          if (role && role.code === 'SALES_MANAGER') {
+          if (role && role.code === "SALES_MANAGER") {
             setIsAuthorized(true);
           } else {
             router.replace("/dashboard");
@@ -35,15 +36,29 @@ export default function SalesManagerLeadManagement() {
   }, [session, isPending, router, isAuthorized]);
 
   if (!isAuthorized) {
-    return <div className="p-8">Verifying access...</div>;
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-8 h-8 text-[var(--brand-600)] animate-spin" />
+        <p className="text-xs font-semibold text-[var(--text-muted)]">
+          Verifying sales manager permissions…
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 animate-enter">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Lead Management</h1>
-          <p className="text-gray-500 text-sm mt-1">Oversee all leads assigned to your Sales Executives</p>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight flex items-center gap-2.5 m-0">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+              <Users2 size={18} />
+            </div>
+            <span>Executive Lead Management</span>
+          </h1>
+          <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5 m-0">
+            Oversee deal pipelines, site visit outcomes & negotiations across your Sales Executives
+          </p>
         </div>
       </div>
 
