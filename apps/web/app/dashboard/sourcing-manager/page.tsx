@@ -8,15 +8,27 @@ import { Leaderboard } from "@/components/dashboard/Leaderboard";
 import { LiveMapCard } from "@/components/dashboard/LiveMapCard";
 import { SourcingManagerTasks } from "./components/SourcingManagerTasks";
 import {
-  UserCheck, UserPlus, CalendarCheck, CalendarDays,
-  Briefcase, Building2, DollarSign, TrendingUp,
+  UserCheck,
+  UserPlus,
+  CalendarCheck,
+  CalendarDays,
+  Briefcase,
+  Building2,
+  DollarSign,
+  TrendingUp,
 } from "lucide-react";
 
-export default function SourcingManagerDashboard({ viewAsEmployeeId }: { viewAsEmployeeId?: string }) {
+export default function SourcingManagerDashboard({
+  viewAsEmployeeId,
+}: {
+  viewAsEmployeeId?: string;
+}) {
   const { data: session } = authClient.useSession();
   const userId = (session?.user as any)?.id ?? null;
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [data, setData]     = useState<any>(null);
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading"
+  );
+  const [data, setData] = useState<any>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -34,77 +46,141 @@ export default function SourcingManagerDashboard({ viewAsEmployeeId }: { viewAsE
       }
     }
     fetchData();
-  }, []);
+  }, [viewAsEmployeeId]);
 
-  const { activeBrokers, newBrokers, todayMeetings, todayFollowUps, revenueStats } = data ?? {};
+  const {
+    activeBrokers,
+    newBrokers,
+    todayMeetings,
+    todayFollowUps,
+    revenueStats,
+  } = data ?? {};
 
-  const topStatItems = data ? [
-    { label: "Active Brokers (Deals)", value: activeBrokers ?? 0,  icon: UserCheck,    accent: "#15803d" },
-    { label: "New Brokers",            value: newBrokers ?? 0,     icon: UserPlus,     accent: "#0369a1" },
-    { label: "Today's Meetings",       value: todayMeetings ?? 0,  icon: CalendarCheck,accent: "#7c3aed" },
-    { label: "Today's Follow-ups",     value: todayFollowUps ?? 0, icon: CalendarDays, accent: "#b45309" },
-  ] : [];
+  const topStatItems = data
+    ? [
+        {
+          label: "Active Brokers (Deals)",
+          value: activeBrokers ?? 0,
+          icon: UserCheck,
+          accent: "#10b981",
+        },
+        {
+          label: "New Brokers",
+          value: newBrokers ?? 0,
+          icon: UserPlus,
+          accent: "#3b82f6",
+        },
+        {
+          label: "Today's Meetings",
+          value: todayMeetings ?? 0,
+          icon: CalendarCheck,
+          accent: "#9333ea",
+        },
+        {
+          label: "Today's Follow-ups",
+          value: todayFollowUps ?? 0,
+          icon: CalendarDays,
+          accent: "#f59e0b",
+        },
+      ]
+    : [];
 
-  const revenueStatItems = revenueStats ? [
-    { label: "Bookings Generated",    value: revenueStats.bookingsGenerated ?? 0, icon: Briefcase,   accent: "#7c3aed" },
-    { label: "Booking Revenue",       value: "₹" + ((revenueStats.bookingRevenueGenerated || 0) / 100000).toFixed(1) + "L", icon: Building2, accent: "#15803d" },
-    { label: "Broker Commission Paid",value: "₹" + ((revenueStats.brokerCommissionPaid || 0) / 100000).toFixed(1) + "L",   icon: DollarSign,accent: "#0369a1" },
-    { label: "Revenue from Handovers",value: "₹" + ((revenueStats.brokerRevenueGenerated || 0) / 100000).toFixed(1) + "L", icon: TrendingUp, accent: "#6d28d9" },
-  ] : [];
+  const revenueStatItems = revenueStats
+    ? [
+        {
+          label: "Bookings Generated",
+          value: revenueStats.bookingsGenerated ?? 0,
+          icon: Briefcase,
+          accent: "#9333ea",
+        },
+        {
+          label: "Booking Revenue",
+          value:
+            "₹" +
+            ((revenueStats.bookingRevenueGenerated || 0) / 100000).toFixed(1) +
+            "L",
+          icon: Building2,
+          accent: "#10b981",
+        },
+        {
+          label: "Broker Commission Paid",
+          value:
+            "₹" +
+            ((revenueStats.brokerCommissionPaid || 0) / 100000).toFixed(1) +
+            "L",
+          icon: DollarSign,
+          accent: "#3b82f6",
+        },
+        {
+          label: "Revenue from Handovers",
+          value:
+            "₹" +
+            ((revenueStats.brokerRevenueGenerated || 0) / 100000).toFixed(1) +
+            "L",
+          icon: TrendingUp,
+          accent: "#7c3aed",
+        },
+      ]
+    : [];
 
-  const lbEntries = (data?.topPerformingBrokers ?? []).map((b: any, i: number) => ({
-    ...b,
-    userId: b.id,
-    name: b.name,
-    rank: b.rank ?? i + 1,
-  }));
+  const lbEntries = (data?.topPerformingBrokers ?? []).map(
+    (b: any, i: number) => ({
+      ...b,
+      userId: b.id,
+      name: b.name,
+      rank: b.rank ?? i + 1,
+    })
+  );
 
   return (
     <DashboardPageWrapper
       loading={status === "loading"}
-      error={status === "error" ? "Failed to load dashboard. Please try again." : null}
-      title="Sourcing Overview"
-      subtitle="Track your brokers' performance, meetings, and generated revenue."
+      error={
+        status === "error"
+          ? "Failed to load sourcing manager dashboard. Please try again."
+          : null
+      }
+      title="Sourcing Manager Command Center"
+      subtitle="Track channel partner network engagement, broker meetings, and generated deal revenue."
     >
       {/* Top stats */}
       {data && <StatCards items={topStatItems} cols={4} />}
 
       {/* Revenue stats */}
       {revenueStats && (
-        <>
-          <div style={{
-            fontSize: "var(--text-lg)",
-            fontWeight: 700,
-            color: "var(--text-primary)",
-            letterSpacing: "-0.02em",
-          }}>
-            Revenue & Performance
-          </div>
+        <div className="space-y-3">
+          <h2 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wider m-0">
+            Channel Partner Sourcing Revenue & Payouts
+          </h2>
           <StatCards items={revenueStatItems} cols={4} />
-        </>
+        </div>
       )}
 
       {/* Tasks + Broker Leaderboard */}
       {data && (
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 3fr", gap: 16 }}>
-          <SourcingManagerTasks dashData={data} />
-          <Leaderboard
-            title="Top Performing Brokers"
-            entries={lbEntries}
-            columns={[
-              { key: "bookingsGenerated", label: "Books" },
-              { key: "unitsSold",         label: "Sold"  },
-              { key: "score",             label: "Score" },
-            ]}
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          <div className="lg:col-span-2">
+            <SourcingManagerTasks dashData={data} />
+          </div>
+          <div className="lg:col-span-3">
+            <Leaderboard
+              title="Top Performing Channel Partners (Brokers)"
+              entries={lbEntries}
+              columns={[
+                { key: "bookingsGenerated", label: "Deals" },
+                { key: "unitsSold", label: "Sold" },
+                { key: "score", label: "Score" },
+              ]}
+            />
+          </div>
         </div>
       )}
 
       {/* Live Map */}
       <LiveMapCard
         userId={userId}
-        title="Live Broker Tracking"
-        subtitle="Syncs from mobile app automatically"
+        title="Live Sourcing Manager & Field GPS Radar"
+        subtitle="Real-time broker visit locations synced from the field agent mobile application"
       />
     </DashboardPageWrapper>
   );
