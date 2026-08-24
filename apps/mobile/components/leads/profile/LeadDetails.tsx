@@ -124,11 +124,12 @@ export default function LeadDetails({
               <Picker
                 selectedValue={leadInfoData.sourceId}
                 onValueChange={(val) => setLeadInfoData({ ...leadInfoData, sourceId: val })}
-                style={{ height: 50, width: '100%' }}
+                style={{ height: 50, width: '100%', color: '#0f172a' }}
+                dropdownIconColor="#0f172a"
               >
                 <Picker.Item label="Select a source..." value="" color="#9ca3af" />
                 {availableSources.map((s) => (
-                  <Picker.Item key={s.id} label={s.name} value={s.id} />
+                  <Picker.Item key={s.id} label={s.name} value={s.id} color="#0f172a" />
                 ))}
               </Picker>
             </View>
@@ -151,11 +152,12 @@ export default function LeadDetails({
               <Picker
                 selectedValue={leadInfoData.interestedProjectId}
                 onValueChange={(val) => setLeadInfoData({ ...leadInfoData, interestedProjectId: val })}
-                style={{ height: 50, width: '100%' }}
+                style={{ height: 50, width: '100%', color: '#0f172a' }}
+                dropdownIconColor="#0f172a"
               >
                 <Picker.Item label="Select a project..." value="" color="#9ca3af" />
                 {availableProjects.map((p) => (
-                  <Picker.Item key={p.id} label={p.name} value={p.id} />
+                  <Picker.Item key={p.id} label={p.name} value={p.id} color="#0f172a" />
                 ))}
               </Picker>
             </View>
