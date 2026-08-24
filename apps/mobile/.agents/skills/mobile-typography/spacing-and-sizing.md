@@ -1,16 +1,46 @@
-# Spacing and Sizing
+# Type Scale & Spacing System in NativeWind
 
-## NativeWind Type Scale
-Define a small set of sizes (`text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl`) and deviate from it as little as possible. Hard-coded `style={{ fontSize: 14 }}` breaks down at scale and violates design consistency.
+---
 
-## Line-Height by Role
-- **Headings** need tighter line-height, around `1.1` to `1.2` (`leading-tight`). 
-- **Body copy** needs `1.5` (`leading-normal`). 
-- **Rule of thumb**: Tight line-height is for short text. Anything that wraps to three or more lines needs at least `1.4`.
+## 1. Native Mobile Type Scale
 
-## iOS Inputs at 16px
-To maintain a premium feel and ensure touch targets remain large enough without looking unbalanced, keep `<TextInput>` text at `16px` (`text-base`). While React Native doesn't force pinch-to-zoom on inputs like Mobile Safari does, inputs smaller than 16px on mobile screens are ergonomically difficult to read and tap.
+| Size Token | Font Size | Line Height | Usage |
+| :--- | :--- | :--- | :--- |
+| `text-[9px]` | 9px | 12px | Micro tags, notification dot badges |
+| `text-[10px]` | 10px | 14px | Uppercase section overlines, chip labels |
+| `text-xs` | 12px | 16px | Meta captions, timestamps, secondary notes |
+| `text-sm` | 14px | 20px | Primary card title, form input text, list body |
+| `text-base` | 16px | 24px | Primary action buttons, lead headline |
+| `text-lg` | 18px | 26px | Screen section headers, subheadings |
+| `text-xl` | 20px | 28px | Modal titles, key metric numbers |
+| `text-2xl` | 24px | 32px | Primary dashboard KPI counters |
+| `text-3xl` | 30px | 36px | Main dashboard welcome hero greeting |
 
-## Letter Spacing
-NativeWind supports `tracking-tight` and `tracking-wide`.
-Large headings often look better with slightly negative letter-spacing (`tracking-tight`). Small uppercase labels need positive letter-spacing (`tracking-widest`) so letters do not feel crowded. Body copy at reading sizes needs neither.
+---
+
+## 2. Text Input Font Size Rule
+
+On iOS, if an input has a font size smaller than `16px`, Safari and iOS WebViews will trigger an aggressive automatic screen zoom that disorients the user.
+
+```tsx
+// ✅ SAFE: 16px font size on mobile inputs
+<TextInput
+  className="h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-base text-slate-900 dark:text-white"
+  placeholderTextColor="#94a3b8"
+/>
+```
+
+---
+
+## 3. Optical Alignment & Android Padding Fix
+
+Always disable default Android font padding when aligning text beside icons:
+
+```tsx
+<View className="flex-row items-center gap-2">
+  <Calendar size={16} color="#64748b" />
+  <Text style={{ includeFontPadding: false }} className="text-xs font-semibold text-slate-600">
+    Site Visit Scheduled
+  </Text>
+</View>
+```

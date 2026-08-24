@@ -1,18 +1,79 @@
-# Fonts and Scaling
+# Mobile Fonts, Dynamic Type & Tabular Figures
 
-## System Font Scaling (Dynamic Type)
-By default, React Native scales all `<Text>` based on the user's OS accessibility settings (iOS Dynamic Type or Android Display Size). 
+---
 
-**Rule:** Do NOT disable `allowFontScaling={false}` globally.
-Only disable it for fixed UI elements (like a circular icon button or a strict tab bar) where text wrapping would break the layout entirely.
+## 1. Custom Font Loading in Expo 54
 
+BrokerOS uses **Plus Jakarta Sans** for UI headers/body and **Geist Mono** for financial figures and metrics.
+
+### App Setup (`app/_layout.tsx`)
 ```tsx
-// Only do this if absolutely necessary for layout integrity
-<Text allowFontScaling={false}>Fixed Tab Name</Text>
+import { useFonts, PlusJakartaSans_400Regular, PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold, PlusJakartaSans_800ExtraBold } from '@expo-google-fonts/plus-jakarta-sans';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
+
+SplashScreen.preventAutoHideAsync();
+
+export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    'PlusJakartaSans-Regular': PlusJakartaSans_400Regular,
+    'PlusJakartaSans-SemiBold': PlusJakartaSans_600SemiBold,
+    'PlusJakartaSans-Bold': PlusJakartaSans_700Bold,
+    'PlusJakartaSans-ExtraBold': PlusJakartaSans_800ExtraBold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
+
+  return <RootNavigation />;
+}
 ```
 
-## Custom Fonts
-We rely on `expo-font` to load custom fonts. Ensure that when applying font families via NativeWind (e.g. `font-sans`), the font is properly loaded in the `_layout.tsx` file using `useFonts`.
+---
 
-## Font Weights
-React Native handles `fontWeight` via mapping to the OS font. Below `18px`, stay at weight `400`+. Weights under `300` are display-only (`28px`+) and disappear at text sizes on mobile screens due to sub-pixel rendering limitations on Android.
+## 2. Indian Rupee (`₹`) & Tabular Figures
+
+Real estate pricing and financial metrics must not jitter or shift horizontally during counter increments or table rendering.
+
+```tsx
+import { Text, TextProps } from 'react-native';
+
+export function formatINR(amount: number): string {
+  if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
+  if (amount >= 100000) return `₹${(amount / 100000).toFixed(2)} L`;
+  if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)} K`;
+  return `₹${amount.toLocaleString('en-IN')}`;
+}
+
+export function PriceText({ amount, className = '', ...props }: { amount: number; className?: string } & TextProps) {
+  return (
+    <Text
+      {...props}
+      style={[{ fontVariant: ['tabular-nums'], includeFontPadding: false }, props.style]}
+      className={`font-black text-slate-900 dark:text-white ${className}`}
+    >
+      {formatINR(amount)}
+    </Text>
+  );
+}
+```
+
+---
+
+## 3. Dynamic Type Scaling Guard
+
+Accessibility font scaling on iOS and Android can inflate text up to 300%. To prevent action buttons from clipping:
+
+```tsx
+<Text 
+  maxFontSizeMultiplier={1.25} 
+  className="text-xs font-bold text-slate-700 dark:text-slate-300"
+>
+  Scheduled: Tomorrow, 11:30 AM
+</Text>
+```

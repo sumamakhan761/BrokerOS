@@ -1,30 +1,56 @@
-# Focus and Keyboard Management
+# Keyboard Navigation & Form Focus
 
-## Keyboard Avoidance
-When a user focuses on a `<TextInput>`, the software keyboard slides up. On mobile, this will physically cover inputs on the bottom half of the screen unless managed.
+---
 
-Always wrap forms in a `KeyboardAvoidingView`:
-```tsx
-<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-  <ScrollView>
-    {/* Form Inputs Here */}
-  </ScrollView>
-</KeyboardAvoidingView>
-```
+## 1. Clean Software Keyboard Dismissal
 
-## Dismissing the Keyboard
-Unlike the web, tapping on a non-input area on a mobile screen does not always dismiss the keyboard automatically.
-Wrap your main form container in a `TouchableWithoutFeedback` to manually dismiss the keyboard:
+Tapping outside an active input on mobile should dismiss the software keyboard smoothly:
 
 ```tsx
-import { Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { TouchableWithoutFeedback, Keyboard, View } from 'react-native';
 
-<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-  <View style={{ flex: 1 }}>
-    {/* Content */}
-  </View>
-</TouchableWithoutFeedback>
+export function DismissKeyboardView({ children }: { children: React.ReactNode }) {
+  return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View className="flex-1">
+        {children}
+      </View>
+    </TouchableWithoutFeedback>
+  );
+}
 ```
 
-## Auto-Focus
-Be extremely careful with `autoFocus={true}` on inputs. On mobile, automatically throwing the keyboard in the user's face immediately upon screen load can be a jarring user experience unless they explicitly navigated to a "Search" screen.
+---
+
+## 2. Accessible Form Flow with `returnKeyType`
+
+Guide users naturally from field to field:
+
+```tsx
+import { useRef } from 'react';
+import { TextInput, View } from 'react-native';
+
+export function LoginForm() {
+  const passwordRef = useRef<TextInput>(null);
+
+  return (
+    <View className="space-y-4">
+      <TextInput
+        placeholder="Enter email"
+        returnKeyType="next"
+        onSubmitEditing={() => passwordRef.current?.focus()}
+        blurOnSubmit={false}
+        className="h-12 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-base text-slate-900"
+      />
+      <TextInput
+        ref={passwordRef}
+        placeholder="Enter password"
+        secureTextEntry
+        returnKeyType="done"
+        onSubmitEditing={Keyboard.dismiss}
+        className="h-12 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-base text-slate-900"
+      />
+    </View>
+  );
+}
+```
