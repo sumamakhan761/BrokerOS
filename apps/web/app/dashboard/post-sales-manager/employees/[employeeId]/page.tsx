@@ -6,13 +6,20 @@ import { useEffect, useState } from "react";
 import { StatCards } from "@/components/dashboard/StatCards";
 import { FollowUpList } from "@/components/dashboard/FollowUpList";
 import { PendingListWidget } from "../../../post-sales/components/PendingListWidget";
-import { Handshake, FileText, Building, Key, CheckCircle, ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { toast } from 'sonner';
+import {
+  Handshake,
+  FileText,
+  Building,
+  Key,
+  CheckCircle,
+  ArrowLeft,
+  UserCircle2,
+} from "lucide-react";
+import { toast } from "sonner";
 import { PostSalesEmployeeLeadsView } from "../_components/PostSalesEmployeeLeadsView";
 import { PostSalesEmployeeAnalyticsView } from "../_components/PostSalesEmployeeAnalyticsView";
 
-type Tab = 'dashboard' | 'leads' | 'analytics';
+type Tab = "dashboard" | "leads" | "analytics";
 
 export default function PostSalesManagerViewAsEmployee() {
   const router = useRouter();
@@ -39,9 +46,13 @@ export default function PostSalesManagerViewAsEmployee() {
   const loadDashboard = async (baseUrl: string, empId: string) => {
     try {
       setLoading(true);
-      const res = await authClient.$fetch<any>(`/api/dashboard/post-sales-manager/employees/${empId}/dashboard`, { baseURL: baseUrl });
+      const res = await authClient.$fetch<any>(
+        `/api/dashboard/post-sales-manager/employees/${empId}/dashboard`,
+        { baseURL: baseUrl }
+      );
       if (res.data) setDashData(res.data);
-      if (res.error) throw new Error(res.error.message || "Failed to load dashboard");
+      if (res.error)
+        throw new Error(res.error.message || "Failed to load dashboard");
     } catch (e: any) {
       setError(e?.message || "Failed to load dashboard");
     } finally {
@@ -52,70 +63,114 @@ export default function PostSalesManagerViewAsEmployee() {
   const confirmFollowUp = async (id: string) => {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
-      const res = await authClient.$fetch<any>(`/api/dashboard/pre-sales/follow-ups/${id}/confirm`, {
-        method: "POST", baseURL: baseUrl,
-      });
+      const res = await authClient.$fetch<any>(
+        `/api/dashboard/pre-sales/follow-ups/${id}/confirm`,
+        {
+          method: "POST",
+          baseURL: baseUrl,
+        }
+      );
       if (res.data?.success) window.location.reload();
       else toast.error(res.data?.message || "Failed");
-    } catch (e: any) { toast.error(e?.message || "Failed"); }
+    } catch (e: any) {
+      toast.error(e?.message || "Failed");
+    }
   };
 
   if (isPending || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-slate-400">Loading employee dashboard...</p>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-xs font-semibold text-[var(--text-muted)] animate-pulse">
+          Loading employee dashboard…
         </div>
       </div>
     );
   }
 
   const w = dashData?.widgets;
-  const statItems = w ? [
-    { label: "Total Booked",        value: w.totalBooked,         icon: Handshake,  accent: "#7c3aed" },
-    { label: "Documents Pending",   value: w.documentsPending,    icon: FileText,   accent: "#f59e0b" },
-    { label: "Loan Cases",          value: w.loanCases,           icon: Building,   accent: "#3b82f6" },
-    { label: "Agreement Pending",   value: w.agreementPending,    icon: FileText,   accent: "#8b5cf6" },
-    { label: "Possession Pending",  value: w.possessionPending,   icon: Key,        accent: "#ec4899" },
-    { label: "Handover Completed",  value: w.handoverCompleted,   icon: CheckCircle,accent: "#10b981" },
-  ] : [];
+  const statItems = w
+    ? [
+        {
+          label: "Total Booked",
+          value: w.totalBooked,
+          icon: Handshake,
+          accent: "#7c3aed",
+        },
+        {
+          label: "Documents Pending",
+          value: w.documentsPending,
+          icon: FileText,
+          accent: "#f59e0b",
+        },
+        {
+          label: "Loan Cases",
+          value: w.loanCases,
+          icon: Building,
+          accent: "#3b82f6",
+        },
+        {
+          label: "Agreement Pending",
+          value: w.agreementPending,
+          icon: FileText,
+          accent: "#8b5cf6",
+        },
+        {
+          label: "Possession Pending",
+          value: w.possessionPending,
+          icon: Key,
+          accent: "#ec4899",
+        },
+        {
+          label: "Handover Completed",
+          value: w.handoverCompleted,
+          icon: CheckCircle,
+          accent: "#10b981",
+        },
+      ]
+    : [];
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-8 bg-slate-50 min-h-screen">
-      <style>{`
-        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-      `}</style>
-
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 animate-enter">
       {/* View As Banner */}
-      <div className="bg-indigo-600 text-white px-6 py-3 rounded-xl flex items-center justify-between shadow-lg sticky top-4 z-50 animate-[fadeUp_0.3s_ease]">
-        <div className="flex items-center gap-3">
-          <span className="text-xl">👀</span>
-          <p className="font-medium text-sm">
-            Viewing <span className="font-bold">Post-Sales Executive</span>'s Dashboard
+      <div className="bg-[var(--brand-600)] text-white px-5 py-3 rounded-2xl flex items-center justify-between shadow-md">
+        <div className="flex items-center gap-2.5">
+          <span className="text-base">👀</span>
+          <p className="font-bold text-xs m-0">
+            Manager View Mode: Supervised Post-Sales Executive Workspace
           </p>
         </div>
-        <Link href="/dashboard/post-sales-manager/employees" className="flex items-center gap-2 text-indigo-100 hover:text-white transition-colors text-sm font-semibold bg-indigo-700/50 px-3 py-1.5 rounded-lg">
-          <ArrowLeft className="w-4 h-4" /> Back to Team
-        </Link>
+        <button
+          onClick={() =>
+            router.push("/dashboard/post-sales-manager/employees")
+          }
+          className="flex items-center gap-1.5 text-white hover:bg-white/10 transition-colors text-xs font-bold bg-white/15 px-3 py-1.5 rounded-xl border border-white/20 cursor-pointer"
+        >
+          <ArrowLeft size={13} /> <span>Back to Team</span>
+        </button>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100">
+        <div className="bg-rose-50 text-rose-700 p-4 rounded-2xl border border-rose-200 text-xs font-bold">
           <strong>Error:</strong> {error}
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 gap-2">
-        {([
-          { key: 'dashboard', label: 'Dashboard' },
-          { key: 'leads', label: 'Lead Management' },
-          { key: 'analytics', label: 'Analytics' },
-        ] as { key: Tab; label: string }[]).map(tab => (
+      <div className="flex border-b border-slate-200/80 gap-2">
+        {(
+          [
+            { key: "dashboard", label: "Dashboard Overview" },
+            { key: "leads", label: "Assigned Leads" },
+            { key: "analytics", label: "Executive Analytics" },
+          ] as { key: Tab; label: string }[]
+        ).map((tab) => (
           <button
             key={tab.key}
-            className={`py-3 px-5 text-[14px] font-bold bg-transparent border-none border-b-2 cursor-pointer transition-colors ${activeTab === tab.key ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
+            className={`py-2.5 px-4 text-xs font-bold bg-transparent border-b-2 cursor-pointer transition-all ${
+              activeTab === tab.key
+                ? "text-[var(--brand-700)] border-[var(--brand-600)]"
+                : "text-slate-500 border-transparent hover:text-slate-800"
+            }`}
             onClick={() => setActiveTab(tab.key)}
           >
             {tab.label}
@@ -123,21 +178,21 @@ export default function PostSalesManagerViewAsEmployee() {
         ))}
       </div>
 
-      {activeTab === 'leads' && (
+      {activeTab === "leads" && (
         <PostSalesEmployeeLeadsView employeeId={employeeId} />
       )}
 
-      {activeTab === 'analytics' && (
+      {activeTab === "analytics" && (
         <PostSalesEmployeeAnalyticsView employeeId={employeeId} />
       )}
 
-      {activeTab === 'dashboard' && (
-        <div className="animate-[fadeUp_0.4s_ease_forwards]">
+      {activeTab === "dashboard" && (
+        <div className="space-y-6">
           {dashData ? (
             <>
               <StatCards items={statItems} />
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 32 }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 <PendingListWidget
                   title="Documents Pending"
                   list={dashData.documentsList ?? []}
@@ -164,17 +219,19 @@ export default function PostSalesManagerViewAsEmployee() {
                 />
               </div>
 
-              <div className="mt-8">
+              <div className="mt-6">
                 <FollowUpList
                   items={dashData.todayFollowUpList ?? []}
                   onConfirm={confirmFollowUp}
                   viewAllHref={`/dashboard/post-sales-manager/employees/${employeeId}/lead-management`}
-                  title="Today's Follow-ups"
+                  title="Today's Executive Follow-ups"
                 />
               </div>
             </>
           ) : (
-            <div className="text-center text-slate-400 py-16">No dashboard data available.</div>
+            <div className="text-center text-[var(--text-muted)] py-16 text-xs font-semibold">
+              No dashboard data available for this employee.
+            </div>
           )}
         </div>
       )}
