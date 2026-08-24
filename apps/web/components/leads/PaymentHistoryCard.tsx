@@ -1,18 +1,22 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { CreditCard, Plus } from 'lucide-react';
-import { PaymentScheduleForm } from './PaymentScheduleForm';
-import { PaymentScheduleList } from './PaymentScheduleList';
+import React, { useState, useEffect } from "react";
+import { CreditCard, Plus, Loader2 } from "lucide-react";
+import { PaymentScheduleForm } from "./PaymentScheduleForm";
+import { PaymentScheduleList } from "./PaymentScheduleList";
 
 interface PaymentHistoryCardProps {
   bookingId: string;
-  agreedPrice: number;    // Full agreed price
-  bookingAmount: number;  // Upfront token/booking amount already paid
+  agreedPrice: number;
+  bookingAmount: number;
 }
 
-export function PaymentHistoryCard({ bookingId, agreedPrice, bookingAmount }: PaymentHistoryCardProps) {
-  const netAmount = agreedPrice - bookingAmount; // Amount to be paid in installments
+export function PaymentHistoryCard({
+  bookingId,
+  agreedPrice,
+  bookingAmount,
+}: PaymentHistoryCardProps) {
+  const netAmount = agreedPrice - bookingAmount;
 
   const [schedules, setSchedules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +24,7 @@ export function PaymentHistoryCard({ bookingId, agreedPrice, bookingAmount }: Pa
 
   const fetchSchedules = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       const res = await fetch(`${apiUrl}/api/payments/booking/${bookingId}`);
       if (res.ok) {
         const data = await res.json();
@@ -39,57 +43,79 @@ export function PaymentHistoryCard({ bookingId, agreedPrice, bookingAmount }: Pa
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex justify-center items-center h-48">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs p-8 flex justify-center items-center h-48">
+        <Loader2 size={24} className="animate-spin text-[var(--brand-600)]" />
       </div>
     );
   }
 
-  // ─── Empty State: Show schedule creator ───────────────────────────────────
+  // Empty State: Show schedule creator
   if (schedules.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden mb-6 animate-enter">
         {/* Header */}
-        <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
-            <CreditCard className="w-5 h-5 text-blue-600" />
+        <div className="p-5 border-b border-slate-100 flex items-center gap-3 bg-slate-50/70">
+          <div className="w-9 h-9 rounded-2xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)] border border-purple-200 shadow-2xs">
+            <CreditCard size={18} />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Payment Tracking</h3>
-            <p className="text-xs text-gray-500 font-medium">No payment schedule created yet</p>
+            <h3 className="font-extrabold text-[var(--text-primary)] text-sm tracking-tight m-0">
+              Payment Milestones & Schedule
+            </h3>
+            <p className="text-[11px] text-[var(--text-muted)] font-medium mt-0.5 m-0">
+              No installment schedule generated yet
+            </p>
           </div>
         </div>
 
-        {/* Amount Summary */}
-        <div className="grid grid-cols-3 gap-0 border-b border-gray-100">
-          <div className="p-4 text-center border-r border-gray-100">
-            <p className="text-xs text-gray-500 font-medium mb-1">Agreed Price</p>
-            <p className="font-bold text-gray-900">₹{agreedPrice.toLocaleString('en-IN')}</p>
+        {/* Amount Summary Bento */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 border-b border-slate-100">
+          <div className="p-4 text-center">
+            <p className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-wider mb-1 m-0">
+              Agreed Sale Price
+            </p>
+            <p className="font-extrabold text-[var(--text-primary)] text-sm tabular-nums m-0">
+              ₹{agreedPrice.toLocaleString("en-IN")}
+            </p>
           </div>
-          <div className="p-4 text-center border-r border-gray-100">
-            <p className="text-xs text-gray-500 font-medium mb-1">Booking Amount</p>
-            <p className="font-bold text-orange-600">− ₹{bookingAmount.toLocaleString('en-IN')}</p>
+          <div className="p-4 text-center">
+            <p className="text-[10px] text-amber-700 font-extrabold uppercase tracking-wider mb-1 m-0">
+              Booking Token Paid
+            </p>
+            <p className="font-extrabold text-amber-800 text-sm tabular-nums m-0">
+              − ₹{bookingAmount.toLocaleString("en-IN")}
+            </p>
           </div>
-          <div className="p-4 text-center bg-blue-50/50">
-            <p className="text-xs text-blue-600 font-medium mb-1">Net to Schedule</p>
-            <p className="font-bold text-blue-700 text-lg">₹{netAmount.toLocaleString('en-IN')}</p>
+          <div className="p-4 text-center bg-purple-50/50">
+            <p className="text-[10px] text-[var(--brand-700)] font-extrabold uppercase tracking-wider mb-1 m-0">
+              Net Balance to Schedule
+            </p>
+            <p className="font-extrabold text-[var(--brand-700)] text-base tabular-nums m-0">
+              ₹{netAmount.toLocaleString("en-IN")}
+            </p>
           </div>
         </div>
 
         <div className="p-6">
           {!showScheduleForm ? (
-            <div className="text-center py-8 bg-gray-50/50 rounded-2xl border border-gray-100">
-              <CreditCard className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-gray-600 font-medium mb-1">Generate Installment Schedule</p>
-              <p className="text-gray-400 text-sm mb-6">
-                Schedule ₹{netAmount.toLocaleString('en-IN')} in monthly installments for this booking.
-              </p>
+            <div className="text-center py-10 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-slate-400 mx-auto border border-slate-200 shadow-2xs">
+                <CreditCard size={22} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-[var(--text-primary)] m-0">
+                  Generate Installment Plan
+                </p>
+                <p className="text-[11px] text-[var(--text-muted)] mt-0.5 max-w-sm mx-auto font-medium">
+                  Schedule <strong className="text-[var(--text-primary)]">₹{netAmount.toLocaleString("en-IN")}</strong> in customizable monthly milestones for this booking.
+                </p>
+              </div>
               <button
                 onClick={() => setShowScheduleForm(true)}
-                className="inline-flex items-center gap-2 bg-blue-600 text-white text-sm rounded-xl px-5 py-2.5 font-medium hover:bg-blue-700 transition-all shadow-sm"
+                className="inline-flex items-center gap-1.5 bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-xs rounded-xl px-4 py-2 font-bold transition-all active:scale-[0.96] press-effect shadow-xs cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
-                Generate Schedule
+                <Plus size={14} />
+                <span>Configure Schedule</span>
               </button>
             </div>
           ) : (
@@ -110,9 +136,9 @@ export function PaymentHistoryCard({ bookingId, agreedPrice, bookingAmount }: Pa
     );
   }
 
-  // ─── Schedule exists: show installment list ────────────────────────────────
+  // Schedule exists: show installment list
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden mb-6 animate-enter">
       <PaymentScheduleList
         schedules={schedules}
         netAmount={netAmount}
