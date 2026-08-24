@@ -112,9 +112,11 @@ export default function PossessionModal({
               <Picker
                 selectedValue={status}
                 onValueChange={(itemValue) => setStatus(itemValue as ConstructionStatus)}
+                style={{ color: '#0f172a' }}
+                dropdownIconColor="#0f172a"
               >
                 {Object.entries(statusLabels).map(([key, label]) => (
-                  <Picker.Item key={key} label={label} value={key} />
+                  <Picker.Item key={key} label={label} value={key} color="#0f172a" />
                 ))}
               </Picker>
             </View>
@@ -133,9 +135,11 @@ export default function PossessionModal({
                 <Picker
                   selectedValue={timeUnit}
                   onValueChange={(itemValue) => setTimeUnit(itemValue as 'MONTHS' | 'YEARS')}
+                  style={{ color: '#0f172a' }}
+                  dropdownIconColor="#0f172a"
                 >
-                  <Picker.Item label="Months" value="MONTHS" />
-                  <Picker.Item label="Years" value="YEARS" />
+                  <Picker.Item label="Months" value="MONTHS" color="#0f172a" />
+                  <Picker.Item label="Years" value="YEARS" color="#0f172a" />
                 </Picker>
               </View>
             </View>
