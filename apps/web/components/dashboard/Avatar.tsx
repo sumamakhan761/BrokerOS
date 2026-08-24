@@ -1,44 +1,44 @@
-/* ── Shared Avatar ──────────────────────────────────────────────────
-   Replaces: pre-sales/components/Avatar.tsx
-             pre-sales-manager/_components/Avatar.tsx
-   ------------------------------------------------------------------ */
+import React from "react";
 
-const AVATAR_COLORS = [
-  { bg: "var(--brand-600)", text: "#fff" },
-  { bg: "#7c3aed", text: "#fff" },
-  { bg: "#0369a1", text: "#fff" },
-  { bg: "#15803d", text: "#fff" },
-  { bg: "#b45309", text: "#fff" },
-  { bg: "#be123c", text: "#fff" },
+const AVATAR_PALETTE = [
+  "bg-purple-600",
+  "bg-indigo-600",
+  "bg-sky-600",
+  "bg-emerald-600",
+  "bg-amber-600",
+  "bg-rose-600",
 ];
 
 export function Avatar({
   name,
   image,
-  size = 36,
+  size = 34,
 }: {
   name?: string;
   image?: string;
   size?: number;
 }) {
   const initials = name
-    ? name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-    : "?";
-  const colorIdx = name ? name.charCodeAt(0) % AVATAR_COLORS.length : 0;
-  const color = AVATAR_COLORS[colorIdx];
+    ? name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "??";
+
+  const colorIdx = name ? name.charCodeAt(0) % AVATAR_PALETTE.length : 0;
+  const colorClass = AVATAR_PALETTE[colorIdx];
 
   if (image) {
     return (
       <img
         src={image}
-        alt={name}
+        alt={name || "Avatar"}
+        className="rounded-full object-cover flex-shrink-0 outline outline-1 -outline-offset-1 outline-black/10"
         style={{
           width: size,
           height: size,
-          borderRadius: "50%",
-          objectFit: "cover",
-          flexShrink: 0,
-          border: "1px solid var(--border-subtle)",
         }}
       />
     );
@@ -46,20 +46,11 @@ export function Avatar({
 
   return (
     <div
+      className={`rounded-full ${colorClass} text-white flex items-center justify-center font-extrabold flex-shrink-0 shadow-xs tracking-tight select-none`}
       style={{
         width: size,
         height: size,
-        borderRadius: "50%",
-        background: color.bg,
-        color: color.text,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontWeight: 700,
-        fontSize: size * 0.38,
-        flexShrink: 0,
-        letterSpacing: "0.02em",
-        boxShadow: "var(--shadow-xs)",
+        fontSize: Math.max(10, Math.round(size * 0.38)),
       }}
     >
       {initials}

@@ -1,132 +1,57 @@
-/* ── Shared LiveMapCard ─────────────────────────────────────────────
-   Wraps LiveTrackingMap in a consistently styled card.
-   Replaces: Inline map sections in sales-executive/page.tsx
-             Inline map section in sourcing-manager/page.tsx
-   ------------------------------------------------------------------ */
 "use client";
+
 import { MapPin } from "lucide-react";
 import LiveTrackingMap from "@/components/LiveTrackingMap";
 
-export function LiveMapCard({ userId, title = "My Live Location", subtitle }: {
+export function LiveMapCard({
+  userId,
+  title = "My Live Location",
+  subtitle,
+}: {
   userId: string | null | undefined;
   title?: string;
   subtitle?: string;
 }) {
   return (
-    <div style={{
-      background: "var(--bg-surface)",
-      border: "1px solid var(--border-subtle)",
-      borderRadius: "var(--radius-xl)",
-      overflow: "hidden",
-      boxShadow: "var(--shadow-sm)",
-    }}>
-      {/* Card header */}
-      <div style={{
-        padding: "18px 24px",
-        borderBottom: "1px solid var(--border-subtle)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 36,
-            height: 36,
-            borderRadius: "var(--radius-md)",
-            background: "var(--info-bg)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}>
-            <MapPin size={16} style={{ color: "var(--info-fg)" }} />
+    <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+      {/* Card Header */}
+      <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center text-sky-700 flex-shrink-0">
+            <MapPin size={16} />
           </div>
           <div>
-            <div style={{
-              fontSize: "var(--text-sm)",
-              fontWeight: 700,
-              color: "var(--text-primary)",
-              letterSpacing: "-0.01em",
-            }}>
+            <div className="text-xs font-bold text-[var(--text-primary)] tracking-tight">
               {title}
             </div>
             {subtitle && (
-              <div style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: "var(--text-muted)",
-                marginTop: 2,
-              }}>
+              <div className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5">
                 {subtitle}
               </div>
             )}
           </div>
         </div>
-        {/* Live badge */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "4px 12px",
-          borderRadius: "var(--radius-full)",
-          background: "var(--success-bg)",
-          border: "1px solid #bbf7d0",
-        }}>
-          <div style={{
-            width: 6,
-            height: 6,
-            borderRadius: "50%",
-            background: "#16a34a",
-            animation: "pulse-live 2s ease infinite",
-          }} />
-          <span style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: "var(--success-fg)",
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-          }}>
-            Live
-          </span>
+
+        {/* Live Status Badge */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>Live GPS</span>
         </div>
       </div>
 
-      {/* Map area */}
-      <div style={{ padding: 20 }}>
+      {/* Map Area */}
+      <div className="p-4">
         {userId ? (
           <LiveTrackingMap userId={userId} />
         ) : (
-          <div style={{
-            height: 380,
-            background: "var(--bg-subtle)",
-            borderRadius: "var(--radius-lg)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 10,
-            border: "1px dashed var(--border-default)",
-          }}>
-            <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              border: "2px solid transparent",
-              borderTopColor: "var(--text-muted)",
-              animation: "dash-spin 0.75s linear infinite",
-            }} />
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", fontWeight: 500 }}>
-              Loading map…
+          <div className="h-80 bg-slate-50 rounded-xl flex flex-col items-center justify-center gap-2.5 border border-dashed border-slate-200">
+            <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-purple-600 animate-spin" />
+            <p className="text-xs font-medium text-[var(--text-muted)]">
+              Connecting to GPS stream…
             </p>
           </div>
         )}
       </div>
-      <style>{`
-        @keyframes pulse-live {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.3); }
-        }
-        @keyframes dash-spin { to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   );
 }

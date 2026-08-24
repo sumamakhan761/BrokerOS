@@ -1,6 +1,4 @@
-/* ── Shared Announcements ───────────────────────────────────────────
-   Replaces: pre-sales/components/Announcements.tsx
-   ------------------------------------------------------------------ */
+import React from "react";
 import { Megaphone } from "lucide-react";
 
 export interface AnnouncementItem {
@@ -10,57 +8,38 @@ export interface AnnouncementItem {
   createdAt: string;
 }
 
-export function Announcements({ announcements }: { announcements: AnnouncementItem[] }) {
+export function Announcements({
+  announcements,
+}: {
+  announcements: AnnouncementItem[];
+}) {
   if (!announcements || announcements.length === 0) return null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <div className="space-y-2.5">
       {announcements.map((ann, i) => (
         <div
           key={ann.id}
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 14,
-            padding: "14px 18px",
-            borderRadius: "var(--radius-lg)",
-            background: "var(--warning-bg)",
-            border: "1px solid #fde68a",
-            borderLeft: "4px solid #f59e0b",
-            animation: `enter 0.5s cubic-bezier(0.16,1,0.3,1) both`,
-            animationDelay: `${i * 0.07}s`,
-          }}
+          className="flex items-start gap-3.5 p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 border-l-4 border-l-amber-500 shadow-xs animate-enter"
+          style={{ animationDelay: `${i * 0.05}s` }}
         >
           <Megaphone
             size={16}
-            style={{ color: "#d97706", flexShrink: 0, marginTop: 2 }}
+            className="text-amber-700 flex-shrink-0 mt-0.5"
           />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: "var(--text-sm)",
-              fontWeight: 700,
-              color: "#92400e",
-              marginBottom: 3,
-              letterSpacing: "-0.01em",
-            }}>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-bold text-amber-950 mb-1 tracking-tight">
               {ann.title}
             </div>
-            <div style={{
-              fontSize: "var(--text-sm)",
-              color: "#b45309",
-              lineHeight: 1.55,
-            }}>
+            <div className="text-xs text-amber-800 leading-relaxed">
               {ann.description}
             </div>
           </div>
-          <div style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: "#d97706",
-            whiteSpace: "nowrap",
-            flexShrink: 0,
-          }}>
-            {new Date(ann.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+          <div className="text-[11px] font-semibold text-amber-700 tabular-nums whitespace-nowrap flex-shrink-0">
+            {new Date(ann.createdAt).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+            })}
           </div>
         </div>
       ))}
