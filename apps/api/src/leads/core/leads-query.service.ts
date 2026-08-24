@@ -46,9 +46,14 @@ export class LeadsQueryService {
           select: { id: true },
         });
         const subordinateIds = subordinates.map((s) => s.id);
+        where.status = { in: SE_VISIBLE_STATUSES };
         where.OR = [
           { siteVisits: { some: { salesExecId: { in: subordinateIds } } } },
-          { customer: { bookings: { some: { salesExecId: { in: subordinateIds } } } } }
+          { assignedUserId: { in: subordinateIds } },
+        ];
+        where.NOT = [
+          { status: 'BOOKING', subStatus: 'DONE' },
+          { customer: { bookings: { some: { status: 'CONFIRMED' } } } },
         ];
       } else if (role?.code === 'SALES_EXECUTIVE') {
         const assignments = await this.prisma.projectAssignment.findMany({
@@ -57,12 +62,14 @@ export class LeadsQueryService {
         });
         const projectIds = assignments.map((a) => a.projectId);
 
+        where.status = { in: SE_VISIBLE_STATUSES };
         where.OR = [
-          {
-            status: { in: SE_VISIBLE_STATUSES },
-            siteVisits: { some: { projectId: { in: projectIds } } },
-          },
-          { customer: { bookings: { some: { salesExecId: filters.userId } } } }
+          { siteVisits: { some: { projectId: { in: projectIds } } } },
+          { assignedUserId: filters.userId },
+        ];
+        where.NOT = [
+          { status: 'BOOKING', subStatus: 'DONE' },
+          { customer: { bookings: { some: { status: 'CONFIRMED' } } } },
         ];
       } else if (role?.code === 'CLOSING_MANAGER') {
         where.OR = [

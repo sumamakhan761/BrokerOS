@@ -21,9 +21,8 @@ export function ApprovalTicketMessages({
         return (
           <div
             key={msg.id}
-            className={`flex flex-col ${
-              alignRight ? "items-end" : "items-start"
-            }`}
+            className={`flex flex-col ${alignRight ? "items-end" : "items-start"
+              }`}
           >
             <div className="flex items-center gap-2 mb-1 px-1">
               <span className="text-[11px] font-bold text-[var(--text-secondary)]">
@@ -40,27 +39,24 @@ export function ApprovalTicketMessages({
             </div>
 
             <div
-              className={`max-w-[85%] sm:max-w-[70%] rounded-2xl p-4 shadow-2xs ${
-                alignRight
-                  ? "bg-[var(--brand-600)] text-white rounded-tr-xs"
-                  : "bg-white border border-slate-200/80 text-[var(--text-primary)] rounded-tl-xs"
-              }`}
+              className={`max-w-[85%] sm:max-w-[70%] rounded-2xl p-4 shadow-2xs ${alignRight
+                ? "bg-[var(--brand-600)] text-white rounded-tr-xs"
+                : "bg-white border border-slate-200/80 text-[var(--text-primary)] rounded-tl-xs"
+                }`}
             >
               <div
-                className={`text-xs whitespace-pre-wrap font-medium leading-relaxed ${
-                  alignRight ? "text-purple-50" : "text-[var(--text-secondary)]"
-                }`}
+                className={`text-xs whitespace-pre-wrap font-medium leading-relaxed ${alignRight ? "text-purple-50" : "text-[var(--text-secondary)]"
+                  }`}
               >
                 {msg.description}
               </div>
 
               {msg.metadata?.documents && msg.metadata.documents.length > 0 ? (
                 <div
-                  className={`mt-2.5 pt-2.5 border-t flex flex-col gap-1.5 ${
-                    alignRight
-                      ? "border-purple-400/40"
-                      : "border-slate-100"
-                  }`}
+                  className={`mt-2.5 pt-2.5 border-t flex flex-col gap-1.5 ${alignRight
+                    ? "border-purple-400/40"
+                    : "border-slate-100"
+                    }`}
                 >
                   {msg.metadata.documents.map((doc: any, i: number) => (
                     <a
@@ -68,11 +64,10 @@ export function ApprovalTicketMessages({
                       href={doc.url}
                       target="_blank"
                       rel="noreferrer"
-                      className={`inline-flex items-center text-xs font-bold transition-colors ${
-                        alignRight
-                          ? "text-purple-100 hover:text-white"
-                          : "text-[var(--brand-700)] hover:underline"
-                      }`}
+                      className={`inline-flex items-center text-xs font-bold transition-colors ${alignRight
+                        ? "text-purple-100 hover:text-white"
+                        : "text-[var(--brand-700)] hover:underline"
+                        }`}
                     >
                       <FileText className="w-3.5 h-3.5 mr-1" />
                       View {doc.name || "Attachment"}
@@ -82,21 +77,19 @@ export function ApprovalTicketMessages({
               ) : (
                 msg.fileUrl && (
                   <div
-                    className={`mt-2.5 pt-2.5 border-t ${
-                      alignRight
-                        ? "border-purple-400/40"
-                        : "border-slate-100"
-                    }`}
+                    className={`mt-2.5 pt-2.5 border-t ${alignRight
+                      ? "border-purple-400/40"
+                      : "border-slate-100"
+                      }`}
                   >
                     <a
                       href={msg.fileUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className={`inline-flex items-center text-xs font-bold transition-colors ${
-                        alignRight
-                          ? "text-purple-100 hover:text-white"
-                          : "text-[var(--brand-700)] hover:underline"
-                      }`}
+                      className={`inline-flex items-center text-xs font-bold transition-colors ${alignRight
+                        ? "text-purple-100 hover:text-white"
+                        : "text-[var(--brand-700)] hover:underline"
+                        }`}
                     >
                       <Download className="w-3.5 h-3.5 mr-1" />
                       Download Attachment

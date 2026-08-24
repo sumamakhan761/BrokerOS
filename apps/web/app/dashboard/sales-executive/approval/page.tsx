@@ -70,7 +70,7 @@ export default function SalesExecutiveApprovalPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 animate-enter">
+    <div className="p-4 md:p-0 max-w-[1600px] mx-auto space-y-6 animate-enter">
       {!selectedTicketId ? (
         <>
           <div className="flex items-start justify-between flex-wrap gap-4">
@@ -193,7 +193,7 @@ export default function SalesExecutiveApprovalPage() {
       ) : (
         <div className="animate-enter">
           {ticketLoading || !selectedTicketData ? (
-            <div className="flex items-center justify-center py-20 flex-col gap-3">
+            <div className="flex items-center justify-center py-10 flex-col gap-3">
               <Loader2 className="w-8 h-8 text-[var(--brand-600)] animate-spin" />
               <p className="text-xs font-semibold text-[var(--text-muted)]">
                 Loading approval ticket thread…

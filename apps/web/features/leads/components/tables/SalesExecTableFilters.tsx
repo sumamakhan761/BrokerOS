@@ -62,9 +62,8 @@ export function SalesExecTableFilters({
             value={followUpDate}
             onChange={(e) => setFollowUpDate(e.target.value)}
             title="Follow-Up Date"
-            className={`w-full h-9 ps-8 pe-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold outline-none transition-all focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 cursor-pointer ${
-              followUpDate ? "text-[var(--brand-700)]" : "text-slate-400"
-            }`}
+            className={`w-full h-9 ps-8 pe-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold outline-none transition-all focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 cursor-pointer ${followUpDate ? "text-[var(--brand-700)]" : "text-slate-400"
+              }`}
           />
           {followUpDate && (
             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-extrabold text-[var(--brand-700)] bg-purple-100 px-1.5 py-0.5 rounded">
@@ -84,9 +83,8 @@ export function SalesExecTableFilters({
             value={siteVisitDate}
             onChange={(e) => setSiteVisitDate(e.target.value)}
             title="Site Visit Date"
-            className={`w-full h-9 ps-8 pe-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold outline-none transition-all focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 cursor-pointer ${
-              siteVisitDate ? "text-purple-700" : "text-slate-400"
-            }`}
+            className={`w-full h-9 ps-8 pe-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold outline-none transition-all focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 cursor-pointer ${siteVisitDate ? "text-purple-700" : "text-slate-400"
+              }`}
           />
           {siteVisitDate && (
             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">
@@ -119,11 +117,10 @@ export function SalesExecTableFilters({
             <button
               key={opt.value}
               onClick={() => setStatus(opt.value)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-150 active:scale-[0.96] press-effect whitespace-nowrap cursor-pointer ${
-                active
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-150 active:scale-[0.96] press-effect whitespace-nowrap cursor-pointer ${active
                   ? "bg-[var(--brand-600)] text-white shadow-xs"
                   : "bg-slate-50 hover:bg-slate-100 text-[var(--text-secondary)] border border-slate-200/80"
-              }`}
+                }`}
             >
               {opt.label}
             </button>
