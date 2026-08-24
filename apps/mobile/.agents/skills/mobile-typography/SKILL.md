@@ -1,21 +1,49 @@
 ---
 name: mobile-typography
-description: React Native typography from spacing to wrapping and accessibility. Use when configuring text in NativeWind, setting up a type scale, checking heading hierarchy, styling Text components, truncating text, or reviewing mobile code for typography. Triggers on Text, typography, fonts, variable fonts, font-weight, letter-spacing, line-height, type scale, heading hierarchy, text-wrap, truncation, numberOfLines, font scaling, allowFontScaling.
+description: React Native typography system covering Plus Jakarta Sans, Geist Mono, Dynamic Type defense, tabular numerals, currency formatting, Android padding fixes, and truncation. Triggers on Text, typography, fonts, variable fonts, font-weight, letter-spacing, line-height, type scale, heading hierarchy, text-wrap, truncation, numberOfLines, font scaling, allowFontScaling, maxFontSizeMultiplier, tabular-nums.
 ---
 
-# Great Mobile Typography
+# Mobile Typography & Financial Figures System
 
-Good mobile typography is mostly restraint. A sensible scale, comfortable spacing, and strict adherence to React Native's `<Text>` component behaviors beat any clever effect. Apply these principles when building or reviewing any mobile screen.
+Mobile typography demands strict discipline: **predictable line-heights**, **native font baseline alignment**, **tabular currency figures for Indian Rupee (`₹`)**, and **Dynamic Type layout safeguards**.
 
-## Quick Reference
+---
+
+## 📚 Quick Reference & Sub-guides
 
 | Category | When to use | Reference |
-| --- | --- | --- |
-| **Spacing & Sizing** | NativeWind type scale, line heights, iOS inputs | [spacing-and-sizing.md](spacing-and-sizing.md) |
-| **Wrapping & Truncation** | `numberOfLines`, ellipsizeMode, text alignment | [wrapping-and-truncation.md](wrapping-and-truncation.md) |
-| **Fonts & Scaling** | Dynamic Type, `allowFontScaling`, custom fonts | [fonts-and-scaling.md](fonts-and-scaling.md) |
+| :--- | :--- | :--- |
+| **Fonts & Tabular Scaling** | Custom font loading, Dynamic Type defense, `fontVariant: ['tabular-nums']` | [fonts-and-scaling.md](fonts-and-scaling.md) |
+| **Type Scale & Sizing** | NativeWind type scale, optical line-heights, Android `includeFontPadding: false` | [spacing-and-sizing.md](spacing-and-sizing.md) |
+| **Wrapping & Truncation** | `numberOfLines`, `ellipsizeMode`, expandable text blocks | [wrapping-and-truncation.md](wrapping-and-truncation.md) |
 
-## Core Principles
-1. **The `<Text>` Component is Law**. You cannot render raw strings inside a `<View>`. 
-2. **Never use HTML text tags**. `<h1>`, `p`, and `span` will crash the mobile app.
-3. **No CSS Truncation**. Do not use `text-overflow` or Tailwind `truncate`. Use `numberOfLines`.
+---
+
+## 🏛️ Core Principles
+
+### 1. The `<Text>` Component is Absolute Law
+In React Native, any bare text string outside of a `<Text>` component crashes the entire app.
+- Never write text directly in a `<View>` or `<Pressable>`.
+- HTML tags (`<h1>`, `<p>`, `<span>`) crash the app.
+
+### 2. Tabular Numeral Figures for Financial Data (`₹`)
+All real estate currencies, token downpayments, commissions, dates, and call timestamps must use monospace tabular alignment to prevent layout jitter:
+```tsx
+<Text style={{ fontVariant: ['tabular-nums'] }} className="font-extrabold text-slate-900 text-base">
+  ₹1,25,00,000
+</Text>
+```
+
+### 3. Android Font Baseline Clipping Fix
+Android native `TextView` defaults to adding internal extra padding which clips capital letters and custom fonts like `Plus Jakarta Sans`. Always apply:
+```tsx
+style={{ includeFontPadding: false, textAlignVertical: 'center' }}
+```
+
+### 4. Dynamic Type Defense (`maxFontSizeMultiplier`)
+When users increase their OS text size, unconstrained text can break cards and overflow buttons. Set a reasonable ceiling:
+```tsx
+<Text maxFontSizeMultiplier={1.25} numberOfLines={1} ellipsizeMode="tail">
+  {lead.customerName}
+</Text>
+```

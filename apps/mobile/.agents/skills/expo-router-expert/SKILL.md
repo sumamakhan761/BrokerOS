@@ -1,56 +1,104 @@
 ---
 name: expo-router-expert
-description: Navigation engineering using Expo Router. Use when creating new screens, handling deep links, passing parameters, setting up tabs or drawers, and routing users. Triggers on Expo Router, navigation, Link, router.push, Tabs, Stack, _layout.tsx, useLocalSearchParams.
+description: Advanced navigation engineering using Expo Router 6 in React Native. Covers file-based routing, route groups, dynamic tab bar filtering by user role, nested stack navigators, modal presentations, typed router.push, useLocalSearchParams, and Better Auth route protection. Triggers on Expo Router, navigation, Link, router.push, Tabs, Stack, _layout.tsx, useLocalSearchParams, useSegments.
 ---
 
-# Expo Router Navigation
+# Expo Router 6 Navigation Engineering
 
-Expo Router brings file-based routing to React Native. 
+Expo Router 6 delivers file-based, deep-linkable native navigation. In BrokerOS mobile, we manage **14 distinct roles** through a single unified `(dashboard)` shell with dynamic tab filtering and nested stacks.
 
-## Core Principles
+---
 
-### 1. File-Based Routing
-Screens are automatically created based on files in the `app/` directory.
-- `app/index.tsx` -> `/`
-- `app/profile/settings.tsx` -> `/profile/settings`
-- `app/leads/[id].tsx` -> Dynamic route for `/leads/123`
+## 🏛️ Core Principles
 
-### 2. The `<Link>` Component
-Never use `<a href>` tags. Use the `<Link>` component from `expo-router`.
-```tsx
-import { Link } from 'expo-router';
-
-<Link href="/leads/123" asChild>
-  <Pressable>
-    <Text>View Lead</Text>
-  </Pressable>
-</Link>
+### 1. File & Group Structure
 ```
-*Note: Always use `asChild` if you are wrapping a custom component like `<Pressable>` or a NativeWind styled view.*
+apps/mobile/app/
+  _layout.tsx                  ← Root Layout (Auth state gatekeeper, fonts, background tasks)
+  (auth)/                      ← Public route group
+    _layout.tsx
+    sign-in.tsx
+    sign-up.tsx
+  (dashboard)/                 ← Protected enterprise workspace
+    _layout.tsx                ← THE MAIN SHELL: dynamic tab filtering, socket & notifications
+    notifications.tsx          ← Global notification center
+    chat/                      ← Messaging & chat rooms
+    sales-executive/
+      index.tsx                ← Sales Executive dashboard
+      lead-management/
+        index.tsx              ← Lead table feed
+        [id].tsx               ← Deep dynamic lead profile route
+```
 
-### 3. Programmatic Navigation
-Use the `useRouter` hook for navigation after an action (like a successful API call).
+---
+
+## 2. Programmatic Navigation & Parameter Handling
+
+### Navigating to a Screen
 ```tsx
 import { useRouter } from 'expo-router';
 
 const router = useRouter();
-router.push('/dashboard');
-router.replace('/login'); // Clears the stack history
+
+// Push new screen onto stack
+router.push('/(dashboard)/sales-executive/lead-management/123');
+
+// Replace history (e.g. after login or logout)
+router.replace('/(auth)/sign-in');
+
+// Go back
 router.back();
 ```
 
-### 4. Reading Parameters
-Use `useLocalSearchParams` to read dynamic segments (`[id].tsx`) or query parameters.
+### Reading Route Parameters
 ```tsx
 import { useLocalSearchParams } from 'expo-router';
 
-const { id, filter } = useLocalSearchParams();
+export function LeadDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  return (
+    <View>
+      <Text>Lead ID: {id}</Text>
+    </View>
+  );
+}
 ```
 
-### 5. Layouts
-Use `_layout.tsx` files to define `<Stack>`, `<Tabs>`, or `<Drawer>` navigators for a directory.
+---
 
-## Common Mistakes
-- **React Navigation Hooks**: Using `@react-navigation/native` hooks (`useNavigation`) instead of Expo Router's hooks.
-- **Missing `asChild`**: Nesting a `<Pressable>` inside a `<Link>` without `asChild`, causing touch issues and styling breaks.
-- **Standard `<a>` tags**: Will crash the app.
+## 3. The `<Link>` Component with `asChild`
+
+When wrapping a custom styled component or `<Pressable>` with `<Link>`, you **MUST** supply `asChild`:
+
+```tsx
+import { Link } from 'expo-router';
+import { Pressable, Text } from 'react-native';
+
+<Link href="/(dashboard)/sales-executive/booking" asChild>
+  <Pressable className="h-12 bg-purple-600 rounded-2xl items-center justify-center">
+    <Text className="text-white font-bold">New Booking</Text>
+  </Pressable>
+</Link>
+```
+
+---
+
+## 4. Modal Stacks & Presentation
+
+To render a sub-screen as an iOS/Android native presentation sheet modal:
+
+```tsx
+// in app/(dashboard)/_layout.tsx or nested _layout.tsx
+<Stack>
+  <Stack.Screen name="index" options={{ headerShown: false }} />
+  <Stack.Screen 
+    name="modal-schedule-visit" 
+    options={{ 
+      presentation: 'modal',
+      headerShown: true,
+      title: 'Schedule Site Visit' 
+    }} 
+  />
+</Stack>
+```

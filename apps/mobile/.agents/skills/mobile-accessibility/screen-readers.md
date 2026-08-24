@@ -1,40 +1,46 @@
-# Screen Readers in React Native
+# Screen Readers (TalkBack & VoiceOver)
 
-## `accessible={true}`
-To make a component readable by a screen reader, mark it with `accessible={true}`. By default, `<Text>` components are accessible, but custom groups of text (like a card) should be grouped.
+---
 
-## Grouping Content
-Instead of the screen reader reading 5 separate text nodes on a card, wrap the card in a `<View accessible={true} accessibilityLabel="Card title, subtitle, and price">` so it reads as one cohesive item. This prevents the user from having to swipe 5 times to get past a single card.
+## 1. Meaningful `accessibilityLabel` & `accessibilityHint`
 
-## `accessibilityRole`
-Always define what an interactive element is.
+Never let a screen reader read out raw cryptic IDs or unlabelled icons:
+
+```tsx
+import { Pressable, Text } from 'react-native';
+import { Calendar } from 'lucide-react-native';
+
+export function ScheduleVisitButton({ leadName, onSchedule }: any) {
+  return (
+    <Pressable
+      onPress={onSchedule}
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel={`Schedule site visit for ${leadName}`}
+      accessibilityHint="Opens the date and project selection calendar modal"
+      className="flex-row items-center gap-2 bg-purple-50 border border-purple-200 px-3 py-2 rounded-xl"
+    >
+      <Calendar size={16} color="#7e22ce" />
+      <Text className="text-xs font-bold text-purple-700">Schedule Visit</Text>
+    </Pressable>
+  );
+}
+```
+
+---
+
+## 2. Accessible States (`accessibilityState`)
+
+For toggle tabs, accordions, and checkable lists:
+
 ```tsx
 <Pressable
-  accessible={true}
-  accessibilityRole="button" // CRITICAL
-  accessibilityLabel="Submit application"
-  onPress={submit}
+  accessibilityRole="tab"
+  accessibilityState={{ selected: activeTab === 'leads' }}
+  className={`px-4 py-2 rounded-full ${activeTab === 'leads' ? 'bg-purple-600' : 'bg-slate-100'}`}
 >
-  <Text>Submit</Text>
+  <Text className={activeTab === 'leads' ? 'text-white font-bold' : 'text-slate-600'}>
+    Leads
+  </Text>
 </Pressable>
-```
-Common roles: `button`, `link`, `header`, `image`, `switch`. If this is missing on a `Pressable`, the user does not know they can interact with it.
-
-## `accessibilityState`
-If a button is disabled or selected, tell the screen reader:
-```tsx
-<Pressable
-  accessibilityRole="button"
-  accessibilityState={{ disabled: true, selected: isSelected }}
->
-```
-
-## `accessibilityHint`
-Use this to describe what happens when the user performs an action, if it's not obvious from the label.
-`accessibilityHint="Opens a new browser window"`
-
-## Hiding from Screen Readers
-If an icon is purely decorative (e.g. an arrow next to a "Next" button), hide it from the screen reader:
-```tsx
-<Icon importantForAccessibility="no-hide-descendants" accessibilityElementsHidden={true} />
 ```

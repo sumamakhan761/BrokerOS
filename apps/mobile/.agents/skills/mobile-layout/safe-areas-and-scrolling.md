@@ -1,23 +1,82 @@
-# Safe Areas and Scrolling
+# Safe Areas, Keyboard Insets & Scrolling
 
-## SafeAreaView
-Mobile screens have hardware notches, dynamic islands, and home indicators.
-Always wrap the root container of your screen in a `<SafeAreaView>` from `react-native-safe-area-context` so content doesn't get clipped by the OS.
-*Note: If you are using Expo Router `<Stack>`, the header often handles the top safe area automatically. Only apply `edges={['bottom']}` if the top is already safe.*
+---
 
-## ScrollView vs `<View>`
-Unlike the web, content does not scroll automatically if it overflows the viewport height. You must explicitly wrap overflowing content in a `<ScrollView>`.
+## 1. Safe Area Insets with `react-native-safe-area-context`
 
-## ScrollView vs FlatList (Performance Death)
-If you are rendering a dynamic array of data (like a list of 100 Leads, Bookings, or Messages), **never use `array.map()` inside a `<ScrollView>`**.
-It will render all 100 items into memory simultaneously, crashing older Android phones.
+Avoid hardcoding pixel values (like `pt-12` or `pb-8`) for device status bars or home navigation bars. Different devices (iPhone dynamic island vs punch-hole Android) have varying cutouts:
 
-You MUST use a `<FlatList>` or `<FlashList>`:
 ```tsx
-<FlatList
-  data={leads}
-  keyExtractor={(item) => item.id}
-  renderItem={({ item }) => <LeadCard lead={item} />}
-/>
+import { View, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+export function ScreenShell({ children }: { children: React.ReactNode }) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View 
+      style={{ paddingTop: insets.top }} 
+      className="flex-1 bg-slate-50 dark:bg-slate-950"
+    >
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: insets.bottom + 80, // Extra clearance for floating bottom bar
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        {children}
+      </ScrollView>
+    </View>
+  );
+}
 ```
-This recycles views off-screen, maintaining 60fps scrolling.
+
+---
+
+## 2. Keyboard Avoidance for Forms & Bottom Sheets
+
+When building login forms, negotiation inputs, or lead remark sheets:
+
+```tsx
+import { KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ScrollView } from 'react-native';
+
+export function FormContainer({ children }: { children: React.ReactNode }) {
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      className="flex-1"
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {children}
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
+  );
+}
+```
+
+---
+
+## 3. Sticky Headers in Feed Lists
+
+To keep a search bar or tab filter pinned while scrolling:
+
+```tsx
+<ScrollView 
+  stickyHeaderIndices={[1]} // Pin the 2nd child (index 1) to the top on scroll
+  showsVerticalScrollIndicator={false}
+>
+  <DashboardGreeting />
+  <View className="bg-slate-50 dark:bg-slate-950 py-2">
+    <SearchAndFilterBar />
+  </View>
+  <LeadFeedItems />
+</ScrollView>
+```
