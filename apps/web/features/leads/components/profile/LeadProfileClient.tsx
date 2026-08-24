@@ -1,44 +1,44 @@
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
-import { authClient } from '@/lib/auth-client';
-import { LeadHeader } from '@/features/leads/components/profile/LeadHeader';
-import { LeadInformationCard } from '@/features/leads/components/profile/LeadInformationCard';
-import { CallRecordingsCard } from '@/features/leads/components/profile/CallRecordingsCard';
-import { SiteVisitCompletedCard } from '@/features/leads/components/site-visits/SiteVisitCompletedCard';
-import { NegotiationCard } from '@/features/leads/components/negotiations/NegotiationCard';
-import { BookingCard } from '@/features/leads/components/booking/BookingCard';
-import { NoteModal } from '@/features/leads/components/modals/NoteModal';
-import { FollowUpModal } from '@/features/leads/components/modals/FollowUpModal';
-import { LeadNotesTimeline } from '@/features/leads/components/profile/LeadNotesTimeline';
-import { LeadSchedulesCard } from '@/features/leads/components/profile/LeadSchedulesCard';
-import { SiteVisitModal } from '@/features/leads/components/modals/SiteVisitModal';
-import { SiteVisitCompleteModal } from '@/features/leads/components/modals/SiteVisitCompleteModal';
-import { PostSalesPipelineCards } from '@/features/leads/components/post-sales/PostSalesPipelineCards';
-import { PaymentHistoryCard } from '@/components/leads/PaymentHistoryCard';
-import { toast } from 'sonner';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ArrowLeft, Sparkles, AlertCircle } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { LeadHeader } from "@/features/leads/components/profile/LeadHeader";
+import { LeadInformationCard } from "@/features/leads/components/profile/LeadInformationCard";
+import { CallRecordingsCard } from "@/features/leads/components/profile/CallRecordingsCard";
+import { SiteVisitCompletedCard } from "@/features/leads/components/site-visits/SiteVisitCompletedCard";
+import { NegotiationCard } from "@/features/leads/components/negotiations/NegotiationCard";
+import { BookingCard } from "@/features/leads/components/booking/BookingCard";
+import { NoteModal } from "@/features/leads/components/modals/NoteModal";
+import { FollowUpModal } from "@/features/leads/components/modals/FollowUpModal";
+import { LeadNotesTimeline } from "@/features/leads/components/profile/LeadNotesTimeline";
+import { LeadSchedulesCard } from "@/features/leads/components/profile/LeadSchedulesCard";
+import { SiteVisitModal } from "@/features/leads/components/modals/SiteVisitModal";
+import { SiteVisitCompleteModal } from "@/features/leads/components/modals/SiteVisitCompleteModal";
+import { PostSalesPipelineCards } from "@/features/leads/components/post-sales/PostSalesPipelineCards";
+import { PaymentHistoryCard } from "@/components/leads/PaymentHistoryCard";
+import { toast } from "sonner";
 
 // Hooks
-import { useLeadDetails } from '@/features/leads/hooks/useLeadDetails';
-import { useLeadNotes } from '@/features/leads/hooks/useLeadNotes';
-import { useLeadSchedules } from '@/features/leads/hooks/useLeadSchedules';
-import { useLeadBooking } from '@/features/leads/hooks/useLeadBooking';
-import { useLeadNegotiations } from '@/features/leads/hooks/useLeadNegotiations';
+import { useLeadDetails } from "@/features/leads/hooks/useLeadDetails";
+import { useLeadNotes } from "@/features/leads/hooks/useLeadNotes";
+import { useLeadSchedules } from "@/features/leads/hooks/useLeadSchedules";
+import { useLeadBooking } from "@/features/leads/hooks/useLeadBooking";
+import { useLeadNegotiations } from "@/features/leads/hooks/useLeadNegotiations";
 
 export function LeadProfileClient({ leadId }: { leadId: string }) {
   const { data: session } = authClient.useSession();
   const userId = session?.user?.id;
   const pathname = usePathname();
 
-  let inferredRole = (session?.user as any)?.role || '';
+  let inferredRole = (session?.user as any)?.role || "";
   if (!inferredRole) {
-    if (pathname.includes('/closing-manager')) inferredRole = 'CLOSING_MANAGER';
-    else if (pathname.includes('/channel-partner')) inferredRole = 'CHANNEL_PARTNER';
-    else if (pathname.includes('/sales-executive')) inferredRole = 'SALES_EXECUTIVE';
-    else if (pathname.includes('/post-sales')) inferredRole = 'POST_SALES';
+    if (pathname.includes("/closing-manager")) inferredRole = "CLOSING_MANAGER";
+    else if (pathname.includes("/channel-partner")) inferredRole = "CHANNEL_PARTNER";
+    else if (pathname.includes("/sales-executive")) inferredRole = "SALES_EXECUTIVE";
+    else if (pathname.includes("/post-sales")) inferredRole = "POST_SALES";
   }
 
   const {
@@ -63,7 +63,7 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
     handleLeadInfoSave,
     handleTemperatureChange,
     handleSubStatusChange,
-    handleAvatarUpload
+    handleAvatarUpload,
   } = useLeadDetails(leadId);
 
   const {
@@ -110,46 +110,37 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
     openSiteVisitModal,
   } = useLeadSchedules(leadId, userId, lead);
 
-  const {
-    booking,
-    fetchBooking,
-  } = useLeadBooking(leadId);
+  const { booking, fetchBooking } = useLeadBooking(leadId);
+  const { negotiations, fetchNegotiations } = useLeadNegotiations(leadId);
 
-  const {
-    negotiations,
-    fetchNegotiations,
-  } = useLeadNegotiations(leadId);
-
-  const [isAiAdvancing, setIsAiAdvancing] = React.useState(false);
+  const [isAiAdvancing, setIsAiAdvancing] = useState(false);
 
   const handleAiAutoAdvance = async () => {
     setIsAiAdvancing(true);
     try {
       if (!userId) {
-        toast.error('You must be logged in to auto-advance.');
+        toast.error("You must be logged in to auto-advance.");
         setIsAiAdvancing(false);
         return;
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       const res = await fetch(`${apiUrl}/api/leads/${leadId}/ai-transition-note`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       });
 
       if (!res.ok) {
-        throw new Error('Failed to generate AI auto-advance');
+        throw new Error("Failed to generate AI auto-advance");
       }
 
-      const data = await res.json();
-      console.log('AI Auto-Advance result:', data);
-
+      toast.success("AI transition note and status generated!");
       await fetchLead();
       await fetchNotes();
     } catch (error) {
       console.error(error);
-      toast.error('Could not generate AI transition note. Please try again.');
+      toast.error("Could not generate AI transition note. Please try again.");
     } finally {
       setIsAiAdvancing(false);
     }
@@ -167,54 +158,76 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-gray-500 animate-pulse">Loading profile...</div>
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3.5">
+        <div className="w-9 h-9 rounded-full border-2 border-purple-100 border-t-[var(--brand-600)] animate-spin" />
+        <p className="text-xs font-semibold text-[var(--text-tertiary)]">
+          Loading prospect profile & activity feed…
+        </p>
       </div>
     );
   }
 
   if (!lead) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-center">
-        <h2 className="text-xl font-semibold text-gray-900">Lead not found</h2>
-        <p className="text-gray-500 mt-2">The lead you are looking for does not exist or was removed.</p>
-        <Link href="/dashboard/lead-management" className="mt-4 text-blue-600 hover:underline">
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-12 max-w-lg mx-auto text-center space-y-3">
+        <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-700 mx-auto">
+          <AlertCircle size={22} />
+        </div>
+        <h2 className="text-base font-extrabold text-[var(--text-primary)]">
+          Prospect Record Not Found
+        </h2>
+        <p className="text-xs text-[var(--text-muted)]">
+          The requested lead profile does not exist or you do not have permission to view it.
+        </p>
+        <Link
+          href="/dashboard/pre-sales/lead-management"
+          className="inline-flex items-center text-xs font-bold text-[var(--brand-700)] bg-purple-50 hover:bg-purple-100 border border-purple-200 px-4 py-2 rounded-xl transition-all"
+        >
           Return to Leads
         </Link>
       </div>
     );
   }
 
-  const isSalesExec = typeof window !== 'undefined' && window.location.pathname.includes('/sales-executive');
-  const isSalesManager = typeof window !== 'undefined' && window.location.pathname.includes('/sales-manager');
-  const isPostSales = typeof window !== 'undefined' && window.location.pathname.includes('/post-sales');
-  const isClosingManager = typeof window !== 'undefined' && window.location.pathname.includes('/closing-manager');
-  const isChannelPartner = typeof window !== 'undefined' && window.location.pathname.includes('/channel-partner');
+  const isSalesExec = typeof window !== "undefined" && window.location.pathname.includes("/sales-executive");
+  const isSalesManager = typeof window !== "undefined" && window.location.pathname.includes("/sales-manager");
+  const isPostSales = typeof window !== "undefined" && window.location.pathname.includes("/post-sales");
+  const isClosingManager = typeof window !== "undefined" && window.location.pathname.includes("/closing-manager");
+  const isChannelPartner = typeof window !== "undefined" && window.location.pathname.includes("/channel-partner");
 
   const backHref = isSalesExec
     ? "/dashboard/sales-executive/lead-management"
     : isSalesManager
-      ? "/dashboard/sales-manager/lead-management"
-      : isPostSales
-        ? "/dashboard/post-sales/lead-management"
-        : isClosingManager
-          ? "/dashboard/closing-manager/lead-management"
-          : isChannelPartner
-            ? "/dashboard/channel-partner/customer-management"
-            : "/dashboard/pre-sales/lead-management";
+    ? "/dashboard/sales-manager/lead-management"
+    : isPostSales
+    ? "/dashboard/post-sales/lead-management"
+    : isClosingManager
+    ? "/dashboard/closing-manager/lead-management"
+    : isChannelPartner
+    ? "/dashboard/channel-partner/customer-management"
+    : "/dashboard/pre-sales/lead-management";
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="max-w-7xl mx-auto space-y-6 animate-enter">
+      {/* Top Breadcrumb / Back Bar */}
+      <div className="flex items-center gap-3">
         <Link
           href={backHref}
-          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          className="w-8 h-8 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center text-slate-600 hover:text-[var(--brand-700)] hover:border-purple-200 shadow-xs transition-all active:scale-[0.96] press-effect"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
+          <ArrowLeft size={16} />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Lead Profile</h1>
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            Prospect Profile
+          </span>
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)] leading-none m-0">
+            {lead.firstName} {lead.lastName || ""}
+          </h1>
+        </div>
       </div>
 
+      {/* Main Executive Lead Header Card */}
       <LeadHeader
         lead={lead}
         leadId={leadId}
@@ -235,23 +248,25 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
         isAiAdvancing={isAiAdvancing}
       />
 
+      {/* AI Next Step Banner */}
       {lead.aiNextStepSuggestion && (
-        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-6 shadow-sm flex items-start gap-3">
-          <div className="bg-purple-100 p-2 rounded-full mt-0.5">
-            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+        <div className="bg-gradient-to-r from-purple-50/90 to-indigo-50/90 border border-purple-200/90 rounded-2xl p-4 shadow-xs flex items-start gap-3.5">
+          <div className="w-8 h-8 rounded-xl bg-purple-100/90 flex items-center justify-center text-purple-700 flex-shrink-0 mt-0.5">
+            <Sparkles size={16} />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-purple-900 mb-1">AI Next Step Suggestion</h4>
-            <p className="text-sm text-purple-800 leading-relaxed">
+            <h4 className="text-xs font-extrabold text-purple-950 mb-0.5 tracking-tight">
+              AI Copilot Next Step Suggestion
+            </h4>
+            <p className="text-xs font-medium text-purple-800 leading-relaxed m-0">
               {lead.aiNextStepSuggestion}
             </p>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* 3-Column Core Workspace Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <LeadInformationCard
           lead={lead}
           isEditingLeadInfo={isEditingLeadInfo}
@@ -267,7 +282,6 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
           setPendingStatusChange={setPendingStatusChange}
           setIsNoteModalOpen={setIsNoteModalOpen}
         />
-        {/* Show schedule card for everyone, but hide site visits for closing manager/channel partner */}
         <LeadSchedulesCard
           siteVisits={siteVisits}
           openSiteVisitModal={openSiteVisitModal}
@@ -282,28 +296,32 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
         />
       </div>
 
+      {/* Sales Exec / Manager Extensions: Site Visits, Negotiations, Bookings */}
       {(isSalesExec || isSalesManager) && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <SiteVisitCompletedCard
-            siteVisits={siteVisits.filter(sv => sv.status === 'COMPLETED' || sv.completedAt)}
+            siteVisits={siteVisits.filter(
+              (sv) => sv.status === "COMPLETED" || sv.completedAt
+            )}
             leadId={leadId}
             onRefresh={fetchSiteVisits}
           />
           <NegotiationCard
             negotiations={negotiations}
             leadId={leadId}
-            userId={userId || ''}
+            userId={userId || ""}
             onRefresh={fetchNegotiations}
           />
           <BookingCard
             booking={booking}
             leadId={leadId}
-            userId={userId || ''}
+            userId={userId || ""}
             onRefresh={fetchBooking}
           />
         </div>
       )}
 
+      {/* Post Sales / CP / Closing Manager: Payments & Pipeline Handovers */}
       {(isPostSales || isClosingManager || isChannelPartner) && booking && (
         <>
           <PaymentHistoryCard
@@ -312,11 +330,11 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
             bookingAmount={booking.bookingAmount || 0}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <BookingCard
               booking={booking}
               leadId={leadId}
-              userId={userId || ''}
+              userId={userId || ""}
               onRefresh={fetchBooking}
               lead={lead}
               userRole={inferredRole}
@@ -335,12 +353,13 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
           </div>
         </>
       )}
+
       {(isPostSales || isClosingManager || isChannelPartner) && !booking && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <BookingCard
             booking={booking}
             leadId={leadId}
-            userId={userId || ''}
+            userId={userId || ""}
             onRefresh={fetchBooking}
             lead={lead}
             userRole={inferredRole}
@@ -348,14 +367,16 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
         </div>
       )}
 
+      {/* Call Recordings Player Card */}
       <CallRecordingsCard lead={lead} />
 
+      {/* Action Modals */}
       <NoteModal
         isOpen={isNoteModalOpen}
         onClose={() => {
           setIsNoteModalOpen(false);
           setPendingStatusChange(null);
-          setNewNoteContent('');
+          setNewNoteContent("");
         }}
         pendingStatusChange={pendingStatusChange}
         newNoteContent={newNoteContent}
@@ -389,8 +410,13 @@ export function LeadProfileClient({ leadId }: { leadId: string }) {
 
       <SiteVisitCompleteModal
         isOpen={svCompleteModalOpen}
-        onClose={() => { setSvCompleteModalOpen(false); setSelectedSvId(null); }}
-        siteVisit={siteVisits.find(sv => sv.id === selectedSvId) || selectedSvId!}
+        onClose={() => {
+          setSvCompleteModalOpen(false);
+          setSelectedSvId(null);
+        }}
+        siteVisit={
+          siteVisits.find((sv) => sv.id === selectedSvId) || selectedSvId!
+        }
         onRefresh={fetchSiteVisits}
       />
     </div>
