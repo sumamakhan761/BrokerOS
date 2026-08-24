@@ -136,7 +136,7 @@ export default function SalesExecutiveApprovalScreen() {
   };
 
   if (selectedTicketId) {
-    if (ticketLoading || !selectedTicketData) {
+    if (!selectedTicketData && ticketLoading) {
       return (
         <View className="flex-1 justify-center items-center bg-[#f8fafc]">
           <ActivityIndicator size="large" color="#2563eb" />

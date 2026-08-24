@@ -43,10 +43,11 @@ export function TowerHeatmap({ inventoryData }: { inventoryData: any }) {
               const proj = inventoryData.projects.find((p: any) => p.id === val);
               if (proj?.towers?.length > 0) setSelectedTowerId(proj.towers[0].id);
             }}
-            style={{ height: 50, width: '100%', fontSize: 14 }}
+            style={{ height: 50, width: '100%', fontSize: 14, color: '#0f172a' }}
+            dropdownIconColor="#0f172a"
           >
             {inventoryData.projects.map((p: any) => (
-              <Picker.Item key={p.id} label={p.name} value={p.id} />
+              <Picker.Item key={p.id} label={p.name} value={p.id} color="#0f172a" />
             ))}
           </Picker>
         </View>
@@ -56,10 +57,11 @@ export function TowerHeatmap({ inventoryData }: { inventoryData: any }) {
             <Picker
               selectedValue={selectedTowerId}
               onValueChange={(val) => setSelectedTowerId(val)}
-              style={{ height: 50, width: '100%', fontSize: 14 }}
+              style={{ height: 50, width: '100%', fontSize: 14, color: '#0f172a' }}
+              dropdownIconColor="#0f172a"
             >
               {selectedProject.towers.map((t: any) => (
-                <Picker.Item key={t.id} label={t.name} value={t.id} />
+                <Picker.Item key={t.id} label={t.name} value={t.id} color="#0f172a" />
               ))}
             </Picker>
           </View>

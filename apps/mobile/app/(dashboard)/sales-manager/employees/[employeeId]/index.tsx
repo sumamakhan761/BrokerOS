@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { CalendarCheck, Footprints, CheckCircle2, MessageSquare, Award } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { authClient } from '../../../../../lib/auth-client';
 import { DashboardData, LeaderboardEntry } from '../../../../../components/dashboards/sales-executive/misc/types';
@@ -8,6 +9,7 @@ import SalesExecTasks from '../../../../../components/dashboards/sales-executive
 import LiveTrackingMap from '../../../../../components/maps/LiveTrackingMap';
 import MobileEmployeeLeads from '../../../../../components/dashboards/sales-manager/widgets/MobileEmployeeLeads';
 import MobileEmployeeAnalytics from '../../../../../components/dashboards/sales-manager/widgets/MobileEmployeeAnalytics';
+import { SharedWidgetsGrid } from '../../../../../components/shared/SharedWidgetsGrid';
 
 export default function SalesManagerViewAsEmployee() {
   const router = useRouter();
@@ -102,21 +104,15 @@ export default function SalesManagerViewAsEmployee() {
           )}
 
           {widgets && (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
-              {[
-                { label: "Total SVs", value: widgets.siteVisitsScheduled, icon: "🗓️" },
-                { label: "Today's SVs", value: widgets.todaySiteVisitsDone, icon: "🏃" },
-                { label: "Completed SVs", value: widgets.siteVisitsCompleted, icon: "✅" },
-                { label: "Negotiations", value: widgets.negotiations, icon: "💬" },
-                { label: "Bookings", value: widgets.bookingsGenerated, icon: "🎉" },
-              ].map((w, i) => (
-                <View key={i} style={[styles.card, { width: '48%', padding: 16 }]}>
-                  <Text style={{ fontSize: 24, marginBottom: 8 }}>{w.icon}</Text>
-                  <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#0f172a' }}>{w.value}</Text>
-                  <Text style={{ fontSize: 13, color: '#64748b' }}>{w.label}</Text>
-                </View>
-              ))}
-            </View>
+            <SharedWidgetsGrid
+              widgets={[
+                { label: "Total SVs", value: widgets.siteVisitsScheduled, icon: CalendarCheck, accent: "indigo" },
+                { label: "Today's SVs", value: widgets.todaySiteVisitsDone, icon: Footprints, accent: "emerald" },
+                { label: "Completed SVs", value: widgets.siteVisitsCompleted, icon: CheckCircle2, accent: "teal" },
+                { label: "Negotiations", value: widgets.negotiations, icon: MessageSquare, accent: "amber" },
+                { label: "Bookings", value: widgets.bookingsGenerated, icon: Award, accent: "blue" },
+              ]}
+            />
           )}
 
           {dashData && (
