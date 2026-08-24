@@ -32,28 +32,30 @@ export default function InventoryFilters({
           <Picker
             selectedValue={filterStatus}
             onValueChange={setFilterStatus}
-            style={{ height: 50, color: 'black' }}
+            style={{ height: 50, color: '#0f172a' }}
+            dropdownIconColor="#0f172a"
           >
-            <Picker.Item label="All Status" value="ALL" />
-            <Picker.Item label="Available" value="AVAILABLE" />
-            <Picker.Item label="Reserved" value="RESERVED" />
-            <Picker.Item label="Sold" value="SOLD" />
-            <Picker.Item label="Blocked" value="BLOCKED" />
+            <Picker.Item label="All Status" value="ALL" color="#0f172a" />
+            <Picker.Item label="Available" value="AVAILABLE" color="#0f172a" />
+            <Picker.Item label="Reserved" value="RESERVED" color="#0f172a" />
+            <Picker.Item label="Sold" value="SOLD" color="#0f172a" />
+            <Picker.Item label="Blocked" value="BLOCKED" color="#0f172a" />
           </Picker>
         </View>
         <View className="flex-1 bg-white border border-slate-300 rounded-xl overflow-hidden">
           <Picker
             selectedValue={filterType}
             onValueChange={setFilterType}
-            style={{ height: 50, color: 'black' }}
+            style={{ height: 50, color: '#0f172a' }}
+            dropdownIconColor="#0f172a"
           >
-            <Picker.Item label="All Types" value="ALL" />
-            <Picker.Item label="Shop" value="SHOP" />
-            <Picker.Item label="Office" value="OFFICE" />
-            <Picker.Item label="Studio" value="STUDIO" />
-            <Picker.Item label="1 BHK" value="ONE_BHK" />
-            <Picker.Item label="2 BHK" value="TWO_BHK" />
-            <Picker.Item label="3 BHK" value="THREE_BHK" />
+            <Picker.Item label="All Types" value="ALL" color="#0f172a" />
+            <Picker.Item label="Shop" value="SHOP" color="#0f172a" />
+            <Picker.Item label="Office" value="OFFICE" color="#0f172a" />
+            <Picker.Item label="Studio" value="STUDIO" color="#0f172a" />
+            <Picker.Item label="1 BHK" value="ONE_BHK" color="#0f172a" />
+            <Picker.Item label="2 BHK" value="TWO_BHK" color="#0f172a" />
+            <Picker.Item label="3 BHK" value="THREE_BHK" color="#0f172a" />
           </Picker>
         </View>
       </View>
