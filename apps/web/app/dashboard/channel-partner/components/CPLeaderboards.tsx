@@ -1,102 +1,72 @@
+"use client";
+
 import { Award, Building2, Users } from "lucide-react";
 
 export function CPLeaderboards({ leaderboards }: { leaderboards: any }) {
   if (!leaderboards) return null;
 
-  const { topProjects = [], topClosingManagers = [], topSourcingManagers = [], topBrokers = [] } = leaderboards;
+  const {
+    topProjects = [],
+    topClosingManagers = [],
+    topSourcingManagers = [],
+    topBrokers = [],
+  } = leaderboards;
 
   return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 16,
-      marginTop: 32
-    }}>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
       {/* Column 1: Top Projects & Top Brokers */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div className="space-y-4">
         {/* Top Projects */}
-        <div style={{
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border-subtle)",
-          boxShadow: "var(--shadow-sm)",
-          borderRadius: "var(--radius-xl)",
-          padding: 24,
-        }}>
-          <h2 style={{
-            fontSize: "var(--text-lg)",
-            fontWeight: 700,
-            color: "var(--text-primary)",
-            letterSpacing: "-0.01em",
-            marginBottom: 24,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            margin: "0 0 24px 0"
-          }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Building2 size={20} style={{ color: "var(--brand-500)" }} /> Top Projects
-            </span>
-          </h2>
+        <div className="bg-white border border-slate-200/80 shadow-2xs rounded-3xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+                <Building2 size={16} />
+              </div>
+              <h2 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+                Top CP Developments
+              </h2>
+            </div>
+          </div>
 
           {topProjects.length === 0 ? (
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: 0 }}>No project data available.</p>
+            <p className="text-xs text-[var(--text-muted)] font-semibold m-0 py-6 text-center">
+              No project data available.
+            </p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="space-y-2">
               {topProjects.map((proj: any, idx: number) => {
                 const colors = [
-                  { bg: "#fef9c3", text: "#a16207" },
-                  { bg: "#f1f5f9", text: "#475569" },
-                  { bg: "#ffedd5", text: "#c2410c" },
-                  { bg: "#eff6ff", text: "#1d4ed8" }
+                  { bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200" },
+                  { bg: "bg-slate-100", text: "text-slate-700", border: "border-slate-200" },
+                  { bg: "bg-orange-50", text: "text-orange-800", border: "border-orange-200" },
+                  { bg: "bg-purple-50", text: "text-[var(--brand-700)]", border: "border-purple-200" },
                 ];
                 const color = colors[Math.min(idx, 3)];
                 return (
-                  <div key={proj.id} style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: 12,
-                    borderRadius: "var(--radius-lg)",
-                    border: "1px solid transparent",
-                    transition: "background 150ms ease, border-color 150ms ease",
-                    cursor: "default"
-                  }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLElement).style.background = "var(--bg-subtle)";
-                      (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)";
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLElement).style.background = "transparent";
-                      (e.currentTarget as HTMLElement).style.borderColor = "transparent";
-                    }}
+                  <div
+                    key={proj.id}
+                    className="flex items-center justify-between p-3 rounded-2xl bg-slate-50/50 hover:bg-slate-100/60 border border-slate-100 transition-colors"
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                      <div style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: "var(--radius-md)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: 900,
-                        background: color.bg,
-                        color: color.text,
-                        fontSize: 12
-                      }}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 border ${color.bg} ${color.text} ${color.border} tabular-nums`}
+                      >
                         #{idx + 1}
                       </div>
-                      <div>
-                        <h3 style={{
-                          margin: 0,
-                          fontSize: "var(--text-sm)",
-                          fontWeight: 700,
-                          color: "var(--text-primary)",
-                        }}>{proj.name}</h3>
+                      <div className="min-w-0">
+                        <h3 className="text-xs font-bold text-[var(--text-primary)] truncate m-0">
+                          {proj.name}
+                        </h3>
                       </div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: "var(--text-primary)" }}>{proj.bookings}</p>
-                      <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.05em" }}>BOOKINGS</p>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-black text-[var(--text-primary)] tabular-nums m-0">
+                        {proj.bookings}
+                      </p>
+                      <p className="text-[9px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider m-0">
+                        Bookings
+                      </p>
                     </div>
                   </div>
                 );
@@ -106,63 +76,43 @@ export function CPLeaderboards({ leaderboards }: { leaderboards: any }) {
         </div>
 
         {/* Top Brokers */}
-        <div style={{
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border-subtle)",
-          boxShadow: "var(--shadow-sm)",
-          borderRadius: "var(--radius-xl)",
-          padding: 24,
-        }}>
-          <h2 style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: "var(--text-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            marginBottom: 16,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            margin: "0 0 16px 0"
-          }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Users size={16} /> Top Brokers
-            </span>
-          </h2>
+        <div className="bg-white border border-slate-200/80 shadow-2xs rounded-3xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+                <Users size={16} />
+              </div>
+              <h2 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+                Top External Brokers
+              </h2>
+            </div>
+          </div>
+
           {topBrokers.length === 0 ? (
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: 0 }}>No broker data available.</p>
+            <p className="text-xs text-[var(--text-muted)] font-semibold m-0 py-6 text-center">
+              No broker data available.
+            </p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {topBrokers.map((broker: any, idx: number) => (
-                <div key={broker.id} style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: 12,
-                  borderRadius: "var(--radius-lg)",
-                  background: "var(--bg-subtle)",
-                  border: "1px solid var(--border-subtle)",
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{
-                      width: 32,
-                      height: 32,
-                      background: "var(--brand-100)",
-                      color: "var(--brand-700)",
-                      borderRadius: "50%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 800,
-                      fontSize: 12
-                    }}>
-                      {broker.name?.[0] || 'B'}
+            <div className="space-y-2">
+              {topBrokers.map((broker: any) => (
+                <div
+                  key={broker.id}
+                  className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50/50 hover:bg-slate-100/60 border border-slate-100 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-7 h-7 bg-purple-50 text-[var(--brand-700)] rounded-xl flex items-center justify-center font-extrabold text-xs shrink-0 border border-purple-200/60">
+                      {broker.name?.[0] || "B"}
                     </div>
-                    <h3 style={{ margin: 0, fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--text-secondary)" }}>{broker.name}</h3>
+                    <h3 className="text-xs font-bold text-slate-800 truncate m-0">
+                      {broker.name}
+                    </h3>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <p style={{ margin: 0, fontSize: "var(--text-sm)", fontWeight: 900, color: "var(--text-primary)" }}>
-                      {broker.bookings} <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)" }}>deals</span>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-black text-[var(--text-primary)] tabular-nums m-0">
+                      {broker.bookings}{" "}
+                      <span className="text-[10px] font-semibold text-[var(--text-muted)]">
+                        deals
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -172,83 +122,47 @@ export function CPLeaderboards({ leaderboards }: { leaderboards: any }) {
         </div>
       </div>
 
-      {/* Column 2: Internal Managers */}
-      <div style={{
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-subtle)",
-        boxShadow: "var(--shadow-sm)",
-        borderRadius: "var(--radius-xl)",
-        padding: 24,
-        display: "flex",
-        flexDirection: "column",
-        gap: 24,
-        height: "100%"
-      }}>
-        <h2 style={{
-          fontSize: "var(--text-lg)",
-          fontWeight: 700,
-          color: "var(--text-primary)",
-          letterSpacing: "-0.01em",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          margin: 0
-        }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Award size={20} style={{ color: "var(--brand-500)" }} /> Top Internal Teams
-          </span>
-        </h2>
+      {/* Column 2: Internal Teams */}
+      <div className="bg-white border border-slate-200/80 shadow-2xs rounded-3xl p-5 space-y-6">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-7 h-7 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+            <Award size={16} />
+          </div>
+          <h2 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider m-0">
+            Top Internal CP Managers
+          </h2>
+        </div>
 
         {/* Top Sourcing Managers */}
-        <div style={{ flex: 1 }}>
-          <h2 style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: "var(--text-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            marginBottom: 16,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            margin: "0 0 16px 0"
-          }}>
-            Top Sourcing Managers
-          </h2>
+        <div>
+          <h3 className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider mb-2 m-0">
+            Top Sourcing Managers (SMs)
+          </h3>
           {topSourcingManagers.length === 0 ? (
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: 0 }}>No sourcing manager data available.</p>
+            <p className="text-xs text-[var(--text-muted)] font-semibold m-0 py-4 text-center">
+              No sourcing manager data available.
+            </p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {topSourcingManagers.map((sm: any, idx: number) => (
-                <div key={sm.id} style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: 12,
-                  borderRadius: "var(--radius-lg)",
-                  background: "var(--bg-subtle)",
-                  border: "1px solid var(--border-subtle)",
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{
-                      width: 32,
-                      height: 32,
-                      background: "#d1fae5",
-                      color: "#059669",
-                      borderRadius: "50%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 800,
-                      fontSize: 12
-                    }}>
-                      {sm.name?.[0] || 'S'}
+            <div className="space-y-2">
+              {topSourcingManagers.map((sm: any) => (
+                <div
+                  key={sm.id}
+                  className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50/50 hover:bg-slate-100/60 border border-slate-100 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-7 h-7 bg-emerald-50 text-emerald-700 rounded-xl flex items-center justify-center font-extrabold text-xs shrink-0 border border-emerald-200/60">
+                      {sm.name?.[0] || "S"}
                     </div>
-                    <h3 style={{ margin: 0, fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--text-secondary)" }}>{sm.name}</h3>
+                    <h4 className="text-xs font-bold text-slate-800 truncate m-0">
+                      {sm.name}
+                    </h4>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <p style={{ margin: 0, fontSize: "var(--text-sm)", fontWeight: 900, color: "var(--text-primary)" }}>
-                      {sm.bookings} <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)" }}>broker deals</span>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-black text-emerald-700 tabular-nums m-0">
+                      {sm.bookings}{" "}
+                      <span className="text-[10px] font-semibold text-[var(--text-muted)]">
+                        broker deals
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -258,55 +172,35 @@ export function CPLeaderboards({ leaderboards }: { leaderboards: any }) {
         </div>
 
         {/* Top Closing Managers */}
-        <div style={{ flex: 1 }}>
-          <h2 style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: "var(--text-muted)",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            marginBottom: 16,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            margin: "0 0 16px 0"
-          }}>
-            Top Closing Managers
-          </h2>
+        <div>
+          <h3 className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider mb-2 m-0">
+            Top Closing Managers (CMs)
+          </h3>
           {topClosingManagers.length === 0 ? (
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: 0 }}>No closing manager data available.</p>
+            <p className="text-xs text-[var(--text-muted)] font-semibold m-0 py-4 text-center">
+              No closing manager data available.
+            </p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {topClosingManagers.map((cm: any, idx: number) => (
-                <div key={cm.id} style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: 12,
-                  borderRadius: "var(--radius-lg)",
-                  background: "var(--bg-subtle)",
-                  border: "1px solid var(--border-subtle)",
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{
-                      width: 32,
-                      height: 32,
-                      background: "#dbeafe",
-                      color: "#2563eb",
-                      borderRadius: "50%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 800,
-                      fontSize: 12
-                    }}>
-                      {cm.name?.[0] || 'C'}
+            <div className="space-y-2">
+              {topClosingManagers.map((cm: any) => (
+                <div
+                  key={cm.id}
+                  className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50/50 hover:bg-slate-100/60 border border-slate-100 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-7 h-7 bg-blue-50 text-blue-700 rounded-xl flex items-center justify-center font-extrabold text-xs shrink-0 border border-blue-200/60">
+                      {cm.name?.[0] || "C"}
                     </div>
-                    <h3 style={{ margin: 0, fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--text-secondary)" }}>{cm.name}</h3>
+                    <h4 className="text-xs font-bold text-slate-800 truncate m-0">
+                      {cm.name}
+                    </h4>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <p style={{ margin: 0, fontSize: "var(--text-sm)", fontWeight: 900, color: "var(--text-primary)" }}>
-                      {cm.bookings} <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)" }}>units sold</span>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-black text-blue-700 tabular-nums m-0">
+                      {cm.bookings}{" "}
+                      <span className="text-[10px] font-semibold text-[var(--text-muted)]">
+                        units closed
+                      </span>
                     </p>
                   </div>
                 </div>

@@ -2,26 +2,22 @@
 
 import { authClient } from "@/lib/auth-client";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, Suspense } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, LayoutDashboard, LineChart, Users, FileText, CheckSquare } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import SourcingManagerDashboard from "@/app/dashboard/sourcing-manager/page";
 import ClosingManagerDashboard from "@/app/dashboard/closing-manager/page";
-
-// We will render the existing components but tell them to fetch from a different baseUrl or they fetch automatically if we patch their fetch calls?
-// Actually, SourcingManagerDashboard is exported as a full page. We can reuse it if we pass props, but it currently doesn't accept props.
-// Alternatively, since we need to render the exact same dashboard but with different data, we might need to modify those pages to accept `viewAsEmployeeId` prop.
 
 function ViewAsPageContent() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  
+
   const employeeId = params.employeeId as string;
-  const role = searchParams.get("role") || "sourcing"; // 'sourcing' | 'closing'
-  
+  const role = searchParams.get("role") || "sourcing";
+
   const { data: session, isPending } = authClient.useSession();
-  
+
   useEffect(() => {
     if (!isPending && !session) {
       router.replace("/login");
@@ -30,36 +26,37 @@ function ViewAsPageContent() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-8 h-8 text-[var(--brand-600)] animate-spin" />
+        <p className="text-xs font-semibold text-[var(--text-muted)]">
+          Verifying session permissions…
+        </p>
       </div>
     );
   }
 
-  const roleTitle = role === "sourcing" ? "Sourcing Manager" : "Closing Manager";
+  const roleTitle =
+    role === "sourcing" ? "Sourcing Manager" : "Closing Manager";
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-8 min-h-screen">
-      <style>{`
-        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-      `}</style>
-
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 animate-enter">
       {/* View As Banner */}
-      <div className="bg-indigo-600 text-white px-6 py-3 rounded-xl flex items-center justify-between shadow-lg sticky top-4 z-50 animate-[fadeUp_0.3s_ease]">
-        <div className="flex items-center gap-3">
-          <span className="text-xl">👀</span>
-          <p className="font-medium text-sm">
-            Viewing <span className="font-bold">{roleTitle}</span>'s Dashboard
+      <div className="bg-[var(--brand-600)] text-white px-5 py-3 rounded-2xl flex items-center justify-between shadow-md">
+        <div className="flex items-center gap-2.5">
+          <span className="text-base">👀</span>
+          <p className="font-bold text-xs m-0">
+            Supervisor Mode: Viewing Active Workspace of{" "}
+            <span className="underline">{roleTitle}</span>
           </p>
         </div>
-        <Link href="/dashboard/channel-partner/employees" className="flex items-center gap-2 text-indigo-100 hover:text-white transition-colors text-sm font-semibold bg-indigo-700/50 px-3 py-1.5 rounded-lg">
-          <ArrowLeft className="w-4 h-4" /> Back to Team
+        <Link
+          href="/dashboard/channel-partner/employees"
+          className="flex items-center gap-1.5 text-white hover:bg-white/10 transition-colors text-xs font-bold bg-white/15 px-3 py-1.5 rounded-xl border border-white/20 no-underline shadow-2xs"
+        >
+          <ArrowLeft size={13} /> <span>Back to Roster</span>
         </Link>
       </div>
 
-      {/* Render the actual component and pass the employeeId via props.
-          We will need to modify SourcingManagerDashboard and ClosingManagerDashboard to accept viewAsEmployeeId.
-      */}
       {role === "sourcing" ? (
         <SourcingManagerDashboard viewAsEmployeeId={employeeId} />
       ) : (
@@ -71,7 +68,13 @@ function ViewAsPageContent() {
 
 export default function ChannelPartnerViewAsEmployee() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 text-indigo-500 animate-spin" /></div>}>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="w-8 h-8 text-[var(--brand-600)] animate-spin" />
+        </div>
+      }
+    >
       <ViewAsPageContent />
     </Suspense>
   );

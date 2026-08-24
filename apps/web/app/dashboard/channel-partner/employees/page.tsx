@@ -26,8 +26,12 @@ type EmployeeCardData = {
 
 export default function ChannelPartnerEmployees() {
   const [activeTab, setActiveTab] = useState<"sourcing" | "closing">("sourcing");
-  const [sourcingManagers, setSourcingManagers] = useState<EmployeeCardData[]>([]);
-  const [closingManagers, setClosingManagers] = useState<EmployeeCardData[]>([]);
+  const [sourcingManagers, setSourcingManagers] = useState<EmployeeCardData[]>(
+    []
+  );
+  const [closingManagers, setClosingManagers] = useState<EmployeeCardData[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,8 +43,14 @@ export default function ChannelPartnerEmployees() {
       setLoading(true);
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       const [sourcingRes, closingRes] = await Promise.all([
-        authClient.$fetch<EmployeeCardData[]>("/api/dashboard/channel-partner/employees/sourcing-managers", { baseURL: baseUrl }),
-        authClient.$fetch<EmployeeCardData[]>("/api/dashboard/channel-partner/employees/closing-managers", { baseURL: baseUrl }),
+        authClient.$fetch<EmployeeCardData[]>(
+          "/api/dashboard/channel-partner/employees/sourcing-managers",
+          { baseURL: baseUrl }
+        ),
+        authClient.$fetch<EmployeeCardData[]>(
+          "/api/dashboard/channel-partner/employees/closing-managers",
+          { baseURL: baseUrl }
+        ),
       ]);
 
       if (sourcingRes.data) setSourcingManagers(sourcingRes.data);
@@ -62,127 +72,163 @@ export default function ChannelPartnerEmployees() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 animate-enter">
       {/* Header */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Your Employees</h1>
-        <p className="text-slate-500 text-sm font-medium">Manage and track performance of your Sourcing and Closing managers.</p>
+      <div className="flex flex-col gap-1">
+        <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight flex items-center gap-2.5 m-0">
+          <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+            <Users size={18} />
+          </div>
+          <span>Channel Partner Field Teams & Managers</span>
+        </h1>
+        <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5 m-0">
+          Supervise and review individual workloads of Sourcing Managers and Closing Managers
+        </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex p-1 bg-slate-100/80 rounded-2xl w-fit border border-slate-200/60 shadow-inner">
+      <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200/60 w-fit">
         <button
           onClick={() => setActiveTab("sourcing")}
-          className={`px-8 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+          className={`px-5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
             activeTab === "sourcing"
-              ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
-              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+              ? "bg-white text-[var(--text-primary)] shadow-xs"
+              : "text-slate-500 hover:text-slate-800"
           }`}
         >
-          Sourcing Managers
+          Sourcing Managers ({sourcingManagers.length})
         </button>
         <button
           onClick={() => setActiveTab("closing")}
-          className={`px-8 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
+          className={`px-5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
             activeTab === "closing"
-              ? "bg-white text-indigo-700 shadow-sm border border-slate-200"
-              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+              ? "bg-white text-[var(--text-primary)] shadow-xs"
+              : "text-slate-500 hover:text-slate-800"
           }`}
         >
-          Closing Managers
+          Closing Managers ({closingManagers.length})
         </button>
       </div>
 
       {/* Grid */}
       {loading ? (
-        <div className="min-h-[400px] flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+        <div className="min-h-[40vh] flex flex-col items-center justify-center gap-3">
+          <Loader2 className="w-8 h-8 text-[var(--brand-600)] animate-spin" />
+          <p className="text-xs font-semibold text-[var(--text-muted)]">
+            Loading team roster…
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {(activeTab === "sourcing" ? sourcingManagers : closingManagers).map((emp) => (
-            <Link
-              href={`/dashboard/channel-partner/employees/${emp.id}?role=${activeTab}`}
-              key={emp.id}
-              className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col justify-between"
-            >
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100 flex items-center justify-center flex-shrink-0 text-indigo-600 font-bold text-lg border border-indigo-200 shadow-inner overflow-hidden relative">
-                  {emp.image ? (
-                    <Image src={emp.image} alt={emp.name} fill className="object-cover" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {(activeTab === "sourcing" ? sourcingManagers : closingManagers).map(
+            (emp) => (
+              <Link
+                href={`/dashboard/channel-partner/employees/${emp.id}?role=${activeTab}`}
+                key={emp.id}
+                className="bg-white border border-slate-200/80 rounded-3xl p-5 shadow-2xs hover:shadow-md transition-all group flex flex-col justify-between no-underline"
+              >
+                <div className="flex items-start gap-3.5 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center shrink-0 text-[var(--brand-700)] font-extrabold text-sm border border-purple-200/60 shadow-2xs overflow-hidden relative">
+                    {emp.image ? (
+                      <Image
+                        src={emp.image}
+                        alt={emp.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      getInitials(emp.name)
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-xs text-[var(--text-primary)] truncate group-hover:text-[var(--brand-700)] transition-colors m-0">
+                      {emp.name}
+                    </h3>
+                    <p className="text-[10px] font-semibold text-[var(--text-muted)] mt-0.5 m-0 tabular-nums">
+                      {emp.employeeCode}
+                    </p>
+                    <span className="text-[9px] font-extrabold text-[var(--brand-700)] mt-1.5 uppercase tracking-wider bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200/60 inline-block">
+                      {activeTab === "sourcing"
+                        ? "Sourcing Manager"
+                        : "Closing Manager"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-3 border-t border-slate-100">
+                  {activeTab === "sourcing" ? (
+                    <>
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-1.5 text-slate-500 font-semibold">
+                          <Users size={13} />
+                          <span>Total Brokers</span>
+                        </div>
+                        <span className="font-extrabold text-slate-900 tabular-nums">
+                          {emp.stats.totalBrokers || 0}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-1.5 text-slate-500 font-semibold">
+                          <CalendarCheck size={13} className="text-emerald-500" />
+                          <span>Meetings</span>
+                        </div>
+                        <span className="font-extrabold text-emerald-700 tabular-nums">
+                          {emp.stats.siteVisits || 0}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-1.5 text-slate-500 font-semibold">
+                          <Briefcase size={13} className="text-amber-500" />
+                          <span>Follow-ups</span>
+                        </div>
+                        <span className="font-extrabold text-amber-700 tabular-nums">
+                          {emp.stats.followUpsDone || 0}
+                        </span>
+                      </div>
+                    </>
                   ) : (
-                    getInitials(emp.name)
+                    <>
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-1.5 text-slate-500 font-semibold">
+                          <Users size={13} />
+                          <span>Total Leads</span>
+                        </div>
+                        <span className="font-extrabold text-slate-900 tabular-nums">
+                          {emp.stats.totalLeads || 0}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-1.5 text-slate-500 font-semibold">
+                          <Briefcase size={13} className="text-purple-500" />
+                          <span>Bookings</span>
+                        </div>
+                        <span className="font-extrabold text-purple-700 tabular-nums">
+                          {emp.stats.bookingsGenerated || 0}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-1.5 text-slate-500 font-semibold">
+                          <Home size={13} className="text-emerald-500" />
+                          <span>Units Sold</span>
+                        </div>
+                        <span className="font-extrabold text-emerald-700 tabular-nums">
+                          {emp.stats.unitsSold || 0}
+                        </span>
+                      </div>
+                    </>
                   )}
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition-colors">
-                    {emp.name}
-                  </h3>
-                  <p className="text-xs font-medium text-slate-500 mt-0.5">{emp.employeeCode}</p>
-                  <p className="text-[11px] font-bold text-indigo-500 mt-1 uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded-md inline-block">
-                    {activeTab === "sourcing" ? "Sourcing" : "Closing"}
-                  </p>
-                </div>
-              </div>
+              </Link>
+            )
+          )}
 
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                {activeTab === "sourcing" ? (
-                  <>
-                    <div className="flex justify-between items-center text-sm">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Users className="w-4 h-4 text-slate-400" />
-                        <span className="font-medium">Total Brokers</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{emp.stats.totalBrokers || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <CalendarCheck className="w-4 h-4 text-emerald-500" />
-                        <span className="font-medium">Meetings</span>
-                      </div>
-                      <span className="font-bold text-emerald-700">{emp.stats.siteVisits || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Briefcase className="w-4 h-4 text-orange-400" />
-                        <span className="font-medium">Follow-ups</span>
-                      </div>
-                      <span className="font-bold text-orange-600">{emp.stats.followUpsDone || 0}</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex justify-between items-center text-sm">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Users className="w-4 h-4 text-slate-400" />
-                        <span className="font-medium">Total Leads</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{emp.stats.totalLeads || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Briefcase className="w-4 h-4 text-indigo-400" />
-                        <span className="font-medium">Bookings</span>
-                      </div>
-                      <span className="font-bold text-indigo-600">{emp.stats.bookingsGenerated || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Home className="w-4 h-4 text-emerald-500" />
-                        <span className="font-medium">Units Sold</span>
-                      </div>
-                      <span className="font-bold text-emerald-700">{emp.stats.unitsSold || 0}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </Link>
-          ))}
-
-          {((activeTab === "sourcing" ? sourcingManagers : closingManagers).length === 0) && (
-            <div className="col-span-full py-16 flex flex-col items-center justify-center bg-slate-50 rounded-3xl border border-slate-200 border-dashed">
-              <Users className="w-12 h-12 text-slate-300 mb-4" />
-              <p className="text-slate-500 font-medium">No {activeTab} managers found.</p>
+          {(activeTab === "sourcing" ? sourcingManagers : closingManagers)
+            .length === 0 && (
+            <div className="col-span-full py-16 flex flex-col items-center justify-center bg-slate-50/60 rounded-3xl border border-slate-200 border-dashed space-y-2">
+              <Users size={24} className="text-slate-300" />
+              <p className="text-xs font-semibold text-[var(--text-muted)] m-0">
+                No {activeTab} managers found.
+              </p>
             </div>
           )}
         </div>
