@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { BookingForm } from '@/features/leads/components/booking/BookingForm';
-import { BookingSummary } from '@/features/leads/components/booking/BookingSummary';
+import React, { useState } from "react";
+import { BookingForm } from "@/features/leads/components/booking/BookingForm";
+import { BookingSummary } from "@/features/leads/components/booking/BookingSummary";
 
 interface BookingDocument {
   type: string;
@@ -35,7 +35,14 @@ interface BookingCardProps {
   userRole?: string;
 }
 
-export function BookingCard({ booking, leadId, userId, onRefresh, lead, userRole }: BookingCardProps) {
+export function BookingCard({
+  booking,
+  leadId,
+  userId,
+  onRefresh,
+  lead,
+  userRole,
+}: BookingCardProps) {
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
