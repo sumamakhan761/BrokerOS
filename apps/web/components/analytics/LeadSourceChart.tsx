@@ -1,5 +1,17 @@
-import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+"use client";
+
+import React from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
+import { PieChart as PieIcon } from "lucide-react";
 
 interface LeadSourceData {
   source: string;
@@ -11,42 +23,71 @@ interface LeadSourceChartProps {
 }
 
 export function LeadSourceChart({ data }: LeadSourceChartProps) {
-  // Add some colors for bars
-  const colors = ['#6366F1', '#8B5CF6', '#EC4899', '#F43F5E', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6'];
+  const colors = [
+    "#9333ea", // purple 600
+    "#6366f1", // indigo 500
+    "#3b82f6", // blue 500
+    "#06b6d4", // cyan 500
+    "#10b981", // emerald 500
+    "#f59e0b", // amber 500
+    "#f43f5e", // rose 500
+    "#8b5cf6", // violet 500
+  ];
 
   if (!data || data.length === 0) {
     return (
-      <div className="w-full h-[250px] flex items-center justify-center text-sm font-medium text-default-400 bg-default-50 rounded-2xl border border-default-100 border-dashed">
-        No source data for site visits in this period.
+      <div className="w-full h-[240px] flex flex-col items-center justify-center text-xs font-semibold text-[var(--text-muted)] bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 gap-2">
+        <PieIcon size={18} className="text-slate-300" />
+        <span>No lead source distribution data for this period.</span>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-[250px]">
+    <div className="w-full h-[240px] animate-enter">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
           layout="vertical"
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+          <CartesianGrid
+            strokeDasharray="3 3"
+            horizontal={false}
+            stroke="#f1f5f9"
+          />
           <XAxis type="number" hide />
-          <YAxis 
-            dataKey="source" 
-            type="category" 
-            axisLine={false} 
-            tickLine={false} 
-            tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }}
-            width={120}
+          <YAxis
+            dataKey="source"
+            type="category"
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
+            width={100}
           />
-          <Tooltip 
-            cursor={{ fill: 'transparent' }}
-            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+          <Tooltip
+            cursor={{ fill: "#f8fafc" }}
+            content={({ active, payload }) => {
+              if (active && payload && payload.length) {
+                const item = payload[0].payload as LeadSourceData;
+                return (
+                  <div className="bg-slate-900 text-white px-3 py-2 rounded-xl text-xs shadow-xl space-y-0.5">
+                    <p className="font-bold text-slate-200">{item.source}</p>
+                    <p className="font-extrabold text-white tabular-nums">
+                      {item.count} leads
+                    </p>
+                  </div>
+                );
+              }
+              return null;
+            }}
           />
-          <Bar dataKey="count" radius={[0, 8, 8, 0]} barSize={24}>
+          <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={18}>
             {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+              <Cell
+                key={`cell-${index}`}
+                fill={colors[index % colors.length]}
+              />
             ))}
           </Bar>
         </BarChart>

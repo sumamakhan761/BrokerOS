@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { motion } from "framer-motion";
 
 interface CircularPercentageProps {
   percentage: number;
@@ -9,7 +9,7 @@ interface CircularPercentageProps {
   subLabel?: string;
   size?: number;
   strokeWidth?: number;
-  color?: 'primary' | 'success' | 'warning' | 'danger';
+  color?: "primary" | "success" | "warning" | "danger";
   delay?: number;
 }
 
@@ -18,42 +18,48 @@ export function CircularPercentage({
   label,
   subLabel,
   size = 180,
-  strokeWidth = 16,
-  color = 'primary',
+  strokeWidth = 14,
+  color = "primary",
   delay = 0,
 }: CircularPercentageProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const strokeDashoffset =
+    circumference - (Math.min(percentage, 100) / 100) * circumference;
 
   const colorMap = {
     primary: {
-      stroke: '#6366F1', // Indigo 500
-      gradient: ['#818CF8', '#4F46E5'], // Indigo 400 to 600
+      stroke: "#9333ea", // purple 600
+      gradient: ["#a855f7", "#7e22ce"], // purple 500 to 700
+      text: "text-purple-900",
     },
     success: {
-      stroke: '#10B981', // Emerald 500
-      gradient: ['#34D399', '#059669'], // Emerald 400 to 600
+      stroke: "#10b981", // emerald 500
+      gradient: ["#34d399", "#059669"], // emerald 400 to 600
+      text: "text-emerald-900",
     },
     warning: {
-      stroke: '#F59E0B', // Amber 500
-      gradient: ['#FBBF24', '#D97706'], // Amber 400 to 600
+      stroke: "#f59e0b", // amber 500
+      gradient: ["#fbbf24", "#d97706"], // amber 400 to 600
+      text: "text-amber-900",
     },
     danger: {
-      stroke: '#F43F5E', // Rose 500
-      gradient: ['#FB7185', '#E11D48'], // Rose 400 to 600
+      stroke: "#f43f5e", // rose 500
+      gradient: ["#fb7185", "#e11d48"], // rose 400 to 600
+      text: "text-rose-900",
     },
   };
 
   const selectedColor = colorMap[color];
-  const gradientId = `gradient-${color}-${Math.random().toString(36).substring(7)}`;
-  const glowId = `glow-${color}-${Math.random().toString(36).substring(7)}`;
+  const gradientId = `circ-grad-${color}-${Math.random()
+    .toString(36)
+    .substring(7)}`;
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
+      initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.6, delay, type: 'spring', bounce: 0.4 }}
+      transition={{ duration: 0.4, delay, ease: "easeOut" }}
       className="flex flex-col items-center justify-center"
     >
       <div className="relative" style={{ width: size, height: size }}>
@@ -64,26 +70,29 @@ export function CircularPercentage({
           viewBox={`0 0 ${size} ${size}`}
         >
           <defs>
-            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient
+              id={gradientId}
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
               <stop offset="0%" stopColor={selectedColor.gradient[0]} />
               <stop offset="100%" stopColor={selectedColor.gradient[1]} />
             </linearGradient>
-            <filter id={glowId} x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor={selectedColor.stroke} floodOpacity="0.3" />
-            </filter>
           </defs>
 
-          {/* Background Circle */}
+          {/* Track Circle */}
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="#F1F5F9" // slate-100
+            stroke="#f1f5f9"
             strokeWidth={strokeWidth}
             fill="transparent"
           />
 
-          {/* Progress Circle */}
+          {/* Progress Indicator */}
           <motion.circle
             cx={size / 2}
             cy={size / 2}
@@ -95,27 +104,32 @@ export function CircularPercentage({
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset }}
-            transition={{ duration: 1.5, delay: delay + 0.2, ease: 'easeOut' }}
-            filter={`url(#${glowId})`}
+            transition={{ duration: 1.2, delay: delay + 0.15, ease: "easeOut" }}
           />
         </svg>
 
-        {/* Center Text */}
+        {/* Metric Counter */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: delay + 0.8 }}
-            className="text-3xl font-bold text-default-900"
+            transition={{ duration: 0.4, delay: delay + 0.5 }}
+            className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tabular-nums tracking-tight"
           >
             {percentage}%
           </motion.span>
         </div>
       </div>
-      
-      <div className="mt-4 text-center">
-        <h4 className="text-sm font-semibold text-default-700">{label}</h4>
-        {subLabel && <p className="text-xs text-default-400 mt-1">{subLabel}</p>}
+
+      <div className="mt-3 text-center">
+        <h4 className="text-xs font-bold text-[var(--text-primary)] m-0">
+          {label}
+        </h4>
+        {subLabel && (
+          <p className="text-[10px] text-[var(--text-muted)] mt-0.5 m-0 font-medium">
+            {subLabel}
+          </p>
+        )}
       </div>
     </motion.div>
   );
