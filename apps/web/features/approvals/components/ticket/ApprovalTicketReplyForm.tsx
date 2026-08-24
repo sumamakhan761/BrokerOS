@@ -1,7 +1,6 @@
-import React, { useRef } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { CheckCircle2, XCircle, RotateCcw, Paperclip, Send } from 'lucide-react';
+import React, { useRef } from "react";
+import { Button } from "@/components/ui/Button";
+import { CheckCircle2, XCircle, RotateCcw, Paperclip, Send } from "lucide-react";
 
 interface ApprovalTicketReplyFormProps {
   ticket: any;
@@ -12,7 +11,7 @@ interface ApprovalTicketReplyFormProps {
   setReplyFile: (val: File | null) => void;
   handleReply: () => void;
   handleRedo: () => void;
-  handleInstantAction: (action: 'APPROVE' | 'REJECT') => void;
+  handleInstantAction: (action: "APPROVE" | "REJECT") => void;
   loading: boolean;
 }
 
@@ -30,96 +29,98 @@ export function ApprovalTicketReplyForm({
 }: ApprovalTicketReplyFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (ticket.status === 'CLOSED') {
+  if (ticket.status === "CLOSED") {
     return null;
   }
 
   return (
     <div className="p-4 border-t border-slate-100 bg-white rounded-b-2xl flex flex-col gap-3">
       {/* Action Buttons for Manager */}
-      {role === 'SALES_MANAGER' && ticket.status === 'REQUESTED' && (
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <Button
-            size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700 font-bold rounded-lg shadow-sm transition-all text-xs"
-            onClick={() => handleInstantAction('APPROVE')}
+      {role === "SALES_MANAGER" && ticket.status === "REQUESTED" && (
+        <div className="flex items-center justify-center gap-2 pb-1 border-b border-slate-100">
+          <button
+            onClick={() => handleInstantAction("APPROVE")}
             disabled={loading}
+            className="h-8 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all active:scale-[0.96] press-effect flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-            Approve
-          </Button>
-          <Button
-            size="sm"
-            className="bg-rose-600 hover:bg-rose-700 font-bold rounded-lg shadow-sm transition-all text-xs"
-            onClick={() => handleInstantAction('REJECT')}
+            <CheckCircle2 size={14} />
+            <span>Approve Request</span>
+          </button>
+          <button
+            onClick={() => handleInstantAction("REJECT")}
             disabled={loading}
+            className="h-8 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition-all active:scale-[0.96] press-effect flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            <XCircle className="w-3.5 h-3.5 mr-1.5" />
-            Reject
-          </Button>
+            <XCircle size={14} />
+            <span>Reject Request</span>
+          </button>
         </div>
       )}
-      
-      {role === 'SALES_MANAGER' && (ticket.status === 'APPROVED' || ticket.status === 'REJECTED') && ticket.redoCount < 2 && (
-        <div className="flex justify-center mb-2">
-          <Button
-            size="sm"
-            className="bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg shadow-sm transition-all text-xs"
-            onClick={handleRedo}
-            disabled={loading}
-          >
-            <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-            Redo Decision ({2 - ticket.redoCount} left)
-          </Button>
-        </div>
-      )}
+
+      {role === "SALES_MANAGER" &&
+        (ticket.status === "APPROVED" || ticket.status === "REJECTED") &&
+        ticket.redoCount < 2 && (
+          <div className="flex justify-center pb-1 border-b border-slate-100">
+            <button
+              onClick={handleRedo}
+              disabled={loading}
+              className="h-8 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs transition-all active:scale-[0.96] press-effect flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <RotateCcw size={13} />
+              <span>Redo Decision ({2 - ticket.redoCount} left)</span>
+            </button>
+          </div>
+        )}
 
       {/* Chat Input Bar */}
       <div className="flex flex-col gap-2">
         {replyFile && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-lg self-start text-xs font-semibold text-indigo-700">
-            <Paperclip className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2 px-3 py-1 bg-purple-50 border border-purple-200 rounded-lg self-start text-xs font-bold text-[var(--brand-700)]">
+            <Paperclip size={12} />
             <span className="truncate max-w-[200px]">{replyFile.name}</span>
-            <button onClick={() => setReplyFile(null)} className="ml-1 text-indigo-400 hover:text-indigo-600">
-              <XCircle className="w-3.5 h-3.5" />
+            <button
+              onClick={() => setReplyFile(null)}
+              className="ml-1 text-purple-400 hover:text-purple-700"
+            >
+              <XCircle size={12} />
             </button>
           </div>
         )}
-        
+
         <div className="flex items-center gap-2">
-          <Input
+          <input
             type="file"
             className="hidden"
             ref={fileInputRef}
             onChange={(e: any) => setReplyFile(e.target.files?.[0] || null)}
           />
-          <button 
+          <button
             onClick={() => fileInputRef.current?.click()}
-            className="p-2.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
-            title="Attach File"
+            className="w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-500 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            title="Attach Document"
           >
-            <Paperclip className="w-5 h-5" />
+            <Paperclip size={16} />
           </button>
-          
-          <Input
-            placeholder="Type a message..."
+
+          <input
+            placeholder="Type your discussion response…"
             value={replyDesc}
             onChange={(e: any) => setReplyDesc(e.target.value)}
-            className="flex-1 rounded-full border-slate-200 bg-slate-50 focus-visible:ring-indigo-500 shadow-none font-medium px-4 h-11"
+            className="flex-1 h-9 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 outline-none font-medium px-3 text-base sm:text-xs text-[var(--text-primary)] transition-all"
             onKeyDown={(e: any) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleReply();
               }
             }}
           />
-          
-          <button 
+
+          <button
             onClick={handleReply}
             disabled={loading || (!replyDesc.trim() && !replyFile)}
-            className="p-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center"
+            className="w-9 h-9 rounded-xl bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white transition-all active:scale-[0.96] press-effect disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center cursor-pointer shrink-0"
           >
-            <Send className="w-4 h-4 ml-0.5" />
+            <Send size={14} />
           </button>
         </div>
       </div>

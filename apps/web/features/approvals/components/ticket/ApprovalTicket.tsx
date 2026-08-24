@@ -1,13 +1,14 @@
-'use client';
-import React, { useState } from 'react';
-import { ApprovalTicketHeader } from '@/features/approvals/components/ticket/ApprovalTicketHeader';
-import { ApprovalTicketMessages } from '@/features/approvals/components/ticket/ApprovalTicketMessages';
-import { ApprovalTicketReplyForm } from '@/features/approvals/components/ticket/ApprovalTicketReplyForm';
-import { toast } from 'sonner';
+"use client";
+
+import React, { useState } from "react";
+import { ApprovalTicketHeader } from "@/features/approvals/components/ticket/ApprovalTicketHeader";
+import { ApprovalTicketMessages } from "@/features/approvals/components/ticket/ApprovalTicketMessages";
+import { ApprovalTicketReplyForm } from "@/features/approvals/components/ticket/ApprovalTicketReplyForm";
+import { toast } from "sonner";
 
 export default function ApprovalTicket({
   ticket,
-  role, // 'SALES_EXECUTIVE' | 'SALES_MANAGER'
+  role,
   onBack,
   onUpdate,
 }: {
@@ -17,65 +18,62 @@ export default function ApprovalTicket({
   onUpdate: () => void;
 }) {
   const [loading, setLoading] = useState(false);
-  const [replyDesc, setReplyDesc] = useState('');
+  const [replyDesc, setReplyDesc] = useState("");
   const [replyFile, setReplyFile] = useState<File | null>(null);
-
-  // For the manager's action when replying
-  const [actionType, setActionType] = useState<'APPROVE' | 'REJECT' | 'REPLY'>('REPLY');
 
   const handleReply = async () => {
     if (!replyDesc.trim() && !replyFile) {
-      toast.error('Message or file is required.');
+      toast.error("Message or file is required.");
       return;
     }
 
     try {
       setLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
 
-      let uploadedUrl = '';
+      let uploadedUrl = "";
       if (replyFile) {
         const formData = new FormData();
-        formData.append('file', replyFile);
+        formData.append("file", replyFile);
 
         const uploadRes = await fetch(`${apiUrl}/api/approvals/upload`, {
-          method: 'POST',
+          method: "POST",
           body: formData,
         });
 
         if (uploadRes.ok) {
           const uploadData = await uploadRes.json();
-          uploadedUrl = uploadData.url || '';
+          uploadedUrl = uploadData.url || "";
         } else {
-          toast.error('Failed to upload file');
+          toast.error("Failed to upload file");
           setLoading(false);
           return;
         }
       }
 
       const res = await fetch(`${apiUrl}/api/approvals/${ticket.id}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: 'Message',
+          title: "Message",
           description: replyDesc,
           fileUrl: uploadedUrl,
-          action: 'REPLY',
+          action: "REPLY",
         }),
       });
 
       if (!res.ok) {
-        toast.error('Failed to submit message');
+        toast.error("Failed to submit message");
         setLoading(false);
         return;
       }
 
-      toast.success('Message Sent!');
-      setReplyDesc('');
+      toast.success("Message sent!");
+      setReplyDesc("");
       setReplyFile(null);
       onUpdate();
-    } catch (e) {
-      toast.error('An error occurred');
+    } catch {
+      toast.error("An error occurred");
     } finally {
       setLoading(false);
     }
@@ -84,33 +82,34 @@ export default function ApprovalTicket({
   const handleCloseTicket = async () => {
     try {
       setLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       const res = await fetch(`${apiUrl}/api/approvals/${ticket.id}/close`, {
-        method: 'PATCH',
+        method: "PATCH",
       });
       if (res.ok) {
-        toast.success('Ticket closed');
+        toast.success("Ticket closed");
         onUpdate();
       } else {
-        toast.error('Failed to close ticket');
+        toast.error("Failed to close ticket");
       }
-    } catch (e) {
-      toast.error('Error closing ticket');
+    } catch {
+      toast.error("Error closing ticket");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInstantAction = async (action: 'APPROVE' | 'REJECT') => {
+  const handleInstantAction = async (action: "APPROVE" | "REJECT") => {
     try {
       setLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       const res = await fetch(`${apiUrl}/api/approvals/${ticket.id}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: action === 'APPROVE' ? 'Approval' : 'Rejection',
-          description: action === 'APPROVE' ? 'Request Approved.' : 'Request Rejected.',
+          title: action === "APPROVE" ? "Approval" : "Rejection",
+          description:
+            action === "APPROVE" ? "Request Approved." : "Request Rejected.",
           action,
         }),
       });
@@ -121,10 +120,12 @@ export default function ApprovalTicket({
         return;
       }
 
-      toast.success(action === 'APPROVE' ? 'Request Approved!' : 'Request Rejected!');
+      toast.success(
+        action === "APPROVE" ? "Request Approved!" : "Request Rejected!"
+      );
       onUpdate();
-    } catch (e) {
-      toast.error('An error occurred');
+    } catch {
+      toast.error("An error occurred");
     } finally {
       setLoading(false);
     }
@@ -133,26 +134,26 @@ export default function ApprovalTicket({
   const handleRedo = async () => {
     try {
       setLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       const res = await fetch(`${apiUrl}/api/approvals/${ticket.id}/redo`, {
-        method: 'POST',
+        method: "POST",
       });
       if (res.ok) {
-        toast.success('Action Undone');
+        toast.success("Action Undone");
         onUpdate();
       } else {
         const errorData = await res.json().catch(() => ({}));
-        toast.error(errorData.message || 'Failed to redo decision');
+        toast.error(errorData.message || "Failed to redo decision");
       }
-    } catch (e) {
-      toast.error('Error undoing action');
+    } catch {
+      toast.error("Error undoing action");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 h-full flex flex-col transition-all duration-300 hover:shadow-md">
+    <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 h-full flex flex-col transition-all overflow-hidden">
       <ApprovalTicketHeader
         ticket={ticket}
         role={role}
@@ -161,10 +162,7 @@ export default function ApprovalTicket({
         loading={loading}
       />
 
-      <ApprovalTicketMessages
-        ticket={ticket}
-        role={role}
-      />
+      <ApprovalTicketMessages ticket={ticket} role={role} />
 
       <ApprovalTicketReplyForm
         ticket={ticket}
