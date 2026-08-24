@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Calendar, Search, MessageSquare, ChevronRight } from "lucide-react";
+import { Calendar, Search, ChevronRight, Loader2 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
@@ -16,7 +16,7 @@ export default function BookingPage() {
 
   const fetchBookings = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       const res = await fetch(`${apiUrl}/api/bookings`);
       if (res.ok) {
         const data = await res.json();
@@ -32,109 +32,145 @@ export default function BookingPage() {
   const filteredBookings = useMemo(() => {
     if (!searchQuery.trim()) return bookings;
     const lowerQ = searchQuery.toLowerCase();
-    return bookings.filter(b => {
-      const name = `${b.customer?.firstName || ''} ${b.customer?.lastName || ''}`.toLowerCase();
-      const bookingNo = (b.bookingNumber || '').toLowerCase();
-      const unitNo = (b.unit?.unitNumber || '').toLowerCase();
-      return name.includes(lowerQ) || bookingNo.includes(lowerQ) || unitNo.includes(lowerQ);
+    return bookings.filter((b) => {
+      const name =
+        `${b.customer?.firstName || ""} ${b.customer?.lastName || ""}`.toLowerCase();
+      const bookingNo = (b.bookingNumber || "").toLowerCase();
+      const unitNo = (b.unit?.unitNumber || "").toLowerCase();
+      return (
+        name.includes(lowerQ) ||
+        bookingNo.includes(lowerQ) ||
+        unitNo.includes(lowerQ)
+      );
     });
   }, [bookings, searchQuery]);
 
   return (
-    <div className="flex-1 w-full bg-slate-50 animate-[fadeUp_0.4s_ease_forwards]">
-      <style>{`
-        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-      `}</style>
-      <div className="p-6 h-[calc(100vh-64px)] flex flex-col max-w-[1600px] mx-auto w-full">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm">
-              <Calendar className="w-6 h-6" />
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 animate-enter">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight flex items-center gap-2.5 m-0">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+              <Calendar size={18} />
             </div>
-            <div>
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Bookings</h1>
-              <p className="text-sm font-medium text-slate-500 mt-1">View and manage finalized unit bookings.</p>
-            </div>
-          </div>
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search by name, booking no, or unit..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm transition-all"
-            />
-          </div>
+            <span>Finalized Bookings</span>
+          </h1>
+          <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5 m-0">
+            Confirmed unit sales, transaction vouchers, and payment records
+          </p>
         </div>
+        <div className="relative w-full md:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by name, booking #, or unit..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] placeholder:text-slate-400 focus:outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 shadow-2xs transition-all"
+          />
+        </div>
+      </div>
 
-        {loading ? (
-          <div className="flex justify-center items-center py-20 flex-col gap-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-            <p className="text-sm font-medium text-slate-500">Loading bookings...</p>
+      {loading ? (
+        <div className="flex justify-center items-center py-20 flex-col gap-3">
+          <Loader2 className="w-8 h-8 text-[var(--brand-600)] animate-spin" />
+          <p className="text-xs font-semibold text-[var(--text-muted)]">
+            Loading confirmed bookings…
+          </p>
+        </div>
+      ) : filteredBookings.length === 0 ? (
+        <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200 space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)] mx-auto border border-purple-200 shadow-2xs">
+            <Calendar size={20} />
           </div>
-        ) : filteredBookings.length === 0 ? (
-          <div className="text-center py-24 bg-white rounded-2xl border-2 border-dashed border-slate-200 transition-all hover:border-indigo-200 hover:bg-indigo-50/30 group">
-            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-5 group-hover:bg-indigo-100 transition-colors">
-              <Calendar className="w-8 h-8 text-slate-300 group-hover:text-indigo-500 transition-colors" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900">{searchQuery ? 'No results found' : 'No Bookings Yet'}</h3>
-            <p className="text-sm font-medium text-slate-500 mb-6 mt-1">
-              {searchQuery ? 'Try adjusting your search terms.' : 'Bookings you process and mark as "Done" will appear here.'}
+          <div>
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)] m-0">
+              {searchQuery ? "No matching bookings found" : "No Bookings Recorded Yet"}
+            </h3>
+            <p className="text-xs text-[var(--text-muted)] font-medium mt-1 max-w-sm mx-auto m-0">
+              {searchQuery
+                ? "Try adjusting your search criteria."
+                : "Bookings generated from accepted negotiations will appear here."}
             </p>
           </div>
-        ) : (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md flex-1">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-50/50 border-b border-slate-100">
-                  <tr>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-16">Sr</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Customer Name</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Phone</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Booking No.</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Unit</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Agreed Price</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-10"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50/50">
-                  {filteredBookings.map((booking, index) => {
-                    const phone = booking.customer?.lead?.phone || booking.customer?.phone || 'N/A';
-                    return (
-                      <tr
-                        key={booking.id}
-                        onClick={() => router.push(`/dashboard/sales-executive/lead-management/${booking.customer?.lead?.id}`)}
-                        className="hover:bg-slate-50 cursor-pointer transition-colors group"
-                      >
-                        <td className="px-6 py-4 text-slate-400 font-bold">{index + 1}</td>
-                        <td className="px-6 py-4 text-slate-900 font-bold group-hover:text-indigo-600 transition-colors">
-                          {booking.customer?.firstName} {booking.customer?.lastName}
-                        </td>
-                        <td className="px-6 py-4 text-slate-600 font-medium">{phone}</td>
-                        <td className="px-6 py-4 text-slate-600 font-medium">
-                          <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-xs font-bold tracking-wider uppercase border border-slate-200 shadow-sm">
-                            {booking.bookingNumber}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-slate-900 font-bold">{booking.unit?.unitNumber || 'N/A'}</td>
-                        <td className="px-6 py-4 text-emerald-600 font-bold text-right">
-                          ₹{Number(booking.agreedPrice).toLocaleString('en-IN')}
-                        </td>
-                        <td className="px-6 py-4 pr-6">
-                          <div className="w-8 h-8 rounded-lg bg-transparent group-hover:bg-indigo-100 flex items-center justify-center transition-colors float-right">
-                            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs whitespace-nowrap">
+              <thead className="bg-slate-50/80 border-b border-slate-100">
+                <tr>
+                  <th className="px-5 py-3 text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider w-12">
+                    #
+                  </th>
+                  <th className="px-5 py-3 text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th className="px-5 py-3 text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider">
+                    Contact
+                  </th>
+                  <th className="px-5 py-3 text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider">
+                    Booking #
+                  </th>
+                  <th className="px-5 py-3 text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider">
+                    Unit
+                  </th>
+                  <th className="px-5 py-3 text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider text-right">
+                    Agreed Sale Price
+                  </th>
+                  <th className="px-5 py-3 w-10"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredBookings.map((booking, index) => {
+                  const phone =
+                    booking.customer?.lead?.phone ||
+                    booking.customer?.phone ||
+                    "N/A";
+                  return (
+                    <tr
+                      key={booking.id}
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/sales-executive/lead-management/${booking.customer?.lead?.id}`
+                        )
+                      }
+                      className="hover:bg-slate-50/80 cursor-pointer transition-colors group"
+                    >
+                      <td className="px-5 py-3.5 text-slate-400 font-bold tabular-nums">
+                        {index + 1}
+                      </td>
+                      <td className="px-5 py-3.5 font-bold text-[var(--text-primary)] group-hover:text-[var(--brand-700)] transition-colors">
+                        {booking.customer?.firstName} {booking.customer?.lastName}
+                      </td>
+                      <td className="px-5 py-3.5 text-slate-600 font-semibold tabular-nums">
+                        {phone}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="bg-purple-50 text-[var(--brand-700)] border border-purple-200/60 px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider uppercase tabular-nums">
+                          {booking.bookingNumber}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 font-bold text-[var(--text-primary)]">
+                        {booking.unit?.unitNumber || "N/A"}
+                      </td>
+                      <td className="px-5 py-3.5 font-extrabold text-emerald-700 text-right tabular-nums">
+                        ₹{Number(booking.agreedPrice).toLocaleString("en-IN")}
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <div className="w-7 h-7 rounded-lg group-hover:bg-purple-50 flex items-center justify-center text-slate-400 group-hover:text-[var(--brand-700)] transition-colors inline-flex">
+                          <ChevronRight size={15} />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
