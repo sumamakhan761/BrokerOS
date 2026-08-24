@@ -1,11 +1,10 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { TrendingUp, Plus } from 'lucide-react';
-import { NegotiationNote } from '@/features/leads/types/negotiation-types';
-import { useNegotiation } from '@/features/leads/hooks/useNegotiation';
-import { NegotiationAddForm } from '@/features/leads/components/negotiations/NegotiationAddForm';
-import { NegotiationTimeline } from '@/features/leads/components/negotiations/NegotiationTimeline';
+import React from "react";
+import { TrendingUp, Plus } from "lucide-react";
+import { useNegotiation } from "@/features/leads/hooks/useNegotiation";
+import { NegotiationAddForm } from "@/features/leads/components/negotiations/NegotiationAddForm";
+import { NegotiationTimeline } from "@/features/leads/components/negotiations/NegotiationTimeline";
 
 interface NegotiationCardProps {
   negotiations: any[];
@@ -14,9 +13,14 @@ interface NegotiationCardProps {
   onRefresh: () => void;
 }
 
-export function NegotiationCard({ negotiations, leadId, userId, onRefresh }: NegotiationCardProps) {
+export function NegotiationCard({
+  negotiations,
+  leadId,
+  userId,
+  onRefresh,
+}: NegotiationCardProps) {
   const negotiationNotes = negotiations;
-  
+
   const {
     showForm,
     setShowForm,
@@ -27,29 +31,36 @@ export function NegotiationCard({ negotiations, leadId, userId, onRefresh }: Neg
   } = useNegotiation(leadId, userId, onRefresh);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
-      <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+      {/* Header */}
+      <div className="p-5 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-violet-50/80 flex items-center justify-center border border-violet-100/50">
-            <TrendingUp className="w-5 h-5 text-violet-600" />
+          <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center border border-purple-200 text-[var(--brand-700)]">
+            <TrendingUp size={18} />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Negotiation</h3>
-            <p className="text-xs text-gray-500 font-medium">{negotiationNotes.length} round{negotiationNotes.length !== 1 ? 's' : ''}</p>
+            <h3 className="text-xs font-bold text-[var(--text-primary)] m-0">
+              Pricing Negotiations
+            </h3>
+            <p className="text-[11px] text-[var(--text-muted)] font-medium mt-0.5 tabular-nums m-0">
+              {negotiationNotes.length} round
+              {negotiationNotes.length !== 1 ? "s" : ""} recorded
+            </p>
           </div>
         </div>
+
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-1.5 text-sm bg-violet-50 text-violet-600 hover:bg-violet-100 hover:text-violet-700 px-3 py-1.5 rounded-lg font-medium transition-all"
+          className="inline-flex items-center gap-1.5 text-xs bg-purple-50 text-[var(--brand-700)] hover:bg-purple-100 border border-purple-200 px-3.5 py-1.5 rounded-xl font-bold transition-all active:scale-[0.96] press-effect shadow-2xs cursor-pointer"
         >
-          <Plus className="w-4 h-4" />
-          Add Round
+          <Plus size={13} />
+          <span>{showForm ? "Cancel" : "Add Round"}</span>
         </button>
       </div>
 
-      <div className="p-6 space-y-5">
+      <div className="p-5 space-y-4">
         {showForm && (
-          <NegotiationAddForm 
+          <NegotiationAddForm
             form={form}
             setForm={setForm}
             saving={saving}
@@ -62,4 +73,3 @@ export function NegotiationCard({ negotiations, leadId, userId, onRefresh }: Neg
     </div>
   );
 }
-

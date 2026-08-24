@@ -1,32 +1,36 @@
-import React, { useState } from 'react';
-import { TrendingUp, ChevronDown, ChevronUp, Handshake } from 'lucide-react';
-import { NegotiationNote, parseNegotiationContent } from '@/features/leads/types/negotiation-types';
+import React, { useState } from "react";
+import { TrendingUp, ChevronDown, ChevronUp, Handshake } from "lucide-react";
 
 interface NegotiationTimelineProps {
   negotiationNotes: any[];
 }
 
-export function NegotiationTimeline({ negotiationNotes }: NegotiationTimelineProps) {
+export function NegotiationTimeline({
+  negotiationNotes,
+}: NegotiationTimelineProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const toggleExpand = (id: string) => {
-    setExpandedId(prev => prev === id ? null : id);
+    setExpandedId((prev) => (prev === id ? null : id));
   };
 
   if (negotiationNotes.length === 0) {
     return (
-      <div className="text-center py-10 bg-gray-50/50 rounded-2xl border border-gray-100">
-        <TrendingUp className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-        <p className="text-sm font-medium text-gray-600">No negotiation rounds yet</p>
-        <p className="text-xs text-gray-500 mt-1">Click "Add Round" to log the first negotiation</p>
+      <div className="text-center py-8 bg-slate-50/50 rounded-xl border border-slate-100">
+        <TrendingUp className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+        <p className="text-xs font-semibold text-[var(--text-secondary)] m-0">
+          No negotiation rounds logged yet
+        </p>
+        <p className="text-[11px] text-[var(--text-muted)] mt-0.5 m-0">
+          Click &quot;Add Round&quot; above to log pricing conversations.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="relative space-y-4">
-      {negotiationNotes.map((note, index) => {
-        // Map database fields to the UI expected variables
+    <div className="space-y-3">
+      {negotiationNotes.map((note) => {
         const data = {
           askingPrice: note.askingPrice,
           offeredPrice: note.offeredPrice,
@@ -36,95 +40,140 @@ export function NegotiationTimeline({ negotiationNotes }: NegotiationTimelinePro
           nextStep: note.nextActionPlan,
         };
         const isExpanded = expandedId === note.id;
-        const gap = data.askingPrice && data.offeredPrice
-          ? Number(data.askingPrice) - Number(data.offeredPrice)
-          : null;
+        const gap =
+          data.askingPrice && data.offeredPrice
+            ? Number(data.askingPrice) - Number(data.offeredPrice)
+            : null;
 
         return (
-          <div key={note.id} className="flex gap-3">
-            {/* Content */}
-            <div className="flex-1 border border-gray-100 rounded-2xl overflow-hidden mb-1 shadow-sm transition-all">
-              {/* Header row */}
-              <div
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50/80 transition-colors"
-                onClick={() => toggleExpand(note.id)}
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center border border-violet-100/50">
-                    <Handshake className="w-4.5 h-4.5 text-violet-600" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">{data.title || 'Round'}</p>
-                    <p className="text-xs font-medium text-gray-500 mt-0.5">
-                      {new Date(note.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </p>
-                  </div>
+          <div
+            key={note.id}
+            className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs transition-all bg-white"
+          >
+            {/* Header Row */}
+            <div
+              className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50/80 transition-colors"
+              onClick={() => toggleExpand(note.id)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center border border-purple-200 text-[var(--brand-700)]">
+                  <Handshake size={16} />
                 </div>
-                <div className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
-                  {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+                <div>
+                  <p className="font-bold text-xs text-[var(--text-primary)] m-0">
+                    {data.title || "Negotiation Round"}
+                  </p>
+                  <p className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5 tabular-nums m-0">
+                    {new Date(note.createdAt).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </p>
                 </div>
               </div>
 
-              {/* Expanded detail */}
-              {isExpanded && (
-                <div className="border-t border-gray-100 p-4 bg-gray-50 space-y-4">
-                  {(data.askingPrice || data.offeredPrice) && (
-                    <div className="flex gap-4 mb-3">
-                      {data.askingPrice && (
-                        <div className="bg-blue-50 rounded-lg px-3 py-2 text-center">
-                          <p className="text-xs text-blue-600 font-medium">Our Price</p>
-                          <p className="text-sm font-bold text-blue-800">₹{Number(data.askingPrice).toLocaleString('en-IN')}</p>
-                        </div>
-                      )}
-                      {data.offeredPrice && (
-                        <div className="bg-orange-50 rounded-lg px-3 py-2 text-center">
-                          <p className="text-xs text-orange-600 font-medium">Customer Offered</p>
-                          <p className="text-sm font-bold text-orange-800">₹{Number(data.offeredPrice).toLocaleString('en-IN')}</p>
-                        </div>
-                      )}
-                      {gap !== null && gap > 0 && (
-                        <div className="bg-red-50/80 rounded-xl p-3 text-center border border-red-100/50">
-                          <p className="text-xs text-red-600 font-medium mb-1">Gap</p>
-                          <p className="text-[15px] font-bold text-red-900">₹{gap.toLocaleString('en-IN')}</p>
-                        </div>
-                      )}
-                    </div>
+              <div className="flex items-center gap-2">
+                {gap !== null && (
+                  <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full tabular-nums">
+                    Gap: ₹{gap.toLocaleString("en-IN")}
+                  </span>
+                )}
+                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-slate-50 text-slate-500">
+                  {isExpanded ? (
+                    <ChevronUp size={14} />
+                  ) : (
+                    <ChevronDown size={14} />
                   )}
+                </div>
+              </div>
+            </div>
 
-                  <div className="grid grid-cols-1 gap-3">
-                    {data.objections && (
-                      <div className="bg-white border border-gray-100 rounded-xl p-3.5 shadow-sm hover:border-red-100 transition-colors">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                          <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Customer Objections</h4>
-                        </div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{data.objections}</p>
+            {/* Expanded Detail */}
+            {isExpanded && (
+              <div className="border-t border-slate-100 p-4 bg-slate-50/40 space-y-3.5 animate-enter">
+                {(data.askingPrice || data.offeredPrice) && (
+                  <div className="flex flex-wrap gap-3">
+                    {data.askingPrice && (
+                      <div className="bg-sky-50 border border-sky-200 rounded-xl px-3.5 py-2 text-center">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-sky-800 m-0">
+                          Firm Asking Price
+                        </p>
+                        <p className="text-xs font-extrabold text-sky-950 tabular-nums mt-0.5 m-0">
+                          ₹{Number(data.askingPrice).toLocaleString("en-IN")}
+                        </p>
                       </div>
                     )}
-                    
-                    {data.strategy && (
-                      <div className="bg-white border border-gray-100 rounded-xl p-3.5 shadow-sm hover:border-violet-100 transition-colors">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-violet-500"></div>
-                          <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Our Strategy</h4>
-                        </div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{data.strategy}</p>
+
+                    {data.offeredPrice && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2 text-center">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 m-0">
+                          Customer Offer
+                        </p>
+                        <p className="text-xs font-extrabold text-amber-950 tabular-nums mt-0.5 m-0">
+                          ₹{Number(data.offeredPrice).toLocaleString("en-IN")}
+                        </p>
                       </div>
                     )}
-                    
-                    {data.nextStep && (
-                      <div className="bg-white border border-gray-100 rounded-xl p-3.5 shadow-sm hover:border-green-100 transition-colors">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                          <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Next Step</h4>
-                        </div>
-                        <p className="text-sm text-gray-700 leading-relaxed">{data.nextStep}</p>
+
+                    {gap !== null && gap > 0 && (
+                      <div className="bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-2 text-center">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-rose-800 m-0">
+                          Price Delta
+                        </p>
+                        <p className="text-xs font-extrabold text-rose-950 tabular-nums mt-0.5 m-0">
+                          ₹{gap.toLocaleString("en-IN")}
+                        </p>
                       </div>
                     )}
                   </div>
+                )}
+
+                <div className="space-y-2.5 text-xs">
+                  {data.objections && (
+                    <div className="bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        <h4 className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider m-0">
+                          Customer Objections
+                        </h4>
+                      </div>
+                      <p className="text-xs text-[var(--text-secondary)] leading-relaxed m-0">
+                        {data.objections}
+                      </p>
+                    </div>
+                  )}
+
+                  {data.strategy && (
+                    <div className="bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                        <h4 className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider m-0">
+                          Negotiation Strategy & Counter
+                        </h4>
+                      </div>
+                      <p className="text-xs text-[var(--text-secondary)] leading-relaxed m-0">
+                        {data.strategy}
+                      </p>
+                    </div>
+                  )}
+
+                  {data.nextStep && (
+                    <div className="bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <h4 className="text-[10px] font-extrabold text-[var(--text-muted)] uppercase tracking-wider m-0">
+                          Next Action Agreed
+                        </h4>
+                      </div>
+                      <p className="text-xs text-[var(--text-secondary)] leading-relaxed m-0">
+                        {data.nextStep}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         );
       })}
