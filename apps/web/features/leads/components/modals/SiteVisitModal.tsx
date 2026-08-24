@@ -1,6 +1,6 @@
-import React from 'react';
-import { Card } from '@/components/ui/Card';
-import { X, Trash2 } from 'lucide-react';
+import React from "react";
+import { Card } from "@/components/ui/Card";
+import { X, Trash2, MapPin } from "lucide-react";
 
 interface SiteVisitData {
   projectId: string;
@@ -35,54 +35,142 @@ export function SiteVisitModal({
   handleSaveSiteVisit,
   handleDeleteSiteVisit,
   availableProjects,
-  isSaving
+  isSaving,
 }: SiteVisitModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <Card className="w-full max-w-lg p-7 shadow-2xl animate-in fade-in zoom-in-95 duration-200 rounded-3xl">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-gray-900">
-            {editingSiteVisitId ? 'Edit Site Visit' : 'Schedule Site Visit'}
-          </h3>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-            <X className="w-5 h-5" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-enter">
+      <Card className="w-full max-w-lg p-6 rounded-2xl border border-slate-200/80 shadow-2xl bg-white space-y-4">
+        {/* Header */}
+        <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+              <MapPin size={16} />
+            </div>
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)] tracking-tight m-0">
+              {editingSiteVisitId ? "Edit Site Visit Details" : "Schedule Site Visit"}
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full flex items-center justify-center transition-all cursor-pointer"
+          >
+            <X size={15} />
           </button>
         </div>
-        <div className="space-y-5">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-gray-700">Project</label>
-            <select value={siteVisitData.projectId} onChange={(e) => setSiteVisitData({ ...siteVisitData, projectId: e.target.value })} className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm w-full text-black">
-              <option value="" disabled>Select Project</option>
-              {availableProjects.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+
+        <div className="space-y-3.5">
+          {/* Project Selector */}
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+              Destination Project
+            </label>
+            <select
+              value={siteVisitData.projectId}
+              onChange={(e) =>
+                setSiteVisitData({ ...siteVisitData, projectId: e.target.value })
+              }
+              className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all cursor-pointer"
+            >
+              <option value="" disabled>
+                Select Project
+              </option>
+              {availableProjects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
             </select>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-gray-700">Date & Time</label>
-            <input type="datetime-local" value={siteVisitData.date} onChange={(e) => setSiteVisitData({ ...siteVisitData, date: e.target.value })} className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm w-full text-black" />
+
+          {/* Date & Time */}
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+              Visit Date & Time
+            </label>
+            <input
+              type="datetime-local"
+              value={siteVisitData.date}
+              onChange={(e) =>
+                setSiteVisitData({ ...siteVisitData, date: e.target.value })
+              }
+              className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all cursor-pointer"
+            />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-gray-700">Google Maps Link (Destination)</label>
-            <input type="url" placeholder="https://maps.google.com/..." value={siteVisitData.destinationUrl || ''} onChange={(e) => setSiteVisitData({ ...siteVisitData, destinationUrl: e.target.value })} className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm w-full text-black" />
+
+          {/* Google Maps Link */}
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+              Google Maps Location Link (Optional)
+            </label>
+            <input
+              type="url"
+              placeholder="https://maps.google.com/..."
+              value={siteVisitData.destinationUrl || ""}
+              onChange={(e) =>
+                setSiteVisitData({
+                  ...siteVisitData,
+                  destinationUrl: e.target.value,
+                })
+              }
+              className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all"
+            />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-gray-700">Description / Notes</label>
-            <textarea value={siteVisitData.description} onChange={(e) => setSiteVisitData({ ...siteVisitData, description: e.target.value })} className="w-full h-24 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none text-sm text-black transition-all" placeholder="Any specific requirements or notes..." />
+
+          {/* Description */}
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+              Visit Objectives / Notes
+            </label>
+            <textarea
+              value={siteVisitData.description}
+              onChange={(e) =>
+                setSiteVisitData({
+                  ...siteVisitData,
+                  description: e.target.value,
+                })
+              }
+              placeholder="Specific units to view, client preferences, or site coordination notes..."
+              className="w-full h-24 p-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-medium text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 resize-none transition-all"
+            />
           </div>
         </div>
-        <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100">
+
+        {/* Footer */}
+        <div className="flex justify-between items-center pt-3 border-t border-slate-100">
           {editingSiteVisitId ? (
-            <button onClick={handleDeleteSiteVisit} className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors">
-              <Trash2 className="w-4 h-4" /> Delete
+            <button
+              onClick={handleDeleteSiteVisit}
+              className="text-rose-600 hover:text-rose-700 text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-rose-50 transition-all active:scale-[0.96] press-effect cursor-pointer"
+            >
+              <Trash2 size={13} />
+              <span>Delete</span>
             </button>
-          ) : <div></div>}
-          <div className="flex gap-3">
-            <button onClick={onClose} disabled={isSaving} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all">Cancel</button>
-            <button onClick={handleSaveSiteVisit} disabled={!siteVisitData.projectId || !siteVisitData.date || isSaving} className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50 shadow-sm">
-              {isSaving ? 'Saving...' : editingSiteVisitId ? 'Save Changes' : 'Schedule'}
+          ) : (
+            <div />
+          )}
+
+          <div className="flex gap-2.5">
+            <button
+              onClick={onClose}
+              disabled={isSaving}
+              className="px-4 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all active:scale-[0.96] press-effect cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveSiteVisit}
+              disabled={
+                !siteVisitData.projectId || !siteVisitData.date || isSaving
+              }
+              className="px-5 py-2 text-xs font-bold text-white bg-[var(--brand-600)] hover:bg-[var(--brand-700)] rounded-xl shadow-xs transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.96] press-effect cursor-pointer"
+            >
+              {isSaving
+                ? "Saving…"
+                : editingSiteVisitId
+                ? "Save Changes"
+                : "Schedule Visit"}
             </button>
           </div>
         </div>

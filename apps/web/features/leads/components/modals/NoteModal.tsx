@@ -1,6 +1,6 @@
-import React from 'react';
-import { Card } from '@/components/ui/Card';
-import { X } from 'lucide-react';
+import React from "react";
+import { Card } from "@/components/ui/Card";
+import { X, MessageSquare } from "lucide-react";
 
 interface NoteModalProps {
   isOpen: boolean;
@@ -19,52 +19,67 @@ export function NoteModal({
   newNoteContent,
   setNewNoteContent,
   saveNote,
-  isSavingNote
+  isSavingNote,
 }: NoteModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <Card className="w-full max-w-lg p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-900">
-            {pendingStatusChange ? `Change Status to ${pendingStatusChange.replace(/_/g, ' ')}` : 'Add Note'}
-          </h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-enter">
+      <Card className="w-full max-w-lg p-6 rounded-2xl border border-slate-200/80 shadow-2xl bg-white space-y-4">
+        {/* Header */}
+        <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)]">
+              <MessageSquare size={16} />
+            </div>
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)] tracking-tight m-0">
+              {pendingStatusChange
+                ? `Change Status to ${pendingStatusChange.replace(/_/g, " ")}`
+                : "Add Interaction Note"}
+            </h3>
+          </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+            className="w-7 h-7 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full flex items-center justify-center transition-all cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X size={15} />
           </button>
         </div>
 
+        {/* Status explanation notice if status is changing */}
         {pendingStatusChange && (
-          <div className="mb-4 p-3 bg-yellow-50 text-yellow-800 text-sm rounded-lg border border-yellow-200">
-            Please add a note explaining this status change.
+          <div className="p-3 bg-amber-50 text-amber-900 text-xs font-semibold rounded-xl border border-amber-200">
+            Please add a brief note explaining the context for this pipeline status change.
           </div>
         )}
 
-        <textarea
-          value={newNoteContent}
-          onChange={(e) => setNewNoteContent(e.target.value)}
-          placeholder="Type your note here..."
-          className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm text-black"
-          autoFocus
-        />
+        <div>
+          <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+            Note Content
+          </label>
+          <textarea
+            value={newNoteContent}
+            onChange={(e) => setNewNoteContent(e.target.value)}
+            placeholder="Type your notes, discussion summary, or follow-up insights here..."
+            className="w-full h-32 p-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-medium text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 resize-none transition-all"
+            autoFocus
+          />
+        </div>
 
-        <div className="flex justify-end gap-3 mt-4">
+        {/* Footer Actions */}
+        <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all active:scale-[0.96] press-effect cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={saveNote}
             disabled={isSavingNote || !newNoteContent.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2 text-xs font-bold text-white bg-[var(--brand-600)] hover:bg-[var(--brand-700)] rounded-xl shadow-xs transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.96] press-effect cursor-pointer"
           >
-            {isSavingNote ? 'Saving...' : 'Save Note'}
+            {isSavingNote ? "Saving Note…" : "Save Note"}
           </button>
         </div>
       </Card>

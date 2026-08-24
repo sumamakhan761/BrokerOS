@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Card } from '@/components/ui/Card';
-import { X } from 'lucide-react';
+import React, { useState } from "react";
+import { Card } from "@/components/ui/Card";
+import { X, CheckCircle2, Navigation } from "lucide-react";
 
 interface SiteVisitCompleteModalProps {
   isOpen: boolean;
@@ -13,18 +13,18 @@ export function SiteVisitCompleteModal({
   isOpen,
   onClose,
   siteVisit,
-  onRefresh
+  onRefresh,
 }: SiteVisitCompleteModalProps) {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    interestLevel: '',
-    budgetConfirmed: '',
-    configInterest: '',
-    customerReaction: '',
-    customerObjections: '',
-    closingProbability: '',
-    meetingNotes: '',
-    nextAction: '',
+    interestLevel: "",
+    budgetConfirmed: "",
+    configInterest: "",
+    customerReaction: "",
+    customerObjections: "",
+    closingProbability: "",
+    meetingNotes: "",
+    nextAction: "",
   });
 
   if (!isOpen) return null;
@@ -32,23 +32,28 @@ export function SiteVisitCompleteModal({
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
-      const res = await fetch(`${apiUrl}/api/leads/site-visits/${siteVisit?.id || siteVisit}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'COMPLETED',
-          completedAt: new Date().toISOString(),
-          interestLevel: form.interestLevel || undefined,
-          budgetConfirmed: form.budgetConfirmed ? Number(form.budgetConfirmed) : undefined,
-          configInterest: form.configInterest,
-          customerReaction: form.customerReaction,
-          customerObjections: form.customerObjections,
-          closingProbability: form.closingProbability,
-          meetingNotes: form.meetingNotes,
-          nextAction: form.nextAction,
-        }),
-      });
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
+      const res = await fetch(
+        `${apiUrl}/api/leads/site-visits/${siteVisit?.id || siteVisit}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "COMPLETED",
+            completedAt: new Date().toISOString(),
+            interestLevel: form.interestLevel || undefined,
+            budgetConfirmed: form.budgetConfirmed
+              ? Number(form.budgetConfirmed)
+              : undefined,
+            configInterest: form.configInterest,
+            customerReaction: form.customerReaction,
+            customerObjections: form.customerObjections,
+            closingProbability: form.closingProbability,
+            meetingNotes: form.meetingNotes,
+            nextAction: form.nextAction,
+          }),
+        }
+      );
 
       if (res.ok) {
         onRefresh();
@@ -60,59 +65,125 @@ export function SiteVisitCompleteModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <Card className="w-full max-w-2xl p-7 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto rounded-3xl">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-gray-900">Complete Site Visit</h3>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-            <X className="w-5 h-5" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-enter">
+      <Card className="w-full max-w-2xl p-6 rounded-3xl border border-slate-200/80 shadow-2xl bg-white max-h-[90vh] overflow-y-auto space-y-4">
+        {/* Header */}
+        <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700">
+              <CheckCircle2 size={16} />
+            </div>
+            <h3 className="text-base font-extrabold text-[var(--text-primary)] tracking-tight m-0">
+              Complete & Log Site Visit
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full flex items-center justify-center transition-all cursor-pointer"
+          >
+            <X size={15} />
           </button>
         </div>
 
+        {/* Verified GPS Arrival Callout */}
         {siteVisit?.arrivedAt && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl flex items-center gap-3.5">
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
+              <CheckCircle2 size={18} />
             </div>
-            <div>
-              <p className="text-sm font-bold text-emerald-900">Arrival Verified</p>
-              <p className="text-xs text-emerald-700 mt-0.5">Arrived at: {new Date(siteVisit.arrivedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-emerald-950 m-0">
+                GPS Location Verified by Agent
+              </p>
+              <p className="text-[11px] text-emerald-700 mt-0.5 tabular-nums m-0">
+                Arrived at:{" "}
+                {new Date(siteVisit.arrivedAt).toLocaleString("en-IN", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
+              </p>
               {siteVisit.arriveLatitude && siteVisit.arriveLongitude && (
-                <a href={`https://maps.google.com/?q=${siteVisit.arriveLatitude},${siteVisit.arriveLongitude}`} target="_blank" rel="noreferrer" className="text-xs text-emerald-600 font-semibold hover:underline mt-1 inline-block">
-                  View Coordinates on Google Maps
+                <a
+                  href={`https://maps.google.com/?q=${siteVisit.arriveLatitude},${siteVisit.arriveLongitude}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[10px] text-emerald-700 font-bold hover:underline inline-flex items-center gap-1 mt-1 tabular-nums"
+                >
+                  <Navigation size={10} />
+                  <span>View GPS Coordinates</span>
                 </a>
               )}
             </div>
           </div>
         )}
 
-        <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-5">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-gray-700">Interest Level</label>
-              <select value={form.interestLevel} onChange={e => setForm({ ...form, interestLevel: e.target.value })} className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm w-full">
-                <option value="">Select...</option>
+        <div className="space-y-3.5">
+          {/* Row 1: Interest Level & Budget */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+                Interest Level
+              </label>
+              <select
+                value={form.interestLevel}
+                onChange={(e) =>
+                  setForm({ ...form, interestLevel: e.target.value })
+                }
+                className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 cursor-pointer transition-all"
+              >
+                <option value="">Select Level…</option>
                 <option value="HIGH">High</option>
                 <option value="MEDIUM">Medium</option>
                 <option value="LOW">Low</option>
                 <option value="NOT_INTERESTED">Not Interested</option>
               </select>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-gray-700">Budget Confirmed (₹)</label>
-              <input type="number" value={form.budgetConfirmed} onChange={e => setForm({ ...form, budgetConfirmed: e.target.value })} placeholder="e.g. 5000000" className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm w-full" />
+
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+                Confirmed Budget (₹)
+              </label>
+              <input
+                type="number"
+                value={form.budgetConfirmed}
+                onChange={(e) =>
+                  setForm({ ...form, budgetConfirmed: e.target.value })
+                }
+                placeholder="e.g. 7500000"
+                className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 tabular-nums transition-all"
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-5">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-gray-700">Config Liked</label>
-              <input type="text" value={form.configInterest} onChange={e => setForm({ ...form, configInterest: e.target.value })} placeholder="e.g. 2BHK, Corner" className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm w-full" />
+          {/* Row 2: Config Liked & Customer Reaction */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+                Configuration Preferred
+              </label>
+              <input
+                type="text"
+                value={form.configInterest}
+                onChange={(e) =>
+                  setForm({ ...form, configInterest: e.target.value })
+                }
+                placeholder="e.g. 2 BHK Corner, 8th Floor"
+                className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all"
+              />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-gray-700">Customer Reaction</label>
-              <select value={form.customerReaction} onChange={e => setForm({ ...form, customerReaction: e.target.value })} className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm w-full">
-                <option value="">Select...</option>
+
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+                Customer Reaction
+              </label>
+              <select
+                value={form.customerReaction}
+                onChange={(e) =>
+                  setForm({ ...form, customerReaction: e.target.value })
+                }
+                className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 cursor-pointer transition-all"
+              >
+                <option value="">Select Reaction…</option>
                 <option value="VERY_POSITIVE">Very Positive</option>
                 <option value="POSITIVE">Positive</option>
                 <option value="NEUTRAL">Neutral</option>
@@ -121,10 +192,19 @@ export function SiteVisitCompleteModal({
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-gray-700">Closing Probability</label>
-            <select value={form.closingProbability} onChange={e => setForm({ ...form, closingProbability: e.target.value })} className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm w-full">
-              <option value="">Select...</option>
+          {/* Closing Probability */}
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+              Closing Probability
+            </label>
+            <select
+              value={form.closingProbability}
+              onChange={(e) =>
+                setForm({ ...form, closingProbability: e.target.value })
+              }
+              className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 cursor-pointer transition-all"
+            >
+              <option value="">Select Probability…</option>
               <option value="VERY_HIGH">Very High</option>
               <option value="HIGH">High</option>
               <option value="MEDIUM">Medium</option>
@@ -132,26 +212,67 @@ export function SiteVisitCompleteModal({
             </select>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-gray-700">Customer Objections</label>
-            <textarea value={form.customerObjections} onChange={e => setForm({ ...form, customerObjections: e.target.value })} className="w-full h-24 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none resize-none text-sm transition-all" placeholder="Any objections raised? Price? Location?" />
+          {/* Customer Objections */}
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+              Customer Objections Raised
+            </label>
+            <textarea
+              value={form.customerObjections}
+              onChange={(e) =>
+                setForm({ ...form, customerObjections: e.target.value })
+              }
+              placeholder="Any price, location, or possession timeline objections raised during the visit..."
+              className="w-full h-20 p-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-medium text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 resize-none transition-all"
+            />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-gray-700">Meeting Notes</label>
-            <textarea value={form.meetingNotes} onChange={e => setForm({ ...form, meetingNotes: e.target.value })} className="w-full h-24 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none resize-none text-sm transition-all" placeholder="General discussion points..." />
+          {/* Meeting Notes */}
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+              Meeting & Discussion Notes
+            </label>
+            <textarea
+              value={form.meetingNotes}
+              onChange={(e) =>
+                setForm({ ...form, meetingNotes: e.target.value })
+              }
+              placeholder="General discussion summary, decision makers present, etc."
+              className="w-full h-20 p-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-medium text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 resize-none transition-all"
+            />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-gray-700">Next Action Plan</label>
-            <input type="text" value={form.nextAction} onChange={e => setForm({ ...form, nextAction: e.target.value })} placeholder="e.g. Call tomorrow, send brochure" className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm w-full" />
+          {/* Next Action */}
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+              Next Action Plan
+            </label>
+            <input
+              type="text"
+              value={form.nextAction}
+              onChange={(e) =>
+                setForm({ ...form, nextAction: e.target.value })
+              }
+              placeholder="e.g. Schedule negotiation meeting with Sales Manager"
+              className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all"
+            />
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100">
-          <button onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all">Cancel</button>
-          <button onClick={handleSubmit} disabled={saving} className="px-6 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm">
-            {saving ? 'Saving...' : 'Mark as Completed'}
+        {/* Footer */}
+        <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all active:scale-[0.96] press-effect cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-[0.96] press-effect cursor-pointer"
+          >
+            {saving ? "Saving Record…" : "Mark as Completed"}
           </button>
         </div>
       </Card>
