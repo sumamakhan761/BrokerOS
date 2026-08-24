@@ -1,5 +1,5 @@
-import React from 'react';
-import { SiteVisitCompleteModalData } from '@/features/leads/types/site-visit-constants';
+import React from "react";
+import { SiteVisitCompleteModalData } from "@/features/leads/types/site-visit-constants";
 
 interface SiteVisitEditModeProps {
   svId: string;
@@ -10,16 +10,27 @@ interface SiteVisitEditModeProps {
   onCancel: () => void;
 }
 
-export function SiteVisitEditMode({ svId, editForm, setEditForm, saving, saveEdit, onCancel }: SiteVisitEditModeProps) {
+export function SiteVisitEditMode({
+  svId,
+  editForm,
+  setEditForm,
+  saving,
+  saveEdit,
+  onCancel,
+}: SiteVisitEditModeProps) {
   return (
-    <div className="space-y-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="space-y-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         <div>
-          <label className="text-xs font-semibold text-gray-600 block mb-1.5">Interest Level</label>
+          <label className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
+            Interest Level
+          </label>
           <select
-            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            className="w-full h-8 px-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-lg text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer transition-all"
             value={editForm.interestLevel}
-            onChange={e => setEditForm({ ...editForm, interestLevel: e.target.value })}
+            onChange={(e) =>
+              setEditForm({ ...editForm, interestLevel: e.target.value })
+            }
           >
             <option value="">Select...</option>
             <option value="HIGH">High</option>
@@ -28,32 +39,47 @@ export function SiteVisitEditMode({ svId, editForm, setEditForm, saving, saveEdi
             <option value="NOT_INTERESTED">Not Interested</option>
           </select>
         </div>
+
         <div>
-          <label className="text-xs font-semibold text-gray-600 block mb-1.5">Budget Confirmed (₹)</label>
+          <label className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
+            Confirmed Budget (₹)
+          </label>
           <input
             type="number"
-            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            className="w-full h-8 px-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-lg text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-purple-500/15 tabular-nums transition-all"
             value={editForm.budgetConfirmed}
-            onChange={e => setEditForm({ ...editForm, budgetConfirmed: e.target.value })}
+            onChange={(e) =>
+              setEditForm({ ...editForm, budgetConfirmed: e.target.value })
+            }
             placeholder="e.g. 5000000"
           />
         </div>
+
         <div>
-          <label className="text-xs font-semibold text-gray-600 block mb-1.5">Config They Liked</label>
+          <label className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
+            Configuration Liked
+          </label>
           <input
             type="text"
-            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            className="w-full h-8 px-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-lg text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-purple-500/15 transition-all"
             value={editForm.configInterest}
-            onChange={e => setEditForm({ ...editForm, configInterest: e.target.value })}
-            placeholder="e.g. 2BHK, Corner Unit"
+            onChange={(e) =>
+              setEditForm({ ...editForm, configInterest: e.target.value })
+            }
+            placeholder="e.g. 2 BHK, Sea view"
           />
         </div>
+
         <div>
-          <label className="text-xs font-semibold text-gray-600 block mb-1.5">Customer Reaction</label>
+          <label className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
+            Customer Reaction
+          </label>
           <select
-            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            className="w-full h-8 px-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-lg text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer transition-all"
             value={editForm.customerReaction}
-            onChange={e => setEditForm({ ...editForm, customerReaction: e.target.value })}
+            onChange={(e) =>
+              setEditForm({ ...editForm, customerReaction: e.target.value })
+            }
           >
             <option value="">Select...</option>
             <option value="VERY_POSITIVE">Very Positive</option>
@@ -62,12 +88,17 @@ export function SiteVisitEditMode({ svId, editForm, setEditForm, saving, saveEdi
             <option value="NEGATIVE">Negative</option>
           </select>
         </div>
+
         <div>
-          <label className="text-xs font-semibold text-gray-600 block mb-1.5">Closing Probability</label>
+          <label className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
+            Closing Probability
+          </label>
           <select
-            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            className="w-full h-8 px-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-lg text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer transition-all"
             value={editForm.closingProbability}
-            onChange={e => setEditForm({ ...editForm, closingProbability: e.target.value })}
+            onChange={(e) =>
+              setEditForm({ ...editForm, closingProbability: e.target.value })
+            }
           >
             <option value="">Select...</option>
             <option value="VERY_HIGH">Very High</option>
@@ -76,48 +107,64 @@ export function SiteVisitEditMode({ svId, editForm, setEditForm, saving, saveEdi
             <option value="LOW">Low</option>
           </select>
         </div>
+
         <div>
-          <label className="text-xs font-semibold text-gray-600 block mb-1.5">Next Action</label>
+          <label className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
+            Next Action
+          </label>
           <input
             type="text"
-            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            className="w-full h-8 px-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-lg text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-purple-500/15 transition-all"
             value={editForm.nextAction}
-            onChange={e => setEditForm({ ...editForm, nextAction: e.target.value })}
-            placeholder="e.g. Send brochure"
+            onChange={(e) =>
+              setEditForm({ ...editForm, nextAction: e.target.value })
+            }
+            placeholder="e.g. Call tomorrow, send floor plan"
           />
         </div>
       </div>
+
       <div>
-        <label className="text-xs font-semibold text-gray-600 block mb-1.5">Objections Raised</label>
+        <label className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
+          Objections Raised
+        </label>
         <textarea
-          className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none"
+          className="w-full text-base sm:text-xs p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/15 transition-all resize-none"
           rows={2}
           value={editForm.customerObjections}
-          onChange={e => setEditForm({ ...editForm, customerObjections: e.target.value })}
-          placeholder="Any objections raised by customer..."
+          onChange={(e) =>
+            setEditForm({ ...editForm, customerObjections: e.target.value })
+          }
+          placeholder="Any specific price, location, or possession objections..."
         />
       </div>
+
       <div>
-        <label className="text-xs font-semibold text-gray-600 block mb-1.5">Meeting Notes</label>
+        <label className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block mb-1">
+          Meeting Notes
+        </label>
         <textarea
-          className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none"
+          className="w-full text-base sm:text-xs p-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/15 transition-all resize-none"
           rows={2}
           value={editForm.meetingNotes}
-          onChange={e => setEditForm({ ...editForm, meetingNotes: e.target.value })}
-          placeholder="General meeting notes..."
+          onChange={(e) =>
+            setEditForm({ ...editForm, meetingNotes: e.target.value })
+          }
+          placeholder="General discussion notes..."
         />
       </div>
-      <div className="flex gap-3 pt-2">
+
+      <div className="flex gap-2.5 pt-1">
         <button
           onClick={() => saveEdit(svId)}
           disabled={saving}
-          className="flex-1 bg-emerald-600 text-white text-sm rounded-xl py-2.5 font-medium hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-sm"
+          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-xl py-2 font-bold disabled:opacity-50 transition-all active:scale-[0.96] press-effect shadow-xs cursor-pointer"
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? "Saving..." : "Save Changes"}
         </button>
         <button
           onClick={onCancel}
-          className="px-5 border border-gray-200 text-gray-700 text-sm rounded-xl py-2.5 font-medium hover:bg-gray-50 transition-all"
+          className="px-4 border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs rounded-xl py-2 font-bold transition-all active:scale-[0.96] press-effect cursor-pointer"
         >
           Cancel
         </button>
@@ -125,4 +172,3 @@ export function SiteVisitEditMode({ svId, editForm, setEditForm, saving, saveEdi
     </div>
   );
 }
-

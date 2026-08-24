@@ -1,8 +1,12 @@
-import React from 'react';
-import { ChevronDown, ChevronUp, Building2 } from 'lucide-react';
-import { SiteVisit, INTEREST_LEVEL_COLORS, SiteVisitCompleteModalData } from '@/features/leads/types/site-visit-constants';
-import { SiteVisitViewMode } from '@/features/leads/components/site-visits/SiteVisitViewMode';
-import { SiteVisitEditMode } from '@/features/leads/components/site-visits/SiteVisitEditMode';
+import React from "react";
+import { ChevronDown, ChevronUp, Building2 } from "lucide-react";
+import {
+  SiteVisit,
+  INTEREST_LEVEL_COLORS,
+  SiteVisitCompleteModalData,
+} from "@/features/leads/types/site-visit-constants";
+import { SiteVisitViewMode } from "@/features/leads/components/site-visits/SiteVisitViewMode";
+import { SiteVisitEditMode } from "@/features/leads/components/site-visits/SiteVisitEditMode";
 
 interface SiteVisitRowProps {
   sv: SiteVisit;
@@ -33,38 +37,53 @@ export function SiteVisitRow({
   const isEditing = editingId === sv.id;
 
   return (
-    <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm transition-all mb-2">
-      {/* Header row */}
+    <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs transition-all bg-white mb-2.5">
+      {/* Header Row */}
       <div
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50/80 transition-colors"
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50/80 transition-colors"
         onClick={() => toggleExpand(sv.id)}
       >
-        <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100/50">
-            <Building2 className="w-4.5 h-4.5 text-emerald-600" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 text-emerald-700">
+            <Building2 size={18} />
           </div>
           <div>
-            <p className="font-semibold text-gray-900 text-sm">{sv.project?.name || 'Project'}</p>
-            <p className="text-xs font-medium text-gray-500 mt-0.5">
-              Completed: {sv.completedAt ? new Date(sv.completedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
+            <p className="font-bold text-xs text-[var(--text-primary)] m-0">
+              {sv.project?.name || "Project Site"}
+            </p>
+            <p className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5 tabular-nums m-0">
+              Completed:{" "}
+              {sv.completedAt
+                ? new Date(sv.completedAt).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })
+                : "N/A"}
             </p>
           </div>
         </div>
+
         <div className="flex items-center gap-3">
           {sv.interestLevel && (
-            <span className={`text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold ${INTEREST_LEVEL_COLORS[sv.interestLevel] || 'bg-gray-100 text-gray-600'}`}>
-              {sv.interestLevel.replace('_', ' ')}
+            <span
+              className={`text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full font-bold border ${
+                INTEREST_LEVEL_COLORS[sv.interestLevel] ||
+                "bg-slate-100 text-slate-700 border-slate-200"
+              }`}
+            >
+              {sv.interestLevel.replace("_", " ")}
             </span>
           )}
-          <div className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 transition-colors">
-            {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+          <div className="flex items-center justify-center w-7 h-7 rounded-full bg-slate-50 text-slate-500">
+            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </div>
         </div>
       </div>
 
-      {/* Expanded detail */}
+      {/* Expanded Detail */}
       {isExpanded && (
-        <div className="border-t border-gray-100 p-5 bg-gray-50/50 space-y-4">
+        <div className="border-t border-slate-100 p-5 bg-slate-50/40 space-y-4 animate-enter">
           {isEditing && editForm ? (
             <SiteVisitEditMode
               svId={sv.id}
