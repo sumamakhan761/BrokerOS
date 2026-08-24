@@ -1,8 +1,7 @@
-import React from 'react';
-import { Upload, Users, Shuffle, CheckSquare } from 'lucide-react';
-import Papa from 'papaparse';
-import { useRef, useState } from 'react';
-import { toast } from 'sonner';
+import React, { useRef, useState } from "react";
+import { Upload, Users, Shuffle, CheckSquare, Loader2 } from "lucide-react";
+import Papa from "papaparse";
+import { toast } from "sonner";
 
 interface NewLeadsToolbarProps {
   selectedLeadIds: Set<string>;
@@ -17,7 +16,7 @@ export function NewLeadsToolbar({
   onAssign,
   onUploadSuccess,
 }: NewLeadsToolbarProps) {
-  const [bulkAssignTarget, setBulkAssignTarget] = useState<string>('');
+  const [bulkAssignTarget, setBulkAssignTarget] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -31,34 +30,37 @@ export function NewLeadsToolbar({
       skipEmptyLines: true,
       complete: async (results) => {
         try {
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
           const res = await fetch(`${baseUrl}/api/leads/bulk-create`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(results.data.map((row: any) => ({
-              firstName: row['First Name'] || row['FirstName'] || row['Name'],
-              lastName: row['Last Name'] || row['LastName'],
-              phone: row['Phone'] || row['Mobile'],
-              email: row['Email'],
-              source: row['Source'] || row['Source Name'],
-              project: row['Project'] || row['Interested Project'],
-              preferredLocation: row['Preferred Location'] || row['Location'],
-              budget: row['Budget'],
-              requirements: row['Requirements'],
-            }))),
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(
+              results.data.map((row: any) => ({
+                firstName: row["First Name"] || row["FirstName"] || row["Name"],
+                lastName: row["Last Name"] || row["LastName"],
+                phone: row["Phone"] || row["Mobile"],
+                email: row["Email"],
+                source: row["Source"] || row["Source Name"],
+                project: row["Project"] || row["Interested Project"],
+                preferredLocation: row["Preferred Location"] || row["Location"],
+                budget: row["Budget"],
+                requirements: row["Requirements"],
+              }))
+            ),
           });
 
           if (res.ok) {
+            toast.success("Leads uploaded successfully");
             onUploadSuccess();
           } else {
-            toast.error('Failed to upload leads.');
+            toast.error("Failed to upload leads.");
           }
         } catch (err) {
           console.error(err);
-          toast.error('Error uploading leads.');
+          toast.error("Error uploading leads.");
         } finally {
           setUploading(false);
-          if (fileInputRef.current) fileInputRef.current.value = '';
+          if (fileInputRef.current) fileInputRef.current.value = "";
         }
       },
     });
@@ -67,121 +69,63 @@ export function NewLeadsToolbar({
   const numSelected = selectedLeadIds.size;
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      flexWrap: 'wrap',
-      gap: 12,
-      marginBottom: 20,
-      paddingBottom: 16,
-      borderBottom: '1px solid var(--border-subtle)',
-    }}>
-      {/* Left: selection actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+    <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
+      {/* Left: Selection & Bulk Assignment */}
+      <div className="flex items-center gap-2.5 flex-wrap">
         {numSelected > 0 ? (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            background: 'var(--brand-50)',
-            border: '1px solid var(--brand-200)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '8px 14px',
-          }}>
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              fontSize: 13,
-              fontWeight: 700,
-              color: 'var(--brand-700)',
-            }}>
+          <div className="flex items-center gap-2.5 bg-purple-50/80 border border-purple-200/80 rounded-xl p-1.5 px-3">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--brand-700)] tabular-nums">
               <CheckSquare size={14} /> {numSelected} selected
             </span>
 
-            {/* Select employee */}
-            <div style={{ position: 'relative' }}>
-              <Users size={12} style={{
-                position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)',
-                color: 'var(--text-muted)', pointerEvents: 'none',
-              }} />
+            {/* Select Employee Dropdown */}
+            <div className="relative min-w-[150px]">
+              <Users
+                size={12}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
               <select
                 value={bulkAssignTarget}
-                onChange={e => setBulkAssignTarget(e.target.value)}
-                style={{
-                  height: 32,
-                  paddingLeft: 26,
-                  paddingRight: 10,
-                  appearance: 'none',
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border-default)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                  cursor: 'pointer',
-                  minWidth: 140,
-                }}
+                onChange={(e) => setBulkAssignTarget(e.target.value)}
+                className="w-full h-8 ps-7 pe-3 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-purple-500/15 cursor-pointer appearance-none"
               >
-                <option value="">Select employee…</option>
-                {subordinates.map(sub => (
-                  <option key={sub.id} value={sub.id}>{sub.name || sub.username}</option>
+                <option value="">Select executive…</option>
+                {subordinates.map((sub) => (
+                  <option key={sub.id} value={sub.id}>
+                    {sub.name || sub.username}
+                  </option>
                 ))}
               </select>
             </div>
 
+            {/* Assign Button */}
             <button
               onClick={() => onAssign(Array.from(selectedLeadIds), bulkAssignTarget)}
               disabled={!bulkAssignTarget}
-              style={{
-                height: 32,
-                padding: '0 14px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--brand-600)',
-                color: '#fff',
-                fontSize: 12,
-                fontWeight: 700,
-                border: 'none',
-                cursor: bulkAssignTarget ? 'pointer' : 'not-allowed',
-                opacity: bulkAssignTarget ? 1 : 0.5,
-                transition: 'opacity var(--duration-fast)',
-              }}
+              className="h-8 px-3.5 rounded-lg bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.96] press-effect shadow-xs cursor-pointer"
             >
               Assign
             </button>
 
-            <div style={{ width: 1, height: 20, background: 'var(--brand-200)' }} />
+            <div className="w-px h-5 bg-purple-200" />
 
+            {/* Round Robin Button */}
             <button
               onClick={() => onAssign(Array.from(selectedLeadIds), undefined, true)}
-              style={{
-                height: 32,
-                padding: '0 14px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--brand-700)',
-                color: '#fff',
-                fontSize: 12,
-                fontWeight: 700,
-                border: 'none',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-              }}
+              className="h-8 px-3.5 rounded-lg bg-[var(--brand-700)] hover:bg-[var(--brand-800)] text-white text-xs font-bold transition-all inline-flex items-center gap-1.5 active:scale-[0.96] press-effect shadow-xs cursor-pointer"
             >
-              <Shuffle size={12} /> Round Robin
+              <Shuffle size={12} />
+              <span>Round Robin</span>
             </button>
           </div>
         ) : (
-          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-muted)' }}>
-            Select leads to bulk assign
+          <span className="text-xs font-semibold text-[var(--text-muted)]">
+            Select checkboxes below to bulk-assign leads
           </span>
         )}
       </div>
 
-      {/* Right: upload */}
+      {/* Right: CSV Upload */}
       <div>
         <input
           type="file"
@@ -193,25 +137,19 @@ export function NewLeadsToolbar({
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 7,
-            height: 38,
-            padding: '0 18px',
-            borderRadius: 'var(--radius-lg)',
-            background: uploading ? 'var(--bg-subtle)' : 'var(--brand-600)',
-            color: uploading ? 'var(--text-muted)' : '#fff',
-            fontSize: 13,
-            fontWeight: 700,
-            border: 'none',
-            cursor: uploading ? 'wait' : 'pointer',
-            boxShadow: uploading ? 'none' : 'var(--shadow-brand)',
-            transition: 'all var(--duration-base) var(--ease-out-expo)',
-          }}
+          className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-xs font-bold shadow-md shadow-purple-600/20 transition-all hover:shadow-lg disabled:opacity-50 active:scale-[0.96] press-effect cursor-pointer"
         >
-          <Upload size={14} />
-          {uploading ? 'Uploading…' : 'Upload CSV'}
+          {uploading ? (
+            <>
+              <Loader2 size={13} className="animate-spin" />
+              <span>Uploading CSV…</span>
+            </>
+          ) : (
+            <>
+              <Upload size={13} />
+              <span>Upload Leads CSV</span>
+            </>
+          )}
         </button>
       </div>
     </div>

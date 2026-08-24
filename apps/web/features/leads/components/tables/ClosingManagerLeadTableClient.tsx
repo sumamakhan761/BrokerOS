@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React, { Suspense, useState } from 'react';
-import { Card } from '@/components/ui/Card';
-import { usePostSalesLeads } from '@/features/leads/hooks/usePostSalesLeads';
-import { PostSalesTableFilters } from '@/features/leads/components/tables/PostSalesTableFilters';
-import { PostSalesTable } from '@/features/leads/components/tables/PostSalesTable';
-import { Button } from '@/components/ui/Button';
-import { Plus } from 'lucide-react';
-import { ClosingManagerNewLeadModal } from '@/features/leads/components/modals/ClosingManagerNewLeadModal';
+import React, { Suspense, useState } from "react";
+import { Card } from "@/components/ui/Card";
+import { usePostSalesLeads } from "@/features/leads/hooks/usePostSalesLeads";
+import { PostSalesTableFilters } from "@/features/leads/components/tables/PostSalesTableFilters";
+import { PostSalesTable } from "@/features/leads/components/tables/PostSalesTable";
+import { Button } from "@/components/ui/Button";
+import { Plus } from "lucide-react";
+import { ClosingManagerNewLeadModal } from "@/features/leads/components/modals/ClosingManagerNewLeadModal";
 
 function ClosingManagerLeadTableContent() {
   const {
@@ -24,12 +24,24 @@ function ClosingManagerLeadTableContent() {
   const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false);
 
   return (
-    <Card className="space-y-4">
-      <div className="flex justify-between items-center px-4 pt-4">
-        <h2 className="text-lg font-bold text-gray-900">Closing Manager Leads</h2>
-        <Button onClick={() => setIsNewLeadModalOpen(true)} className="flex items-center gap-2">
+    <Card className="space-y-4 p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="flex justify-between items-center pb-2">
+        <div>
+          <h2 className="text-base font-extrabold text-[var(--text-primary)] tracking-tight">
+            Channel Partner Deals & Closures
+          </h2>
+          <p className="text-xs font-medium text-[var(--text-muted)] mt-0.5">
+            Closing and negotiation records for CP-network sourced inventory.
+          </p>
+        </div>
+        <Button
+          onClick={() => setIsNewLeadModalOpen(true)}
+          variant="luxury"
+          size="sm"
+          className="flex items-center gap-1.5"
+        >
           <Plus className="w-4 h-4" />
-          New Lead
+          <span>New Lead</span>
         </Button>
       </div>
 
@@ -52,7 +64,7 @@ function ClosingManagerLeadTableContent() {
           onClose={() => setIsNewLeadModalOpen(false)}
           onSuccess={() => {
             setIsNewLeadModalOpen(false);
-            window.location.reload(); // Quick refresh for now
+            window.location.reload();
           }}
         />
       )}
@@ -62,7 +74,13 @@ function ClosingManagerLeadTableContent() {
 
 export function ClosingManagerLeadTableClient() {
   return (
-    <Suspense fallback={<div className="p-4 text-center text-gray-400">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-12 text-center text-xs font-semibold text-[var(--text-muted)]">
+          Loading closing manager deals…
+        </div>
+      }
+    >
       <ClosingManagerLeadTableContent />
     </Suspense>
   );

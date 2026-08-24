@@ -1,10 +1,12 @@
-import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
-  StatusPill, SkeletonRows, EmptyState,
-  tableHeaderStyle, thStyle, tableWrapperStyle, formatDate,
-} from './TablePrimitives';
+  StatusPill,
+  SkeletonRows,
+  EmptyState,
+  formatDate,
+} from "./TablePrimitives";
 
 interface SalesExecTableProps {
   filteredLeads: any[];
@@ -12,99 +14,135 @@ interface SalesExecTableProps {
   isManagerView?: boolean;
 }
 
-export function SalesExecTable({ filteredLeads, loading, isManagerView }: SalesExecTableProps) {
+export function SalesExecTable({
+  filteredLeads,
+  loading,
+  isManagerView,
+}: SalesExecTableProps) {
   const pathname = usePathname();
   const colCount = isManagerView ? 8 : 7;
 
   return (
-    <div style={tableWrapperStyle}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
-        <thead style={tableHeaderStyle}>
+    <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+      <table className="w-full border-collapse min-w-[900px] text-left text-xs">
+        <thead className="bg-slate-50/80 border-b border-slate-200/80">
           <tr>
-            <th style={{ ...thStyle, width: 48 }}>#</th>
-            <th style={thStyle}>Lead</th>
-            <th style={thStyle}>Phone</th>
-            <th style={thStyle}>Status</th>
-            {isManagerView && <th style={thStyle}>Agent</th>}
-            <th style={thStyle}>SV Scheduled</th>
-            <th style={thStyle}>SV Completed</th>
-            {!isManagerView && <th style={thStyle}>Last Contact</th>}
-            <th style={thStyle}>Next Follow-Up</th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)] w-12 text-center">
+              #
+            </th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              Prospect
+            </th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              Phone
+            </th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              Status
+            </th>
+            {isManagerView && (
+              <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+                Assigned Agent
+              </th>
+            )}
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              SV Scheduled
+            </th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              SV Completed
+            </th>
+            {!isManagerView && (
+              <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+                Last Contact
+              </th>
+            )}
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              Next Follow-Up
+            </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-slate-100">
           {loading ? (
             <SkeletonRows cols={colCount} />
           ) : filteredLeads.length === 0 ? (
-            <EmptyState message="No leads found. Try adjusting your filters." colSpan={colCount} />
+            <EmptyState
+              message="No leads found matching your sales pipeline filters."
+              colSpan={colCount}
+            />
           ) : (
             filteredLeads.map((lead, index) => {
               const href = `${pathname}/${lead.id}`;
               return (
                 <tr
                   key={lead.id}
-                  style={{
-                    borderBottom: '1px solid var(--border-subtle)',
-                    transition: 'background var(--duration-fast) var(--ease-out-expo)',
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.background = 'var(--bg-subtle)';
-                    const firstTd = (e.currentTarget as HTMLElement).querySelector('td') as HTMLElement;
-                    if (firstTd) firstTd.style.borderLeft = '3px solid var(--brand-500)';
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.background = 'transparent';
-                    const firstTd = (e.currentTarget as HTMLElement).querySelector('td') as HTMLElement;
-                    if (firstTd) firstTd.style.borderLeft = '3px solid transparent';
-                  }}
+                  className="hover:bg-purple-50/40 transition-colors group cursor-pointer"
                 >
-                  <td style={{ padding: '14px 16px', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', borderLeft: '3px solid transparent', transition: 'border-color var(--duration-fast)' }}>
-                    <Link href={href} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>{index + 1}</Link>
-                  </td>
-                  <td style={{ padding: '14px 16px' }}>
-                    <Link href={href} style={{ display: 'block', textDecoration: 'none' }}>
-                      <div style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-                        {lead.firstName} {lead.lastName || ''}
-                      </div>
+                  <td className="py-3.5 px-4 text-center font-bold text-[var(--text-muted)] tabular-nums group-hover:text-[var(--brand-700)]">
+                    <Link href={href} className="block text-inherit text-decoration-none">
+                      {index + 1}
                     </Link>
                   </td>
-                  <td style={{ padding: '14px 16px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                    <Link href={href} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>{lead.phone}</Link>
+                  <td className="py-3.5 px-4">
+                    <Link href={href} className="block text-decoration-none">
+                      <div className="font-bold text-xs text-[var(--text-primary)] group-hover:text-[var(--brand-700)] transition-colors">
+                        {lead.firstName} {lead.lastName || ""}
+                      </div>
+                      {lead.project && (
+                        <div className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5">
+                          {lead.project}
+                        </div>
+                      )}
+                    </Link>
                   </td>
-                  <td style={{ padding: '14px 16px' }}>
-                    <Link href={href} style={{ display: 'block', textDecoration: 'none' }}>
+                  <td className="py-3.5 px-4 font-semibold text-[var(--text-secondary)] tabular-nums">
+                    <Link href={href} className="block text-inherit text-decoration-none">
+                      {lead.phone || "—"}
+                    </Link>
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <Link href={href} className="block text-decoration-none">
                       <StatusPill status={lead.status} />
                     </Link>
                   </td>
                   {isManagerView && (
-                    <td style={{ padding: '14px 16px', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      <Link href={href} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
-                        {lead.assignedUser ? (lead.assignedUser.name || lead.assignedUser.username) : (
-                          <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontWeight: 400 }}>Unassigned</span>
+                    <td className="py-3.5 px-4 text-xs font-semibold text-[var(--text-secondary)]">
+                      <Link href={href} className="block text-inherit text-decoration-none">
+                        {lead.assignedUser ? (
+                          lead.assignedUser.name || lead.assignedUser.username
+                        ) : (
+                          <span className="text-slate-400 font-normal italic">
+                            Unassigned
+                          </span>
                         )}
                       </Link>
                     </td>
                   )}
-                  <td style={{ padding: '14px 16px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                    <Link href={href} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>{formatDate(lead.siteVisitScheduledDate)}</Link>
+                  <td className="py-3.5 px-4 font-medium text-[var(--text-secondary)] tabular-nums">
+                    <Link href={href} className="block text-inherit text-decoration-none">
+                      {formatDate(lead.siteVisitScheduledDate)}
+                    </Link>
                   </td>
-                  <td style={{ padding: '14px 16px' }}>
-                    <Link href={href} style={{ display: 'block', textDecoration: 'none' }}>
+                  <td className="py-3.5 px-4 tabular-nums">
+                    <Link href={href} className="block text-decoration-none">
                       {lead.siteVisitCompletedDate ? (
-                        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--success-fg)' }}>
+                        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                           {formatDate(lead.siteVisitCompletedDate)}
                         </span>
-                      ) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
+                      ) : (
+                        <span className="text-slate-300 font-medium">—</span>
+                      )}
                     </Link>
                   </td>
                   {!isManagerView && (
-                    <td style={{ padding: '14px 16px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                      <Link href={href} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>{formatDate(lead.lastContactDate)}</Link>
+                    <td className="py-3.5 px-4 font-medium text-[var(--text-secondary)] tabular-nums">
+                      <Link href={href} className="block text-inherit text-decoration-none">
+                        {formatDate(lead.lastContactDate)}
+                      </Link>
                     </td>
                   )}
-                  <td style={{ padding: '14px 16px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                    <Link href={href} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>{formatDate(lead.nextFollowUpDate)}</Link>
+                  <td className="py-3.5 px-4 font-medium text-[var(--text-secondary)] tabular-nums">
+                    <Link href={href} className="block text-inherit text-decoration-none">
+                      {formatDate(lead.nextFollowUpDate)}
+                    </Link>
                   </td>
                 </tr>
               );
