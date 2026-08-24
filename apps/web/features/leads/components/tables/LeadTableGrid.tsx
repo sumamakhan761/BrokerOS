@@ -1,9 +1,11 @@
-import React from 'react';
-import Link from 'next/link';
+import React from "react";
+import Link from "next/link";
 import {
-  StatusPill, SkeletonRows, EmptyState,
-  tableHeaderStyle, thStyle, tableWrapperStyle, formatDate,
-} from './TablePrimitives';
+  StatusPill,
+  SkeletonRows,
+  EmptyState,
+  formatDate,
+} from "./TablePrimitives";
 
 interface LeadTableGridProps {
   leads: any[];
@@ -12,37 +14,67 @@ interface LeadTableGridProps {
   pathname: string;
 }
 
-const TEMP_COLORS: Record<string, { bg: string; fg: string }> = {
-  HOT:  { bg: '#fff1f2', fg: '#e11d48' },
-  WARM: { bg: '#fff7ed', fg: '#ea580c' },
-  COLD: { bg: '#eff6ff', fg: '#3b82f6' },
+const TEMP_STYLES: Record<string, { bg: string; fg: string; icon: string }> = {
+  HOT: { bg: "bg-rose-50 border-rose-200", fg: "text-rose-700", icon: "🔥" },
+  WARM: { bg: "bg-amber-50 border-amber-200", fg: "text-amber-800", icon: "⚡" },
+  COLD: { bg: "bg-sky-50 border-sky-200", fg: "text-sky-700", icon: "❄️" },
 };
 
-export function LeadTableGrid({ leads, loading, isManagerView, pathname }: LeadTableGridProps) {
-  const colCount = isManagerView ? 8 : 9;
+export function LeadTableGrid({
+  leads,
+  loading,
+  isManagerView,
+  pathname,
+}: LeadTableGridProps) {
+  const colCount = isManagerView ? 9 : 10;
 
   return (
-    <div style={tableWrapperStyle}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 840 }}>
-        <thead style={tableHeaderStyle}>
+    <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+      <table className="w-full border-collapse min-w-[900px] text-left text-xs">
+        <thead className="bg-slate-50/80 border-b border-slate-200/80">
           <tr>
-            <th style={{ ...thStyle, width: 48 }}>#</th>
-            <th style={thStyle}>Lead</th>
-            <th style={thStyle}>Phone</th>
-            <th style={thStyle}>Status</th>
-            <th style={thStyle}>Temp</th>
-            <th style={thStyle}>{isManagerView ? 'Agent' : 'Assigned To'}</th>
-            {!isManagerView && <th style={thStyle}>Score</th>}
-            <th style={thStyle}>Last Contact</th>
-            <th style={thStyle}>Follow Up</th>
-            <th style={thStyle}>Site Visit</th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)] w-12 text-center">
+              #
+            </th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              Lead Name
+            </th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              Phone
+            </th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              Status
+            </th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              Temperature
+            </th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              Assigned Agent
+            </th>
+            {!isManagerView && (
+              <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)] text-center">
+                AI Score
+              </th>
+            )}
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              Last Contact
+            </th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              Next Follow Up
+            </th>
+            <th className="py-3 px-4 font-extrabold uppercase tracking-wider text-[10px] text-[var(--text-muted)]">
+              Site Visit
+            </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-slate-100">
           {loading ? (
             <SkeletonRows cols={colCount} />
           ) : leads.length === 0 ? (
-            <EmptyState message="No leads found. Try adjusting your filters." colSpan={colCount} />
+            <EmptyState
+              message="No leads found matching your criteria. Try adjusting the search filters."
+              colSpan={colCount}
+            />
           ) : (
             leads.map((lead, index) => (
               <LeadRow
@@ -60,7 +92,12 @@ export function LeadTableGrid({ leads, loading, isManagerView, pathname }: LeadT
   );
 }
 
-function LeadRow({ lead, index, pathname, isManagerView }: {
+function LeadRow({
+  lead,
+  index,
+  pathname,
+  isManagerView,
+}: {
   lead: any;
   index: number;
   pathname: string;
@@ -68,103 +105,114 @@ function LeadRow({ lead, index, pathname, isManagerView }: {
 }) {
   const href = `${pathname}/${lead.id}`;
   const temp = lead.temperature as string;
-  const tempColor = TEMP_COLORS[temp] ?? null;
+  const tempStyle = TEMP_STYLES[temp] ?? null;
 
   return (
-    <tr
-      style={{
-        borderBottom: '1px solid var(--border-subtle)',
-        transition: 'background var(--duration-fast) var(--ease-out-expo)',
-        cursor: 'pointer',
-      }}
-      className="table-row-hover"
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLElement).style.background = 'var(--bg-subtle)';
-        const firstTd = (e.currentTarget as HTMLElement).querySelector('td') as HTMLElement;
-        if (firstTd) firstTd.style.borderLeft = '3px solid var(--brand-500)';
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLElement).style.background = 'transparent';
-        const firstTd = (e.currentTarget as HTMLElement).querySelector('td') as HTMLElement;
-        if (firstTd) firstTd.style.borderLeft = '3px solid transparent';
-      }}
-    >
-      <td style={{ padding: '14px 16px', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', borderLeft: '3px solid transparent', transition: 'border-color var(--duration-fast) var(--ease-out-expo)' }}>
-        <Link href={href} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>{index + 1}</Link>
+    <tr className="hover:bg-purple-50/40 transition-colors group cursor-pointer">
+      {/* Index */}
+      <td className="py-3.5 px-4 text-center font-bold text-[var(--text-muted)] tabular-nums group-hover:text-[var(--brand-700)]">
+        <Link href={href} className="block text-inherit text-decoration-none">
+          {index + 1}
+        </Link>
       </td>
-      <td style={{ padding: '14px 16px' }}>
-        <Link href={href} style={{ display: 'block', textDecoration: 'none' }}>
-          <div style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-            {lead.firstName} {lead.lastName || ''}
+
+      {/* Name */}
+      <td className="py-3.5 px-4">
+        <Link href={href} className="block text-decoration-none">
+          <div className="font-bold text-xs text-[var(--text-primary)] group-hover:text-[var(--brand-700)] transition-colors">
+            {lead.firstName} {lead.lastName || ""}
           </div>
-        </Link>
-      </td>
-      <td style={{ padding: '14px 16px' }}>
-        <Link href={href} style={{ display: 'block', textDecoration: 'none', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 500 }}>
-          {lead.phone}
-        </Link>
-      </td>
-      <td style={{ padding: '14px 16px' }}>
-        <Link href={href} style={{ display: 'block', textDecoration: 'none' }}>
-          <StatusPill status={lead.status} />
-        </Link>
-      </td>
-      <td style={{ padding: '14px 16px' }}>
-        <Link href={href} style={{ display: 'block', textDecoration: 'none' }}>
-          {tempColor ? (
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              padding: '3px 9px',
-              borderRadius: 'var(--radius-full)',
-              fontSize: 10,
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              background: tempColor.bg,
-              color: tempColor.fg,
-            }}>
-              {temp === 'HOT' && '🔥'} {temp}
-            </span>
-          ) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
-        </Link>
-      </td>
-      <td style={{ padding: '14px 16px', fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-secondary)' }}>
-        <Link href={href} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
-          {lead.assignedUser ? (lead.assignedUser.name || lead.assignedUser.username) : (
-            <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontWeight: 400 }}>Unassigned</span>
+          {lead.project && (
+            <div className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5">
+              {lead.project}
+            </div>
           )}
         </Link>
       </td>
+
+      {/* Phone */}
+      <td className="py-3.5 px-4 font-semibold text-[var(--text-secondary)] tabular-nums">
+        <Link href={href} className="block text-inherit text-decoration-none">
+          {lead.phone || "—"}
+        </Link>
+      </td>
+
+      {/* Status */}
+      <td className="py-3.5 px-4">
+        <Link href={href} className="block text-decoration-none">
+          <StatusPill status={lead.status} />
+        </Link>
+      </td>
+
+      {/* Temperature */}
+      <td className="py-3.5 px-4">
+        <Link href={href} className="block text-decoration-none">
+          {tempStyle ? (
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${tempStyle.bg} ${tempStyle.fg}`}
+            >
+              <span>{tempStyle.icon}</span>
+              <span>{temp}</span>
+            </span>
+          ) : (
+            <span className="text-slate-300 font-medium">—</span>
+          )}
+        </Link>
+      </td>
+
+      {/* Assigned Agent */}
+      <td className="py-3.5 px-4 text-xs font-semibold text-[var(--text-secondary)]">
+        <Link href={href} className="block text-inherit text-decoration-none">
+          {lead.assignedUser ? (
+            lead.assignedUser.name || lead.assignedUser.username
+          ) : (
+            <span className="text-slate-400 font-normal italic">Unassigned</span>
+          )}
+        </Link>
+      </td>
+
+      {/* AI Score */}
       {!isManagerView && (
-        <td style={{ padding: '14px 16px' }}>
-          <Link href={href} style={{ display: 'block', textDecoration: 'none' }}>
+        <td className="py-3.5 px-4 text-center">
+          <Link href={href} className="block text-decoration-none">
             {lead.score !== null && lead.score !== undefined ? (
-              <span style={{
-                display: 'inline-block',
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-full)',
-                fontSize: 11,
-                fontWeight: 800,
-                background: lead.score >= 80 ? '#f0fdf4' : lead.score >= 60 ? '#fffbeb' : '#fff1f2',
-                color: lead.score >= 80 ? '#15803d' : lead.score >= 60 ? '#b45309' : '#be123c',
-              }}>
+              <span
+                className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-extrabold tabular-nums border ${lead.score >= 80
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    : lead.score >= 60
+                      ? "bg-amber-50 text-amber-800 border-amber-200"
+                      : "bg-rose-50 text-rose-800 border-rose-200"
+                  }`}
+              >
                 {lead.score}
               </span>
-            ) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
+            ) : (
+              <span className="text-slate-300 font-medium">—</span>
+            )}
           </Link>
         </td>
       )}
-      <td style={{ padding: '14px 16px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 500 }}>
-        <Link href={href} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>{formatDate(lead.lastContactDate)}</Link>
+
+      {/* Last Contact */}
+      <td className="py-3.5 px-4 font-medium text-[var(--text-secondary)] tabular-nums">
+        <Link href={href} className="block text-inherit text-decoration-none">
+          {formatDate(lead.lastContactDate)}
+        </Link>
       </td>
-      <td style={{ padding: '14px 16px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 500 }}>
-        <Link href={href} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>{formatDate(lead.nextFollowUpDate)}</Link>
+
+      {/* Next Follow Up */}
+      <td className="py-3.5 px-4 font-medium text-[var(--text-secondary)] tabular-nums">
+        <Link href={href} className="block text-inherit text-decoration-none">
+          {formatDate(lead.nextFollowUpDate)}
+        </Link>
       </td>
-      <td style={{ padding: '14px 16px', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 500 }}>
-        <Link href={href} style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}>
-          {lead.latestSiteVisit ? formatDate(lead.latestSiteVisit.scheduledDate) : '—'}
+
+      {/* Site Visit */}
+      <td className="py-3.5 px-4 font-medium text-[var(--text-secondary)] tabular-nums">
+        <Link href={href} className="block text-inherit text-decoration-none">
+          {lead.latestSiteVisit
+            ? formatDate(lead.latestSiteVisit.scheduledDate)
+            : "—"}
         </Link>
       </td>
     </tr>

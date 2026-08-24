@@ -1,140 +1,178 @@
-'use client';
+"use client";
 
-import React, { Suspense, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Handshake, CheckCircle2 } from 'lucide-react';
-import { authClient } from '@/lib/auth-client';
-import { ClosingManagerHandoverFormModal } from '../modals/ClosingManagerHandoverFormModal';
+import React, { Suspense, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Handshake, CheckCircle2 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { ClosingManagerHandoverFormModal } from "../modals/ClosingManagerHandoverFormModal";
+import { StatusPill } from "./TablePrimitives";
 
 function ClosingManagerHandoverContent() {
   const router = useRouter();
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'pending' | 'completed'>('pending');
+  const [activeTab, setActiveTab] = useState<"pending" | "completed">("pending");
 
   const fetchLeads = async () => {
     setLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/proxy';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
 
-      const statuses = activeTab === 'pending'
-        ? ['BOOKING', 'AGREEMENT']
-        : ['HANDOVER', 'SOLD'];
+      const statuses =
+        activeTab === "pending"
+          ? ["BOOKING", "AGREEMENT"]
+          : ["HANDOVER", "SOLD"];
 
       let allLeads: any[] = [];
 
       for (const st of statuses) {
-        const res = await authClient.$fetch<any[]>(`/api/leads?status=${st}&isCpProject=true`, { baseURL: apiUrl });
+        const res = await authClient.$fetch<any[]>(
+          `/api/leads?status=${st}&isCpProject=true`,
+          { baseURL: apiUrl }
+        );
         if (res.data) {
           allLeads = [...allLeads, ...res.data];
         }
       }
 
       // Unique leads
-      let uniqueLeads = Array.from(new Map(allLeads.map(item => [item.id, item])).values());
-      uniqueLeads.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      let uniqueLeads = Array.from(
+        new Map(allLeads.map((item) => [item.id, item])).values()
+      );
+      uniqueLeads.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
       setLeads(uniqueLeads);
     } catch (e) {
-      console.error('Failed to fetch leads:', e);
+      console.error("Failed to fetch handover leads:", e);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchLeads(); }, [activeTab]);
+  useEffect(() => {
+    fetchLeads();
+  }, [activeTab]);
 
   return (
-    <Card className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center px-4 pt-4 gap-4">
+    <Card className="space-y-5 p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+      {/* Header with Switcher Tabs */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-slate-100 pb-4">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">
-            {activeTab === 'pending' ? 'Leads Ready for Handover' : 'Completed Handovers'}
+          <h2 className="text-base font-extrabold text-[var(--text-primary)] tracking-tight">
+            {activeTab === "pending"
+              ? "Leads Ready for Post-Sales Handover"
+              : "Completed Handovers"}
           </h2>
-          <p className="text-sm text-gray-500">
-            {activeTab === 'pending'
-              ? 'Leads that have completed the closing process and are ready for Post Sales.'
-              : 'Leads that you have successfully handed over or sold.'}
+          <p className="text-xs font-medium text-[var(--text-muted)] mt-0.5">
+            {activeTab === "pending"
+              ? "Prospects that have finalized closing negotiations and are awaiting formal post-sales induction."
+              : "Prospects successfully transitioned to post-sales processing."}
           </p>
         </div>
-        <div className="flex bg-gray-100 p-1 rounded-lg">
+
+        {/* Tab Switcher */}
+        <div className="flex bg-slate-100 p-1 rounded-xl flex-shrink-0 self-start sm:self-auto">
           <button
-            onClick={() => setActiveTab('pending')}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'pending' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
+            onClick={() => setActiveTab("pending")}
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer active:scale-[0.96] press-effect ${
+              activeTab === "pending"
+                ? "bg-white text-[var(--brand-700)] shadow-xs"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            }`}
           >
-            Pending
+            Pending Handover
           </button>
           <button
-            onClick={() => setActiveTab('completed')}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'completed' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
+            onClick={() => setActiveTab("completed")}
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer active:scale-[0.96] press-effect ${
+              activeTab === "completed"
+                ? "bg-white text-[var(--brand-700)] shadow-xs"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            }`}
           >
             Completed
           </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/50">
-              <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
-              <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</th>
-              <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+      {/* Table */}
+      <div className="overflow-x-auto rounded-xl border border-slate-200/80">
+        <table className="w-full text-left border-collapse text-xs">
+          <thead className="bg-slate-50/80 border-b border-slate-200/80">
+            <tr>
+              <th className="py-3 px-4 font-extrabold text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
+                Customer Name
+              </th>
+              <th className="py-3 px-4 font-extrabold text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
+                Phone
+              </th>
+              <th className="py-3 px-4 font-extrabold text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
+                Status
+              </th>
+              <th className="py-3 px-4 font-extrabold text-[10px] text-[var(--text-muted)] uppercase tracking-wider text-right">
+                Action
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-slate-100">
             {loading ? (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-gray-400">Loading leads...</td>
+                <td colSpan={4} className="py-12 text-center text-xs font-semibold text-[var(--text-muted)]">
+                  Loading handover leads…
+                </td>
               </tr>
             ) : leads.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-8 text-center text-gray-400">
-                  {activeTab === 'pending' ? 'No leads eligible for handover right now.' : 'No completed handovers found.'}
+                <td colSpan={4} className="py-12 text-center text-xs font-semibold text-[var(--text-muted)]">
+                  {activeTab === "pending"
+                    ? "No leads currently pending handover."
+                    : "No completed handovers on record."}
                 </td>
               </tr>
             ) : (
               leads.map((lead) => (
-                <tr 
-                  key={lead.id} 
-                  className="hover:bg-gray-50/50 transition-colors cursor-pointer"
-                  onClick={() => router.push(`/dashboard/closing-manager/lead-management/${lead.id}`)}
+                <tr
+                  key={lead.id}
+                  className="hover:bg-purple-50/40 transition-colors cursor-pointer group"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/closing-manager/lead-management/${lead.id}`
+                    )
+                  }
                 >
-                  <td className="py-3 px-4">
-                    <div className="font-medium text-gray-900">{lead.firstName} {lead.lastName}</div>
+                  <td className="py-3.5 px-4 font-bold text-[var(--text-primary)] group-hover:text-[var(--brand-700)] transition-colors">
+                    {lead.firstName} {lead.lastName || ""}
                   </td>
-                  <td className="py-3 px-4">
-                    <div className="text-sm text-gray-600">{lead.phone}</div>
+                  <td className="py-3.5 px-4 font-semibold text-[var(--text-secondary)] tabular-nums">
+                    {lead.phone || "—"}
                   </td>
-                  <td className="py-3 px-4">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                      {lead.status}
-                    </span>
+                  <td className="py-3.5 px-4">
+                    <StatusPill status={lead.status} />
                   </td>
-                  <td className="py-3 px-4 text-right">
-                    {activeTab === 'pending' ? (
+                  <td className="py-3.5 px-4 text-right">
+                    {activeTab === "pending" ? (
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="gap-2"
+                        variant="luxury"
+                        className="gap-1.5 text-xs py-1 px-3"
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedLead(lead);
                         }}
                       >
-                        <Handshake className="w-4 h-4" />
-                        Handover
+                        <Handshake className="w-3.5 h-3.5" />
+                        <span>Handover</span>
                       </Button>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600 px-3 py-1.5 bg-green-50 rounded-md">
-                        <CheckCircle2 className="w-4 h-4" />
-                        Done
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 px-2.5 py-1 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Handed Over</span>
                       </span>
                     )}
                   </td>
@@ -152,7 +190,7 @@ function ClosingManagerHandoverContent() {
           onClose={() => setSelectedLead(null)}
           onSuccess={() => {
             setSelectedLead(null);
-            fetchLeads(); // Refresh table after handover
+            fetchLeads();
           }}
         />
       )}
@@ -162,9 +200,14 @@ function ClosingManagerHandoverContent() {
 
 export function ClosingManagerHandoverClient() {
   return (
-    <Suspense fallback={<div className="p-4 text-center text-gray-400">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-12 text-center text-xs font-semibold text-[var(--text-muted)]">
+          Loading handover workspace…
+        </div>
+      }
+    >
       <ClosingManagerHandoverContent />
     </Suspense>
   );
 }
-

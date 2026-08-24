@@ -1,12 +1,12 @@
-import React from 'react';
-import { Search, Calendar, X } from 'lucide-react';
+import React from "react";
+import { Search, Calendar, X } from "lucide-react";
 
 const STATUS_OPTIONS = [
-  { label: 'All',          value: '',                     color: 'var(--text-secondary)' },
-  { label: 'SV Scheduled', value: 'SITE_VISIT_SCHEDULED', color: '#b45309' },
-  { label: 'SV Completed', value: 'SITE_VISIT_COMPLETED', color: '#7c3aed' },
-  { label: 'Negotiation',  value: 'NEGOTIATION',          color: '#c2410c' },
-  { label: 'Booking',      value: 'BOOKING',              color: '#15803d' },
+  { label: "All", value: "", color: "var(--text-secondary)" },
+  { label: "SV Scheduled", value: "SITE_VISIT_SCHEDULED", color: "oklch(0.50 0.17 80)" },
+  { label: "SV Completed", value: "SITE_VISIT_COMPLETED", color: "oklch(0.455 0.215 275)" },
+  { label: "Negotiation", value: "NEGOTIATION", color: "oklch(0.55 0.18 45)" },
+  { label: "Booking", value: "BOOKING", color: "oklch(0.42 0.16 145)" },
 ];
 
 interface SalesExecTableFiltersProps {
@@ -21,75 +21,110 @@ interface SalesExecTableFiltersProps {
 }
 
 export function SalesExecTableFilters({
-  status, setStatus,
-  followUpDate, setFollowUpDate,
-  siteVisitDate, setSiteVisitDate,
-  search, setSearch,
+  status,
+  setStatus,
+  followUpDate,
+  setFollowUpDate,
+  siteVisitDate,
+  setSiteVisitDate,
+  search,
+  setSearch,
 }: SalesExecTableFiltersProps) {
   const hasActive = status || followUpDate || siteVisitDate || search;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
-      {/* Row 1: search + dates */}
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div className="flex flex-col gap-3.5 mb-5">
+      {/* Row 1: Search + Date Filters */}
+      <div className="flex items-center gap-2.5 flex-wrap">
         {/* Search */}
-        <div style={{ position: 'relative', flex: '1 1 220px' }}>
-          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+        <div className="relative flex-1 min-w-[220px]">
+          <Search
+            size={14}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+          />
           <input
             type="text"
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search name or phone…"
-            style={{
-              width: '100%', height: 38, paddingLeft: 34, paddingRight: 12,
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-default)',
-              borderRadius: 'var(--radius-lg)',
-              fontSize: 'var(--text-sm)', fontWeight: 500,
-              color: 'var(--text-primary)', outline: 'none',
-              transition: 'border-color var(--duration-fast)',
-            }}
-            onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'var(--brand-400)'; }}
-            onBlur={e => { (e.target as HTMLInputElement).style.borderColor = 'var(--border-default)'; }}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search prospect by name or phone…"
+            className="w-full h-9 ps-9 pe-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-medium text-[var(--text-primary)] placeholder:text-slate-400 outline-none transition-all focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15"
           />
         </div>
 
-        {/* Follow-up date */}
-        <div style={{ position: 'relative', flex: '0 1 180px' }}>
-          <Calendar size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-          <input type="date" value={followUpDate} onChange={e => setFollowUpDate(e.target.value)} title="Follow-Up Date"
-            style={{ width: '100%', height: 38, paddingLeft: 30, paddingRight: 8, background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', fontSize: 'var(--text-sm)', fontWeight: 500, color: followUpDate ? 'var(--text-primary)' : 'var(--text-muted)', outline: 'none', cursor: 'pointer' }} />
+        {/* Follow-up Date */}
+        <div className="relative min-w-[170px]">
+          <Calendar
+            size={13}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+          />
+          <input
+            type="date"
+            value={followUpDate}
+            onChange={(e) => setFollowUpDate(e.target.value)}
+            title="Follow-Up Date"
+            className={`w-full h-9 ps-8 pe-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold outline-none transition-all focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 cursor-pointer ${
+              followUpDate ? "text-[var(--brand-700)]" : "text-slate-400"
+            }`}
+          />
+          {followUpDate && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-extrabold text-[var(--brand-700)] bg-purple-100 px-1.5 py-0.5 rounded">
+              F-UP
+            </span>
+          )}
         </div>
 
-        {/* SV date */}
-        <div style={{ position: 'relative', flex: '0 1 180px' }}>
-          <Calendar size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-          <input type="date" value={siteVisitDate} onChange={e => setSiteVisitDate(e.target.value)} title="Site Visit Date"
-            style={{ width: '100%', height: 38, paddingLeft: 30, paddingRight: 8, background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', fontSize: 'var(--text-sm)', fontWeight: 500, color: siteVisitDate ? 'var(--text-primary)' : 'var(--text-muted)', outline: 'none', cursor: 'pointer' }} />
+        {/* SV Date */}
+        <div className="relative min-w-[170px]">
+          <Calendar
+            size={13}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+          />
+          <input
+            type="date"
+            value={siteVisitDate}
+            onChange={(e) => setSiteVisitDate(e.target.value)}
+            title="Site Visit Date"
+            className={`w-full h-9 ps-8 pe-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold outline-none transition-all focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 cursor-pointer ${
+              siteVisitDate ? "text-purple-700" : "text-slate-400"
+            }`}
+          />
+          {siteVisitDate && (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-extrabold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">
+              SV
+            </span>
+          )}
         </div>
 
         {hasActive && (
-          <button onClick={() => { setStatus(''); setFollowUpDate(''); setSiteVisitDate(''); setSearch(''); }}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 38, padding: '0 14px', borderRadius: 'var(--radius-lg)', background: 'var(--danger-bg)', border: '1px solid #fecaca', color: 'var(--danger-fg)', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
-            <X size={12} /> Clear
+          <button
+            onClick={() => {
+              setStatus("");
+              setFollowUpDate("");
+              setSiteVisitDate("");
+              setSearch("");
+            }}
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-rose-50 hover:bg-rose-100/80 border border-rose-200 text-rose-700 text-xs font-bold transition-all active:scale-[0.96] press-effect flex-shrink-0 cursor-pointer"
+          >
+            <X size={13} />
+            <span>Reset</span>
           </button>
         )}
       </div>
 
-      {/* Row 2: status pills */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {STATUS_OPTIONS.map(opt => {
+      {/* Row 2: Status Pills */}
+      <div className="flex items-center gap-1.5 flex-wrap pt-1">
+        {STATUS_OPTIONS.map((opt) => {
           const active = status === opt.value;
           return (
-            <button key={opt.value} onClick={() => setStatus(opt.value)} style={{
-              padding: '5px 14px', borderRadius: 'var(--radius-full)', fontSize: 12,
-              fontWeight: active ? 800 : 600, cursor: 'pointer',
-              border: active ? `1.5px solid ${opt.color}` : '1.5px solid var(--border-default)',
-              background: active ? opt.color : 'var(--bg-surface)',
-              color: active ? '#fff' : 'var(--text-secondary)',
-              transition: 'all var(--duration-fast) var(--ease-out-expo)',
-              whiteSpace: 'nowrap',
-            }}>
+            <button
+              key={opt.value}
+              onClick={() => setStatus(opt.value)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-150 active:scale-[0.96] press-effect whitespace-nowrap cursor-pointer ${
+                active
+                  ? "bg-[var(--brand-600)] text-white shadow-xs"
+                  : "bg-slate-50 hover:bg-slate-100 text-[var(--text-secondary)] border border-slate-200/80"
+              }`}
+            >
               {opt.label}
             </button>
           );
