@@ -1,24 +1,24 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { UserCircle, Shield, Building } from "lucide-react";
+import { Building2, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 const roleToRouteMap: Record<string, string> = {
-  'PRE_SALES': '/dashboard/pre-sales',
-  'PRE_SALES_MANAGER': '/dashboard/pre-sales-manager',
-  'SALES_EXECUTIVE': '/dashboard/sales-executive',
-  'SALES_MANAGER': '/dashboard/sales-manager',
-  'POST_SALES': '/dashboard/post-sales',
-  'POST_SALES_MANAGER': '/dashboard/post-sales-manager',
-  'FINANCE': '/dashboard/finance',
-  'BUSINESS_MANAGER': '/dashboard/business-manager',
-  'DIRECTOR': '/dashboard/director',
-  'ADMIN': '/dashboard/admin',
-  'SOURCING_MANAGER': '/dashboard/sourcing-manager',
-  'CLOSING_MANAGER': '/dashboard/closing-manager',
-  'CHANNEL_PARTNER': '/dashboard/channel-partner',
+  PRE_SALES: "/dashboard/pre-sales",
+  PRE_SALES_MANAGER: "/dashboard/pre-sales-manager",
+  SALES_EXECUTIVE: "/dashboard/sales-executive",
+  SALES_MANAGER: "/dashboard/sales-manager",
+  POST_SALES: "/dashboard/post-sales",
+  POST_SALES_MANAGER: "/dashboard/post-sales-manager",
+  FINANCE: "/dashboard/finance",
+  BUSINESS_MANAGER: "/dashboard/business-manager",
+  DIRECTOR: "/dashboard/director",
+  ADMIN: "/dashboard/admin",
+  SOURCING_MANAGER: "/dashboard/sourcing-manager",
+  CLOSING_MANAGER: "/dashboard/closing-manager",
+  CHANNEL_PARTNER: "/dashboard/channel-partner",
 };
 
 export default function DashboardOverview() {
@@ -31,11 +31,13 @@ export default function DashboardOverview() {
       if (user?.roleId) {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
         fetch(`${baseUrl}/roles`)
-          .then(res => res.json())
-          .then(roles => {
-            const role = roles.find((r: any) => r.id === user.roleId);
-            if (role && roleToRouteMap[role.code]) {
-              router.replace(roleToRouteMap[role.code]);
+          .then((res) => res.json())
+          .then((roles) => {
+            if (Array.isArray(roles)) {
+              const role = roles.find((r: any) => r.id === user.roleId);
+              if (role && roleToRouteMap[role.code]) {
+                router.replace(roleToRouteMap[role.code]);
+              }
             }
           })
           .catch(console.error);
@@ -44,18 +46,25 @@ export default function DashboardOverview() {
   }, [session, isPending, router]);
 
   return (
-    <div className="max-w-4xl mx-auto flex flex-col items-center justify-center min-h-[60vh] text-center">
-      <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-6">
-        <Building className="w-10 h-10 text-blue-600 animate-pulse" />
+    <div className="max-w-md mx-auto flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      {/* Brand Icon with Spinner */}
+      <div className="relative mb-6">
+        <div className="w-16 h-16 rounded-2xl bg-[var(--brand-600)] flex items-center justify-center text-white shadow-lg shadow-purple-600/25">
+          <Building2 className="w-8 h-8 text-white" strokeWidth={2.2} />
+        </div>
+        <div className="absolute -inset-2 rounded-3xl border-2 border-transparent border-t-[var(--brand-600)] animate-spin pointer-events-none" />
       </div>
-      <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-4">Authenticating...</h1>
-      <p className="text-lg text-gray-600 max-w-2xl">
-        Redirecting you to your workspace...
+
+      <h1 className="text-xl font-extrabold tracking-tight text-[var(--text-primary)] mb-1.5">
+        Authenticating Workspace
+      </h1>
+      <p className="text-xs text-[var(--text-tertiary)] max-w-sm mb-6">
+        Validating 4-factor session credentials and routing to your departmental dashboard…
       </p>
 
-      <div className="mt-12 inline-flex items-center gap-2 bg-gray-50 px-6 py-3 rounded-full border border-gray-200">
-        <UserCircle className="w-5 h-5 text-gray-500" />
-        <span className="text-sm font-medium text-gray-700">{session?.user?.email || "Loading..."}</span>
+      <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200/90 shadow-xs text-xs font-semibold text-[var(--text-secondary)]">
+        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+        <span>{session?.user?.email || "Checking session…"}</span>
       </div>
     </div>
   );

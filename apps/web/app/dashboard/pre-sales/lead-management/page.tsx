@@ -20,11 +20,13 @@ export default function PreSalesLeadManagement() {
     if (user?.roleId) {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
       fetch(`${baseUrl}/roles`)
-        .then(res => res.json())
-        .then(roles => {
+        .then((res) => res.json())
+        .then((roles) => {
           const role = roles.find((r: any) => r.id === user.roleId);
-          // Only PRE_SALES, PRE_SALES_MANAGER, and ADMIN can access this specific view
-          if (role && ['PRE_SALES', 'PRE_SALES_MANAGER', 'ADMIN'].includes(role.code)) {
+          if (
+            role &&
+            ["PRE_SALES", "PRE_SALES_MANAGER", "ADMIN"].includes(role.code)
+          ) {
             setIsAuthorized(true);
           } else {
             router.replace("/dashboard");
@@ -35,15 +37,27 @@ export default function PreSalesLeadManagement() {
   }, [session, isPending, router]);
 
   if (!isAuthorized) {
-    return <div className="p-8">Verifying access...</div>;
+    return (
+      <div className="min-h-[40vh] flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-purple-100 border-t-[var(--brand-600)] animate-spin" />
+        <p className="text-xs font-semibold text-[var(--text-tertiary)]">
+          Verifying authorization clearance…
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Pre-Sales Lead Management</h1>
+    <div className="space-y-6 animate-enter max-w-7xl mx-auto">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight m-0">
+          Lead Management Hub
+        </h1>
+        <p className="text-xs sm:text-sm font-medium text-[var(--text-tertiary)] mt-1 mb-0">
+          Filter, triage, and manage active prospects across all inbound sales channels.
+        </p>
       </div>
-      
+
       <LeadTableClient />
     </div>
   );
