@@ -1,5 +1,15 @@
-import React from 'react';
-import { Phone, Mail, MapPin, Clock, Users, Wand2, Loader2 } from 'lucide-react';
+import React from "react";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+  Users,
+  Zap,
+  Loader2,
+  MessageSquare,
+  ChevronDown,
+} from "lucide-react";
 
 interface BrokerHeaderDetailsProps {
   broker: any;
@@ -13,15 +23,19 @@ interface BrokerHeaderDetailsProps {
   isCM?: boolean;
 }
 
-/* dynamic status pill color */
-function statusPillStyle(status: string): React.CSSProperties {
-  if (status === 'ACTIVE') return { background: 'var(--success-bg)', color: 'var(--success-fg)', border: '1px solid #86efac' };
-  if (status === 'BLACKLISTED') return { background: 'var(--danger-bg)', color: 'var(--danger-fg)', border: '1px solid #fca5a5' };
-  if (status === 'INACTIVE') return { background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)' };
-  if (status === 'DEAL') return { background: 'var(--info-bg)', color: 'var(--info-fg)', border: '1px solid #7dd3fc' };
-  /* default — brand tint */
-  return { background: 'var(--brand-50)', color: 'var(--brand-700)', border: '1px solid var(--brand-200)' };
-}
+const BROKER_STATUS_CLASSES: Record<
+  string,
+  { bg: string; text: string; border: string }
+> = {
+  NEW: { bg: "bg-sky-50", text: "text-sky-700", border: "border-sky-200" },
+  CONTACTED: { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
+  VISIT: { bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200" },
+  DEAL: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+  ACTIVE: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+  INACTIVE: { bg: "bg-slate-100", text: "text-slate-600", border: "border-slate-200" },
+  BLACKLISTED: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200" },
+  PENDING_APPROVAL: { bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200" },
+};
 
 export function BrokerHeaderDetails({
   broker,
@@ -32,251 +46,166 @@ export function BrokerHeaderDetails({
   openMeetingModal,
   handleAiAutoAdvance,
   isAiAdvancing,
-  isCM
+  isCM,
 }: BrokerHeaderDetailsProps) {
+  const currentStatus = broker.status || "NEW";
+  const statusConf = BROKER_STATUS_CLASSES[currentStatus] || {
+    bg: "bg-purple-50",
+    text: "text-[var(--brand-700)]",
+    border: "border-purple-200",
+  };
+
   return (
     <>
-      {/* Name + Status row */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
-        <h2 style={{
-          margin: 0,
-          fontSize: 'var(--text-2xl)',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          letterSpacing: '-0.02em',
-          lineHeight: 1.2,
-        }}>
+      {/* Name + Status + AI Advance */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight m-0">
           {displayName}
         </h2>
 
-        {/* Status pill */}
-        <select
-          value={broker.status || 'NEW'}
-          onChange={(e) => handleStatusChange(e.target.value)}
-          style={{
-            padding: '3px 12px',
-            fontSize: 'var(--text-xs)',
-            fontWeight: 700,
-            borderRadius: 'var(--radius-full)',
-            cursor: 'pointer',
-            outline: 'none',
-            letterSpacing: '0.02em',
-            transition: 'background var(--duration-fast)',
-            ...statusPillStyle(broker.status || 'NEW'),
-          }}
-        >
-          {(() => {
-            const allStatuses = ['PENDING_APPROVAL', 'ACTIVE', 'INACTIVE', 'BLACKLISTED', 'NEW', 'CONTACTED', 'VISIT', 'DEAL'];
-            let availableStatuses = allStatuses;
-            if (!availableStatuses.includes(broker.status)) {
-              availableStatuses = [broker.status, ...availableStatuses].filter(Boolean);
-            }
-            return availableStatuses.map(s => (
-              <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
-            ));
-          })()}
-        </select>
+        {/* Status Dropdown */}
+        <div className="relative inline-flex items-center">
+          <select
+            value={currentStatus}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            className={`h-7 pl-3 pr-7 rounded-full text-xs font-bold ${statusConf.bg} ${statusConf.text} border ${statusConf.border} outline-none cursor-pointer appearance-none transition-all shadow-2xs`}
+          >
+            {(() => {
+              const allStatuses = [
+                "PENDING_APPROVAL",
+                "ACTIVE",
+                "INACTIVE",
+                "BLACKLISTED",
+                "NEW",
+                "CONTACTED",
+                "VISIT",
+                "DEAL",
+              ];
+              let availableStatuses = allStatuses;
+              if (!availableStatuses.includes(broker.status)) {
+                availableStatuses = [
+                  broker.status,
+                  ...availableStatuses,
+                ].filter(Boolean);
+              }
+              return availableStatuses.map((s) => (
+                <option key={s} value={s}>
+                  {s.replace(/_/g, " ")}
+                </option>
+              ));
+            })()}
+          </select>
+          <ChevronDown
+            size={12}
+            className={`absolute right-2.5 pointer-events-none ${statusConf.text} opacity-70`}
+          />
+        </div>
 
-        {/* Sub-Status pill */}
-        <select
-          value={broker.subStatus || 'PENDING'}
-          onChange={(e) => handleSubStatusChange && handleSubStatusChange(e.target.value)}
-          style={{
-            padding: '3px 12px',
-            fontSize: 'var(--text-xs)',
-            fontWeight: 700,
-            borderRadius: 'var(--radius-full)',
-            background: 'var(--bg-subtle)',
-            color: 'var(--text-secondary)',
-            border: '1px solid var(--border-default)',
-            cursor: 'pointer',
-            outline: 'none',
-          }}
-        >
-          <option value="PENDING">Pending</option>
-          <option value="DONE">Done</option>
-        </select>
+        {/* Sub-Status Dropdown */}
+        <div className="relative inline-flex items-center">
+          <select
+            value={broker.subStatus || "PENDING"}
+            onChange={(e) =>
+              handleSubStatusChange && handleSubStatusChange(e.target.value)
+            }
+            className="h-7 pl-3 pr-7 rounded-full text-xs font-bold bg-slate-100 hover:bg-slate-200/80 text-slate-700 border border-slate-200 outline-none cursor-pointer appearance-none transition-all shadow-2xs"
+          >
+            <option value="PENDING">Pending</option>
+            <option value="DONE">Done</option>
+          </select>
+          <ChevronDown
+            size={12}
+            className="absolute right-2.5 pointer-events-none text-slate-500 opacity-70"
+          />
+        </div>
 
         {/* AI Auto-Advance */}
         <button
           onClick={handleAiAutoAdvance}
           disabled={isAiAdvancing}
-          style={{
-            marginLeft: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '4px 14px',
-            background: 'linear-gradient(135deg, #c026d3, var(--brand-600))',
-            color: '#fff',
-            fontSize: 'var(--text-xs)',
-            fontWeight: 700,
-            borderRadius: 'var(--radius-full)',
-            border: 'none',
-            cursor: isAiAdvancing ? 'not-allowed' : 'pointer',
-            opacity: isAiAdvancing ? 0.6 : 1,
-            boxShadow: 'var(--shadow-sm)',
-            transition: 'all var(--duration-base) var(--ease-out-expo)',
-          }}
-          onMouseEnter={e => {
-            if (!isAiAdvancing) {
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-              (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-brand)';
-            }
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-sm)';
-          }}
-          title="Auto-advance status based on AI call analysis"
+          className="h-7 px-3 rounded-full text-xs font-bold bg-purple-50 hover:bg-purple-100 text-[var(--brand-700)] border border-purple-200 inline-flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.96] press-effect shadow-2xs cursor-pointer ml-auto"
+          title="Auto-advance status based on AI interaction history"
         >
-          {isAiAdvancing
-            ? <Loader2 style={{ width: 13, height: 13, animation: 'spin 0.8s linear infinite' }} />
-            : <Wand2 style={{ width: 13, height: 13 }} />
-          }
-          {isAiAdvancing ? 'Analyzing…' : 'AI Auto-Advance'}
+          {isAiAdvancing ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Zap className="w-3.5 h-3.5 text-[var(--brand-600)]" />
+          )}
+          <span>{isAiAdvancing ? "Analyzing…" : "AI Advance"}</span>
         </button>
       </div>
 
-      {/* Contact info */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <Phone style={{ width: 14, height: 14, color: 'var(--text-muted)' }} />
-          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-secondary)' }}>
-            {broker.phone}{broker.alternatePhone ? ` / ${broker.alternatePhone}` : ''}
+      {/* Contact Quick Info Row */}
+      <div className="flex flex-wrap items-center gap-y-1.5 gap-x-5 text-xs text-[var(--text-secondary)]">
+        <div className="flex items-center gap-1.5 font-bold tabular-nums">
+          <Phone className="w-3.5 h-3.5 text-slate-400" />
+          <span>
+            {broker.phone}
+            {broker.alternatePhone ? ` / ${broker.alternatePhone}` : ""}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <Mail style={{ width: 14, height: 14, color: 'var(--text-muted)' }} />
-          <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>
-            {broker.email || <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>No email</span>}
+        <div className="flex items-center gap-1.5 font-medium">
+          <Mail className="w-3.5 h-3.5 text-slate-400" />
+          <span>
+            {broker.email || (
+              <em className="text-slate-400">No email registered</em>
+            )}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <MapPin style={{ width: 14, height: 14, color: 'var(--text-muted)' }} />
-          <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-tertiary)' }}>
-            {broker.city || <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>No location</span>}
+        <div className="flex items-center gap-1.5 font-medium">
+          <MapPin className="w-3.5 h-3.5 text-slate-400" />
+          <span>
+            {broker.city || (
+              <em className="text-slate-400">No city specified</em>
+            )}
           </span>
         </div>
       </div>
 
-      {/* Action buttons */}
+      {/* Action Buttons Toolbar */}
       {!isCM && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, paddingTop: 2 }}>
-          {/* Call */}
-        <button
-          style={{
-            padding: '7px 16px',
-            background: 'var(--success-bg)',
-            color: 'var(--success-fg)',
-            border: '1px solid #86efac',
-            borderRadius: 'var(--radius-lg)',
-            fontWeight: 600,
-            fontSize: 'var(--text-sm)',
-            display: 'flex', alignItems: 'center', gap: 7,
-            cursor: 'pointer',
-            transition: 'all var(--duration-base) var(--ease-out-expo)',
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-          }}
-        >
-          <Phone style={{ width: 14, height: 14 }} />
-          Call
-        </button>
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          {/* Direct Call */}
+          <button
+            onClick={() => {
+              if (broker.phone) window.open(`tel:${broker.phone}`, "_self");
+            }}
+            className="h-8 px-3.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.96] press-effect shadow-2xs cursor-pointer"
+          >
+            <Phone className="w-3.5 h-3.5" />
+            <span>Direct Call</span>
+          </button>
 
-        {/* WhatsApp */}
-        <button
-          style={{
-            padding: '7px 16px',
-            background: '#f0fdf4',
-            color: '#15803d',
-            border: '1px solid #bbf7d0',
-            borderRadius: 'var(--radius-lg)',
-            fontWeight: 600,
-            fontSize: 'var(--text-sm)',
-            display: 'flex', alignItems: 'center', gap: 7,
-            cursor: 'pointer',
-            transition: 'all var(--duration-base) var(--ease-out-expo)',
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-          }}
-        >
-          <svg style={{ width: 14, height: 14, fill: 'currentColor' }} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" />
-          </svg>
-          WhatsApp
-        </button>
+          {/* WhatsApp */}
+          <button
+            onClick={() => {
+              if (broker.phone) {
+                const cleanPhone = broker.phone.replace(/[^0-9]/g, "");
+                window.open(`https://wa.me/${cleanPhone}`, "_blank");
+              }
+            }}
+            className="h-8 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.96] press-effect shadow-xs cursor-pointer"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>WhatsApp</span>
+          </button>
 
-        {/* Follow-up */}
-        <button
-          onClick={() => openFollowUpModal()}
-          style={{
-            padding: '7px 16px',
-            background: 'var(--brand-600)',
-            color: '#fff',
-            border: '1px solid var(--brand-700)',
-            borderRadius: 'var(--radius-lg)',
-            fontWeight: 600,
-            fontSize: 'var(--text-sm)',
-            display: 'flex', alignItems: 'center', gap: 7,
-            cursor: 'pointer',
-            transition: 'all var(--duration-base) var(--ease-out-expo)',
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = 'var(--brand-700)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-brand)';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = 'var(--brand-600)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-          }}
-        >
-          <Clock style={{ width: 14, height: 14 }} />
-          Follow-up
-        </button>
+          {/* Follow-up */}
+          <button
+            onClick={() => openFollowUpModal()}
+            className="h-8 px-3.5 rounded-xl bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.96] press-effect shadow-xs cursor-pointer"
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>Schedule Follow-up</span>
+          </button>
 
-        {/* Meeting */}
-        <button
-          onClick={() => openMeetingModal()}
-          style={{
-            padding: '7px 16px',
-            background: 'var(--brand-50)',
-            color: 'var(--brand-700)',
-            border: '1px solid var(--brand-200)',
-            borderRadius: 'var(--radius-lg)',
-            fontWeight: 600,
-            fontSize: 'var(--text-sm)',
-            display: 'flex', alignItems: 'center', gap: 7,
-            cursor: 'pointer',
-            transition: 'all var(--duration-base) var(--ease-out-expo)',
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = 'var(--brand-100)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-md)';
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = 'var(--brand-50)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-          }}
-        >
-          <Users style={{ width: 14, height: 14 }} />
-          Meeting
+          {/* Meeting */}
+          <button
+            onClick={() => openMeetingModal()}
+            className="h-8 px-3.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-[var(--brand-700)] border border-purple-200 text-xs font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.96] press-effect shadow-2xs cursor-pointer"
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Log Meeting</span>
           </button>
         </div>
       )}

@@ -1,6 +1,5 @@
-import React from 'react';
-import { Input } from '@/components/ui/Input';
-import { Phone } from 'lucide-react';
+import React from "react";
+import { Phone } from "lucide-react";
 
 interface BrokerHeaderEditProps {
   formData: any;
@@ -8,25 +7,50 @@ interface BrokerHeaderEditProps {
   brokerPhone: string;
 }
 
-export function BrokerHeaderEdit({ formData, setFormData, brokerPhone }: BrokerHeaderEditProps) {
+export function BrokerHeaderEdit({
+  formData,
+  setFormData,
+  brokerPhone,
+}: BrokerHeaderEditProps) {
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 mr-12">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Input
-          label="Name"
-          value={formData.name || ''}
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pr-8 animate-enter">
+      <div>
+        <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+          Broker Name
+        </label>
+        <input
+          value={formData.name || ""}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-        />
-        <Input
-          label="Email Address"
-          type="email"
-          value={formData.email || ''}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          placeholder="Broker contact name"
+          className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all"
         />
       </div>
-      <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm text-gray-500 flex items-center gap-2 mt-2">
-        <Phone className="w-4 h-4 text-gray-400" />
-        Phone number ({brokerPhone}) cannot be edited.
+
+      <div>
+        <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+          Email Address
+        </label>
+        <input
+          type="email"
+          value={formData.email || ""}
+          onChange={(e) =>
+            setFormData({ ...formData, email: e.target.value })
+          }
+          placeholder="broker@agency.com"
+          className="w-full h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all"
+        />
+      </div>
+
+      <div className="sm:col-span-2">
+        <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs">
+          <Phone size={13} className="text-slate-400 flex-shrink-0" />
+          <span className="font-bold text-[var(--text-secondary)] tabular-nums">
+            {brokerPhone}
+          </span>
+          <span className="text-[11px] text-slate-400 ml-1">
+            — Primary verified broker phone
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -1,18 +1,22 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Plus, Search } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
-import { useBrokerTable } from './useBrokerTable';
-import { BrokerTable } from './BrokerTable';
-import { AddBrokerModal } from './AddBrokerModal';
-import { AssignBrokerModal } from './AssignBrokerModal';
+import React, { useEffect } from "react";
+import { Plus, Search } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useBrokerTable } from "@/features/brokers/components/tables/useBrokerTable";
+import { BrokerTable } from "@/features/brokers/components/tables/BrokerTable";
+import { AddBrokerModal } from "@/features/brokers/components/tables/AddBrokerModal";
+import { AssignBrokerModal } from "@/features/brokers/components/tables/AssignBrokerModal";
 
 export function BrokerTableClient() {
   const searchParams = useSearchParams();
-  const initialFollowUpDate = searchParams.get('followUpDate') || '';
-  const isCP = typeof window !== 'undefined' && window.location.pathname.includes('/channel-partner');
-  const isCM = typeof window !== 'undefined' && window.location.pathname.includes('/closing-manager');
+  const initialFollowUpDate = searchParams.get("followUpDate") || "";
+  const isCP =
+    typeof window !== "undefined" &&
+    window.location.pathname.includes("/channel-partner");
+  const isCM =
+    typeof window !== "undefined" &&
+    window.location.pathname.includes("/closing-manager");
 
   const {
     loading,
@@ -33,57 +37,67 @@ export function BrokerTableClient() {
     handleAssign,
     filteredBrokers,
     followUpDate,
-    setFollowUpDate
+    setFollowUpDate,
   } = useBrokerTable(isCP);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (initialFollowUpDate) {
       setFollowUpDate(initialFollowUpDate);
     }
   }, [initialFollowUpDate, setFollowUpDate]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-5 animate-enter">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Broker Management</h1>
-          <p className="text-gray-500">Manage your channel partners and brokerage deals</p>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight m-0">
+            Broker Network & Partners
+          </h1>
+          <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5 m-0">
+            Manage channel partners, sourcing managers, and CP deal card allocations
+          </p>
         </div>
+
         {!isCM && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+            className="inline-flex items-center gap-1.5 bg-[var(--brand-600)] hover:bg-[var(--brand-700)] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-[0.96] press-effect shadow-xs cursor-pointer"
           >
-            <Plus className="w-5 h-5" /> Add Broker
+            <Plus size={14} />
+            <span>Add New Broker</span>
           </button>
         )}
       </div>
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 items-center">
-        <div className="relative flex-1">
-          <Search className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" />
+      {/* Filter Bar */}
+      <div className="bg-white p-3.5 rounded-2xl shadow-xs border border-slate-200/80 flex flex-col sm:flex-row gap-3 items-center">
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
           <input
             type="text"
-            placeholder="Search brokers..."
+            placeholder="Search brokers by agency, contact name, city, phone…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-10 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 pr-3 h-9 w-full bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-medium text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all"
           />
         </div>
+
         <select
           value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="h-9 px-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all cursor-pointer w-full sm:w-auto"
         >
           <option value="ALL">All Statuses</option>
           <option value="NEW">New</option>
           <option value="CONTACTED">Contacted</option>
-          <option value="VISIT">Visit</option>
-          <option value="DEAL">Deal</option>
+          <option value="VISIT">Visit Scheduled</option>
+          <option value="DEAL">Deal Active</option>
         </select>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+      {/* Table Container */}
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
         <BrokerTable
           loading={loading}
           filteredBrokers={filteredBrokers}
@@ -113,7 +127,6 @@ export function BrokerTableClient() {
           setAssignModalBroker={setAssignModalBroker}
         />
       )}
-
     </div>
   );
 }
