@@ -13,7 +13,7 @@
  */
 
 import { NestFactory } from '@nestjs/core';
-import { WorkersModule } from './workers.module';
+import { WorkersModule } from './workers.module.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(WorkersModule);
