@@ -30,6 +30,18 @@ importers:
       '@brokeros/constants':
         specifier: workspace:*
         version: link:../../packages/constants
+      '@brokeros/int-mail-brevo':
+        specifier: workspace:*
+        version: link:../../integrations/mail/brevo
+      '@brokeros/int-mail-mailchimp':
+        specifier: workspace:*
+        version: link:../../integrations/mail/mailchimp
+      '@brokeros/int-mail-sendgrid':
+        specifier: workspace:*
+        version: link:../../integrations/mail/sendgrid
+      '@brokeros/int-mail-ses':
+        specifier: workspace:*
+        version: link:../../integrations/mail/aws-ses
       '@brokeros/prisma':
         specifier: workspace:*
         version: link:../../packages/prisma
@@ -480,6 +492,24 @@ importers:
 
   apps/workers:
     dependencies:
+      '@brokeros/constants':
+        specifier: workspace:*
+        version: link:../../packages/constants
+      '@brokeros/int-mail-brevo':
+        specifier: workspace:*
+        version: link:../../integrations/mail/brevo
+      '@brokeros/int-mail-mailchimp':
+        specifier: workspace:*
+        version: link:../../integrations/mail/mailchimp
+      '@brokeros/int-mail-sendgrid':
+        specifier: workspace:*
+        version: link:../../integrations/mail/sendgrid
+      '@brokeros/int-mail-ses':
+        specifier: workspace:*
+        version: link:../../integrations/mail/aws-ses
+      '@brokeros/prisma':
+        specifier: workspace:*
+        version: link:../../packages/prisma
       '@brokeros/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -505,6 +535,30 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  integrations/mail/aws-ses:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+
+  integrations/mail/brevo:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+
+  integrations/mail/mailchimp:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+
+  integrations/mail/sendgrid:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
 
   packages/constants:
     devDependencies:

@@ -1,7 +1,7 @@
 packages:
   - "apps/*"
   - "packages/*"
-  - "integrations/*"
+  - "integrations/**"
 
 # Merged from apps/api/pnpm-workspace.yaml and apps/web/pnpm-workspace.yaml
 ignoredBuiltDependencies:

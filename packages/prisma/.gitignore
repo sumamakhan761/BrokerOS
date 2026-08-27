@@ -6,4 +6,5 @@
 .env*.local
 /prisma/migrations
 /src/generated/
+/migrations/*
 /src/generated/*

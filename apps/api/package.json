@@ -27,6 +27,10 @@
   },
   "dependencies": {
     "@brokeros/constants": "workspace:*",
+    "@brokeros/int-mail-brevo": "workspace:*",
+    "@brokeros/int-mail-mailchimp": "workspace:*",
+    "@brokeros/int-mail-sendgrid": "workspace:*",
+    "@brokeros/int-mail-ses": "workspace:*",
     "@brokeros/prisma": "workspace:*",
     "@brokeros/storage": "workspace:*",
     "@brokeros/types": "workspace:*",
