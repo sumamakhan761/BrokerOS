@@ -14,6 +14,7 @@ import { InventoryModule } from './inventory/inventory.module.js';
 import { BrokersModule } from './brokers/brokers.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { ChatModule } from './chat/chat.module.js';
+import { MarketingModule } from './marketing/marketing.module.js';
 
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
@@ -39,6 +40,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     BrokersModule,
     NotificationsModule,
     ChatModule,
+    MarketingModule,
   ],
   controllers: [AppController],
   providers: [
