@@ -3,10 +3,11 @@
   "private": true,
   "packageManager": "pnpm@10.28.2",
   "scripts": {
+    "dev": "turbo run dev start:dev --parallel",
     "dev:api": "pnpm --filter @brokeros/api start:dev",
     "dev:web": "pnpm --filter @brokeros/web dev",
-    "dev:mobile": "pnpm --filter @brokeros/mobile start",
     "dev:workers": "pnpm --filter @brokeros/workers start:dev",
+    "dev:mobile": "pnpm --filter @brokeros/mobile start",
     "db:generate": "pnpm --filter @brokeros/prisma db:generate",
     "db:migrate": "pnpm --filter @brokeros/prisma db:migrate",
     "db:seed": "pnpm --filter @brokeros/prisma db:seed",

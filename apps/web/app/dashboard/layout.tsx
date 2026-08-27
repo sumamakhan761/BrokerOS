@@ -21,6 +21,7 @@ import {
   Settings,
   ChevronRight,
   Radio,
+  Mail,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -189,6 +190,7 @@ export default function DashboardLayout({
       { name: "Employees", href: "/dashboard/pre-sales-manager/employees", icon: Users, roles: ["PRE_SALES_MANAGER"] },
       { name: "New Leads", href: "/dashboard/pre-sales-manager/new-leads", icon: Star, roles: ["PRE_SALES_MANAGER"] },
       { name: "Lead Management", href: "/dashboard/pre-sales-manager/lead-management", icon: List, roles: ["PRE_SALES_MANAGER"] },
+      { name: "Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["PRE_SALES_MANAGER"] },
       { name: "Analytics", href: "/dashboard/pre-sales-manager/analytics", icon: BarChart2, roles: ["PRE_SALES_MANAGER"] },
       { name: "Settings", href: "/dashboard/pre-sales-manager/settings", icon: Settings, roles: ["PRE_SALES_MANAGER"] },
     ];
@@ -210,6 +212,7 @@ export default function DashboardLayout({
       { name: "Approval", href: "/dashboard/sales-manager/approval", icon: CheckSquare, roles: ["SALES_MANAGER"] },
       { name: "Inventory", href: "/dashboard/sales-manager/inventory", icon: Package, roles: ["SALES_MANAGER"] },
       { name: "Booking", href: "/dashboard/sales-manager/booking", icon: Calendar, roles: ["SALES_MANAGER"] },
+      { name: "Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["SALES_MANAGER"] },
       { name: "Analytics", href: "/dashboard/sales-manager/analytics", icon: BarChart2, roles: ["SALES_MANAGER"] },
       { name: "Settings", href: "/dashboard/sales-manager/settings", icon: Settings, roles: ["SALES_MANAGER"] },
     ];
@@ -269,6 +272,7 @@ export default function DashboardLayout({
       { name: "Inventory", href: "/dashboard/business-manager/inventory", icon: Package, roles: ["BUSINESS_MANAGER"] },
       { name: "Financials", href: "/dashboard/business-manager/financials", icon: DollarSign, roles: ["BUSINESS_MANAGER"] },
       { name: "Employees", href: "/dashboard/business-manager/employees", icon: Briefcase, roles: ["BUSINESS_MANAGER"] },
+      { name: "Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["BUSINESS_MANAGER"] },
       { name: "Analytics", href: "/dashboard/business-manager/analytics", icon: BarChart2, roles: ["BUSINESS_MANAGER"] },
     ];
   } else if (userRole === "DIRECTOR") {
@@ -276,6 +280,7 @@ export default function DashboardLayout({
       { name: "Overview", href: "/dashboard/director", icon: LayoutDashboard, roles: ["DIRECTOR"] },
       { name: "Pre-Sales", href: "/dashboard/pre-sales", icon: Users, roles: ["DIRECTOR"] },
       { name: "Sales", href: "/dashboard/sales", icon: Briefcase, roles: ["DIRECTOR"] },
+      { name: "Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["DIRECTOR"] },
       { name: "Post-Sales", href: "/dashboard/post-sales", icon: Handshake, roles: ["DIRECTOR"] },
       { name: "Finance", href: "/dashboard/finance", icon: DollarSign, roles: ["DIRECTOR"] },
     ];
