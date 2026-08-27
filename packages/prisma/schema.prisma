@@ -103,6 +103,8 @@ enum LeadSourceType {
   WALK_IN
   CHANNEL_PARTNER
   WHATSAPP
+  MARKETING_CAMPAIGN
+  MARKETING_CSV_IMPORT
   OTHER
 }
 
@@ -463,6 +465,51 @@ enum ChatRoomType {
   DEPARTMENT
 }
 
+// ── Marketing & Campaigns ──
+
+enum MarketingChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+  VOICE_CALL
+}
+
+enum EmailProviderType {
+  SYSTEM_DEFAULT
+  AWS_SES
+  SENDGRID
+  BREVO
+  MAILCHIMP
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  PROCESSING
+  COMPLETED
+  PAUSED
+  FAILED
+  CANCELLED
+}
+
+enum RecipientDeliveryStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  SPAM_COMPLAINT
+  UNSUBSCRIBED
+  FAILED
+}
+
+enum AudienceSourceType {
+  CRM_DATABASE
+  CSV_UPLOAD
+  HYBRID
+}
+
 // ─────────────────────────────────────────────
 // 3. DOMAIN 1: IDENTITY & ACCESS
 // ─────────────────────────────────────────────
@@ -575,6 +622,7 @@ model User {
   approvalMessagesSent       ApprovalMessage[]   @relation("ApprovalMessageSender")
   receivedInboundCommissions InboundCommission[] @relation("ReceivedInboundCommissions")
   assignedPostSalesBookings  Booking[]           @relation("BookingPostSales")
+  createdCampaigns           MarketingCampaign[] @relation("CampaignCreatedBy")
 
   @@index([departmentId])
   @@index([roleId])
@@ -911,6 +959,7 @@ model Lead {
   notes                 Note[]                  @relation("LeadNotes")
   activities            ActivityTimeline[]      @relation("LeadActivities")
   customer              Customer?
+  campaignRecipients    CampaignRecipient[]
 
   @@index([status])
   @@index([temperature])
@@ -1325,6 +1374,7 @@ model Project {
   distributionRules    LeadDistributionRule[]
   brokerAssignments    BrokerProjectAssignment[]
   inboundCommissions   InboundCommission[]
+  campaigns            MarketingCampaign[]
 
   @@index([builderId])
   @@index([status])
@@ -2012,6 +2062,7 @@ model Broker {
   activities            ActivityTimeline[]        @relation("BrokerActivities")
   whatsappConversations WhatsAppConversation[]
   leads                 Lead[]
+  campaignRecipients    CampaignRecipient[]
 
   invoices Invoice[]
 
@@ -2476,3 +2527,180 @@ model InboundCommission {
   @@index([status])
   @@map("inbound_commission")
 }
+
+// ─────────────────────────────────────────────
+// 14. DOMAIN 12: MARKETING & CAMPAIGNS
+// ─────────────────────────────────────────────
+
+model MarketingIntegration {
+  id              String            @id @default(uuid())
+  provider        EmailProviderType
+  name            String
+  isActive        Boolean           @default(true)
+  isDefault       Boolean           @default(false)
+
+  // Encrypted Provider Credentials
+  apiKey          String?
+  awsAccessKeyId  String?
+  awsSecretKey    String?
+  awsRegion       String?
+  mailchimpServer String?
+
+  fromEmail       String
+  fromName        String
+  replyTo         String?
+
+  webhookSecret   String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  campaigns       MarketingCampaign[]
+
+  @@index([provider])
+  @@index([isActive])
+  @@map("marketing_integration")
+}
+
+model EmailTemplate {
+  id              String            @id @default(uuid())
+  name            String
+  subject         String
+  category        String            // "PROJECT_LAUNCH", "PRICE_DROP", "FESTIVE", "CP_COMMISSION", "NEWSLETTER"
+  htmlBody        String            @db.Text
+  plainText       String?           @db.Text
+  previewImageUrl String?
+  isSystem        Boolean           @default(false)
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  campaigns       MarketingCampaign[]
+
+  @@index([category])
+  @@map("email_template")
+}
+
+model MarketingCampaign {
+  id              String            @id @default(uuid())
+  title           String
+  channel         MarketingChannel  @default(EMAIL)
+  status          CampaignStatus    @default(DRAFT)
+  providerType    EmailProviderType @default(SYSTEM_DEFAULT)
+  audienceSource  AudienceSourceType @default(CRM_DATABASE)
+
+  // Scope: Brokerage vs Channel Partner
+  isCpCampaign    Boolean           @default(false)
+  projectId       String?
+  project         Project?          @relation(fields: [projectId], references: [id])
+
+  integrationId   String?
+  integration     MarketingIntegration? @relation(fields: [integrationId], references: [id])
+
+  templateId      String?
+  template        EmailTemplate?    @relation(fields: [templateId], references: [id])
+
+  subject         String
+  fromName        String
+  fromEmail       String
+  replyTo         String?
+  htmlContent     String            @db.Text
+
+  // Dynamic filter JSON (e.g. { temperatures: ["HOT"], statuses: ["INTERESTED"], minBudget: 5000000 })
+  audienceFilters Json?
+
+  // Aggregate Performance Metrics
+  totalRecipients   Int             @default(0)
+  sentCount         Int             @default(0)
+  deliveredCount    Int             @default(0)
+  openedCount       Int             @default(0)
+  clickedCount      Int             @default(0)
+  bouncedCount      Int             @default(0)
+  complaintCount    Int             @default(0)
+  unsubscribedCount Int             @default(0)
+
+  scheduledAt     DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+
+  createdById     String?
+  createdBy       User?             @relation("CampaignCreatedBy", fields: [createdById], references: [id])
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  recipients      CampaignRecipient[]
+  trackingEvents  EmailTrackingEvent[]
+
+  @@index([status])
+  @@index([channel])
+  @@index([projectId])
+  @@index([integrationId])
+  @@index([createdAt])
+  @@map("marketing_campaign")
+}
+
+model CampaignRecipient {
+  id              String                  @id @default(uuid())
+  campaignId      String
+  campaign        MarketingCampaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  leadId          String?
+  lead            Lead?                   @relation(fields: [leadId], references: [id])
+
+  brokerId        String?
+  broker          Broker?                 @relation(fields: [brokerId], references: [id])
+
+  email           String
+  name            String?
+  phone           String?
+  status          RecipientDeliveryStatus @default(QUEUED)
+  source          AudienceSourceType      @default(CRM_DATABASE)
+  providerMsgId   String?
+
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  firstOpenedAt   DateTime?
+  openCount       Int                     @default(0)
+  firstClickedAt  DateTime?
+  clickCount      Int                     @default(0)
+  bouncedAt       DateTime?
+  bounceReason    String?
+  mergeData       Json?
+
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@index([campaignId, status])
+  @@index([email])
+  @@index([leadId])
+  @@map("campaign_recipient")
+}
+
+model EmailTrackingEvent {
+  id              String            @id @default(uuid())
+  campaignId      String
+  campaign        MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  recipientId     String
+
+  eventType       String            // "OPEN", "CLICK", "BOUNCE", "UNSUBSCRIBE"
+  urlClicked      String?
+  ipAddress       String?
+  userAgent       String?
+  timestamp       DateTime          @default(now())
+
+  @@index([campaignId, eventType])
+  @@index([recipientId])
+  @@map("email_tracking_event")
+}
+
+model MarketingUnsubscribe {
+  id              String            @id @default(uuid())
+  email           String            @unique
+  reason          String?
+  campaignId      String?
+  channel         MarketingChannel  @default(EMAIL)
+  createdAt       DateTime          @default(now())
+
+  @@map("marketing_unsubscribe")
+}
+
