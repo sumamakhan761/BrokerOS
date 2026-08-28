@@ -92,3 +92,114 @@ Amit Verma,amit.verma@example.com,+919823456789,Bangalore,22000000,Signature Tow
 Sneha Reddy,sneha.reddy@example.com,+919834567890,Hyderabad,12000000,Skyline Luxuria,HOT,High-Net-Worth
 Vikram Malhotra,vikram.m@example.com,+919845678901,Delhi NCR,18000000,Signature Towers,WARM,Ready-To-Move
 `;
+
+// ============================================================================
+// SMS Marketing Constants
+// ============================================================================
+
+export const SMS_PROVIDERS = {
+  TWILIO: {
+    id: 'TWILIO',
+    name: 'Twilio SMS',
+    description: 'Global standard for Programmable SMS, 10DLC, and Messaging Services.',
+    badge: 'Global Gateway',
+    color: '#f22f46', // Twilio Red
+    docsUrl: 'https://www.twilio.com/docs/sms',
+  },
+  AWS_SNS: {
+    id: 'AWS_SNS',
+    name: 'Amazon SNS SMS',
+    description: 'Direct high-throughput cloud SMS with IAM credentials & Origination Numbers.',
+    badge: 'AWS Cloud Tier',
+    color: '#ff9900', // AWS Orange
+    docsUrl: 'https://docs.aws.amazon.com/sns/latest/dg/sns-mobile-phone-number-sms-token.html',
+  },
+  SINCH: {
+    id: 'SINCH',
+    name: 'Sinch SMS',
+    description: 'Global Tier-1 carrier network with high deliverability & REST API v1.',
+    badge: 'Carrier Tier 1',
+    color: '#262626', // Sinch Dark
+    docsUrl: 'https://developers.sinch.com/docs/sms/',
+  },
+  GUPSHUP: {
+    id: 'GUPSHUP',
+    name: 'Gupshup Enterprise (TRAI DLT)',
+    description: 'Enterprise gateway for India & APAC with DLT Header & PE ID compliance.',
+    badge: 'DLT Enterprise Ready',
+    color: '#00a4d3', // Gupshup Cyan
+    docsUrl: 'https://www.gupshup.io/developer/docs/sms-api',
+  },
+} as const;
+
+export const SMS_CHAR_LIMITS = {
+  GSM7_SINGLE_SEGMENT: 160,
+  GSM7_MULTI_SEGMENT: 153,
+  UNICODE_SINGLE_SEGMENT: 70,
+  UNICODE_MULTI_SEGMENT: 67,
+} as const;
+
+export const DEFAULT_SMS_MERGE_TAGS = [
+  { tag: '{{lead.firstName}}', label: 'Lead First Name', sample: 'Rahul' },
+  { tag: '{{lead.fullName}}', label: 'Lead Full Name', sample: 'Rahul Sharma' },
+  { tag: '{{project.name}}', label: 'Project Name', sample: 'Skyline Luxuria' },
+  { tag: '{{project.startingPrice}}', label: 'Starting Price', sample: '₹1.45 Cr' },
+  { tag: '{{project.location}}', label: 'Project Location', sample: 'Bandra West' },
+  { tag: '{{agent.name}}', label: 'Agent Name', sample: 'Amit Verma' },
+  { tag: '{{agent.phone}}', label: 'Agent Phone', sample: '+91 98765 43210' },
+  { tag: '{{shortUrl}}', label: 'Dynamic Short Link', sample: 'https://brk.os/s/x9k2' },
+  { tag: '{{optOut}}', label: 'Opt-Out Notice', sample: 'Reply STOP to unsub' },
+] as const;
+
+export const DEFAULT_SMS_TEMPLATES = [
+  {
+    id: 'sms-project-launch',
+    name: 'Exclusive Project / Tower Launch',
+    category: 'PROJECT_LAUNCH',
+    dltTemplateId: 'DLT-110234567890',
+    message:
+      'Hi {{lead.firstName}}, exclusive pre-launch booking is now open for {{project.name}} starting at {{project.startingPrice}} in {{project.location}}. Download brochure & pricing: {{shortUrl}} - BrokerOS Sales',
+  },
+  {
+    id: 'sms-site-visit',
+    name: 'VIP Site Visit Pass & Pickup',
+    category: 'SITE_VISIT',
+    dltTemplateId: 'DLT-110234567891',
+    message:
+      'Dear {{lead.firstName}}, your VIP site visit pass for {{project.name}} is confirmed. Book your complimentary cab pickup here: {{shortUrl}} or call {{agent.phone}}.',
+  },
+  {
+    id: 'sms-price-drop',
+    name: 'Spot Discount / Price Drop Alert',
+    category: 'PRICE_DROP',
+    dltTemplateId: 'DLT-110234567892',
+    message:
+      '🚨 Special Offer: Save up to ₹5 Lacs on selected 2 & 3 BHK residences at {{project.name}} this weekend only. View available units: {{shortUrl}} - {{agent.name}}',
+  },
+  {
+    id: 'sms-cp-commission',
+    name: 'Channel Partner 2.5% Spot Commission',
+    category: 'CP_COMMISSION',
+    dltTemplateId: 'DLT-110234567893',
+    message:
+      'CP Alert: Earn 2.5% spot commission + instant bonus on client bookings at {{project.name}} this month. Register your buyers: {{shortUrl}}',
+  },
+] as const;
+
+export const SAMPLE_SMS_CSV_HEADERS = [
+  'Full Name',
+  'Phone Number',
+  'City',
+  'Budget (INR)',
+  'Interested Project',
+  'Lead Temperature (HOT/WARM/COLD)',
+] as const;
+
+export const SAMPLE_SMS_CSV_CONTENT = `Full Name,Phone Number,City,Budget (INR),Interested Project,Lead Temperature (HOT/WARM/COLD)
+Rahul Sharma,+919876543210,Mumbai,15000000,Skyline Luxuria,HOT
+Priya Patel,+919812345678,Pune,8500000,Green Valley,WARM
+Amit Verma,+919823456789,Bangalore,22000000,Signature Towers,COLD
+Sneha Reddy,+919834567890,Hyderabad,12000000,Skyline Luxuria,HOT
+Vikram Malhotra,+919845678901,Delhi NCR,18000000,Signature Towers,WARM
+`;
+
