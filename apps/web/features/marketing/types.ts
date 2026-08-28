@@ -58,3 +58,91 @@ export interface IntegrationRecord {
   updatedAt?: string;
 }
 
+// ── SMS Types & ViewModels ──
+
+export type SmsProviderType = 'TWILIO' | 'AWS_SNS' | 'SINCH' | 'GUPSHUP';
+
+export interface SmsCampaignItem {
+  id: string;
+  title: string;
+  channel: string;
+  status: CampaignStatus;
+  providerType: SmsProviderType;
+  audienceSource: AudienceSourceType;
+  fromSender: string;
+  messageContent: string;
+  dltTemplateId?: string;
+  totalRecipients: number;
+  sentCount: number;
+  deliveredCount: number;
+  clickedCount: number;
+  failedCount: number;
+  totalSegmentsSent: number;
+  scheduledAt?: string;
+  createdAt: string;
+  project?: { id: string; name: string };
+  integration?: { id: string; name: string; provider: string };
+  createdBy?: { id: string; name: string; email: string };
+}
+
+export interface SmsIntegrationRecord {
+  id: string;
+  provider: SmsProviderType;
+  name: string;
+  isActive: boolean;
+  isDefault: boolean;
+  fromSender: string;
+  awsRegion?: string;
+  dltEntityId?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface SmsRecipientItem {
+  id: string;
+  phone: string;
+  name?: string;
+  status: 'QUEUED' | 'SENT' | 'DELIVERED' | 'CLICKED' | 'FAILED';
+  source: AudienceSourceType;
+  segmentsCount: number;
+  clickCount: number;
+  firstClickedAt?: string;
+  deliveredAt?: string;
+  failReason?: string;
+  leadId?: string;
+  lead?: {
+    id: string;
+    firstName: string;
+    lastName?: string;
+    phone: string;
+    temperature?: string;
+    status: string;
+  };
+  mergeData?: Record<string, unknown>;
+}
+
+export interface SmsAnalyticsSummary {
+  campaignId: string;
+  title: string;
+  status: CampaignStatus;
+  providerType: SmsProviderType;
+  fromSender: string;
+  totalRecipients: number;
+  sentCount: number;
+  deliveredCount: number;
+  deliveryRate: number;
+  clickedCount: number;
+  clickRate: number;
+  failedCount: number;
+  totalSegmentsSent: number;
+  topClickedLinks: Array<{ url: string; clicks: number }>;
+}
+
+export interface SmsAudienceEstimation {
+  totalCount: number;
+  validPhoneCount: number;
+  duplicateCount: number;
+  finalAudienceCount: number;
+}
+
+
