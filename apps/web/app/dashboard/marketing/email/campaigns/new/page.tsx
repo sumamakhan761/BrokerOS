@@ -281,8 +281,17 @@ export default function NewCampaignPage() {
   }, [title, projectId, subject, htmlContent, fromName, fromEmail, filters, audienceSource, saveDraftToDatabase]);
 
   // 6. Clear / Discard Draft
-  const handleDiscardDraft = () => {
+  const handleDiscardDraft = async () => {
     if (confirm("Are you sure you want to discard this draft and start fresh?")) {
+      if (draftCampaignId) {
+        try {
+          await fetch(`${baseUrl}/api/marketing/campaigns/${draftCampaignId}`, {
+            method: "DELETE",
+          });
+        } catch {
+          // Ignore network cleanup errors
+        }
+      }
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       setTitle("");
       setProjectId("");
