@@ -112,7 +112,7 @@ export default function EmailMarketingDashboard() {
           <Link href="/dashboard/marketing/email/campaigns/new">
             <Button variant="default" size="sm" className="gap-2 text-xs font-bold shadow-sm">
               <Plus className="w-3.5 h-3.5" />
-              <span>+ New Campaign</span>
+              <span>New Campaign</span>
             </Button>
           </Link>
         </div>

@@ -469,35 +469,32 @@ export default function NewSmsCampaignPage() {
                 key={s.num}
                 type="button"
                 onClick={() => handleStepChange(s.num)}
-                className={`relative flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-150 active:scale-[0.99] ${
-                  isCurrent
+                className={`relative flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-150 active:scale-[0.99] ${isCurrent
                     ? "bg-amber-50/80 border-amber-500 shadow-xs ring-2 ring-amber-500/15"
                     : isCompleted
-                    ? "bg-emerald-50/50 border-emerald-300/80 hover:bg-emerald-50"
-                    : "bg-slate-50/50 border-slate-200/80 hover:bg-slate-100/60"
-                }`}
+                      ? "bg-emerald-50/50 border-emerald-300/80 hover:bg-emerald-50"
+                      : "bg-slate-50/50 border-slate-200/80 hover:bg-slate-100/60"
+                  }`}
               >
                 <div
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0 transition-colors ${
-                    isCurrent
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0 transition-colors ${isCurrent
                       ? "bg-amber-600 text-white shadow-xs"
                       : isCompleted
-                      ? "bg-emerald-600 text-white"
-                      : "bg-slate-200 text-slate-600"
-                  }`}
+                        ? "bg-emerald-600 text-white"
+                        : "bg-slate-200 text-slate-600"
+                    }`}
                 >
                   {isCompleted ? <Check className="w-4 h-4" strokeWidth={2.5} /> : s.num}
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <div
-                    className={`text-xs font-extrabold truncate ${
-                      isCurrent
+                    className={`text-xs font-extrabold truncate ${isCurrent
                         ? "text-amber-900"
                         : isCompleted
-                        ? "text-emerald-900"
-                        : "text-[var(--text-primary)]"
-                    }`}
+                          ? "text-emerald-900"
+                          : "text-[var(--text-primary)]"
+                      }`}
                   >
                     {s.label}
                   </div>
@@ -584,22 +581,20 @@ export default function NewSmsCampaignPage() {
                     <button
                       type="button"
                       onClick={() => setIsCpCampaign(false)}
-                      className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${
-                        !isCpCampaign
+                      className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${!isCpCampaign
                           ? "bg-amber-50 border-amber-500 text-amber-800 shadow-xs"
                           : "bg-slate-50 border-slate-200 text-[var(--text-secondary)] hover:bg-slate-100"
-                      }`}
+                        }`}
                     >
                       Direct Brokerage (Buyers)
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsCpCampaign(true)}
-                      className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${
-                        isCpCampaign
+                      className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${isCpCampaign
                           ? "bg-amber-50 border-amber-500 text-amber-800 shadow-xs"
                           : "bg-slate-50 border-slate-200 text-[var(--text-secondary)] hover:bg-slate-100"
-                      }`}
+                        }`}
                     >
                       Channel Partner Network
                     </button>
@@ -889,11 +884,10 @@ export default function NewSmsCampaignPage() {
 
             {testSendStatus && (
               <div
-                className={`p-3 rounded-xl border text-xs font-bold flex items-center gap-2 shadow-xs ${
-                  testSendStatus.ok
+                className={`p-3 rounded-xl border text-xs font-bold flex items-center gap-2 shadow-xs ${testSendStatus.ok
                     ? "bg-emerald-50 border-emerald-200 text-emerald-800"
                     : "bg-rose-50 border-rose-200 text-rose-800"
-                }`}
+                  }`}
               >
                 {testSendStatus.ok ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />

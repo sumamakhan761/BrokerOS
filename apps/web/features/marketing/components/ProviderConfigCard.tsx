@@ -345,6 +345,19 @@ export function ProviderConfigCard({ integrations, onConnect, onDelete }: Provid
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
                     />
                   </div>
+                  <div>
+                    <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+                      AWS Region
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="ap-south-1"
+                      value={formData.awsRegion}
+                      onChange={(e) => setFormData({ ...formData, awsRegion: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                    />
+                  </div>
                 </>
               )}
 
