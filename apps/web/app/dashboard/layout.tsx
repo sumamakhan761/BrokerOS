@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Radio,
   Mail,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -112,6 +113,12 @@ const ROLE_CONFIG: Record<
     border: "oklch(0.88 0.07 25)",
     label: "Administrator",
   },
+  MARKETING: {
+    accent: "oklch(0.55 0.22 310)",
+    bg: "oklch(0.975 0.02 310)",
+    border: "oklch(0.895 0.07 310)",
+    label: "Marketing Suite",
+  },
 };
 
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
@@ -190,7 +197,7 @@ export default function DashboardLayout({
       { name: "Employees", href: "/dashboard/pre-sales-manager/employees", icon: Users, roles: ["PRE_SALES_MANAGER"] },
       { name: "New Leads", href: "/dashboard/pre-sales-manager/new-leads", icon: Star, roles: ["PRE_SALES_MANAGER"] },
       { name: "Lead Management", href: "/dashboard/pre-sales-manager/lead-management", icon: List, roles: ["PRE_SALES_MANAGER"] },
-      { name: "Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["PRE_SALES_MANAGER"] },
+      { name: "Marketing", href: "/dashboard/marketing", icon: Mail, roles: ["PRE_SALES_MANAGER"] },
       { name: "Analytics", href: "/dashboard/pre-sales-manager/analytics", icon: BarChart2, roles: ["PRE_SALES_MANAGER"] },
       { name: "Settings", href: "/dashboard/pre-sales-manager/settings", icon: Settings, roles: ["PRE_SALES_MANAGER"] },
     ];
@@ -212,7 +219,7 @@ export default function DashboardLayout({
       { name: "Approval", href: "/dashboard/sales-manager/approval", icon: CheckSquare, roles: ["SALES_MANAGER"] },
       { name: "Inventory", href: "/dashboard/sales-manager/inventory", icon: Package, roles: ["SALES_MANAGER"] },
       { name: "Booking", href: "/dashboard/sales-manager/booking", icon: Calendar, roles: ["SALES_MANAGER"] },
-      { name: "Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["SALES_MANAGER"] },
+      { name: "Marketing", href: "/dashboard/marketing", icon: Mail, roles: ["SALES_MANAGER"] },
       { name: "Analytics", href: "/dashboard/sales-manager/analytics", icon: BarChart2, roles: ["SALES_MANAGER"] },
       { name: "Settings", href: "/dashboard/sales-manager/settings", icon: Settings, roles: ["SALES_MANAGER"] },
     ];
@@ -272,7 +279,7 @@ export default function DashboardLayout({
       { name: "Inventory", href: "/dashboard/business-manager/inventory", icon: Package, roles: ["BUSINESS_MANAGER"] },
       { name: "Financials", href: "/dashboard/business-manager/financials", icon: DollarSign, roles: ["BUSINESS_MANAGER"] },
       { name: "Employees", href: "/dashboard/business-manager/employees", icon: Briefcase, roles: ["BUSINESS_MANAGER"] },
-      { name: "Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["BUSINESS_MANAGER"] },
+      { name: "Marketing", href: "/dashboard/marketing", icon: Mail, roles: ["BUSINESS_MANAGER"] },
       { name: "Analytics", href: "/dashboard/business-manager/analytics", icon: BarChart2, roles: ["BUSINESS_MANAGER"] },
     ];
   } else if (userRole === "DIRECTOR") {
@@ -280,10 +287,27 @@ export default function DashboardLayout({
       { name: "Overview", href: "/dashboard/director", icon: LayoutDashboard, roles: ["DIRECTOR"] },
       { name: "Pre-Sales", href: "/dashboard/pre-sales", icon: Users, roles: ["DIRECTOR"] },
       { name: "Sales", href: "/dashboard/sales", icon: Briefcase, roles: ["DIRECTOR"] },
-      { name: "Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["DIRECTOR"] },
+      { name: "Marketing", href: "/dashboard/marketing", icon: Mail, roles: ["DIRECTOR"] },
       { name: "Post-Sales", href: "/dashboard/post-sales", icon: Handshake, roles: ["DIRECTOR"] },
       { name: "Finance", href: "/dashboard/finance", icon: DollarSign, roles: ["DIRECTOR"] },
     ];
+  } else if (userRole === "MARKETING") {
+    const isEmailSub = pathname.startsWith("/dashboard/marketing/email");
+    if (isEmailSub) {
+      navLinks = [
+        { name: "Email Overview", href: "/dashboard/marketing/email", icon: LayoutDashboard, roles: ["MARKETING"] },
+        { name: "New Campaign", href: "/dashboard/marketing/email/campaigns/new", icon: Star, roles: ["MARKETING"] },
+        { name: "Email Settings", href: "/dashboard/marketing/email/settings", icon: Settings, roles: ["MARKETING"] },
+      ];
+    } else {
+      navLinks = [
+        { name: "Overview", href: "/dashboard/marketing", icon: LayoutDashboard, roles: ["MARKETING"] },
+        { name: "Email Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["MARKETING"] },
+        { name: "WhatsApp Campaigns", href: "/dashboard/marketing/whatsapp", icon: Radio, roles: ["MARKETING"] },
+        { name: "Analytics", href: "/dashboard/marketing/analytics", icon: BarChart2, roles: ["MARKETING"] },
+        { name: "Settings & BYO", href: "/dashboard/marketing/settings", icon: Settings, roles: ["MARKETING"] },
+      ];
+    }
   }
 
   const userEmail = session?.user?.email || "";
@@ -328,10 +352,22 @@ export default function DashboardLayout({
 
         {/* Nav Links List */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-hide">
+          {pathname.startsWith("/dashboard/marketing/email") && (
+            <Link
+              href="/dashboard/marketing"
+              className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-xl mb-3 transition-colors group"
+            >
+              <ArrowLeft className="w-4 h-4 text-[var(--brand-600)] transition-transform group-hover:-translate-x-0.5" />
+              <span>Back to Marketing Hub</span>
+            </Link>
+          )}
+
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive =
-              link.name === "Overview"
+              link.href === "/dashboard/marketing" || link.href === "/dashboard/marketing/email"
+                ? pathname === link.href
+                : link.name.toLowerCase().includes("overview")
                 ? pathname === link.href
                 : pathname === link.href || pathname.startsWith(link.href + "/");
 
