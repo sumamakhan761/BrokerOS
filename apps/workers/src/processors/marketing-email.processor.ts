@@ -132,7 +132,7 @@ export class MarketingEmailProcessor implements OnModuleInit, OnModuleDestroy {
         fromEmail: campaign.integration.fromEmail,
         fromName: campaign.integration.fromName,
       };
-    } else if (campaign.providerType !== 'SYSTEM_DEFAULT' && campaign.providerType !== 'AWS_SES') {
+    } else if (campaign.providerType !== 'SYSTEM_DEFAULT') {
       const activeIntegration = await this.prisma.marketingIntegration.findFirst({
         where: { provider: campaign.providerType as any, isActive: true },
         orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
