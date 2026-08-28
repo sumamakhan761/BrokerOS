@@ -2,13 +2,19 @@ import { Controller, Get, Post, Body, Param, Query, Req } from '@nestjs/common';
 import { MarketingService } from './marketing.service.js';
 import {
   CreateCampaignDto,
+  SaveDraftCampaignDto,
   PreviewAudienceDto,
   SendTestEmailDto,
 } from './dto/marketing.dto.js';
 
 @Controller('api/marketing')
 export class CampaignsController {
-  constructor(private readonly marketingService: MarketingService) {}
+  constructor(private readonly marketingService: MarketingService) { }
+
+  @Get('projects')
+  async getProjects() {
+    return this.marketingService.getProjects();
+  }
 
   @Post('audience-preview')
   async previewAudience(@Body() dto: PreviewAudienceDto) {
@@ -18,6 +24,11 @@ export class CampaignsController {
   @Get('campaigns')
   async findAll(@Query() query: { page?: number; limit?: number; status?: string; search?: string }) {
     return this.marketingService.findAllCampaigns(query);
+  }
+
+  @Post('campaigns/draft')
+  async saveDraft(@Req() req: any, @Body() dto: SaveDraftCampaignDto) {
+    return this.marketingService.saveDraftCampaign(dto, req.user?.id);
   }
 
   @Post('campaigns')
@@ -46,6 +57,11 @@ export class CampaignsController {
   @Post('campaigns/send-test')
   async sendTestEmail(@Body() dto: SendTestEmailDto) {
     return this.marketingService.sendTestEmail(dto);
+  }
+
+  @Post('campaigns/:id/dispatch')
+  async dispatchCampaign(@Param('id') id: string) {
+    return this.marketingService.dispatchCampaign(id);
   }
 
   @Post('recipients/:recipientId/promote')

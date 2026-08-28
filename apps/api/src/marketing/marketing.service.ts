@@ -17,6 +17,7 @@ import { BrevoAdapter } from '@brokeros/int-mail-brevo';
 import { MailchimpAdapter } from '@brokeros/int-mail-mailchimp';
 import {
   CreateCampaignDto,
+  SaveDraftCampaignDto,
   PreviewAudienceDto,
   SendTestEmailDto,
   ConnectIntegrationDto,
@@ -33,7 +34,7 @@ export class MarketingService {
   private readonly brevoAdapter = new BrevoAdapter();
   private readonly mailchimpAdapter = new MailchimpAdapter();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   private getAdapter(providerType: string): IEmailMarketingProvider {
     switch (providerType) {
@@ -48,6 +49,58 @@ export class MarketingService {
       default:
         return this.sesAdapter;
     }
+  }
+
+  async getProjects() {
+    return this.prisma.project.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        name: true,
+        city: true,
+        isCpProject: true,
+        builder: { select: { name: true } },
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  private buildLeadWhereClause(filters: any = {}, isCpCampaign?: boolean, projectId?: string) {
+    const whereClause: any = {
+      deletedAt: null,
+      email: { not: null },
+    };
+
+    // 1. Pre-sales Status Filtering:
+    // Excludes site visits, negotiations, bookings, agreements, lost leads
+    if (filters.statuses?.length && !filters.statuses.includes('ALL')) {
+      whereClause.status = { in: filters.statuses };
+    } else {
+      whereClause.status = { in: ['NEW', 'CONTACTED', 'INTERESTED', 'QUALIFIED'] };
+    }
+
+    // 2. Optional Temperature Filter
+    if (filters.temperatures?.length) {
+      whereClause.temperature = { in: filters.temperatures };
+    }
+
+    // 3. Optional Project Affinity Filter
+    const targetProject = filters.projectId || projectId;
+    if (targetProject && targetProject !== 'ALL' && targetProject !== '') {
+      whereClause.interestedProjectId = targetProject;
+    }
+
+    // 4. Optional Budget Filter
+    if (filters.minBudget) {
+      whereClause.budget = { gte: Number(filters.minBudget) };
+    }
+
+    // 5. Business World Scope
+    if (isCpCampaign) {
+      whereClause.brokerId = { not: null };
+    }
+
+    return whereClause;
   }
 
   // ── AUDIENCE ESTIMATION & VALIDATION ──
@@ -93,26 +146,7 @@ export class MarketingService {
     }
 
     // CRM Database Query
-    const filters = dto.audienceFilters || {};
-    const whereClause: any = {
-      deletedAt: null,
-      email: { not: null },
-    };
-
-    if (filters.temperatures?.length) {
-      whereClause.temperature = { in: filters.temperatures };
-    }
-    if (filters.statuses?.length) {
-      whereClause.status = { in: filters.statuses };
-    }
-    if (filters.projectId || dto.projectId) {
-      whereClause.interestedProjectId = filters.projectId || dto.projectId;
-    }
-    if (filters.minBudget || filters.maxBudget) {
-      whereClause.budget = {};
-      if (filters.minBudget) whereClause.budget.gte = filters.minBudget;
-      if (filters.maxBudget) whereClause.budget.lte = filters.maxBudget;
-    }
+    const whereClause = this.buildLeadWhereClause(dto.audienceFilters, dto.isCpCampaign, dto.projectId);
 
     const leads = await this.prisma.lead.findMany({
       where: whereClause,
@@ -151,39 +185,192 @@ export class MarketingService {
     };
   }
 
+  private async resolveForeignKeys(
+    dto: { templateId?: string; projectId?: string; integrationId?: string; providerType?: string },
+    userId?: string,
+  ) {
+    let validTemplateId: string | null = null;
+    if (dto.templateId) {
+      const exists = await this.prisma.emailTemplate.findUnique({
+        where: { id: dto.templateId },
+        select: { id: true },
+      });
+      if (exists) validTemplateId = exists.id;
+    }
+
+    let validProjectId: string | null = null;
+    if (dto.projectId) {
+      const exists = await this.prisma.project.findUnique({
+        where: { id: dto.projectId },
+        select: { id: true },
+      });
+      if (exists) validProjectId = exists.id;
+    }
+
+    let validIntegrationId: string | null = null;
+    if (dto.integrationId) {
+      const exists = await this.prisma.marketingIntegration.findUnique({
+        where: { id: dto.integrationId },
+        select: { id: true },
+      });
+      if (exists) validIntegrationId = exists.id;
+    } else if (dto.providerType && dto.providerType !== 'SYSTEM_DEFAULT' && dto.providerType !== 'AWS_SES') {
+      const defaultIntegration = await this.prisma.marketingIntegration.findFirst({
+        where: { provider: dto.providerType as any, isActive: true },
+        orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+        select: { id: true },
+      });
+      if (defaultIntegration) validIntegrationId = defaultIntegration.id;
+    }
+
+    let validUserId: string | null = null;
+    if (userId) {
+      const exists = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      });
+      if (exists) validUserId = exists.id;
+    }
+
+    return {
+      templateId: validTemplateId,
+      projectId: validProjectId,
+      integrationId: validIntegrationId,
+      userId: validUserId,
+    };
+  }
+
   // ── CAMPAIGN MANAGEMENT ──
 
+  async saveDraftCampaign(dto: SaveDraftCampaignDto, userId?: string) {
+    const { templateId, projectId, integrationId, userId: validUserId } =
+      await this.resolveForeignKeys(dto, userId);
+
+    if (dto.campaignId) {
+      const existing = await this.prisma.marketingCampaign.findUnique({
+        where: { id: dto.campaignId },
+      });
+
+      if (existing) {
+        return this.prisma.marketingCampaign.update({
+          where: { id: dto.campaignId },
+          data: {
+            title: dto.title !== undefined ? dto.title : existing.title,
+            channel: dto.channel ?? existing.channel,
+            providerType: dto.providerType ?? existing.providerType,
+            audienceSource: dto.audienceSource ?? existing.audienceSource,
+            isCpCampaign: dto.isCpCampaign ?? existing.isCpCampaign,
+            projectId: dto.projectId !== undefined ? projectId : existing.projectId,
+            integrationId: dto.integrationId !== undefined ? integrationId : existing.integrationId,
+            templateId: dto.templateId !== undefined ? templateId : existing.templateId,
+            subject: dto.subject !== undefined ? dto.subject : existing.subject,
+            fromName: dto.fromName !== undefined ? dto.fromName : existing.fromName,
+            fromEmail: dto.fromEmail !== undefined ? dto.fromEmail : existing.fromEmail,
+            replyTo: dto.replyTo !== undefined ? (dto.replyTo || null) : existing.replyTo,
+            htmlContent: dto.htmlContent !== undefined ? dto.htmlContent : existing.htmlContent,
+            audienceFilters: dto.audienceFilters ? (dto.audienceFilters as any) : existing.audienceFilters,
+            scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : existing.scheduledAt,
+          },
+        });
+      }
+    }
+
+    return this.prisma.marketingCampaign.create({
+      data: {
+        title: dto.title?.trim() || 'Untitled Draft Campaign',
+        channel: dto.channel || 'EMAIL',
+        status: 'DRAFT',
+        providerType: dto.providerType || 'SYSTEM_DEFAULT',
+        audienceSource: dto.audienceSource || 'CRM_DATABASE',
+        isCpCampaign: dto.isCpCampaign || false,
+        projectId,
+        integrationId,
+        templateId,
+        subject: dto.subject || '',
+        fromName: dto.fromName || '',
+        fromEmail: dto.fromEmail || '',
+        replyTo: dto.replyTo || null,
+        htmlContent: dto.htmlContent || '',
+        audienceFilters: dto.audienceFilters ? (dto.audienceFilters as any) : undefined,
+        totalRecipients: 0,
+        scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+        createdById: validUserId,
+      },
+    });
+  }
+
   async createCampaign(dto: CreateCampaignDto, userId?: string) {
+    const { templateId, projectId, integrationId, userId: validUserId } =
+      await this.resolveForeignKeys(dto, userId);
+
     const audienceResult = await this.previewAudience({
       audienceSource: dto.audienceSource || 'CRM_DATABASE',
       audienceFilters: dto.audienceFilters,
       csvRecipients: dto.csvRecipients,
       isCpCampaign: dto.isCpCampaign,
-      projectId: dto.projectId,
+      projectId: projectId || undefined,
     });
 
-    const campaign = await this.prisma.marketingCampaign.create({
-      data: {
-        title: dto.title,
-        channel: dto.channel || 'EMAIL',
-        status: dto.scheduledAt ? 'SCHEDULED' : 'DRAFT',
-        providerType: dto.providerType || 'SYSTEM_DEFAULT',
-        audienceSource: dto.audienceSource || 'CRM_DATABASE',
-        isCpCampaign: dto.isCpCampaign || false,
-        projectId: dto.projectId,
-        integrationId: dto.integrationId,
-        templateId: dto.templateId,
-        subject: dto.subject,
-        fromName: dto.fromName,
-        fromEmail: dto.fromEmail,
-        replyTo: dto.replyTo,
-        htmlContent: dto.htmlContent,
-        audienceFilters: dto.audienceFilters as any,
-        totalRecipients: audienceResult.finalAudienceCount,
-        scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
-        createdById: userId,
-      },
-    });
+    let campaign: any;
+
+    if (dto.campaignId) {
+      const existing = await this.prisma.marketingCampaign.findUnique({
+        where: { id: dto.campaignId },
+      });
+      if (existing) {
+        campaign = await this.prisma.marketingCampaign.update({
+          where: { id: dto.campaignId },
+          data: {
+            title: dto.title,
+            channel: dto.channel || 'EMAIL',
+            status: dto.scheduledAt ? 'SCHEDULED' : 'PROCESSING',
+            providerType: dto.providerType || 'SYSTEM_DEFAULT',
+            audienceSource: dto.audienceSource || 'CRM_DATABASE',
+            isCpCampaign: dto.isCpCampaign || false,
+            projectId,
+            integrationId,
+            templateId,
+            subject: dto.subject,
+            fromName: dto.fromName,
+            fromEmail: dto.fromEmail,
+            replyTo: dto.replyTo || null,
+            htmlContent: dto.htmlContent,
+            audienceFilters: dto.audienceFilters as any,
+            totalRecipients: audienceResult.finalAudienceCount,
+            scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+          },
+        });
+        // Remove prior recipients if this draft had any
+        await this.prisma.campaignRecipient.deleteMany({
+          where: { campaignId: campaign.id },
+        });
+      }
+    }
+
+    if (!campaign) {
+      campaign = await this.prisma.marketingCampaign.create({
+        data: {
+          title: dto.title,
+          channel: dto.channel || 'EMAIL',
+          status: dto.scheduledAt ? 'SCHEDULED' : 'PROCESSING',
+          providerType: dto.providerType || 'SYSTEM_DEFAULT',
+          audienceSource: dto.audienceSource || 'CRM_DATABASE',
+          isCpCampaign: dto.isCpCampaign || false,
+          projectId,
+          integrationId,
+          templateId,
+          subject: dto.subject,
+          fromName: dto.fromName,
+          fromEmail: dto.fromEmail,
+          replyTo: dto.replyTo || null,
+          htmlContent: dto.htmlContent,
+          audienceFilters: dto.audienceFilters as any,
+          totalRecipients: audienceResult.finalAudienceCount,
+          scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+          createdById: validUserId,
+        },
+      });
+    }
 
     // Populate Recipients
     if (dto.audienceSource === 'CSV_UPLOAD' && dto.csvRecipients?.length) {
@@ -223,9 +410,9 @@ export class MarketingService {
             email,
             phone: row.phone || 'N/A',
             temperature: row.temperature || 'WARM',
-            interestedProjectId: dto.projectId,
+            interestedProjectId: projectId,
             budget: row.budget ? Number(row.budget) : null,
-            createdById: userId,
+            createdById: validUserId,
           });
         }
       }
@@ -243,15 +430,7 @@ export class MarketingService {
       }
     } else {
       // Query CRM DB leads and attach as recipients
-      const filters = dto.audienceFilters || {};
-      const whereClause: any = {
-        deletedAt: null,
-        email: { not: null },
-      };
-
-      if (filters.temperatures?.length) whereClause.temperature = { in: filters.temperatures };
-      if (filters.statuses?.length) whereClause.status = { in: filters.statuses };
-      if (filters.projectId || dto.projectId) whereClause.interestedProjectId = filters.projectId || dto.projectId;
+      const whereClause = this.buildLeadWhereClause(dto.audienceFilters, dto.isCpCampaign, dto.projectId);
 
       const leads: any[] = await this.prisma.lead.findMany({
         where: whereClause,
@@ -297,7 +476,37 @@ export class MarketingService {
       }
     }
 
+    if (!dto.scheduledAt) {
+      this.triggerWorkerDispatch(campaign.id);
+    }
+
     return campaign;
+  }
+
+  private triggerWorkerDispatch(campaignId: string) {
+    const workerUrl = process.env.WORKER_URL || 'http://127.0.0.1:3334';
+    fetch(`${workerUrl}/dispatch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ campaignId }),
+    }).catch(() => {
+      // Auto-scanner in workers will also process it
+    });
+  }
+
+  async dispatchCampaign(id: string) {
+    const campaign = await this.prisma.marketingCampaign.findUnique({
+      where: { id },
+    });
+    if (!campaign) throw new NotFoundException('Campaign not found');
+
+    await this.prisma.marketingCampaign.update({
+      where: { id },
+      data: { status: 'PROCESSING' },
+    });
+
+    this.triggerWorkerDispatch(id);
+    return { success: true, message: `Dispatched campaign ${id}` };
   }
 
   async findAllCampaigns(query?: { page?: number; limit?: number; status?: string; search?: string }) {
@@ -356,11 +565,52 @@ export class MarketingService {
   async getCampaignAnalytics(campaignId: string): Promise<CampaignAnalyticsSummary> {
     const campaign = await this.findOneCampaign(campaignId);
 
-    const deliveryRate = campaign.sentCount > 0 ? (campaign.deliveredCount / campaign.sentCount) * 100 : 0;
-    const openRate = campaign.deliveredCount > 0 ? (campaign.openedCount / campaign.deliveredCount) * 100 : 0;
-    const clickRate = campaign.deliveredCount > 0 ? (campaign.clickedCount / campaign.deliveredCount) * 100 : 0;
-    const clickToOpenRate = campaign.openedCount > 0 ? (campaign.clickedCount / campaign.openedCount) * 100 : 0;
-    const bounceRate = campaign.sentCount > 0 ? (campaign.bouncedCount / campaign.sentCount) * 100 : 0;
+    // Live aggregate stats from actual recipients table
+    const [
+      totalRecipientsCount,
+      deliveredRecipients,
+      openedRecipients,
+      clickedRecipients,
+      bouncedRecipients,
+    ] = await Promise.all([
+      this.prisma.campaignRecipient.count({ where: { campaignId } }),
+      this.prisma.campaignRecipient.count({
+        where: { campaignId, status: { in: ['DELIVERED', 'OPENED', 'CLICKED', 'SENT'] } },
+      }),
+      this.prisma.campaignRecipient.count({
+        where: {
+          campaignId,
+          OR: [
+            { status: { in: ['OPENED', 'CLICKED'] } },
+            { openCount: { gt: 0 } },
+          ],
+        },
+      }),
+      this.prisma.campaignRecipient.count({
+        where: {
+          campaignId,
+          OR: [
+            { status: 'CLICKED' },
+            { clickCount: { gt: 0 } },
+          ],
+        },
+      }),
+      this.prisma.campaignRecipient.count({
+        where: { campaignId, status: { in: ['BOUNCED', 'FAILED'] } },
+      }),
+    ]);
+
+    const sentCount = Math.max(campaign.sentCount, deliveredRecipients + bouncedRecipients);
+    const deliveredCount = Math.max(campaign.deliveredCount, deliveredRecipients);
+    const openedCount = Math.max(campaign.openedCount, openedRecipients);
+    const clickedCount = Math.max(campaign.clickedCount, clickedRecipients);
+    const bouncedCount = Math.max(campaign.bouncedCount, bouncedRecipients);
+
+    const deliveryRate = sentCount > 0 ? (deliveredCount / sentCount) * 100 : 0;
+    const openRate = deliveredCount > 0 ? (openedCount / deliveredCount) * 100 : 0;
+    const clickRate = deliveredCount > 0 ? (clickedCount / deliveredCount) * 100 : 0;
+    const clickToOpenRate = openedCount > 0 ? (clickedCount / openedCount) * 100 : 0;
+    const bounceRate = sentCount > 0 ? (bouncedCount / sentCount) * 100 : 0;
 
     // Top Clicked Links
     const clicks = await this.prisma.emailTrackingEvent.findMany({
@@ -385,16 +635,16 @@ export class MarketingService {
       title: campaign.title,
       status: campaign.status as any,
       providerType: campaign.providerType as any,
-      totalRecipients: campaign.totalRecipients,
-      sentCount: campaign.sentCount,
-      deliveredCount: campaign.deliveredCount,
+      totalRecipients: Math.max(campaign.totalRecipients, totalRecipientsCount),
+      sentCount,
+      deliveredCount,
       deliveryRate: Number(deliveryRate.toFixed(1)),
-      openedCount: campaign.openedCount,
+      openedCount,
       openRate: Number(openRate.toFixed(1)),
-      clickedCount: campaign.clickedCount,
+      clickedCount,
       clickRate: Number(clickRate.toFixed(1)),
       clickToOpenRate: Number(clickToOpenRate.toFixed(1)),
-      bouncedCount: campaign.bouncedCount,
+      bouncedCount,
       bounceRate: Number(bounceRate.toFixed(1)),
       unsubscribedCount: campaign.unsubscribedCount,
       complaintCount: campaign.complaintCount,
@@ -476,9 +726,39 @@ export class MarketingService {
     return newLead;
   }
 
-  // ── TEST SEND & DIRECT DISPATCH ──
+  renderMergeTags(
+    template: string,
+    data: {
+      firstName?: string;
+      lastName?: string;
+      fullName?: string;
+      city?: string;
+      projectName?: string;
+      projectLocation?: string;
+      projectStartingPrice?: string;
+      projectBrochureUrl?: string;
+      agentName?: string;
+      agentPhone?: string;
+      unsubscribeUrl?: string;
+    },
+  ): string {
+    if (!template) return '';
+    return template
+      .replace(/{{lead\.firstName}}/gi, data.firstName || 'Valued Prospect')
+      .replace(/{{lead\.lastName}}/gi, data.lastName || '')
+      .replace(/{{lead\.fullName}}/gi, data.fullName || data.firstName || 'Valued Prospect')
+      .replace(/{{lead\.city}}/gi, data.city || 'your city')
+      .replace(/{{project\.name}}/gi, data.projectName || 'Luxury Residence')
+      .replace(/{{project\.location}}/gi, data.projectLocation || 'Prime Location')
+      .replace(/{{project\.startingPrice}}/gi, data.projectStartingPrice || '₹1.50 Cr')
+      .replace(/{{project\.brochureUrl}}/gi, data.projectBrochureUrl || '#')
+      .replace(/{{agent\.name}}/gi, data.agentName || 'Sales Team')
+      .replace(/{{agent\.phone}}/gi, data.agentPhone || '+91 98000 00000')
+      .replace(/{{unsubscribeUrl}}/gi, data.unsubscribeUrl || '#unsubscribe');
+  }
 
   async sendTestEmail(dto: SendTestEmailDto) {
+    const providerType = dto.providerType || 'SYSTEM_DEFAULT';
     let credentials: ProviderCredentials | undefined;
 
     if (dto.integrationId) {
@@ -496,17 +776,67 @@ export class MarketingService {
           fromName: integration.fromName,
         };
       }
+    } else if (providerType !== 'SYSTEM_DEFAULT' && providerType !== 'AWS_SES') {
+      // Automatically look up the active integration saved by the user in the CRM database!
+      const activeIntegration = await this.prisma.marketingIntegration.findFirst({
+        where: { provider: providerType as any, isActive: true },
+        orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+      });
+      if (activeIntegration) {
+        credentials = {
+          apiKey: activeIntegration.apiKey || undefined,
+          awsAccessKeyId: activeIntegration.awsAccessKeyId || undefined,
+          awsSecretKey: activeIntegration.awsSecretKey || undefined,
+          awsRegion: activeIntegration.awsRegion || undefined,
+          mailchimpServer: activeIntegration.mailchimpServer || undefined,
+          fromEmail: activeIntegration.fromEmail,
+          fromName: activeIntegration.fromName,
+        };
+      }
     }
 
-    const providerType = dto.providerType || 'SYSTEM_DEFAULT';
+    let project: any = null;
+    if (dto.projectId) {
+      project = await this.prisma.project.findUnique({
+        where: { id: dto.projectId },
+        select: { name: true, city: true, address: true, brochureUrl: true },
+      });
+    }
+
     const adapter = this.getAdapter(providerType);
 
+    // Use verified sender from integration credentials if user left fromEmail blank/default
+    const resolvedFromEmail =
+      dto.fromEmail && dto.fromEmail.includes('@') && dto.fromEmail !== 'marketing@example.com'
+        ? dto.fromEmail
+        : credentials?.fromEmail || dto.fromEmail || 'marketing@example.com';
+
+    const resolvedFromName = dto.fromName || credentials?.fromName || 'Sales Team';
+
+    const testRecipientName = dto.recipientEmail.split('@')[0];
+    const previewData = {
+      firstName: 'Rahul',
+      lastName: 'Sharma',
+      fullName: 'Rahul Sharma',
+      city: project?.city || 'Mumbai',
+      projectName: project?.name || 'Luxury Villas',
+      projectLocation: project?.address || project?.city || 'Prime Downtown Corridor',
+      projectStartingPrice: '₹1.50 Cr',
+      projectBrochureUrl: project?.brochureUrl || 'https://yourdomain.com/brochure',
+      agentName: resolvedFromName,
+      agentPhone: '+91 98000 00000',
+      unsubscribeUrl: '#unsubscribe',
+    };
+
+    const renderedSubject = this.renderMergeTags(dto.subject, previewData);
+    const renderedHtml = this.renderMergeTags(dto.htmlContent, previewData);
+
     const options: SendEmailOptions = {
-      fromEmail: dto.fromEmail,
-      fromName: dto.fromName,
-      to: [{ email: dto.recipientEmail, name: 'Test Recipient' }],
-      subject: `[TEST] ${dto.subject}`,
-      htmlContent: dto.htmlContent,
+      fromEmail: resolvedFromEmail,
+      fromName: resolvedFromName,
+      to: [{ email: dto.recipientEmail, name: testRecipientName }],
+      subject: `[TEST] ${renderedSubject}`,
+      htmlContent: renderedHtml,
     };
 
     return adapter.sendBatch(options, credentials);
@@ -610,7 +940,13 @@ export class MarketingService {
 
   async recordClickEvent(campaignId: string, recipientId: string, url: string, ip?: string, userAgent?: string) {
     try {
-      await this.prisma.$transaction([
+      const recipient = await this.prisma.campaignRecipient.findUnique({
+        where: { id: recipientId },
+      });
+
+      const isFirstOpen = !recipient?.firstOpenedAt || recipient.openCount === 0;
+
+      const txOps: any[] = [
         this.prisma.emailTrackingEvent.create({
           data: {
             campaignId,
@@ -626,14 +962,35 @@ export class MarketingService {
           data: {
             status: 'CLICKED',
             clickCount: { increment: 1 },
-            firstClickedAt: new Date(),
+            openCount: isFirstOpen ? { increment: 1 } : undefined,
+            firstOpenedAt: recipient?.firstOpenedAt || new Date(),
+            firstClickedAt: recipient?.firstClickedAt || new Date(),
           },
         }),
         this.prisma.marketingCampaign.update({
           where: { id: campaignId },
-          data: { clickedCount: { increment: 1 } },
+          data: {
+            clickedCount: { increment: 1 },
+            openedCount: isFirstOpen ? { increment: 1 } : undefined,
+          },
         }),
-      ]);
+      ];
+
+      if (isFirstOpen) {
+        txOps.push(
+          this.prisma.emailTrackingEvent.create({
+            data: {
+              campaignId,
+              recipientId,
+              eventType: 'OPEN',
+              ipAddress: ip,
+              userAgent,
+            },
+          }),
+        );
+      }
+
+      await this.prisma.$transaction(txOps);
     } catch (e: any) {
       this.logger.warn(`Failed to record click event: ${e?.message}`);
     }
