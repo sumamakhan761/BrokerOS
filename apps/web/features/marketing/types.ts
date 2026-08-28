@@ -44,3 +44,17 @@ export interface AudienceEstimation {
   unsubscribedCount: number;
   finalAudienceCount: number;
 }
+
+export interface IntegrationRecord {
+  id: string;
+  provider: EmailProviderType;
+  name: string;
+  isActive: boolean;
+  isDefault: boolean;
+  fromEmail: string;
+  fromName: string;
+  replyTo?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
