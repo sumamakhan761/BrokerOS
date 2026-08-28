@@ -185,28 +185,32 @@ export default function MarketingHubPage() {
           </div>
 
           {/* SMS Channel Card */}
-          <div className="relative bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs opacity-90 overflow-hidden flex flex-col justify-between">
+          <Link
+            href="/dashboard/marketing/sms"
+            className="group relative bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:border-amber-400 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between"
+          >
+            <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
             <div>
               <div className="flex items-center justify-between mb-3.5">
                 <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
                   <MessageSquare className="w-5 h-5" strokeWidth={2.2} />
                 </div>
-                <Badge variant="default" className="text-[10px] font-bold">
-                  DLT Ready
+                <Badge variant="success" className="text-[10px] font-bold">
+                  Active Engine
                 </Badge>
               </div>
-              <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
-                SMS Campaigns
+              <h3 className="text-sm font-extrabold text-[var(--text-primary)] group-hover:text-amber-600 transition-colors">
+                SMS Broadcasts
               </h3>
               <p className="text-xs text-[var(--text-tertiary)] mt-1 line-clamp-2">
-                Fast promotional & transactional SMS routing via Twilio & Gupshup with DLT headers.
+                Fast promotional & transactional SMS routing via Twilio, AWS SNS, Sinch & Gupshup with DLT headers.
               </p>
             </div>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-400">
-              <span>100% Delivery SLA</span>
-              <Zap className="w-4 h-4 text-amber-500" />
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-amber-600">
+              <span>Open SMS Engine</span>
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </div>
-          </div>
+          </Link>
 
           {/* Portals & Ads Channel Card */}
           <div className="relative bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs opacity-90 overflow-hidden flex flex-col justify-between">
