@@ -42,6 +42,18 @@ importers:
       '@brokeros/int-mail-ses':
         specifier: workspace:*
         version: link:../../integrations/mail/aws-ses
+      '@brokeros/int-sms-aws-sns':
+        specifier: workspace:*
+        version: link:../../integrations/sms/aws-sns
+      '@brokeros/int-sms-gupshup':
+        specifier: workspace:*
+        version: link:../../integrations/sms/gupshup
+      '@brokeros/int-sms-sinch':
+        specifier: workspace:*
+        version: link:../../integrations/sms/sinch
+      '@brokeros/int-sms-twilio':
+        specifier: workspace:*
+        version: link:../../integrations/sms/twilio
       '@brokeros/prisma':
         specifier: workspace:*
         version: link:../../packages/prisma
@@ -507,6 +519,18 @@ importers:
       '@brokeros/int-mail-ses':
         specifier: workspace:*
         version: link:../../integrations/mail/aws-ses
+      '@brokeros/int-sms-aws-sns':
+        specifier: workspace:*
+        version: link:../../integrations/sms/aws-sns
+      '@brokeros/int-sms-gupshup':
+        specifier: workspace:*
+        version: link:../../integrations/sms/gupshup
+      '@brokeros/int-sms-sinch':
+        specifier: workspace:*
+        version: link:../../integrations/sms/sinch
+      '@brokeros/int-sms-twilio':
+        specifier: workspace:*
+        version: link:../../integrations/sms/twilio
       '@brokeros/prisma':
         specifier: workspace:*
         version: link:../../packages/prisma
@@ -555,6 +579,30 @@ importers:
         version: link:../../../packages/types
 
   integrations/mail/sendgrid:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+
+  integrations/sms/aws-sns:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+
+  integrations/sms/gupshup:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+
+  integrations/sms/sinch:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
+
+  integrations/sms/twilio:
     dependencies:
       '@brokeros/types':
         specifier: workspace:*
