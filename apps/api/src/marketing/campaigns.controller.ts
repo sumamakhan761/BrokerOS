@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, Req } from '@nestjs/common';
 import { MarketingService } from './marketing.service.js';
 import {
   CreateCampaignDto,
@@ -22,7 +22,7 @@ export class CampaignsController {
   }
 
   @Get('campaigns')
-  async findAll(@Query() query: { page?: number; limit?: number; status?: string; search?: string }) {
+  async findAll(@Query() query: { page?: number; limit?: number; status?: string; search?: string; includeDrafts?: string | boolean }) {
     return this.marketingService.findAllCampaigns(query);
   }
 
@@ -39,6 +39,11 @@ export class CampaignsController {
   @Get('campaigns/:id')
   async findOne(@Param('id') id: string) {
     return this.marketingService.findOneCampaign(id);
+  }
+
+  @Delete('campaigns/:id')
+  async delete(@Param('id') id: string) {
+    return this.marketingService.deleteCampaign(id);
   }
 
   @Get('campaigns/:id/analytics')

@@ -429,13 +429,22 @@ export class SmsService {
     return { success: true, message: `Dispatched SMS campaign ${id}` };
   }
 
-  async findAllCampaigns(query?: { page?: number; limit?: number; status?: string; search?: string }) {
+  async findAllCampaigns(query?: { page?: number; limit?: number; status?: string; search?: string; includeDrafts?: string | boolean }) {
     const page = Number(query?.page) || 1;
     const limit = Number(query?.limit) || 20;
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (query?.status) where.status = query.status;
+    if (query?.status) {
+      if (query.status !== 'ALL') {
+        where.status = query.status;
+      } else if (query?.includeDrafts !== 'true' && query?.includeDrafts !== true) {
+        where.status = { not: 'DRAFT' };
+      }
+    } else if (query?.includeDrafts !== 'true' && query?.includeDrafts !== true) {
+      where.status = { not: 'DRAFT' };
+    }
+
     if (query?.search) {
       where.OR = [
         { title: { contains: query.search, mode: 'insensitive' } },
@@ -821,5 +830,16 @@ export class SmsService {
         }).catch(() => null);
       }
     }
+  }
+
+  async deleteCampaign(id: string) {
+    const campaign = await this.prisma.smsCampaign.findUnique({ where: { id } });
+    if (!campaign) throw new NotFoundException('SMS Campaign not found');
+
+    await this.prisma.smsTrackingEvent.deleteMany({ where: { campaignId: id } });
+    await this.prisma.smsRecipient.deleteMany({ where: { campaignId: id } });
+    await this.prisma.smsCampaign.delete({ where: { id } });
+
+    return { success: true, message: `Deleted SMS campaign ${id}` };
   }
 }

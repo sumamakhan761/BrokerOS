@@ -214,7 +214,7 @@ export class MarketingService {
         select: { id: true },
       });
       if (exists) validIntegrationId = exists.id;
-    } else if (dto.providerType && dto.providerType !== 'SYSTEM_DEFAULT' && dto.providerType !== 'AWS_SES') {
+    } else if (dto.providerType && dto.providerType !== 'SYSTEM_DEFAULT') {
       const defaultIntegration = await this.prisma.marketingIntegration.findFirst({
         where: { provider: dto.providerType as any, isActive: true },
         orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
@@ -509,13 +509,22 @@ export class MarketingService {
     return { success: true, message: `Dispatched campaign ${id}` };
   }
 
-  async findAllCampaigns(query?: { page?: number; limit?: number; status?: string; search?: string }) {
+  async findAllCampaigns(query?: { page?: number; limit?: number; status?: string; search?: string; includeDrafts?: string | boolean }) {
     const page = Number(query?.page) || 1;
     const limit = Number(query?.limit) || 20;
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (query?.status) where.status = query.status;
+    if (query?.status) {
+      if (query.status !== 'ALL') {
+        where.status = query.status;
+      } else if (query?.includeDrafts !== 'true' && query?.includeDrafts !== true) {
+        where.status = { not: 'DRAFT' };
+      }
+    } else if (query?.includeDrafts !== 'true' && query?.includeDrafts !== true) {
+      where.status = { not: 'DRAFT' };
+    }
+
     if (query?.search) {
       where.OR = [
         { title: { contains: query.search, mode: 'insensitive' } },
@@ -776,7 +785,7 @@ export class MarketingService {
           fromName: integration.fromName,
         };
       }
-    } else if (providerType !== 'SYSTEM_DEFAULT' && providerType !== 'AWS_SES') {
+    } else if (providerType !== 'SYSTEM_DEFAULT') {
       // Automatically look up the active integration saved by the user in the CRM database!
       const activeIntegration = await this.prisma.marketingIntegration.findFirst({
         where: { provider: providerType as any, isActive: true },
@@ -904,6 +913,17 @@ export class MarketingService {
 
   async deleteIntegration(id: string) {
     return this.prisma.marketingIntegration.delete({ where: { id } });
+  }
+
+  async deleteCampaign(id: string) {
+    const campaign = await this.prisma.marketingCampaign.findUnique({ where: { id } });
+    if (!campaign) throw new NotFoundException('Campaign not found');
+
+    await this.prisma.emailTrackingEvent.deleteMany({ where: { campaignId: id } });
+    await this.prisma.campaignRecipient.deleteMany({ where: { campaignId: id } });
+    await this.prisma.marketingCampaign.delete({ where: { id } });
+
+    return { success: true, message: `Deleted campaign ${id}` };
   }
 
   // ── TRACKING & WEBHOOK EVENT HANDLERS ──

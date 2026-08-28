@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, Req } from '@nestjs/common';
 import { SmsService } from './sms.service.js';
 import {
   CreateSmsCampaignDto,
@@ -34,13 +34,18 @@ export class SmsCampaignsController {
   }
 
   @Get('campaigns')
-  async findAll(@Query() query: { page?: number; limit?: number; status?: string; search?: string }) {
+  async findAll(@Query() query: { page?: number; limit?: number; status?: string; search?: string; includeDrafts?: string | boolean }) {
     return this.smsService.findAllCampaigns(query);
   }
 
   @Get('campaigns/:id')
   async findOne(@Param('id') id: string) {
     return this.smsService.findOneCampaign(id);
+  }
+
+  @Delete('campaigns/:id')
+  async delete(@Param('id') id: string) {
+    return this.smsService.deleteCampaign(id);
   }
 
   @Get('campaigns/:id/analytics')
