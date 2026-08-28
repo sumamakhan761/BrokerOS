@@ -1,7 +1,3 @@
-// ============================================================================
-// BrokerOS — AWS SES Email Integration Package
-// ============================================================================
-
 import type {
   EmailProviderType,
   EmailWebhookEvent,
@@ -11,7 +7,9 @@ import type {
   SendEmailResult,
 } from '@brokeros/types';
 
-// ── Types ──
+// ============================================================================
+// Types
+// ============================================================================
 
 export interface SesCredentials {
   awsAccessKeyId?: string;
@@ -59,7 +57,9 @@ export interface SesEventPayload {
   };
 }
 
-// ── SES Client ──
+// ============================================================================
+// Client
+// ============================================================================
 
 export class SesClient {
   private region: string;
@@ -109,7 +109,9 @@ export class SesClient {
   }
 }
 
-// ── SES Webhook Parser ──
+// ============================================================================
+// Webhook Parser
+// ============================================================================
 
 export class SesWebhookParser {
   static parse(headers: Record<string, any>, rawPayload: any): EmailWebhookEvent[] {
@@ -203,7 +205,9 @@ export class SesWebhookParser {
   }
 }
 
-// ── SES Adapter ──
+// ============================================================================
+// Adapter
+// ============================================================================
 
 export class SesAdapter implements IEmailMarketingProvider {
   readonly providerType: EmailProviderType = 'AWS_SES';
