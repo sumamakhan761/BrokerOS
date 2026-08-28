@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import type {
   EmailProviderType,
   EmailWebhookEvent,
@@ -58,6 +59,53 @@ export interface SesEventPayload {
 }
 
 // ============================================================================
+// AWS v4 Request Signer
+// ============================================================================
+
+function signAwsRequest(
+  method: string,
+  pathname: string,
+  body: string,
+  service: string,
+  region: string,
+  accessKeyId: string,
+  secretAccessKey: string,
+) {
+  const host = `email.${region}.amazonaws.com`;
+  const now = new Date();
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+  const dateStamp = amzDate.substring(0, 8);
+
+  const payloadHash = crypto.createHash('sha256').update(body, 'utf8').digest('hex');
+  const canonicalHeaders = `content-type:application/json\nhost:${host}\nx-amz-date:${amzDate}\n`;
+  const signedHeaders = 'content-type;host;x-amz-date';
+
+  const canonicalRequest = `${method}\n${pathname}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+
+  const algorithm = 'AWS4-HMAC-SHA256';
+  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+  const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${crypto.createHash('sha256').update(canonicalRequest, 'utf8').digest('hex')}`;
+
+  const kDate = crypto.createHmac('sha256', `AWS4${secretAccessKey}`).update(dateStamp).digest();
+  const kRegion = crypto.createHmac('sha256', kDate).update(region).digest();
+  const kService = crypto.createHmac('sha256', kRegion).update(service).digest();
+  const kSigning = crypto.createHmac('sha256', kService).update('aws4_request').digest();
+  const signature = crypto.createHmac('sha256', kSigning).update(stringToSign).digest('hex');
+
+  const authorizationHeader = `${algorithm} Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  return {
+    url: `https://${host}${pathname}`,
+    headers: {
+      'Content-Type': 'application/json',
+      'Host': host,
+      'x-amz-date': amzDate,
+      'Authorization': authorizationHeader,
+    },
+  };
+}
+
+// ============================================================================
 // Client
 // ============================================================================
 
@@ -67,20 +115,81 @@ export class SesClient {
   private secretKey: string;
 
   constructor(credentials?: ProviderCredentials) {
-    this.region = credentials?.awsRegion || process.env.AWS_SES_REGION || 'ap-south-1';
-    this.accessKeyId = credentials?.awsAccessKeyId || process.env.AWS_SES_ACCESS_KEY_ID || '';
-    this.secretKey = credentials?.awsSecretKey || process.env.AWS_SES_SECRET_ACCESS_KEY || '';
+    this.region =
+      credentials?.awsRegion ||
+      process.env.AWS_SES_REGION ||
+      process.env.AWS_REGION ||
+      'ap-south-1';
+    this.accessKeyId =
+      credentials?.awsAccessKeyId ||
+      process.env.AWS_SES_ACCESS_KEY_ID ||
+      process.env.AWS_ACCESS_KEY_ID ||
+      '';
+    this.secretKey =
+      credentials?.awsSecretKey ||
+      process.env.AWS_SES_SECRET_ACCESS_KEY ||
+      process.env.AWS_SECRET_ACCESS_KEY ||
+      '';
   }
 
   async validate(): Promise<boolean> {
     if (!this.accessKeyId || !this.secretKey) return false;
+
+    // Check basic format
     const isValidKeyId = /^[A-Z0-9]{16,32}$/.test(this.accessKeyId);
     const isValidSecret = this.secretKey.length >= 20;
-    return isValidKeyId && isValidSecret;
+    if (!isValidKeyId || !isValidSecret) return false;
+
+    try {
+      // Live ping to AWS SES API (/v2/email/account) to verify IAM credentials
+      const signed = signAwsRequest(
+        'GET',
+        '/v2/email/account',
+        '',
+        'ses',
+        this.region,
+        this.accessKeyId,
+        this.secretKey,
+      );
+
+      const res = await fetch(signed.url, {
+        method: 'GET',
+        headers: signed.headers,
+      });
+
+      // 200 OK: Valid AWS credentials with account query permission
+      // 403 Forbidden with InvalidSignatureException: Invalid keys
+      if (res.status === 200) {
+        return true;
+      }
+
+      if (res.status === 403) {
+        const errorData = await res.json().catch(() => ({}));
+        // If it's an AccessDenied to GetAccount, but signature was valid, keys are functional
+        if (errorData?.message?.includes('not authorized to perform: ses:GetAccount')) {
+          return true;
+        }
+        return false;
+      }
+
+      return false;
+    } catch {
+      // Fallback on network timeout
+      return isValidKeyId && isValidSecret;
+    }
   }
 
   async send(options: SendEmailOptions): Promise<SendEmailResult> {
     try {
+      if (!this.accessKeyId || !this.secretKey) {
+        return {
+          success: false,
+          provider: 'AWS_SES',
+          sentCount: 0,
+          error: 'Missing AWS SES Credentials (Access Key or Secret Key)',
+        };
+      }
+
       if (!options.to || options.to.length === 0) {
         return {
           success: false,
@@ -90,13 +199,95 @@ export class SesClient {
         };
       }
 
-      const messageId = `ses-${Date.now()}-${Math.random().toString(36).substring(2, 9)}@${this.region}.amazonses.com`;
+      const toAddresses = options.to.map((r) => r.email).filter(Boolean);
+      if (toAddresses.length === 0) {
+        return {
+          success: false,
+          provider: 'AWS_SES',
+          sentCount: 0,
+          error: 'No valid recipient email addresses found',
+        };
+      }
+
+      const fromAddress = options.fromName
+        ? `${options.fromName} <${options.fromEmail}>`
+        : options.fromEmail;
+
+      const payload: Record<string, any> = {
+        FromEmailAddress: fromAddress,
+        Destination: {
+          ToAddresses: toAddresses,
+        },
+        Content: {
+          Simple: {
+            Subject: {
+              Data: options.subject,
+              Charset: 'UTF-8',
+            },
+            Body: {
+              Html: {
+                Data: options.htmlContent,
+                Charset: 'UTF-8',
+              },
+              ...(options.plainTextContent
+                ? {
+                  Text: {
+                    Data: options.plainTextContent,
+                    Charset: 'UTF-8',
+                  },
+                }
+                : {}),
+            },
+          },
+        },
+      };
+
+      if (options.replyTo) {
+        payload.ReplyToAddresses = [options.replyTo];
+      }
+
+      if (options.tracking?.campaignId) {
+        payload.EmailTags = [
+          {
+            Name: 'campaignId',
+            Value: options.tracking.campaignId,
+          },
+        ];
+      }
+
+      const bodyString = JSON.stringify(payload);
+      const signed = signAwsRequest(
+        'POST',
+        '/v2/email/outbound-emails',
+        bodyString,
+        'ses',
+        this.region,
+        this.accessKeyId,
+        this.secretKey,
+      );
+
+      const res = await fetch(signed.url, {
+        method: 'POST',
+        headers: signed.headers,
+        body: bodyString,
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 200) {
+        return {
+          success: true,
+          provider: 'AWS_SES',
+          providerMessageId: data?.MessageId || `ses-${Date.now()}`,
+          sentCount: toAddresses.length,
+        };
+      }
 
       return {
-        success: true,
+        success: false,
         provider: 'AWS_SES',
-        providerMessageId: messageId,
-        sentCount: options.to.length,
+        sentCount: 0,
+        error: data?.message || `AWS SES dispatch failed with status HTTP ${res.status}`,
       };
     } catch (err: any) {
       return {
