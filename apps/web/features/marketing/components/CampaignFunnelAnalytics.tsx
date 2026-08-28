@@ -10,9 +10,9 @@ import {
   UserX,
   ExternalLink,
   TrendingUp,
-  Activity,
 } from "lucide-react";
 import type { CampaignAnalyticsSummary } from "@brokeros/types";
+import { Badge } from "@/components/ui/Badge";
 
 interface CampaignFunnelAnalyticsProps {
   analytics: CampaignAnalyticsSummary;
@@ -25,7 +25,7 @@ export function CampaignFunnelAnalytics({ analytics }: CampaignFunnelAnalyticsPr
       count: analytics.sentCount,
       rate: "100%",
       subtext: "Total outbound recipients",
-      color: "from-blue-500 to-indigo-600",
+      color: "oklch(0.535 0.235 275)",
       icon: Send,
     },
     {
@@ -33,7 +33,7 @@ export function CampaignFunnelAnalytics({ analytics }: CampaignFunnelAnalyticsPr
       count: analytics.deliveredCount,
       rate: `${analytics.deliveryRate}%`,
       subtext: `${analytics.bouncedCount} bounces filtered`,
-      color: "from-sky-500 to-cyan-600",
+      color: "oklch(0.42 0.16 145)",
       icon: CheckCircle2,
     },
     {
@@ -41,7 +41,7 @@ export function CampaignFunnelAnalytics({ analytics }: CampaignFunnelAnalyticsPr
       count: analytics.openedCount,
       rate: `${analytics.openRate}%`,
       subtext: "Unique inbox reads",
-      color: "from-indigo-500 to-purple-600",
+      color: "oklch(0.48 0.18 240)",
       icon: Eye,
     },
     {
@@ -49,7 +49,7 @@ export function CampaignFunnelAnalytics({ analytics }: CampaignFunnelAnalyticsPr
       count: analytics.clickedCount,
       rate: `${analytics.clickRate}%`,
       subtext: "High-intent brochure clicks",
-      color: "from-emerald-500 to-teal-600",
+      color: "oklch(0.50 0.17 80)",
       icon: MousePointer,
     },
   ];
@@ -58,112 +58,128 @@ export function CampaignFunnelAnalytics({ analytics }: CampaignFunnelAnalyticsPr
     <div className="space-y-6">
       {/* ── TOP KPI CARDS ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400 mb-1">
+        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+          <div className="flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] mb-1">
             <span>Delivered Rate</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{analytics.deliveryRate}%</p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">{analytics.deliveryRate}%</p>
+          <p className="text-[11px] font-medium text-[var(--text-muted)] mt-1">
             {analytics.deliveredCount.toLocaleString()} of {analytics.sentCount.toLocaleString()} emails
           </p>
         </div>
 
-        <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400 mb-1">
+        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+          <div className="flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] mb-1">
             <span>Open Rate</span>
-            <Eye className="w-4 h-4 text-sky-500" />
+            <Eye className="w-4 h-4 text-sky-600" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{analytics.openRate}%</p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">{analytics.openRate}%</p>
+          <p className="text-[11px] font-medium text-[var(--text-muted)] mt-1">
             {analytics.openedCount.toLocaleString()} unique opens
           </p>
         </div>
 
-        <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400 mb-1">
+        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+          <div className="flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] mb-1">
             <span>Click-Through Rate</span>
-            <MousePointer className="w-4 h-4 text-indigo-500" />
+            <MousePointer className="w-4 h-4 text-[var(--brand-600)]" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{analytics.clickRate}%</p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">{analytics.clickRate}%</p>
+          <p className="text-[11px] font-medium text-[var(--text-muted)] mt-1">
             {analytics.clickedCount.toLocaleString()} link clicks
           </p>
         </div>
 
-        <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400 mb-1">
+        <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+          <div className="flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] mb-1">
             <span>Click-to-Open (CTOR)</span>
-            <TrendingUp className="w-4 h-4 text-purple-500" />
+            <TrendingUp className="w-4 h-4 text-purple-600" />
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{analytics.clickToOpenRate}%</p>
-          <p className="text-xs text-slate-400 mt-1">Content resonance index</p>
+          <p className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">{analytics.clickToOpenRate}%</p>
+          <p className="text-[11px] font-medium text-[var(--text-muted)] mt-1">Content resonance index</p>
         </div>
       </div>
 
-      {/* ── VISUAL DELIVERY FUNNEL ── */}
-      <div className="p-6 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-sky-500" />
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Marketing Conversion Funnel</h4>
-          </div>
-          <span className="text-xs text-slate-400">Real-time event stream</span>
+      {/* ── VISUAL FUNNEL PIPELINE ── */}
+      <div className="p-6 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+        <div>
+          <h3 className="text-sm font-extrabold text-[var(--text-primary)] mb-0.5">Campaign Conversion Funnel</h3>
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">Step-by-step audience engagement pipeline</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 relative">
-          {steps.map((step, idx) => {
-            const Icon = step.icon;
-
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {steps.map((st, i) => {
+            const Icon = st.icon;
             return (
               <div
-                key={step.label}
-                className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200/80 dark:border-zinc-700/80 relative overflow-hidden"
+                key={st.label}
+                className="relative p-4 rounded-2xl border border-slate-200/80 bg-slate-50/70 flex flex-col justify-between"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400">{step.label}</span>
-                  <div className="p-1.5 rounded-lg bg-white dark:bg-zinc-700 shadow-xs">
-                    <Icon className="w-3.5 h-3.5 text-slate-700 dark:text-zinc-200" />
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-extrabold text-[var(--text-tertiary)] uppercase tracking-wider">{st.label}</span>
+                    <Icon className="w-4 h-4" style={{ color: st.color }} />
                   </div>
+                  <div className="text-xl font-extrabold text-[var(--text-primary)] tabular-nums">{st.count.toLocaleString()}</div>
+                  <div className="text-xs font-bold mt-0.5" style={{ color: st.color }}>{st.rate} conversion</div>
                 </div>
-
-                <p className="text-2xl font-black text-slate-900 dark:text-white mb-0.5">
-                  {step.count.toLocaleString()}
-                </p>
-
-                <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t border-slate-200/60 dark:border-zinc-700/60">
-                  <span className="font-bold text-sky-600 dark:text-sky-400">{step.rate}</span>
-                  <span className="text-[11px] text-slate-400 truncate max-w-[120px]">{step.subtext}</span>
-                </div>
+                <p className="text-[10px] font-medium text-[var(--text-muted)] mt-3 pt-2 border-t border-slate-200/70">{st.subtext}</p>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* ── TOP CLICKED LINKS TABLE ── */}
-      {analytics.topClickedLinks?.length > 0 && (
-        <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Top Clicked Links</h4>
-            <span className="text-xs text-slate-400">CTA Engagement Breakdown</span>
-          </div>
-
-          <div className="divide-y divide-slate-100 dark:divide-zinc-800">
-            {analytics.topClickedLinks.map((item, idx) => (
-              <div key={idx} className="py-2.5 flex items-center justify-between gap-4 text-xs">
-                <div className="flex items-center gap-2 truncate">
-                  <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span className="font-mono text-slate-700 dark:text-zinc-300 truncate">{item.url}</span>
+      {/* ── TOP CLICKED LINKS & HYGIENE ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Top Clicked Links */}
+        <div className="lg:col-span-2 p-6 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Top Clicked Project Assets</h3>
+          {analytics.topClickedLinks.length === 0 ? (
+            <p className="text-xs text-[var(--text-muted)]">No link clicks recorded yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {analytics.topClickedLinks.map((link, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/80"
+                >
+                  <div className="flex items-center gap-2 overflow-hidden mr-3">
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span className="text-xs font-bold text-[var(--text-primary)] truncate">{link.url}</span>
+                  </div>
+                  <Badge variant="default" className="text-xs font-extrabold shrink-0 tabular-nums">
+                    {link.clicks} clicks
+                  </Badge>
                 </div>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full shrink-0">
-                  {item.clicks.toLocaleString()} clicks
-                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Email Health & Bounce Stats */}
+        <div className="p-6 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <h3 className="text-sm font-extrabold text-[var(--text-primary)]">Audience Hygiene</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-rose-50 border border-rose-200/80">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600" />
+                <span className="text-xs font-bold text-rose-900">Bounced Emails</span>
               </div>
-            ))}
+              <span className="text-xs font-extrabold text-rose-900 tabular-nums">{analytics.bouncedCount} ({analytics.bounceRate}%)</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-100 border border-slate-200/80">
+              <div className="flex items-center gap-2">
+                <UserX className="w-4 h-4 text-slate-600" />
+                <span className="text-xs font-bold text-slate-800">Unsubscribes</span>
+              </div>
+              <span className="text-xs font-extrabold text-slate-800 tabular-nums">{analytics.unsubscribedCount}</span>
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
