@@ -47,6 +47,7 @@ const ROLES = [
   { name: 'Business Manager', code: 'BUSINESS_MANAGER' },
   { name: 'Director', code: 'DIRECTOR' },
   { name: 'Admin', code: 'ADMIN' },
+  { name: 'Marketing', code: 'MARKETING' },
   { name: 'Sourcing Manager', code: 'SOURCING_MANAGER' },
   { name: 'Closing Manager', code: 'CLOSING_MANAGER' },
   { name: 'Channel Partner', code: 'CHANNEL_PARTNER' },
@@ -72,6 +73,7 @@ const DEMO_USERS = [
   { name: 'Business Manager', email: 'businessmanager@demo.com', username: 'businessmanager', phone: '9800000011', roleCode: 'BUSINESS_MANAGER' },
   { name: 'Director', email: 'director@demo.com', username: 'director', phone: '9800000012', roleCode: 'DIRECTOR' },
   { name: 'Admin', email: 'admin@demo.com', username: 'admin', phone: '9800000013', roleCode: 'ADMIN' },
+  { name: 'Marketing Manager', email: 'marketing@demo.com', username: 'marketing', phone: '9800000024', roleCode: 'MARKETING' },
   // ── CP World ──
   { name: 'Channel Partner', email: 'cp1@demo.com', username: 'cp1', phone: '9800000014', roleCode: 'CHANNEL_PARTNER' },
   { name: 'Sourcing Manager 1', email: 'sourcingmanager1@demo.com', username: 'sourcingmanager1', phone: '9800000015', roleCode: 'SOURCING_MANAGER' },
