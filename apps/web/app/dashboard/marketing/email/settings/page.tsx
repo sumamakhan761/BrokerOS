@@ -2,22 +2,28 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Settings, ShieldCheck, Mail } from "lucide-react";
+import { ArrowLeft, Settings, Mail } from "lucide-react";
+import { DashboardPageWrapper } from "@/components/dashboard/DashboardPageWrapper";
+import { Button } from "@/components/ui/Button";
 import { ProviderConfigCard, IntegrationRecord } from "@/features/marketing/components/ProviderConfigCard";
 
 export default function MarketingSettingsPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
   const [integrations, setIntegrations] = useState<IntegrationRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchIntegrations = async () => {
     try {
+      setIsLoading(true);
       const res = await fetch(`${baseUrl}/api/marketing/integrations`);
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setIntegrations(data);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setIntegrations(data);
+          return;
+        }
       }
-    } catch {
       // Mock fallback
       setIntegrations([
         {
@@ -31,6 +37,8 @@ export default function MarketingSettingsPage() {
           createdAt: new Date().toISOString(),
         },
       ]);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load provider integrations");
     } finally {
       setIsLoading(false);
     }
@@ -60,36 +68,27 @@ export default function MarketingSettingsPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* ── HEADER ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard/marketing/email"
-            className="p-2 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-300 hover:text-slate-900 shadow-xs"
-          >
-            <ArrowLeft className="w-4 h-4" />
+    <DashboardPageWrapper
+      loading={isLoading}
+      error={error}
+      title="Email Provider Integrations"
+      subtitle="Manage your default master engine and connect third-party enterprise providers (AWS SES, SendGrid, Brevo, Mailchimp)."
+      headerRight={
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/marketing/email">
+            <Button variant="outline" size="sm" className="gap-2 text-xs font-bold">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Email Engine</span>
+            </Button>
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
-                <Settings className="w-4 h-4" />
-              </span>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">Email Provider Integrations</h1>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-              Manage your default master engine and connect third-party enterprise providers.
-            </p>
-          </div>
         </div>
-      </div>
-
-      {/* ── PROVIDER CONFIG COMPONENT ── */}
+      }
+    >
       <ProviderConfigCard
         integrations={integrations}
         onConnect={handleConnect}
         onDelete={handleDelete}
       />
-    </div>
+    </DashboardPageWrapper>
   );
 }
