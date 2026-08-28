@@ -105,6 +105,12 @@ All users have the exact same password: **Demo@1234**
 - **Phone:** 9800000013
 - **Password:** Demo@1234
 
+### Marketing
+- **Role:** Marketing
+- **Email:** marketing@demo.com
+- **Phone:** 9800000024
+- **Password:** Demo@1234
+
 
 ## Channel Partner (CP) World
 
