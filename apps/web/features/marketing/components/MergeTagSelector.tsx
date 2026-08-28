@@ -10,10 +10,10 @@ interface MergeTagSelectorProps {
 
 export function MergeTagSelector({ onInsertTag }: MergeTagSelectorProps) {
   return (
-    <div className="p-3 bg-slate-50 dark:bg-zinc-800/40 rounded-xl border border-slate-200/80 dark:border-zinc-700/80">
+    <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 shadow-xs">
       <div className="flex items-center gap-2 mb-2.5">
-        <Sparkles className="w-3.5 h-3.5 text-sky-500" />
-        <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200">
+        <Sparkles className="w-3.5 h-3.5 text-[var(--brand-600)]" />
+        <span className="text-xs font-extrabold text-[var(--text-primary)]">
           Personalization Tags (Click to Insert)
         </span>
       </div>
@@ -24,11 +24,11 @@ export function MergeTagSelector({ onInsertTag }: MergeTagSelectorProps) {
             key={item.tag}
             type="button"
             onClick={() => onInsertTag(item.tag)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 bg-white dark:bg-zinc-900 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-slate-700 dark:text-zinc-300 hover:text-sky-700 dark:hover:text-sky-300 border border-slate-200 dark:border-zinc-700 rounded-md text-[11px] font-medium transition-all shadow-2xs group"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-purple-50 text-[var(--text-secondary)] hover:text-[var(--brand-700)] border border-slate-200/80 hover:border-purple-300/80 rounded-lg text-[11px] font-bold transition-all shadow-xs group"
           >
-            <Plus className="w-3 h-3 text-slate-400 group-hover:text-sky-500" />
+            <Plus className="w-3 h-3 text-slate-400 group-hover:text-[var(--brand-600)]" />
             <span>{item.label}</span>
-            <code className="text-[10px] text-slate-400 dark:text-zinc-500 font-mono">({item.tag})</code>
+            <code className="text-[10px] text-[var(--text-muted)] font-mono">({item.tag})</code>
           </button>
         ))}
       </div>

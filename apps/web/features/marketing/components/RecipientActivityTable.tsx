@@ -13,6 +13,8 @@ import {
   ArrowUpRight,
   FileSpreadsheet,
 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 
 interface RecipientRow {
   id: string;
@@ -66,31 +68,44 @@ export function RecipientActivityTable({
     }
   };
 
+  const getStatusBadgeVariant = (status: string): "success" | "brand" | "danger" | "default" => {
+    switch (status) {
+      case "CLICKED":
+        return "success";
+      case "OPENED":
+        return "brand";
+      case "BOUNCED":
+        return "danger";
+      default:
+        return "default";
+    }
+  };
+
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 overflow-hidden shadow-xs space-y-4 p-4">
+    <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs space-y-4 p-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Recipient Engagement Drill-down</h4>
-          <p className="text-xs text-slate-500 dark:text-zinc-400">
+          <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Recipient Engagement Drill-down</h4>
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">
             Track individual lead responses and promote high-intent prospects to sales leads.
           </p>
         </div>
 
         <div className="relative max-w-xs w-full">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search recipients by email/name..."
+            placeholder="Search recipients by email or name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
           />
         </div>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs text-slate-600 dark:text-zinc-300">
-          <thead className="bg-slate-50 dark:bg-zinc-800/60 font-semibold uppercase text-slate-500 dark:text-zinc-400 tracking-wider border-b border-slate-200/80 dark:border-zinc-800">
+        <table className="w-full text-left text-xs text-[var(--text-secondary)]">
+          <thead className="bg-slate-50/90 font-extrabold uppercase text-[var(--text-tertiary)] tracking-wider border-b border-slate-200/80 text-[11px]">
             <tr>
               <th className="py-3 px-3">Lead Contact</th>
               <th className="py-3 px-3">Audience Source</th>
@@ -100,87 +115,77 @@ export function RecipientActivityTable({
               <th className="py-3 px-3 text-right">Lead Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+          <tbody className="divide-y divide-slate-100 font-normal">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-slate-400">
-                  No recipient activity found matching filter.
+                <td colSpan={6} className="py-8 text-center text-[var(--text-muted)]">
+                  No recipient engagement data found
                 </td>
               </tr>
             ) : (
-              filtered.map((row) => {
-                const isEngaged = row.openCount > 1 || row.clickCount > 0;
-                const isLinked = !!row.leadId;
-
+              filtered.map((r) => {
                 return (
-                  <tr
-                    key={row.id}
-                    className={`hover:bg-slate-50/70 dark:hover:bg-zinc-800/40 transition-colors ${
-                      isEngaged ? "bg-sky-50/20 dark:bg-sky-950/10" : ""
-                    }`}
-                  >
-                    <td className="py-3 px-3">
-                      <div>
-                        <span className="font-semibold text-slate-900 dark:text-white">
-                          {row.name || "Valued Contact"}
-                        </span>
-                        <p className="text-[11px] text-slate-500 font-mono">{row.email}</p>
-                      </div>
+                  <tr key={r.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3.5 px-3">
+                      <div className="font-extrabold text-[var(--text-primary)]">{r.name || "Anonymous Prospect"}</div>
+                      <div className="text-[11px] font-medium text-[var(--text-tertiary)]">{r.email}</div>
+                      {r.phone && (
+                        <div className="text-[10px] font-bold text-slate-400 mt-0.5">{r.phone}</div>
+                      )}
                     </td>
 
-                    <td className="py-3 px-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        {row.source === "CSV_UPLOAD" ? (
-                          <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-                        ) : (
-                          <Users className="w-3.5 h-3.5 text-sky-500" />
-                        )}
-                        <span className="capitalize">{row.source === "CSV_UPLOAD" ? "CSV File" : "CRM Database"}</span>
-                      </div>
-                    </td>
-
-                    <td className="py-3 px-3 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
-                        {row.status}
-                      </span>
-                    </td>
-
-                    <td className="py-3 px-3 text-center whitespace-nowrap">
-                      <span
-                        className={`font-semibold ${
-                          row.openCount > 0 ? "text-sky-600 dark:text-sky-400 font-bold" : "text-slate-400"
-                        }`}
-                      >
-                        {row.openCount}
-                      </span>
-                    </td>
-
-                    <td className="py-3 px-3 text-center whitespace-nowrap">
-                      <span
-                        className={`font-semibold ${
-                          row.clickCount > 0 ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-slate-400"
-                        }`}
-                      >
-                        {row.clickCount}
-                      </span>
-                    </td>
-
-                    <td className="py-3 px-3 text-right whitespace-nowrap">
-                      {isLinked ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-800">
-                          <UserCheck className="w-3 h-3" />
-                          <span>CRM Lead Active</span>
-                        </span>
+                    <td className="py-3.5 px-3">
+                      {r.source === "CSV_UPLOAD" ? (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-bold text-[10px]">
+                          <FileSpreadsheet className="w-3 h-3" />
+                          <span>CSV Audience</span>
+                        </div>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => handlePromote(row.id)}
-                          disabled={promotingId === row.id}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-sky-500 hover:bg-sky-600 text-white rounded-md text-[11px] font-bold transition-all shadow-xs disabled:opacity-50"
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 text-[var(--brand-700)] border border-purple-200/80 font-bold text-[10px]">
+                          <Users className="w-3 h-3" />
+                          <span>CRM Database</span>
+                        </div>
+                      )}
+                    </td>
+
+                    <td className="py-3.5 px-3">
+                      <Badge variant={getStatusBadgeVariant(r.status)} className="text-[10px]">
+                        {r.status}
+                      </Badge>
+                    </td>
+
+                    <td className="py-3.5 px-3 text-center">
+                      <span className="font-extrabold text-[var(--text-primary)] tabular-nums">
+                        {Math.max(r.openCount || 0, r.clickCount > 0 ? 1 : 0)}
+                      </span>
+                    </td>
+
+                    <td className="py-3.5 px-3 text-center">
+                      <span
+                        className={`font-extrabold tabular-nums ${r.clickCount > 0 ? "text-emerald-600 font-black" : "text-slate-400"
+                          }`}
+                      >
+                        {r.clickCount}
+                      </span>
+                    </td>
+
+                    <td className="py-3.5 px-3 text-right">
+                      {r.leadId ? (
+                        <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/80">
+                          <UserCheck className="w-3.5 h-3.5" />
+                          <span>Active CRM Lead</span>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePromote(r.id)}
+                          disabled={promotingId === r.id}
+                          className="h-7 px-2.5 text-[11px] font-bold gap-1 text-[var(--brand-600)] hover:bg-purple-50"
                         >
-                          <UserPlus className="w-3 h-3" />
-                          <span>{promotingId === row.id ? "Promoting..." : "Promote to CRM Lead"}</span>
-                        </button>
+                          <UserPlus className="w-3.5 h-3.5" />
+                          <span>{promotingId === r.id ? "Promoting..." : "Promote to Lead"}</span>
+                        </Button>
                       )}
                     </td>
                   </tr>

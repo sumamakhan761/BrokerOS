@@ -12,15 +12,20 @@ import {
   Check,
   X,
   Sparkles,
+  Building,
+  Flame,
+  Layers,
 } from "lucide-react";
 import type { AudienceSourceType, CsvLeadRow, AudienceEstimation } from "../types";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 
 interface AudienceSelectorProps {
   audienceSource: AudienceSourceType;
   onSourceChange: (source: AudienceSourceType) => void;
   filters: {
-    temperatures: Array<"HOT" | "WARM" | "COLD">;
-    statuses: string[];
+    temperatures?: Array<"HOT" | "WARM" | "COLD">;
+    statuses?: string[];
     projectId?: string;
     minBudget?: number;
     maxBudget?: number;
@@ -48,6 +53,12 @@ export function AudienceSelector({
 }: AudienceSelectorProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [csvFileName, setCsvFileName] = useState<string | null>(null);
+
+  // Filter Toggles
+  const [enableProjectFilter, setEnableProjectFilter] = useState(Boolean(filters.projectId));
+  const [enableTempFilter, setEnableTempFilter] = useState(Boolean(filters.temperatures?.length));
+  const [enableBudgetFilter, setEnableBudgetFilter] = useState(Boolean(filters.minBudget));
+
   const [estimation, setEstimation] = useState<AudienceEstimation>({
     totalCount: 0,
     validEmailCount: 0,
@@ -57,14 +68,29 @@ export function AudienceSelector({
   });
   const [isEstimating, setIsEstimating] = useState(false);
 
-  // Recalculate preview
+  // Recalculate preview live from backend
   useEffect(() => {
     let isMounted = true;
     setIsEstimating(true);
 
+    const activeFilters: any = {};
+
+    if (filters.statuses?.length && !filters.statuses.includes("ALL")) {
+      activeFilters.statuses = filters.statuses;
+    }
+    if (enableTempFilter && filters.temperatures?.length) {
+      activeFilters.temperatures = filters.temperatures;
+    }
+    if (enableProjectFilter && filters.projectId) {
+      activeFilters.projectId = filters.projectId;
+    }
+    if (enableBudgetFilter && filters.minBudget) {
+      activeFilters.minBudget = filters.minBudget;
+    }
+
     const payload = {
       audienceSource,
-      audienceFilters: filters,
+      audienceFilters: activeFilters,
       csvRecipients: audienceSource === "CSV_UPLOAD" ? csvRecipients : undefined,
     };
 
@@ -80,7 +106,7 @@ export function AudienceSelector({
         }
       })
       .catch(() => {
-        // Fallback client estimate
+        // Safe real fallback
         if (isMounted) {
           if (audienceSource === "CSV_UPLOAD") {
             setEstimation({
@@ -92,11 +118,11 @@ export function AudienceSelector({
             });
           } else {
             setEstimation({
-              totalCount: 150,
-              validEmailCount: 145,
-              duplicateCount: 3,
-              unsubscribedCount: 2,
-              finalAudienceCount: 145,
+              totalCount: 0,
+              validEmailCount: 0,
+              duplicateCount: 0,
+              unsubscribedCount: 0,
+              finalAudienceCount: 0,
             });
           }
         }
@@ -108,7 +134,15 @@ export function AudienceSelector({
     return () => {
       isMounted = false;
     };
-  }, [audienceSource, filters, csvRecipients, apiBaseUrl]);
+  }, [
+    audienceSource,
+    filters,
+    enableProjectFilter,
+    enableTempFilter,
+    enableBudgetFilter,
+    csvRecipients,
+    apiBaseUrl,
+  ]);
 
   // Handle CSV File Parse
   const handleFileUpload = (file: File) => {
@@ -162,8 +196,18 @@ export function AudienceSelector({
     reader.readAsText(file);
   };
 
-  const toggleTemperature = (temp: "HOT" | "WARM" | "COLD") => {
-    const current = [...filters.temperatures];
+  const currentStatus = filters.statuses?.[0] || "ALL";
+
+  const handleStatusChange = (status: string) => {
+    if (status === "ALL") {
+      onFiltersChange({ ...filters, statuses: [] });
+    } else {
+      onFiltersChange({ ...filters, statuses: [status] });
+    }
+  };
+
+  const handleToggleTemperature = (temp: "HOT" | "WARM" | "COLD") => {
+    const current = [...(filters.temperatures || [])];
     const idx = current.indexOf(temp);
     if (idx > -1) {
       current.splice(idx, 1);
@@ -176,137 +220,258 @@ export function AudienceSelector({
   return (
     <div className="space-y-6">
       {/* Source Selector Tabs */}
-      <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-100 dark:bg-zinc-800/80 rounded-xl border border-slate-200/80 dark:border-zinc-700/80">
+      <div className="grid grid-cols-2 gap-2.5 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80">
         <button
           type="button"
           onClick={() => onSourceChange("CRM_DATABASE")}
-          className={`flex items-center justify-center gap-2.5 py-3 px-4 rounded-lg font-medium text-sm transition-all ${
+          className={`flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl font-extrabold text-xs transition-all ${
             audienceSource === "CRM_DATABASE"
-              ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs border border-slate-200/60 dark:border-zinc-700"
-              : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
+              ? "bg-white text-[var(--text-primary)] shadow-xs border border-slate-200/60"
+              : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
           }`}
         >
-          <Users className="w-4 h-4 text-sky-500" />
+          <Users className="w-4 h-4 text-[var(--brand-600)]" />
           <span>Filter CRM Database</span>
         </button>
 
         <button
           type="button"
           onClick={() => onSourceChange("CSV_UPLOAD")}
-          className={`flex items-center justify-center gap-2.5 py-3 px-4 rounded-lg font-medium text-sm transition-all ${
+          className={`flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl font-extrabold text-xs transition-all ${
             audienceSource === "CSV_UPLOAD"
-              ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs border border-slate-200/60 dark:border-zinc-700"
-              : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
+              ? "bg-white text-[var(--text-primary)] shadow-xs border border-slate-200/60"
+              : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
           }`}
         >
-          <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+          <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
           <span>Upload CSV / Excel File</span>
         </button>
       </div>
 
       {/* ── TAB 1: CRM DATABASE FILTERS ── */}
       {audienceSource === "CRM_DATABASE" && (
-        <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 space-y-5 shadow-xs">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-sky-500" />
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Lead Targeting Criteria</h4>
+        <div className="p-6 bg-white rounded-2xl border border-slate-200/80 space-y-6 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-[var(--brand-600)]" />
+                <h4 className="text-sm font-extrabold text-[var(--text-primary)]">
+                  CRM Lead Targeting Criteria
+                </h4>
+              </div>
+              <p className="text-xs font-medium text-[var(--text-tertiary)] mt-0.5">
+                Automatically queries pre-sales leads. Excludes site visits, negotiations, and booked customers.
+              </p>
             </div>
-            <span className="text-xs text-slate-500 dark:text-zinc-400">Live query across active CRM pipeline</span>
+            <Badge variant="default" className="text-[10px]">
+              Pre-Sales Pipeline
+            </Badge>
           </div>
 
-          {/* Lead Temperature Filter */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2">
-              Lead Temperature
+          {/* 1. Pre-Sales Status Filter */}
+          <div className="space-y-2">
+            <label className="block text-xs font-extrabold text-[var(--text-primary)]">
+              1. Pre-Sales Lead Status
             </label>
-            <div className="flex items-center gap-2.5">
-              {(["HOT", "WARM", "COLD"] as const).map((temp) => {
-                const isSelected = filters.temperatures.includes(temp);
-                const colors = {
-                  HOT: isSelected
-                    ? "bg-rose-500 text-white border-rose-500 shadow-xs"
-                    : "bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900",
-                  WARM: isSelected
-                    ? "bg-amber-500 text-white border-amber-500 shadow-xs"
-                    : "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900",
-                  COLD: isSelected
-                    ? "bg-sky-500 text-white border-sky-500 shadow-xs"
-                    : "bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-900",
-                };
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { id: "ALL", label: "All Pre-Sales Leads" },
+                { id: "NEW", label: "New Leads" },
+                { id: "CONTACTED", label: "Contacted" },
+                { id: "INTERESTED", label: "Interested" },
+                { id: "QUALIFIED", label: "Qualified" },
+              ].map((st) => {
+                const isSelected =
+                  st.id === "ALL"
+                    ? !filters.statuses?.length || filters.statuses.includes("ALL")
+                    : filters.statuses?.includes(st.id);
 
                 return (
                   <button
-                    key={temp}
+                    key={st.id}
                     type="button"
-                    onClick={() => toggleTemperature(temp)}
-                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${colors[temp]}`}
+                    onClick={() => handleStatusChange(st.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                      isSelected
+                        ? "bg-purple-50 border-[var(--brand-500)] text-[var(--brand-700)] shadow-xs ring-2 ring-purple-500/15"
+                        : "bg-slate-50 border-slate-200/80 text-[var(--text-secondary)] hover:bg-slate-100"
+                    }`}
                   >
-                    {isSelected && <Check className="w-3.5 h-3.5" />}
-                    <span>{temp} Leads</span>
+                    {isSelected && <span className="mr-1.5 text-[var(--brand-600)]">✓</span>}
+                    <span>{st.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Project Affinity & Budget */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2">
-                Interested Project
+          {/* 2. Optional Lead Temperature Filter */}
+          <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-amber-500" />
+                <span className="text-xs font-extrabold text-[var(--text-primary)]">
+                  Filter by Lead Temperature
+                </span>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[var(--text-secondary)]">
+                <input
+                  type="checkbox"
+                  checked={enableTempFilter}
+                  onChange={(e) => {
+                    setEnableTempFilter(e.target.checked);
+                    if (!e.target.checked) {
+                      onFiltersChange({ ...filters, temperatures: [] });
+                    }
+                  }}
+                  className="w-4 h-4 accent-[var(--brand-600)] rounded-sm"
+                />
+                <span>{enableTempFilter ? "Filter Enabled" : "Off (Include All Temperatures)"}</span>
               </label>
-              <select
-                value={filters.projectId || ""}
-                onChange={(e) => onFiltersChange({ ...filters, projectId: e.target.value || undefined })}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-              >
-                <option value="">All Projects</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2">
-                Minimum Budget (INR)
+            {enableTempFilter && (
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-200/70">
+                {(["HOT", "WARM", "COLD"] as const).map((temp) => {
+                  const isSelected = filters.temperatures?.includes(temp);
+                  const colors = {
+                    HOT: isSelected
+                      ? "bg-rose-500 text-white border-rose-500 shadow-xs ring-2 ring-rose-500/20"
+                      : "bg-white text-rose-700 border-rose-200 hover:bg-rose-50",
+                    WARM: isSelected
+                      ? "bg-amber-500 text-white border-amber-500 shadow-xs ring-2 ring-amber-500/20"
+                      : "bg-white text-amber-800 border-amber-200 hover:bg-amber-50",
+                    COLD: isSelected
+                      ? "bg-sky-500 text-white border-sky-500 shadow-xs ring-2 ring-sky-500/20"
+                      : "bg-white text-sky-700 border-sky-200 hover:bg-sky-50",
+                  };
+
+                  return (
+                    <button
+                      key={temp}
+                      type="button"
+                      onClick={() => handleToggleTemperature(temp)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${colors[temp]}`}
+                    >
+                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                      <span>{temp}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 3. Optional Project Affinity Filter */}
+          <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4 text-[var(--brand-600)]" />
+                <span className="text-xs font-extrabold text-[var(--text-primary)]">
+                  Filter by Specific Project Affinity
+                </span>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[var(--text-secondary)]">
+                <input
+                  type="checkbox"
+                  checked={enableProjectFilter}
+                  onChange={(e) => {
+                    setEnableProjectFilter(e.target.checked);
+                    if (!e.target.checked) {
+                      onFiltersChange({ ...filters, projectId: undefined });
+                    }
+                  }}
+                  className="w-4 h-4 accent-[var(--brand-600)] rounded-sm"
+                />
+                <span>{enableProjectFilter ? "Filter Enabled" : "Off (Include All Leads & Unassigned)"}</span>
               </label>
-              <input
-                type="number"
-                placeholder="e.g. 5000000 (₹50 Lakhs)"
-                value={filters.minBudget || ""}
-                onChange={(e) =>
-                  onFiltersChange({
-                    ...filters,
-                    minBudget: e.target.value ? Number(e.target.value) : undefined,
-                  })
-                }
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 rounded-lg text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-              />
             </div>
+
+            {enableProjectFilter && (
+              <div className="pt-2 border-t border-slate-200/70">
+                <select
+                  value={filters.projectId || ""}
+                  onChange={(e) =>
+                    onFiltersChange({ ...filters, projectId: e.target.value || undefined })
+                  }
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] shadow-xs"
+                >
+                  <option value="">Select Project from Database...</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                {projects.length === 0 && (
+                  <p className="text-[11px] text-[var(--text-muted)] mt-1">
+                    No active projects found in database inventory.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 4. Optional Budget Filter */}
+          <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold text-[var(--text-primary)]">
+                Filter by Minimum Budget (INR)
+              </span>
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[var(--text-secondary)]">
+                <input
+                  type="checkbox"
+                  checked={enableBudgetFilter}
+                  onChange={(e) => {
+                    setEnableBudgetFilter(e.target.checked);
+                    if (!e.target.checked) {
+                      onFiltersChange({ ...filters, minBudget: undefined });
+                    }
+                  }}
+                  className="w-4 h-4 accent-[var(--brand-600)] rounded-sm"
+                />
+                <span>{enableBudgetFilter ? "Filter Enabled" : "Off"}</span>
+              </label>
+            </div>
+
+            {enableBudgetFilter && (
+              <div className="pt-2 border-t border-slate-200/70">
+                <input
+                  type="number"
+                  placeholder="e.g. 5000000 (₹50 Lakhs)"
+                  value={filters.minBudget || ""}
+                  onChange={(e) =>
+                    onFiltersChange({
+                      ...filters,
+                      minBudget: e.target.value ? Number(e.target.value) : undefined,
+                    })
+                  }
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] shadow-xs"
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* ── TAB 2: CSV / EXCEL UPLOAD ── */}
       {audienceSource === "CSV_UPLOAD" && (
-        <div className="p-5 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 space-y-5 shadow-xs">
+        <div className="p-6 bg-white rounded-2xl border border-slate-200/80 space-y-5 shadow-xs">
           {/* Header & Download Template Button */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
             <div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Upload External Prospect List</h4>
-              <p className="text-xs text-slate-500 dark:text-zinc-400">
-                Upload CSV from exhibitions, portal exports, or property expos.
+              <h4 className="text-xs font-extrabold text-[var(--text-primary)]">
+                Upload External Prospect List
+              </h4>
+              <p className="text-[11px] font-medium text-[var(--text-tertiary)]">
+                Upload CSV exports from property expos, 99acres/MagicBricks, or exhibitions.
               </p>
             </div>
 
             <a
               href={`${apiBaseUrl}/api/marketing/sample-csv`}
               download="sample_marketing_leads.csv"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900/50 rounded-lg border border-sky-200 dark:border-sky-800 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[var(--brand-600)] bg-purple-50 hover:bg-purple-100/70 rounded-xl border border-purple-200/80 transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download Sample CSV Template</span>
@@ -327,19 +492,19 @@ export function AudienceSelector({
                 handleFileUpload(e.dataTransfer.files[0]);
               }
             }}
-            className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+            className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all ${
               isDragging
-                ? "border-sky-500 bg-sky-50/50 dark:bg-sky-950/20"
-                : "border-slate-300 dark:border-zinc-700 bg-slate-50/50 dark:bg-zinc-800/30 hover:border-slate-400"
+                ? "border-[var(--brand-500)] bg-purple-50/50 shadow-xs"
+                : "border-slate-300 bg-slate-50/60 hover:border-slate-400 hover:bg-slate-50"
             }`}
           >
-            <div className="w-12 h-12 mx-auto rounded-full bg-sky-100 dark:bg-sky-950/60 flex items-center justify-center text-sky-600 dark:text-sky-400 mb-3">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-purple-50 flex items-center justify-center text-[var(--brand-600)] mb-3 shadow-xs">
               <UploadCloud className="w-6 h-6" />
             </div>
 
-            <p className="text-sm font-semibold text-slate-800 dark:text-zinc-200 mb-1">
+            <p className="text-xs font-bold text-[var(--text-primary)] mb-1">
               Drag & drop your CSV file here, or{" "}
-              <label className="text-sky-600 dark:text-sky-400 hover:underline cursor-pointer">
+              <label className="text-[var(--brand-600)] hover:underline cursor-pointer font-extrabold">
                 browse file
                 <input
                   type="file"
@@ -351,13 +516,13 @@ export function AudienceSelector({
                 />
               </label>
             </p>
-            <p className="text-xs text-slate-500 dark:text-zinc-400">
+            <p className="text-[11px] font-medium text-[var(--text-tertiary)]">
               Supported columns: Full Name, Email, Phone Number, City, Budget, Project, Temperature
             </p>
 
             {csvFileName && (
-              <div className="inline-flex items-center gap-2 mt-4 px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-semibold">
-                <CheckCircle2 className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 mt-4 px-3.5 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold shadow-xs">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 <span>
                   Loaded: {csvFileName} ({csvRecipients.length} rows detected)
                 </span>
@@ -366,21 +531,21 @@ export function AudienceSelector({
           </div>
 
           {/* CRM Sync Toggle */}
-          <div className="p-3.5 bg-slate-50 dark:bg-zinc-800/50 rounded-lg border border-slate-200/80 dark:border-zinc-700/80 flex items-center justify-between">
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 id="saveCsvLeads"
                 checked={saveCsvAsCrmLeads}
                 onChange={(e) => onSaveCsvAsCrmLeadsChange(e.target.checked)}
-                className="w-4 h-4 text-sky-600 rounded-sm border-slate-300 dark:border-zinc-600 focus:ring-sky-500"
+                className="w-4 h-4 accent-[var(--brand-600)] rounded-sm"
               />
-              <label htmlFor="saveCsvLeads" className="text-xs text-slate-700 dark:text-zinc-300 cursor-pointer">
-                <span className="font-semibold text-slate-900 dark:text-white">
+              <label htmlFor="saveCsvLeads" className="text-xs text-[var(--text-secondary)] cursor-pointer">
+                <span className="font-extrabold text-[var(--text-primary)]">
                   Also import contacts as permanent CRM Leads
                 </span>
                 <br />
-                <span className="text-slate-500 dark:text-zinc-400">
+                <span className="text-[11px] font-medium text-[var(--text-tertiary)]">
                   Automatically adds them to the main Lead Management database with source &apos;MARKETING_CSV_IMPORT&apos;.
                 </span>
               </label>
@@ -390,9 +555,9 @@ export function AudienceSelector({
       )}
 
       {/* ── LIVE AUDIENCE ESTIMATION BANNER ── */}
-      <div className="p-4 bg-gradient-to-r from-sky-50 via-slate-50 to-indigo-50 dark:from-sky-950/30 dark:via-zinc-900 dark:to-indigo-950/30 rounded-xl border border-sky-200/80 dark:border-sky-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          <div className="w-10 h-10 rounded-2xl bg-purple-50 text-[var(--brand-600)] flex items-center justify-center font-extrabold text-sm shadow-xs tabular-nums">
             {isEstimating ? (
               <Sparkles className="w-5 h-5 animate-spin" />
             ) : (
@@ -401,14 +566,14 @@ export function AudienceSelector({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h5 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h5 className="text-xs font-extrabold text-[var(--text-primary)] tabular-nums">
                 {estimation.finalAudienceCount.toLocaleString()} Deliverable Recipients
               </h5>
-              <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-full">
-                Cleaned & Ready
-              </span>
+              <Badge variant={estimation.finalAudienceCount > 0 ? "success" : "default"} className="text-[10px]">
+                {estimation.finalAudienceCount > 0 ? "Cleaned & Ready" : "0 Matching Leads"}
+              </Badge>
             </div>
-            <p className="text-xs text-slate-600 dark:text-zinc-400">
+            <p className="text-[11px] font-medium text-[var(--text-tertiary)] mt-0.5">
               {estimation.duplicateCount > 0 && `${estimation.duplicateCount} duplicate emails removed • `}
               {estimation.unsubscribedCount > 0 && `${estimation.unsubscribedCount} unsubscribed users excluded • `}
               Zero bounce risk
