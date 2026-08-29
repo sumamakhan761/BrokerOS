@@ -18,15 +18,23 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\" --ignore-path .gitignore"
   },
   "devDependencies": {
+    "prettier": "^3.9.5",
     "tsx": "^4.19.3",
     "turbo": "^2.5.4",
-    "prettier": "^3.9.5",
     "typescript": "^5.9.3"
   },
   "pnpm": {
     "overrides": {
       "react": "19.1.0",
       "react-dom": "19.1.0"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "bcrypt",
+      "esbuild",
+      "prisma",
+      "protobufjs",
+      "sharp"
+    ]
   }
 }
