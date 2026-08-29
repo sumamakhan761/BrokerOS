@@ -58,6 +58,8 @@ export interface IntegrationRecord {
   updatedAt?: string;
 }
 
+export type EmailIntegrationItem = IntegrationRecord;
+
 // ── SMS Types & ViewModels ──
 
 export type SmsProviderType = 'TWILIO' | 'AWS_SNS' | 'SINCH' | 'GUPSHUP';
