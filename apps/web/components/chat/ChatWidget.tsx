@@ -1,47 +1,20 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   MessageCircle,
   X,
   Maximize2,
   Minimize2,
-  Send,
   ArrowLeft,
-  User,
-  Paperclip,
-  FileText,
-  Loader2,
 } from "lucide-react";
 import { io, Socket } from "socket.io-client";
 import { authClient } from "@/lib/auth-client";
-
-type ChatRoom = {
-  id: string;
-  name: string;
-  avatarUrl: string | null;
-  unreadCount: number;
-  lastMessage: { content: string; createdAt: string } | null;
-};
-
-type Contact = {
-  id: string;
-  name: string;
-  email: string;
-  image: string | null;
-  role: { name: string; code: string };
-};
-
-type Message = {
-  id: string;
-  content: string;
-  createdAt: string;
-  senderId: string;
-  sender: { id: string; name: string; image: string | null };
-  attachmentUrl?: string | null;
-  attachmentType?: string | null;
-  attachmentName?: string | null;
-};
+import { ChatRoomList } from "./ChatRoomList";
+import { ChatDirectoryList } from "./ChatDirectoryList";
+import { ChatMessageFeed } from "./ChatMessageFeed";
+import { ChatMessageInput } from "./ChatMessageInput";
+import type { ChatRoom, Contact, Message } from "./types";
 
 export function ChatWidget() {
   const { data: session } = authClient.useSession();
@@ -63,7 +36,6 @@ export function ChatWidget() {
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3333";
@@ -268,7 +240,6 @@ export function ChatWidget() {
     }
 
     setIsUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const sendMessage = async (e: React.FormEvent) => {
@@ -384,98 +355,23 @@ export function ChatWidget() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-1.5">
-              {activeTab === "recent" &&
-                (loadingRooms ? (
-                  <div className="flex justify-center p-8">
-                    <Loader2 size={20} className="animate-spin text-[var(--brand-600)]" />
-                  </div>
-                ) : rooms.length === 0 ? (
-                  <div className="text-center p-8 text-slate-400 text-xs font-semibold">
-                    No recent conversations
-                  </div>
-                ) : (
-                  rooms.map((room) => (
-                    <div
-                      key={room.id}
-                      onClick={() => {
-                        setActiveRoomId(room.id);
-                        setActiveRoomName(room.name);
-                      }}
-                      className="p-3 hover:bg-white rounded-2xl cursor-pointer flex items-center gap-3 transition-colors mb-1 shadow-2xs border border-transparent hover:border-slate-200/60"
-                    >
-                      <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center text-[var(--brand-700)] shrink-0 border border-purple-200">
-                        {room.avatarUrl ? (
-                          <img
-                            src={room.avatarUrl}
-                            className="w-full h-full rounded-xl object-cover"
-                            alt="avatar"
-                          />
-                        ) : (
-                          <User size={16} />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-baseline mb-0.5">
-                          <h4 className="font-bold text-[var(--text-primary)] text-xs truncate m-0">
-                            {room.name}
-                          </h4>
-                          {room.lastMessage && (
-                            <span className="text-[9px] text-[var(--text-muted)] shrink-0 ml-2 font-medium tabular-nums">
-                              {new Date(
-                                room.lastMessage.createdAt
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-[var(--text-secondary)] truncate m-0">
-                          {room.lastMessage?.content || "No messages yet"}
-                        </p>
-                      </div>
-                      {room.unreadCount > 0 && (
-                        <div className="w-4 h-4 bg-[var(--brand-600)] text-white rounded-full text-[9px] font-extrabold flex items-center justify-center shrink-0 shadow-2xs tabular-nums">
-                          {room.unreadCount}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                ))}
+              {activeTab === "recent" && (
+                <ChatRoomList
+                  rooms={rooms}
+                  isLoading={loadingRooms}
+                  onSelectRoom={(id, name) => {
+                    setActiveRoomId(id);
+                    setActiveRoomName(name);
+                  }}
+                />
+              )}
 
-              {activeTab === "directory" &&
-                (contacts.length === 0 ? (
-                  <div className="text-center p-8 text-slate-400 text-xs font-semibold">
-                    No colleagues available
-                  </div>
-                ) : (
-                  contacts.map((contact) => (
-                    <div
-                      key={contact.id}
-                      onClick={() =>
-                        startDirectChat(
-                          contact.id,
-                          contact.name || "Unknown"
-                        )
-                      }
-                      className="p-3 hover:bg-white rounded-2xl cursor-pointer flex items-center gap-3 transition-colors mb-1 shadow-2xs border border-transparent hover:border-slate-200/60"
-                    >
-                      <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 shrink-0 border border-emerald-200">
-                        <User size={16} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-[var(--text-primary)] text-xs truncate m-0">
-                          {contact.name || contact.email}
-                        </h4>
-                        <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider font-extrabold mt-0.5 m-0">
-                          {contact.role?.name ||
-                            contact.role?.code.replace(/_/g, " ")}
-                        </p>
-                      </div>
-                      <MessageCircle size={14} className="text-slate-400" />
-                    </div>
-                  ))
-                ))}
+              {activeTab === "directory" && (
+                <ChatDirectoryList
+                  contacts={contacts}
+                  onStartDirectChat={startDirectChat}
+                />
+              )}
             </div>
           </>
         )}
@@ -483,127 +379,20 @@ export function ChatWidget() {
         {/* Active Room View */}
         {activeRoomId && (
           <>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col">
-              {loadingMessages ? (
-                <div className="flex justify-center p-8">
-                  <Loader2 size={20} className="animate-spin text-[var(--brand-600)]" />
-                </div>
-              ) : (
-                messages.map((msg, idx) => {
-                  const isMe = msg.senderId === userId;
-                  return (
-                    <div
-                      key={`${msg.id}-${idx}`}
-                      className={`flex flex-col max-w-[85%] ${
-                        isMe
-                          ? "self-end items-end"
-                          : "self-start items-start"
-                      }`}
-                    >
-                      {!isMe && (
-                        <span className="text-[9px] text-[var(--text-muted)] ml-1 mb-1 font-bold">
-                          {msg.sender.name}
-                        </span>
-                      )}
-                      <div
-                        className={`px-3.5 py-2 rounded-2xl shadow-2xs ${
-                          isMe
-                            ? "bg-[var(--brand-600)] text-white rounded-tr-xs"
-                            : "bg-white border border-slate-200/80 text-[var(--text-primary)] rounded-tl-xs"
-                        }`}
-                      >
-                        {msg.attachmentUrl && (
-                          <div className="mb-2">
-                            {msg.attachmentType?.startsWith("image/") ? (
-                              <a
-                                href={msg.attachmentUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                <img
-                                  src={msg.attachmentUrl}
-                                  alt="attachment"
-                                  className="rounded-xl max-w-full max-h-48 object-cover"
-                                />
-                              </a>
-                            ) : (
-                              <a
-                                href={msg.attachmentUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className={`flex items-center gap-2 p-2 rounded-xl border ${
-                                  isMe
-                                    ? "bg-purple-700/50 border-purple-400 text-white"
-                                    : "bg-slate-50 border-slate-200 text-[var(--text-primary)]"
-                                } text-xs font-semibold no-underline`}
-                              >
-                                <FileText size={14} />
-                                <span className="truncate max-w-[150px]">
-                                  {msg.attachmentName || "Attachment"}
-                                </span>
-                              </a>
-                            )}
-                          </div>
-                        )}
-                        {(!msg.attachmentUrl ||
-                          msg.content !== "Sent an attachment") && (
-                          <p className="text-xs leading-relaxed whitespace-pre-wrap m-0 font-medium">
-                            {msg.content}
-                          </p>
-                        )}
-                      </div>
-                      <span className="text-[9px] text-[var(--text-muted)] mt-1 mx-1 font-semibold tabular-nums">
-                        {new Date(msg.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+            <ChatMessageFeed
+              messages={messages}
+              currentUserId={userId}
+              isLoading={loadingMessages}
+              messagesEndRef={messagesEndRef}
+            />
 
-            <form
-              onSubmit={sendMessage}
-              className="p-2.5 bg-white border-t border-slate-100 shrink-0 flex gap-2 items-center"
-            >
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:text-[var(--brand-700)] hover:bg-purple-50 transition-colors shrink-0 cursor-pointer"
-              >
-                {isUploading ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Paperclip size={16} />
-                )}
-              </button>
-
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder="Type your message..."
-                disabled={isUploading}
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-base sm:text-xs font-semibold text-[var(--text-primary)] outline-none focus:bg-white focus:border-[var(--brand-600)] focus:ring-2 focus:ring-purple-500/15 transition-all disabled:opacity-50"
-              />
-              <button
-                type="submit"
-                disabled={!inputText.trim() || isUploading}
-                className="w-8 h-8 bg-[var(--brand-600)] text-white rounded-xl flex items-center justify-center hover:bg-[var(--brand-700)] disabled:opacity-40 transition-colors shrink-0 shadow-2xs cursor-pointer active:scale-[0.96]"
-              >
-                <Send size={14} />
-              </button>
-            </form>
+            <ChatMessageInput
+              inputText={inputText}
+              onInputTextChange={setInputText}
+              onSendMessage={sendMessage}
+              onFileUpload={handleFileUpload}
+              isUploading={isUploading}
+            />
           </>
         )}
       </div>
