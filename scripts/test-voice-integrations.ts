@@ -22,8 +22,8 @@ async function main() {
   console.log('[1/2] Testing Telephony Carrier Adapters...');
 
   const twilio = new TwilioTelephonyClient({
-    accountSid: 'AC12345678901234567890123456789012',
-    authToken: 'tw_test_token_12345678901234567890',
+    accountSid: '',
+    authToken: '',
   });
   console.log(`  - Twilio Client Initialized (Provider: ${twilio.providerType})`);
 
