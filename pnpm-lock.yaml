@@ -54,6 +54,9 @@ importers:
       '@brokeros/int-sms-twilio':
         specifier: workspace:*
         version: link:../../integrations/sms/twilio
+      '@brokeros/int-voice':
+        specifier: workspace:*
+        version: link:../../integrations/voice
       '@brokeros/prisma':
         specifier: workspace:*
         version: link:../../packages/prisma
@@ -531,6 +534,9 @@ importers:
       '@brokeros/int-sms-twilio':
         specifier: workspace:*
         version: link:../../integrations/sms/twilio
+      '@brokeros/int-voice':
+        specifier: workspace:*
+        version: link:../../integrations/voice
       '@brokeros/prisma':
         specifier: workspace:*
         version: link:../../packages/prisma
@@ -607,6 +613,120 @@ importers:
       '@brokeros/types':
         specifier: workspace:*
         version: link:../../../packages/types
+
+  integrations/voice:
+    dependencies:
+      '@brokeros/int-agent-bolna':
+        specifier: workspace:*
+        version: link:agents/bolna
+      '@brokeros/int-agent-elevenlabs':
+        specifier: workspace:*
+        version: link:agents/elevenlabs
+      '@brokeros/int-agent-livekit':
+        specifier: workspace:*
+        version: link:agents/livekit
+      '@brokeros/int-agent-openai-realtime':
+        specifier: workspace:*
+        version: link:agents/openai-realtime
+      '@brokeros/int-agent-pipecat':
+        specifier: workspace:*
+        version: link:agents/pipecat
+      '@brokeros/int-agent-retell':
+        specifier: workspace:*
+        version: link:agents/retell
+      '@brokeros/int-agent-sarvam':
+        specifier: workspace:*
+        version: link:agents/sarvam
+      '@brokeros/int-agent-vapi':
+        specifier: workspace:*
+        version: link:agents/vapi
+      '@brokeros/int-telephony-exotel':
+        specifier: workspace:*
+        version: link:telephony/exotel
+      '@brokeros/int-telephony-telnyx':
+        specifier: workspace:*
+        version: link:telephony/telnyx
+      '@brokeros/int-telephony-twilio':
+        specifier: workspace:*
+        version: link:telephony/twilio
+      '@brokeros/int-telephony-vobiz':
+        specifier: workspace:*
+        version: link:telephony/vobiz
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+
+  integrations/voice/agents/bolna:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../../packages/types
+
+  integrations/voice/agents/elevenlabs:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../../packages/types
+
+  integrations/voice/agents/livekit:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../../packages/types
+
+  integrations/voice/agents/openai-realtime:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../../packages/types
+
+  integrations/voice/agents/pipecat:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../../packages/types
+
+  integrations/voice/agents/retell:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../../packages/types
+
+  integrations/voice/agents/sarvam:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../../packages/types
+
+  integrations/voice/agents/vapi:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../../packages/types
+
+  integrations/voice/telephony/exotel:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../../packages/types
+
+  integrations/voice/telephony/telnyx:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../../packages/types
+
+  integrations/voice/telephony/twilio:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../../packages/types
+
+  integrations/voice/telephony/vobiz:
+    dependencies:
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../../packages/types
 
   packages/constants:
     devDependencies:
