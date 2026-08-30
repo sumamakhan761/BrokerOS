@@ -23,6 +23,19 @@ import { SmsIntegrationsController } from './sms/controllers/sms-integrations.co
 import { SmsTrackingController } from './sms/controllers/sms-tracking.controller.js';
 import { SmsWebhooksController } from './sms/controllers/sms-webhooks.controller.js';
 
+// Voice Domain
+import { VoiceService } from './voice/voice.service.js';
+import { VoiceAudienceService } from './voice/services/voice-audience.service.js';
+import { VoiceAnalyticsService } from './voice/services/voice-analytics.service.js';
+import { VoiceIntegrationsService } from './voice/services/voice-integrations.service.js';
+import { VoiceAudioService } from './voice/services/voice-audio.service.js';
+import { VoiceTrackingService } from './voice/services/voice-tracking.service.js';
+import { VoiceCampaignsController } from './voice/controllers/voice-campaigns.controller.js';
+import { VoiceIntegrationsController } from './voice/controllers/voice-integrations.controller.js';
+import { VoiceAudioController } from './voice/controllers/voice-audio.controller.js';
+import { VoiceTestController } from './voice/controllers/voice-test.controller.js';
+import { VoiceWebhooksController } from './voice/controllers/voice-webhooks.controller.js';
+
 // Shared
 import { SampleCsvController } from './shared/sample-csv.controller.js';
 
@@ -41,6 +54,13 @@ import { SampleCsvController } from './shared/sample-csv.controller.js';
     SmsTrackingController,
     SmsWebhooksController,
 
+    // Voice Controllers
+    VoiceCampaignsController,
+    VoiceIntegrationsController,
+    VoiceAudioController,
+    VoiceTestController,
+    VoiceWebhooksController,
+
     // Shared Controllers
     SampleCsvController,
   ],
@@ -58,6 +78,14 @@ import { SampleCsvController } from './shared/sample-csv.controller.js';
     SmsIntegrationsService,
     SmsTrackingService,
     SmsService,
+
+    // Voice Services
+    VoiceAudienceService,
+    VoiceAnalyticsService,
+    VoiceIntegrationsService,
+    VoiceAudioService,
+    VoiceTrackingService,
+    VoiceService,
   ],
   exports: [
     EmailService,
@@ -71,6 +99,14 @@ import { SampleCsvController } from './shared/sample-csv.controller.js';
     SmsAnalyticsService,
     SmsIntegrationsService,
     SmsTrackingService,
+
+    VoiceService,
+    VoiceAudienceService,
+    VoiceAnalyticsService,
+    VoiceIntegrationsService,
+    VoiceAudioService,
+    VoiceTrackingService,
   ],
 })
 export class MarketingModule {}
+
