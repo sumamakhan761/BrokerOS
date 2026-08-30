@@ -10,9 +10,9 @@ async function main() {
   console.log('[1/3] Testing VoiceAudienceService estimation & deduplication...');
   const audienceService = new VoiceAudienceService();
   const estimation = await audienceService.estimateAudience(undefined, [
-    { phone: '9876543210', name: 'Rahul Sharma' },
-    { phone: '+919876543210', name: 'Rahul Sharma Duplicate' },
-    { phone: '9123456789', name: 'Pooja Verma' },
+    { phone: '+xxxxxxxxxx', name: 'jon doe' },
+    { phone: '+xxxxxxxxxx', name: 'jon doe' },
+    { phone: '+xxxxxxxxxx', name: 'jon doe' },
   ]);
 
   console.log(`  - Total Inputs: ${estimation.totalCount}`);
