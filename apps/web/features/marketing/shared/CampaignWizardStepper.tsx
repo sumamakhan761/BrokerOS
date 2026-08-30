@@ -47,35 +47,32 @@ export function CampaignWizardStepper({
             key={s.num}
             type="button"
             onClick={() => onStepClick(s.num)}
-            className={`relative flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-150 active:scale-[0.99] ${
-              isCurrent
-                ? activeClasses
-                : isCompleted
+            className={`relative flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-150 active:scale-[0.99] ${isCurrent
+              ? activeClasses
+              : isCompleted
                 ? "bg-emerald-50/50 border-emerald-300/80 hover:bg-emerald-50"
                 : "bg-slate-50/50 border-slate-200/80 hover:bg-slate-100/60"
-            }`}
+              }`}
           >
             <div
-              className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0 transition-colors ${
-                isCurrent
-                  ? activeBadgeClasses
-                  : isCompleted
+              className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0 transition-colors ${isCurrent
+                ? activeBadgeClasses
+                : isCompleted
                   ? "bg-emerald-600 text-white"
                   : "bg-slate-200 text-slate-600"
-              }`}
+                }`}
             >
               {isCompleted ? <Check className="w-4 h-4" strokeWidth={2.5} /> : s.num}
             </div>
 
             <div className="min-w-0 flex-1">
               <div
-                className={`text-xs font-extrabold truncate ${
-                  isCurrent
-                    ? activeTextClasses
-                    : isCompleted
+                className={`text-xs font-extrabold truncate ${isCurrent
+                  ? activeTextClasses
+                  : isCompleted
                     ? "text-emerald-900"
                     : "text-[var(--text-primary)]"
-                }`}
+                  }`}
               >
                 {s.label}
               </div>

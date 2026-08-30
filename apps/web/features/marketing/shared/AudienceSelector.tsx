@@ -37,7 +37,7 @@ export interface AudienceSelectorProps {
   onSaveCsvAsCrmLeadsChange: (val: boolean) => void;
   projects?: Array<{ id: string; name: string }>;
   apiBaseUrl?: string;
-  channel?: "EMAIL" | "SMS";
+  channel?: "EMAIL" | "SMS" | "VOICE";
 }
 
 export function AudienceSelector({
@@ -96,9 +96,12 @@ export function AudienceSelector({
       csvRecipients: audienceSource === "CSV_UPLOAD" ? csvRecipients : undefined,
     };
 
-    const previewEndpoint = channel === "SMS"
-      ? `${apiBaseUrl}/api/marketing/sms/audience-preview`
-      : `${apiBaseUrl}/api/marketing/audience-preview`;
+    const previewEndpoint =
+      channel === "VOICE"
+        ? `${apiBaseUrl}/api/marketing/voice/campaigns/estimate-audience`
+        : channel === "SMS"
+        ? `${apiBaseUrl}/api/marketing/sms/audience-preview`
+        : `${apiBaseUrl}/api/marketing/audience-preview`;
 
     fetch(previewEndpoint, {
       method: "POST",
@@ -183,9 +186,10 @@ export function AudienceSelector({
         const email = emailIdx !== -1 ? cols[emailIdx] : "";
         const phone = phoneIdx !== -1 ? cols[phoneIdx] : "";
 
-        // For Email channel, require email. For SMS channel, require phone or email.
+        // For Email channel, require email. For SMS channel, require phone or email. For Voice channel, require phone.
         if (channel === "EMAIL" && (!email || !email.includes("@"))) continue;
         if (channel === "SMS" && !phone && (!email || !email.includes("@"))) continue;
+        if (channel === "VOICE" && !phone) continue;
 
         rows.push({
           email: email || `user-${i}@csv-import.local`,
