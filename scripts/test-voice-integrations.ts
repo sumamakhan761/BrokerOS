@@ -28,8 +28,8 @@ async function main() {
   console.log(`  - Twilio Client Initialized (Provider: ${twilio.providerType})`);
 
   const vobiz = new VobizTelephonyClient({
-    apiKey: 'vob_auth_12345678',
-    apiToken: 'vob_tok_1234567890123456',
+    apiKey: '',
+    apiToken: '',
   });
   console.log(`  - Vobiz AI Client Initialized (Provider: ${vobiz.providerType})`);
 
