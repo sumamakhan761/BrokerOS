@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Mail,
   MessageSquare,
+  Phone,
   Radio,
   Globe,
   ArrowRight,
@@ -12,40 +13,42 @@ import {
   Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import type { CampaignItem, SmsCampaignItem } from "../types";
+import type { CampaignItem, SmsCampaignItem, VoiceCampaignItem } from "../types";
 
 export interface MarketingChannelGridProps {
   emailCampaigns: CampaignItem[];
   smsCampaigns: SmsCampaignItem[];
+  voiceCampaigns?: VoiceCampaignItem[];
 }
 
 export function MarketingChannelGrid({
-  emailCampaigns,
-  smsCampaigns,
+  emailCampaigns = [],
+  smsCampaigns = [],
+  voiceCampaigns = [],
 }: MarketingChannelGridProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-            Marketing Channels
+            Marketing Outreach Channels
           </h2>
           <p className="text-xs font-medium text-[var(--text-tertiary)]">
-            Manage your outreach strategies and configure connected provider engines.
+            Manage your multichannel outreach engines and configure carrier gateways.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Email Marketing Channel Card */}
         <Link
           href="/dashboard/marketing/email"
-          className="group relative bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:border-purple-300 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between"
+          className="group relative bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs hover:border-purple-300 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between"
         >
           <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-purple-500 to-indigo-500" />
           <div>
             <div className="flex items-center justify-between mb-3.5">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+              <div className="w-10 h-10 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600">
                 <Mail className="w-5 h-5" strokeWidth={2.2} />
               </div>
               <div className="flex items-center gap-1.5">
@@ -73,12 +76,12 @@ export function MarketingChannelGrid({
         {/* SMS Channel Card */}
         <Link
           href="/dashboard/marketing/sms"
-          className="group relative bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:border-amber-400 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between"
+          className="group relative bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs hover:border-amber-400 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between"
         >
           <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
           <div>
             <div className="flex items-center justify-between mb-3.5">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
                 <MessageSquare className="w-5 h-5" strokeWidth={2.2} />
               </div>
               <div className="flex items-center gap-1.5">
@@ -94,7 +97,7 @@ export function MarketingChannelGrid({
               SMS Broadcasts
             </h3>
             <p className="text-xs text-[var(--text-tertiary)] mt-1 line-clamp-2">
-              Fast promotional & transactional SMS routing via Twilio, AWS SNS, Sinch & Gupshup with DLT headers.
+              Promotional & transactional SMS routing via Twilio, AWS SNS, Sinch & Gupshup with DLT headers.
             </p>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-amber-600">
@@ -103,53 +106,38 @@ export function MarketingChannelGrid({
           </div>
         </Link>
 
-        {/* WhatsApp Channel Card */}
-        <div className="relative bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs opacity-90 overflow-hidden flex flex-col justify-between">
+        {/* AI Voice Agent & Telephony Broadcasts Card */}
+        <Link
+          href="/dashboard/marketing/voice"
+          className="group relative bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs hover:border-indigo-400 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between"
+        >
+          <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
           <div>
             <div className="flex items-center justify-between mb-3.5">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                <Radio className="w-5 h-5" strokeWidth={2.2} />
+              <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <Phone className="w-5 h-5" strokeWidth={2.2} />
               </div>
-              <Badge variant="default" className="text-[10px] font-bold">
-                Configured
-              </Badge>
+              <div className="flex items-center gap-1.5">
+                <Badge variant="success" className="text-[10px] font-bold">
+                  AI Active
+                </Badge>
+                <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
+                  {voiceCampaigns.length} Active
+                </span>
+              </div>
             </div>
-            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
-              WhatsApp Broadcasts
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)] group-hover:text-indigo-600 transition-colors">
+              AI Voice Agent Calling
             </h3>
             <p className="text-xs text-[var(--text-tertiary)] mt-1 line-clamp-2">
-              Meta Cloud API & Interakt templates for instant site visit invites and brochure PDFs.
+              Human-grade conversational AI calls with Vapi, Retell, Sarvam & ElevenLabs across Twilio, Vobiz & Exotel lines.
             </p>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-400">
-            <span>Meta Business Verified</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600">
+            <span>Open Voice Engine</span>
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </div>
-        </div>
-
-        {/* Portals & Ads Channel Card */}
-        <div className="relative bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs opacity-90 overflow-hidden flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3.5">
-              <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center text-sky-600">
-                <Globe className="w-5 h-5" strokeWidth={2.2} />
-              </div>
-              <Badge variant="default" className="text-[10px] font-bold">
-                Connected
-              </Badge>
-            </div>
-            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
-              Portals & Meta Ads
-            </h3>
-            <p className="text-xs text-[var(--text-tertiary)] mt-1 line-clamp-2">
-              Automatic lead ingestion from 99acres, MagicBricks, and Facebook Lead Ads.
-            </p>
-          </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-400">
-            <span>Real-time Ingestion</span>
-            <Users className="w-4 h-4 text-sky-500" />
-          </div>
-        </div>
+        </Link>
       </div>
     </div>
   );
