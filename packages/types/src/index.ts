@@ -248,3 +248,183 @@ export interface SmsCampaignAnalyticsSummary {
   topClickedLinks: Array<{ url: string; clicks: number }>;
 }
 
+// ============================================================================
+// Voice & AI Agent Marketing Types & Interfaces
+// ============================================================================
+
+export type VoiceTelephonyType = 'TWILIO' | 'VOBIZ' | 'EXOTEL' | 'TELNYX' | 'AMAZON_CONNECT';
+
+export type VoiceAgentPlatform =
+  | 'VAPI'
+  | 'RETELL'
+  | 'ELEVENLABS'
+  | 'SARVAM'
+  | 'BOLNA'
+  | 'PIPECAT'
+  | 'LIVEKIT'
+  | 'OPENAI_REALTIME';
+
+export type VoiceCallDisposition =
+  | 'COMPLETED'
+  | 'BUSY'
+  | 'NO_ANSWER'
+  | 'VOICEMAIL'
+  | 'FAILED'
+  | 'IN_PROGRESS'
+  | 'RINGING';
+
+export interface VoiceRecipient {
+  phone: string;
+  name?: string;
+  leadId?: string;
+  source?: AudienceSourceType;
+  mergeData?: Record<string, string | number | boolean | undefined>;
+}
+
+export interface VoiceTelephonyCredentials {
+  accountSid?: string;
+  authToken?: string;
+  apiKey?: string;
+  apiToken?: string;
+  subdomain?: string;
+  sipDomain?: string;
+  fromNumbers?: string[];
+}
+
+export interface VoiceAgentCredentials {
+  apiKey?: string;
+  orgId?: string;
+  serverUrl?: string;
+}
+
+export interface SendVoiceOptions {
+  toPhone: string;
+  fromNumber: string;
+  campaignId: string;
+  recipientId?: string;
+  llmModel: string;
+  voiceProvider: string;
+  voiceId: string;
+  voiceName?: string;
+  scriptPrompt: string;
+  firstMessage?: string;
+  telephonyCredentials?: VoiceTelephonyCredentials;
+  agentCredentials?: VoiceAgentCredentials;
+  variables?: Record<string, string | number | boolean | undefined>;
+  transcriberModel?: string;
+  transcriberLanguage?: string;
+  maxTurnSilenceMs?: number;
+  voiceSpeed?: number;
+  firstMessageMode?: string;
+  voicemailDetection?: string;
+  backgroundSound?: string;
+  maxDurationSeconds?: number;
+}
+
+export interface SendVoiceResult {
+  success: boolean;
+  providerCallId?: string;
+  error?: string;
+}
+
+export interface VoiceWebhookEvent {
+  providerCallId: string;
+  campaignId?: string;
+  recipientPhone: string;
+  disposition: VoiceCallDisposition;
+  durationSec?: number;
+  recordingUrl?: string;
+  transcript?: string;
+  summary?: string;
+  sentiment?: 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE';
+  extractedData?: Record<string, any>;
+  timestamp: Date;
+}
+
+export interface IVoiceTelephonyProvider {
+  readonly providerType: VoiceTelephonyType;
+  validateCredentials(credentials: VoiceTelephonyCredentials): Promise<boolean>;
+  testCarrierCall(
+    toPhone: string,
+    fromNumber: string,
+    credentials?: VoiceTelephonyCredentials,
+  ): Promise<{ success: boolean; callId?: string; error?: string }>;
+}
+
+export interface VoiceModelItem {
+  id: string;
+  name: string;
+  provider: string;
+  badge?: string;
+  description?: string;
+}
+
+export interface VoicePersonaItem {
+  id: string;
+  name: string;
+  provider: string;
+  accent: string;
+  gender: string;
+  tags?: string[];
+  previewUrl?: string;
+  previewText?: string;
+}
+
+export interface IVoiceAgentProvider {
+  readonly platformType: VoiceAgentPlatform;
+  validateCredentials(credentials: VoiceAgentCredentials): Promise<boolean>;
+  previewAudio(
+    text: string,
+    voiceId: string,
+    credentials?: VoiceAgentCredentials,
+  ): Promise<{ audioBuffer: Buffer; contentType: string }>;
+  dispatchOutboundCall(
+    options: SendVoiceOptions,
+    credentials?: VoiceAgentCredentials,
+  ): Promise<SendVoiceResult>;
+  parseWebhookEvent(headers: Record<string, any>, payload: any): VoiceWebhookEvent[];
+  getAvailableModels(credentials?: VoiceAgentCredentials): Promise<VoiceModelItem[]>;
+  getAvailableVoices(credentials?: VoiceAgentCredentials): Promise<VoicePersonaItem[]>;
+}
+
+export interface VoiceAudienceEstimationResult {
+  totalCount: number;
+  validPhoneCount: number;
+  duplicateCount: number;
+  dndCount: number;
+  finalAudienceCount: number;
+}
+
+export interface VoiceCampaignAnalyticsSummary {
+  campaignId: string;
+  title: string;
+  status: CampaignStatus;
+  telephonyType: VoiceTelephonyType;
+  agentPlatform: VoiceAgentPlatform;
+  callerIdNumber?: string;
+  totalRecipients: number;
+  completedCalls: number;
+  busyCalls: number;
+  noAnswerCalls: number;
+  failedCalls: number;
+  completionRate: number;
+  averageDurationSec: number;
+  totalDurationSec: number;
+  sentimentBreakdown: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  recentCallLogs: Array<{
+    recipientId: string;
+    phone: string;
+    name?: string;
+    durationSec: number;
+    disposition: string;
+    sentiment?: string;
+    summary?: string;
+    recordingUrl?: string;
+  }>;
+}
+
+
