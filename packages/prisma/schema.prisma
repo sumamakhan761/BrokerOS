@@ -624,6 +624,7 @@ model User {
   assignedPostSalesBookings  Booking[]           @relation("BookingPostSales")
   createdCampaigns           MarketingCampaign[] @relation("CampaignCreatedBy")
   createdSmsCampaigns        SmsCampaign[]       @relation("SmsCampaignCreatedBy")
+  createdVoiceCampaigns      VoiceCampaign[]     @relation("VoiceCampaignCreatedBy")
 
   @@index([departmentId])
   @@index([roleId])
@@ -962,6 +963,7 @@ model Lead {
   customer              Customer?
   campaignRecipients    CampaignRecipient[]
   smsRecipients         SmsRecipient[]
+  voiceRecipients       VoiceRecipient[]
 
   @@index([status])
   @@index([temperature])
@@ -1378,6 +1380,7 @@ model Project {
   inboundCommissions   InboundCommission[]
   campaigns            MarketingCampaign[]
   smsCampaigns         SmsCampaign[]
+  voiceCampaigns       VoiceCampaign[]
 
   @@index([builderId])
   @@index([status])
@@ -2878,3 +2881,198 @@ model SmsTrackingEvent {
   @@index([recipientId])
   @@map("sms_tracking_event")
 }
+
+// ─────────────────────────────────────────────
+// 16. DOMAIN 12 EXTENSION: VOICE & AI AGENTS
+// ─────────────────────────────────────────────
+
+enum VoiceTelephonyType {
+  TWILIO
+  VOBIZ
+  EXOTEL
+  TELNYX
+  AMAZON_CONNECT
+}
+
+enum VoiceAgentPlatform {
+  VAPI
+  RETELL
+  ELEVENLABS
+  SARVAM
+  BOLNA
+  PIPECAT
+  LIVEKIT
+  OPENAI_REALTIME
+}
+
+model VoiceTelephonyIntegration {
+  id          String             @id @default(uuid())
+  provider    VoiceTelephonyType
+  name        String
+  isActive    Boolean            @default(true)
+  isDefault   Boolean            @default(false)
+
+  // Encrypted Credentials & SIP Details
+  accountSid  String?
+  authToken   String?
+  apiKey      String?
+  apiToken    String?
+  subdomain   String?            // e.g. api.in.exotel.com for Exotel
+  sipDomain   String?            // e.g. brokeros.pstn.twilio.com
+  fromNumbers String[]           // Array of available caller ID numbers / DIDs
+
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  campaigns   VoiceCampaign[]
+
+  @@index([provider])
+  @@index([isActive])
+  @@map("voice_telephony_integration")
+}
+
+model VoiceAgentIntegration {
+  id          String             @id @default(uuid())
+  platform    VoiceAgentPlatform
+  name        String
+  isActive    Boolean            @default(true)
+  isDefault   Boolean            @default(false)
+
+  // Encrypted Credentials & Endpoints
+  apiKey      String
+  orgId       String?
+  serverUrl   String?            // For custom LiveKit / Pipecat / Bolna servers
+
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  campaigns   VoiceCampaign[]
+
+  @@index([platform])
+  @@index([isActive])
+  @@map("voice_agent_integration")
+}
+
+model VoiceCampaign {
+  id                 String                    @id @default(uuid())
+  title              String
+  channel            MarketingChannel          @default(VOICE_CALL)
+  status             CampaignStatus            @default(DRAFT)
+  audienceSource     AudienceSourceType        @default(CRM_DATABASE)
+
+  // Scope: Brokerage vs Channel Partner
+  isCpCampaign       Boolean                   @default(false)
+  projectId          String?
+  project            Project?                  @relation(fields: [projectId], references: [id])
+
+  telephonyId        String?
+  telephony          VoiceTelephonyIntegration? @relation(fields: [telephonyId], references: [id])
+  callerIdNumber     String?
+
+  agentPlatformId    String?
+  agentIntegration   VoiceAgentIntegration?    @relation(fields: [agentPlatformId], references: [id])
+
+  // AI & Voice Persona Configuration
+  llmModel           String                    @default("gpt-4o-mini")
+  voiceProvider      String                    @default("11labs")
+  voiceId            String                    @default("21m00Tcm4TlvDq8ikWAM")
+  voiceName          String                    @default("Rachel")
+  scriptPrompt       String                    @db.Text
+  firstMessage       String?                   @db.Text
+
+  // Execution & Calling Window Rules
+  maxConcurrentCalls Int                       @default(5)
+  retryLimit         Int                       @default(1)
+  callingWindowStart String?                   // "10:00"
+  callingWindowEnd   String?                   // "19:00"
+
+  audienceFilters    Json?
+
+  // Aggregate Performance Metrics
+  totalRecipients    Int                       @default(0)
+  completedCalls     Int                       @default(0)
+  busyCalls          Int                       @default(0)
+  noAnswerCalls      Int                       @default(0)
+  failedCalls        Int                       @default(0)
+  totalDurationSec   Int                       @default(0)
+
+  scheduledAt        DateTime?
+  startedAt          DateTime?
+  completedAt        DateTime?
+
+  createdById        String?
+  createdBy          User?                     @relation("VoiceCampaignCreatedBy", fields: [createdById], references: [id])
+
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  recipients         VoiceRecipient[]
+  callLogs           VoiceCallLog[]
+
+  @@index([status])
+  @@index([channel])
+  @@index([projectId])
+  @@index([telephonyId])
+  @@index([agentPlatformId])
+  @@index([createdAt])
+  @@map("voice_campaign")
+}
+
+model VoiceRecipient {
+  id              String                  @id @default(uuid())
+  campaignId      String
+  campaign        VoiceCampaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  leadId          String?
+  lead            Lead?                   @relation(fields: [leadId], references: [id])
+
+  phone           String
+  name            String?
+  status          RecipientDeliveryStatus @default(QUEUED)
+  source          AudienceSourceType      @default(CRM_DATABASE)
+  providerCallId  String?
+
+  callDurationSec Int                     @default(0)
+  disposition     String?                 // "COMPLETED", "BUSY", "NO_ANSWER", "VOICEMAIL", "FAILED"
+  recordingUrl    String?
+  transcript      String?                 @db.Text
+  summary         String?                 @db.Text
+  sentiment       String?                 // "POSITIVE", "NEUTRAL", "NEGATIVE"
+  extractedData   Json?
+
+  sentAt          DateTime?
+  completedAt     DateTime?
+  failedAt        DateTime?
+  failReason      String?
+  mergeData       Json?
+
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@index([campaignId, status])
+  @@index([phone])
+  @@index([leadId])
+  @@map("voice_recipient")
+}
+
+model VoiceCallLog {
+  id            String        @id @default(uuid())
+  campaignId    String
+  campaign      VoiceCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  recipientId   String
+
+  disposition   String
+  durationSec   Int           @default(0)
+  recordingUrl  String?
+  transcript    String?       @db.Text
+  summary       String?       @db.Text
+  sentiment     String?
+  extractedData Json?
+
+  timestamp     DateTime      @default(now())
+
+  @@index([campaignId])
+  @@index([recipientId])
+  @@map("voice_call_log")
+}
+
