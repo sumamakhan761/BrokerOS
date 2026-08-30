@@ -43,7 +43,7 @@ async function main() {
         name: 'Twilio Production Voice',
         accountSid: 'AC' + 'a'.repeat(32),
         authToken: 'tw_auth_' + 'x'.repeat(24),
-        fromNumbers: ['+14155550199', '+919876543210'],
+        fromNumbers: ['+xxxxxxxxx', '+xxxxxxxxx'],
         isDefault: true,
       },
     });
@@ -54,7 +54,7 @@ async function main() {
         name: 'Vobiz AI High-Throughput Line',
         apiKey: 'vob_auth_id_' + 'k'.repeat(16),
         apiToken: 'vob_token_' + 't'.repeat(24),
-        fromNumbers: ['+918000012345'],
+        fromNumbers: ['+xxxxxxxxx'],
       },
     });
 
