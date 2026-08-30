@@ -147,4 +147,148 @@ export interface SmsAudienceEstimation {
   finalAudienceCount: number;
 }
 
+// ── Voice & AI Voice Agent Types & ViewModels ──
+
+export type VoiceTelephonyType = 'TWILIO' | 'VOBIZ' | 'EXOTEL' | 'TELNYX' | 'AMAZON_CONNECT';
+export type VoiceAgentPlatform =
+  | 'VAPI'
+  | 'RETELL'
+  | 'ELEVENLABS'
+  | 'SARVAM'
+  | 'BOLNA'
+  | 'PIPECAT'
+  | 'LIVEKIT'
+  | 'OPENAI_REALTIME';
+
+export type VoiceCallDisposition =
+  | 'PENDING'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'BUSY'
+  | 'NO_ANSWER'
+  | 'FAILED'
+  | 'VOICEMAIL'
+  | 'TRANSFERRED';
+
+export interface VoiceTelephonyIntegrationRecord {
+  id: string;
+  provider: VoiceTelephonyType;
+  name: string;
+  accountSid?: string;
+  fromNumbers: string[];
+  subdomain?: string;
+  sipDomain?: string;
+  isActive: boolean;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface VoiceAgentIntegrationRecord {
+  id: string;
+  platform: VoiceAgentPlatform;
+  name: string;
+  orgId?: string;
+  serverUrl?: string;
+  isActive: boolean;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface VoiceCampaignItem {
+  id: string;
+  title: string;
+  channel: string;
+  status: CampaignStatus;
+  isCpCampaign: boolean;
+  telephonyId?: string;
+  callerIdNumber?: string;
+  agentPlatformId?: string;
+  llmModel: string;
+  voiceProvider: string;
+  voiceId: string;
+  voiceName: string;
+  scriptPrompt: string;
+  firstMessage?: string;
+  maxConcurrentCalls: number;
+  retryLimit: number;
+  callingWindowStart?: string;
+  callingWindowEnd?: string;
+  totalRecipients: number;
+  completedCalls: number;
+  busyCalls: number;
+  noAnswerCalls: number;
+  failedCalls: number;
+  totalDurationSec: number;
+  scheduledAt?: string;
+  startedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+  project?: { id: string; name: string; city?: string };
+  telephony?: { id: string; name: string; provider: VoiceTelephonyType };
+  agentIntegration?: { id: string; name: string; platform: VoiceAgentPlatform };
+  createdBy?: { id: string; name: string; email?: string; phoneNumber?: string };
+  _count?: { recipients: number };
+}
+
+export interface VoiceRecipientItem {
+  id: string;
+  phone: string;
+  name?: string;
+  status: 'QUEUED' | 'SENT' | 'DELIVERED' | 'FAILED';
+  disposition?: VoiceCallDisposition;
+  callDurationSec: number;
+  sentiment?: 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE';
+  recordingUrl?: string;
+  transcript?: string;
+  summary?: string;
+  failReason?: string;
+  leadId?: string;
+  lead?: {
+    id: string;
+    firstName: string;
+    lastName?: string;
+    phone: string;
+    temperature?: string;
+    status: string;
+  };
+  mergeData?: Record<string, any>;
+  createdAt: string;
+}
+
+export interface VoiceCallLogItem {
+  id: string;
+  recipientId: string;
+  phone: string;
+  name?: string;
+  durationSec: number;
+  disposition: VoiceCallDisposition;
+  sentiment?: 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE';
+  summary?: string;
+  recordingUrl?: string;
+}
+
+export interface VoiceAnalyticsSummary {
+  campaignId: string;
+  title: string;
+  status: CampaignStatus;
+  telephonyType: VoiceTelephonyType;
+  agentPlatform: VoiceAgentPlatform;
+  callerIdNumber?: string;
+  totalRecipients: number;
+  completedCalls: number;
+  busyCalls: number;
+  noAnswerCalls: number;
+  failedCalls: number;
+  completionRate: number;
+  averageDurationSec: number;
+  totalDurationSec: number;
+  sentimentBreakdown: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  recentCallLogs: VoiceCallLogItem[];
+}
+
+
 
