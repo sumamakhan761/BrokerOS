@@ -1,0 +1,29 @@
+{
+  "name": "@brokeros/int-voice",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    }
+  },
+  "dependencies": {
+    "@brokeros/types": "workspace:*",
+    "@brokeros/int-telephony-twilio": "workspace:*",
+    "@brokeros/int-telephony-vobiz": "workspace:*",
+    "@brokeros/int-telephony-exotel": "workspace:*",
+    "@brokeros/int-telephony-telnyx": "workspace:*",
+    "@brokeros/int-agent-vapi": "workspace:*",
+    "@brokeros/int-agent-retell": "workspace:*",
+    "@brokeros/int-agent-elevenlabs": "workspace:*",
+    "@brokeros/int-agent-sarvam": "workspace:*",
+    "@brokeros/int-agent-bolna": "workspace:*",
+    "@brokeros/int-agent-pipecat": "workspace:*",
+    "@brokeros/int-agent-livekit": "workspace:*",
+    "@brokeros/int-agent-openai-realtime": "workspace:*"
+  }
+}
