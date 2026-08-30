@@ -23,6 +23,8 @@ import {
   Radio,
   Mail,
   MessageSquare,
+  Phone,
+  PhoneCall,
   ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
@@ -295,6 +297,7 @@ export default function DashboardLayout({
   } else if (userRole === "MARKETING") {
     const isEmailSub = pathname.startsWith("/dashboard/marketing/email");
     const isSmsSub = pathname.startsWith("/dashboard/marketing/sms");
+    const isVoiceSub = pathname.startsWith("/dashboard/marketing/voice");
     if (isEmailSub) {
       navLinks = [
         { name: "Email Overview", href: "/dashboard/marketing/email", icon: LayoutDashboard, roles: ["MARKETING"] },
@@ -307,11 +310,18 @@ export default function DashboardLayout({
         { name: "New SMS Campaign", href: "/dashboard/marketing/sms/campaigns/new", icon: Star, roles: ["MARKETING"] },
         { name: "SMS Gateways & DLT", href: "/dashboard/marketing/sms/settings", icon: Settings, roles: ["MARKETING"] },
       ];
+    } else if (isVoiceSub) {
+      navLinks = [
+        { name: "Voice Overview", href: "/dashboard/marketing/voice", icon: LayoutDashboard, roles: ["MARKETING"] },
+        { name: "New Voice Call", href: "/dashboard/marketing/voice/campaigns/new", icon: PhoneCall, roles: ["MARKETING"] },
+        { name: "Carrier & AI Gateways", href: "/dashboard/marketing/voice/settings", icon: Settings, roles: ["MARKETING"] },
+      ];
     } else {
       navLinks = [
         { name: "Overview", href: "/dashboard/marketing", icon: LayoutDashboard, roles: ["MARKETING"] },
-        { name: "Email Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["MARKETING"] },
+        { name: "AI Voice Calling", href: "/dashboard/marketing/voice", icon: Phone, roles: ["MARKETING"] },
         { name: "SMS Campaigns", href: "/dashboard/marketing/sms", icon: MessageSquare, roles: ["MARKETING"] },
+        { name: "Email Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["MARKETING"] },
         { name: "WhatsApp Campaigns", href: "/dashboard/marketing/whatsapp", icon: Radio, roles: ["MARKETING"] },
         { name: "Analytics", href: "/dashboard/marketing/analytics", icon: BarChart2, roles: ["MARKETING"] },
         { name: "Settings & BYO", href: "/dashboard/marketing/settings", icon: Settings, roles: ["MARKETING"] },
@@ -361,7 +371,7 @@ export default function DashboardLayout({
 
         {/* Nav Links List */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-hide">
-          {(pathname.startsWith("/dashboard/marketing/email") || pathname.startsWith("/dashboard/marketing/sms")) && (
+          {(pathname.startsWith("/dashboard/marketing/email") || pathname.startsWith("/dashboard/marketing/sms") || pathname.startsWith("/dashboard/marketing/voice")) && (
             <Link
               href="/dashboard/marketing"
               className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-xl mb-3 transition-colors group"
@@ -375,12 +385,13 @@ export default function DashboardLayout({
             const Icon = link.icon;
             const isActive =
               link.href === "/dashboard/marketing" ||
-              link.href === "/dashboard/marketing/email" ||
-              link.href === "/dashboard/marketing/sms"
+                link.href === "/dashboard/marketing/email" ||
+                link.href === "/dashboard/marketing/sms" ||
+                link.href === "/dashboard/marketing/voice"
                 ? pathname === link.href
                 : link.name.toLowerCase().includes("overview")
-                ? pathname === link.href
-                : pathname === link.href || pathname.startsWith(link.href + "/");
+                  ? pathname === link.href
+                  : pathname === link.href || pathname.startsWith(link.href + "/");
 
             return (
               <Link
