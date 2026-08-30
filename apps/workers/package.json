@@ -21,6 +21,7 @@
     "@brokeros/int-sms-gupshup": "workspace:*",
     "@brokeros/int-sms-sinch": "workspace:*",
     "@brokeros/int-sms-twilio": "workspace:*",
+    "@brokeros/int-voice": "workspace:*",
     "@brokeros/prisma": "workspace:*",
     "@brokeros/types": "workspace:*",
     "@nestjs/common": "^11.1.28",
