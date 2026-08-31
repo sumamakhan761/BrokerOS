@@ -45,6 +45,14 @@ export interface VoiceStep5ReviewLaunchProps {
     voicemailDetection?: "off" | "machine_detection";
     backgroundSound?: "off" | "office";
     maxDurationSeconds?: number;
+    // Retell Specific Parameters
+    retellVoiceModel?: string;
+    retellEmotion?: string;
+    enableExpressiveMode?: boolean;
+    retellAmbientSound?: string;
+    retellLanguage?: string;
+    retellBackchannel?: boolean;
+    retellReminderMs?: number;
   };
   totalRecipients: number;
   projects?: Array<{ id: string; name: string }>;
@@ -71,12 +79,15 @@ export function VoiceStep5ReviewLaunch({
   const [testingAiCall, setTestingAiCall] = useState(false);
   const [testAiResult, setTestAiResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  const selectedProject = projects.find((p) => p.id === formData.projectId);
   const selectedTelephony = telephonyIntegrations.find((t) => t.id === formData.telephonyId);
   const selectedAgent = agentIntegrations.find((a) => a.id === formData.agentPlatformId);
+  const selectedProject = projects.find((p) => p.id === formData.projectId);
 
   const handleTestAiCall = async () => {
-    if (!formData.telephonyId || !formData.agentPlatformId || !testPhone.trim()) return;
+    if (!testPhone.trim()) {
+      setTestAiResult({ success: false, message: "Please enter a valid phone number with country code (e.g. +919876543210)." });
+      return;
+    }
 
     try {
       setTestingAiCall(true);
@@ -95,6 +106,21 @@ export function VoiceStep5ReviewLaunch({
           scriptPrompt: formData.scriptPrompt,
           firstMessage: formData.firstMessage,
           fromNumber: formData.callerIdNumber,
+          transcriberModel: formData.transcriberModel,
+          transcriberLanguage: formData.transcriberLanguage,
+          maxTurnSilenceMs: formData.maxTurnSilenceMs,
+          voiceSpeed: formData.voiceSpeed,
+          firstMessageMode: formData.firstMessageMode,
+          voicemailDetection: formData.voicemailDetection,
+          backgroundSound: formData.backgroundSound,
+          maxDurationSeconds: formData.maxDurationSeconds,
+          retellVoiceModel: formData.retellVoiceModel,
+          retellEmotion: formData.retellEmotion,
+          enableExpressiveMode: formData.enableExpressiveMode,
+          retellAmbientSound: formData.retellAmbientSound,
+          retellLanguage: formData.retellLanguage,
+          retellBackchannel: formData.retellBackchannel,
+          retellReminderMs: formData.retellReminderMs,
         }),
       });
 

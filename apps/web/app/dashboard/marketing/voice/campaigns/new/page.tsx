@@ -93,6 +93,15 @@ export default function NewVoiceCampaignPage() {
   const [backgroundSound, setBackgroundSound] = useState<"off" | "office">("off");
   const [maxDurationSeconds, setMaxDurationSeconds] = useState(600);
 
+  // Retell Advanced Studio State (Persisted)
+  const [retellVoiceModel, setRetellVoiceModel] = useState("eleven_flash_v2_5");
+  const [retellEmotion, setRetellEmotion] = useState("calm");
+  const [enableExpressiveMode, setEnableExpressiveMode] = useState(false);
+  const [retellAmbientSound, setRetellAmbientSound] = useState("call-center");
+  const [retellLanguage, setRetellLanguage] = useState("hi-IN");
+  const [retellBackchannel, setRetellBackchannel] = useState(true);
+  const [retellReminderMs, setRetellReminderMs] = useState(10000);
+
   // Metadata Lists
   const [projects, setProjects] = useState<Array<{ id: string; name: string; city?: string }>>([]);
   const [telephonyIntegrations, setTelephonyIntegrations] = useState<VoiceTelephonyIntegrationRecord[]>([]);
@@ -186,6 +195,14 @@ export default function NewVoiceCampaignPage() {
         if (draft.voicemailDetection) setVoicemailDetection(draft.voicemailDetection);
         if (draft.backgroundSound) setBackgroundSound(draft.backgroundSound);
         if (draft.maxDurationSeconds !== undefined) setMaxDurationSeconds(draft.maxDurationSeconds);
+        // Retell parameters restore
+        if (draft.retellVoiceModel) setRetellVoiceModel(draft.retellVoiceModel);
+        if (draft.retellEmotion) setRetellEmotion(draft.retellEmotion);
+        if (draft.enableExpressiveMode !== undefined) setEnableExpressiveMode(draft.enableExpressiveMode);
+        if (draft.retellAmbientSound) setRetellAmbientSound(draft.retellAmbientSound);
+        if (draft.retellLanguage) setRetellLanguage(draft.retellLanguage);
+        if (draft.retellBackchannel !== undefined) setRetellBackchannel(draft.retellBackchannel);
+        if (draft.retellReminderMs !== undefined) setRetellReminderMs(draft.retellReminderMs);
         if (draft.draftCampaignId) setDraftCampaignId(draft.draftCampaignId);
         if (draft.currentStep) setCurrentStep(draft.currentStep);
         setHasRestoredDraft(true);
@@ -229,6 +246,13 @@ export default function NewVoiceCampaignPage() {
         voicemailDetection,
         backgroundSound,
         maxDurationSeconds,
+        retellVoiceModel,
+        retellEmotion,
+        enableExpressiveMode,
+        retellAmbientSound,
+        retellLanguage,
+        retellBackchannel,
+        retellReminderMs,
         audienceSource,
         audienceFilters: audienceSource === "CRM_DATABASE" || audienceSource === "HYBRID" ? audienceFilters : undefined,
         csvRecipients: audienceSource === "CSV_UPLOAD" || audienceSource === "HYBRID" ? csvRecipients : undefined,
@@ -284,6 +308,13 @@ export default function NewVoiceCampaignPage() {
     voicemailDetection,
     backgroundSound,
     maxDurationSeconds,
+    retellVoiceModel,
+    retellEmotion,
+    enableExpressiveMode,
+    retellAmbientSound,
+    retellLanguage,
+    retellBackchannel,
+    retellReminderMs,
     audienceSource,
     audienceFilters,
     csvRecipients,
@@ -331,6 +362,13 @@ export default function NewVoiceCampaignPage() {
     voicemailDetection,
     backgroundSound,
     maxDurationSeconds,
+    retellVoiceModel,
+    retellEmotion,
+    enableExpressiveMode,
+    retellAmbientSound,
+    retellLanguage,
+    retellBackchannel,
+    retellReminderMs,
     audienceSource,
     audienceFilters,
     saveDraftToDatabase,
@@ -364,7 +402,7 @@ export default function NewVoiceCampaignPage() {
       setTelephonyId(undefined);
       setCallerIdNumber(undefined);
       setAgentPlatformId(undefined);
-      setLlmModel("gpt-4o-mini");
+      setLlmModel("gpt-4o");
       setVoiceProvider("sarvam");
       setVoiceId("priya");
       setVoiceName("Priya");
@@ -378,6 +416,13 @@ export default function NewVoiceCampaignPage() {
       setVoicemailDetection("off");
       setBackgroundSound("off");
       setMaxDurationSeconds(600);
+      setRetellVoiceModel("eleven_flash_v2_5");
+      setRetellEmotion("calm");
+      setEnableExpressiveMode(false);
+      setRetellAmbientSound("call-center");
+      setRetellLanguage("hi-IN");
+      setRetellBackchannel(true);
+      setRetellReminderMs(10000);
       setDraftCampaignId(null);
       setLastSavedTime(null);
       setHasRestoredDraft(false);
@@ -635,6 +680,13 @@ export default function NewVoiceCampaignPage() {
               voicemailDetection,
               backgroundSound,
               maxDurationSeconds,
+              retellVoiceModel,
+              retellEmotion,
+              enableExpressiveMode,
+              retellAmbientSound,
+              retellLanguage,
+              retellBackchannel,
+              retellReminderMs,
             }}
             onChange={(f) => {
               if (f.agentPlatformId !== undefined) setAgentPlatformId(f.agentPlatformId);
@@ -652,6 +704,13 @@ export default function NewVoiceCampaignPage() {
               if (f.voicemailDetection !== undefined) setVoicemailDetection(f.voicemailDetection);
               if (f.backgroundSound !== undefined) setBackgroundSound(f.backgroundSound);
               if (f.maxDurationSeconds !== undefined) setMaxDurationSeconds(f.maxDurationSeconds);
+              if (f.retellVoiceModel !== undefined) setRetellVoiceModel(f.retellVoiceModel);
+              if (f.retellEmotion !== undefined) setRetellEmotion(f.retellEmotion);
+              if (f.enableExpressiveMode !== undefined) setEnableExpressiveMode(f.enableExpressiveMode);
+              if (f.retellAmbientSound !== undefined) setRetellAmbientSound(f.retellAmbientSound);
+              if (f.retellLanguage !== undefined) setRetellLanguage(f.retellLanguage);
+              if (f.retellBackchannel !== undefined) setRetellBackchannel(f.retellBackchannel);
+              if (f.retellReminderMs !== undefined) setRetellReminderMs(f.retellReminderMs);
             }}
             agentIntegrations={agentIntegrations}
             csvRecipients={csvRecipients}
@@ -691,6 +750,13 @@ export default function NewVoiceCampaignPage() {
               voicemailDetection,
               backgroundSound,
               maxDurationSeconds,
+              retellVoiceModel,
+              retellEmotion,
+              enableExpressiveMode,
+              retellAmbientSound,
+              retellLanguage,
+              retellBackchannel,
+              retellReminderMs,
             }}
             totalRecipients={estimatedCount}
             projects={projects}
