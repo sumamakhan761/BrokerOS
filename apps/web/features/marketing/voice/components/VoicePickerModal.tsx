@@ -108,9 +108,11 @@ export function VoicePickerModal({
     const sampleText = voice.previewText || `Hello! This is ${voice.name}. How may I help you with your property search today?`;
 
     // 1. Direct verified preview URL
-    if (voice.previewUrl) {
+    if (voice.previewUrl && voice.previewUrl.trim().length > 0) {
       try {
-        const audio = new Audio(voice.previewUrl);
+        const audio = new Audio();
+        audio.preload = "auto";
+        audio.src = voice.previewUrl;
         audioRef.current = audio;
         setPlayingVoiceId(voice.id);
 
@@ -123,7 +125,10 @@ export function VoicePickerModal({
           audioRef.current = null;
         };
 
-        await audio.play();
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+        }
         return;
       } catch (err) {
         console.warn("Direct audio playback failed, trying backend synthesis", err);
@@ -135,7 +140,7 @@ export function VoicePickerModal({
       : (typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_API_URL || "/api/proxy") : "/api/proxy");
     const previewEndpoint = `${resolvedBase.replace(/\/$/, '')}/api/marketing/voice/audio/preview`;
 
-    // 2. Try Backend Neural TTS API (Sarvam Bulbul v3, ElevenLabs, OpenAI, Deepgram, Cartesia)
+    // 2. Try Backend Neural TTS API (Sarvam Bulbul v3, ElevenLabs, Deepgram Aura)
     try {
       setIsLoadingAudio(true);
       const res = await fetch(previewEndpoint, {
@@ -151,14 +156,15 @@ export function VoicePickerModal({
 
       if (res.ok) {
         const blob = await res.blob();
-        if (blob.size > 500) {
+        if (blob && blob.size > 500 && (blob.type.includes("audio") || blob.type === "" || blob.type === "application/octet-stream")) {
           if (urlRef.current) {
             URL.revokeObjectURL(urlRef.current);
           }
           const url = URL.createObjectURL(blob);
           urlRef.current = url;
 
-          const audio = new Audio(url);
+          const audio = new Audio();
+          audio.src = url;
           audioRef.current = audio;
           setPlayingVoiceId(voice.id);
           setIsLoadingAudio(false);
@@ -172,7 +178,10 @@ export function VoicePickerModal({
             audioRef.current = null;
           };
 
-          await audio.play();
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            await playPromise;
+          }
           return;
         }
       }
@@ -183,65 +192,68 @@ export function VoicePickerModal({
     }
 
     // 3. Fallback: Distinct Persona Speech Synthesis
-    if (window.speechSynthesis) {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
       const utterance = new SpeechSynthesisUtterance(sampleText);
       const voicesList = window.speechSynthesis.getVoices();
-      const isFemale = voice.gender?.toLowerCase() === "female" || /female|savannah|emma|clara|layla|naina|sarah|rachel|bella|domi|asteria|luna|stella|nova|shimmer|jenny|priya|ritu|pooja|kavitha|simran|shreya|rupali/i.test(voice.name || voice.id);
+      const isMale = voice.gender?.toLowerCase() === "male" || /male|elliot|nico|kai|sagar|godfrey|neil|sid|rohan|adam|antoni|josh|michael|orion|zeus|helios|rahul|shubh/i.test(voice.name || voice.id);
+      const isFemale = !isMale;
       const isHindi = /hindi|sarvam|indic/i.test(voice.provider) || /hindi|indian/i.test(voice.accent || "") || /rohan|sagar|neil|naina|priya|rahul|shubh|ritu|pooja|kabir|aditya/i.test(voice.name || voice.id);
-      const isBritish = /british/i.test(voice.accent || "") || /michael|helios|brian|fable/i.test(voice.name || voice.id);
 
       if (voicesList.length > 0) {
-        let matchingVoice = voicesList.find((v) => {
-          const vName = v.name.toLowerCase();
-          const isVFemale = /female|zira|heera|kalpana|samantha|karen|victoria|hazel|jenny|veena/i.test(vName);
-          const isVMale = /male|david|ravi|mark|george|alex|ryan/i.test(vName);
+        let matchingVoice: SpeechSynthesisVoice | undefined;
 
-          if (isFemale && isVMale) return false;
-          if (!isFemale && isVFemale) return false;
-
-          if (isHindi && (v.lang.startsWith("hi") || v.lang.includes("IN"))) {
-            if (isFemale && isVFemale) return true;
-            if (!isFemale && isVMale) return true;
-            return true;
-          }
-
-          if (isFemale && isVFemale) return true;
-          if (!isFemale && isVMale) return true;
-          return false;
-        });
-
-        if (!matchingVoice) {
-          matchingVoice = isFemale
-            ? voicesList.find((v) => /female|zira|heera|kalpana|samantha|karen|victoria|hazel|jenny/i.test(v.name))
-            : voicesList.find((v) => /male|david|ravi|mark|alex|ryan/i.test(v.name));
+        if (isMale) {
+          // Strictly look for male voices
+          matchingVoice = voicesList.find((v) => {
+            const vName = v.name.toLowerCase();
+            const hasFemaleTag = /female|zira|heera|kalpana|samantha|karen|victoria|hazel|jenny|veena|aria|susan|catherine|helena/i.test(vName);
+            const hasMaleTag = /male|david|ravi|mark|george|alex|ryan|guy|steffan|richard|james/i.test(vName);
+            if (hasFemaleTag) return false;
+            return hasMaleTag || (!hasFemaleTag && v.lang.startsWith("en"));
+          });
+        } else {
+          // Strictly look for female voices
+          matchingVoice = voicesList.find((v) => {
+            const vName = v.name.toLowerCase();
+            const hasMaleTag = /male|david|ravi|mark|george|alex|ryan|guy|steffan|richard/i.test(vName);
+            const hasFemaleTag = /female|zira|heera|kalpana|samantha|karen|victoria|hazel|jenny|veena|aria|susan|catherine|helena/i.test(vName);
+            if (hasMaleTag) return false;
+            return hasFemaleTag;
+          });
         }
 
-        if (!matchingVoice) matchingVoice = voicesList.find((v) => v.lang.startsWith("en")) || voicesList[0];
+        if (!matchingVoice) {
+          matchingVoice = voicesList.find((v) => v.lang.startsWith("en")) || voicesList[0];
+        }
         if (matchingVoice) utterance.voice = matchingVoice;
       }
 
-      // Persona-specific pitch & speed tuning so each character sounds distinct
-      if (/sid|onyx|adam|zeus|orion/i.test(voice.name || voice.id)) {
-        utterance.pitch = 0.78; // Deep-toned
-        utterance.rate = 0.95;
-      } else if (/elliot|antoni|michael/i.test(voice.name || voice.id)) {
-        utterance.pitch = 0.92; // Soothing executive
-        utterance.rate = 1.0;
-      } else if (/godfrey|kai|josh/i.test(voice.name || voice.id)) {
-        utterance.pitch = 1.05; // Young energetic
-        utterance.rate = 1.08;
-      } else if (/sagar|neil|rohan/i.test(voice.name || voice.id)) {
-        utterance.pitch = 0.88; // Indian professional
-        utterance.rate = 1.02;
-      } else if (/layla|bella|nova/i.test(voice.name || voice.id)) {
-        utterance.pitch = 1.25; // Bright cheerful
-        utterance.rate = 1.05;
-      } else if (/savannah|clara|sarah/i.test(voice.name || voice.id)) {
-        utterance.pitch = 1.10; // Warm consultative
-        utterance.rate = 0.98;
+      // Persona-specific pitch & speed tuning
+      if (isMale) {
+        if (/sid|onyx|adam|zeus|orion/i.test(voice.name || voice.id)) {
+          utterance.pitch = 0.72; // Deep authoritative
+          utterance.rate = 0.95;
+        } else if (/elliot|antoni|michael/i.test(voice.name || voice.id)) {
+          utterance.pitch = 0.82; // Executive
+          utterance.rate = 1.0;
+        } else if (/godfrey|kai|josh/i.test(voice.name || voice.id)) {
+          utterance.pitch = 0.92; // Young energetic
+          utterance.rate = 1.05;
+        } else {
+          utterance.pitch = 0.80; // General male
+          utterance.rate = 1.0;
+        }
       } else {
-        utterance.pitch = isFemale ? 1.15 : 0.88;
-        utterance.rate = 1.0;
+        if (/layla|bella|nova/i.test(voice.name || voice.id)) {
+          utterance.pitch = 1.25; // Bright cheerful
+          utterance.rate = 1.05;
+        } else if (/savannah|clara|sarah/i.test(voice.name || voice.id)) {
+          utterance.pitch = 1.10; // Warm consultative
+          utterance.rate = 0.98;
+        } else {
+          utterance.pitch = 1.15; // General female
+          utterance.rate = 1.0;
+        }
       }
 
       utterance.onstart = () => setPlayingVoiceId(voice.id);
