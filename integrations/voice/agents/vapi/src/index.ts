@@ -68,15 +68,74 @@ export class VapiAgentClient implements IVoiceAgentProvider {
         },
       };
 
-      // Set phone number configuration
+      // 1. Phone number configuration
+      const isUUID = (val?: string) => !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
       if (options.telephonyCredentials?.accountSid && options.telephonyCredentials?.authToken) {
         payload.phoneNumber = {
           twilioPhoneNumber: options.fromNumber,
           twilioAccountSid: options.telephonyCredentials.accountSid,
           twilioAuthToken: options.telephonyCredentials.authToken,
         };
-      } else if (options.fromNumber) {
+      } else if (isUUID(options.fromNumber)) {
         payload.phoneNumberId = options.fromNumber;
+      } else {
+        // Look up user's active phone numbers in Vapi
+        try {
+          const pRes = await fetch('https://api.vapi.ai/phone-number', {
+            headers: { Authorization: `Bearer ${key}` },
+          });
+          if (pRes.ok) {
+            const numbers = await pRes.json();
+            if (Array.isArray(numbers) && numbers.length > 0) {
+              const matched = numbers.find((n: any) => n.number === options.fromNumber || n.id === options.fromNumber);
+              payload.phoneNumberId = matched ? matched.id : numbers[0].id;
+            }
+          }
+        } catch {
+          // continue without explicit phoneNumberId
+        }
+      }
+
+      // 2. Map Voice Provider to valid Vapi enum
+      let vapiVoiceProvider: any = 'vapi';
+      const rawVp = (options.voiceProvider || '').toLowerCase();
+      if (rawVp.includes('eleven') || rawVp === '11labs') vapiVoiceProvider = '11labs';
+      else if (rawVp.includes('cartesia')) vapiVoiceProvider = 'cartesia';
+      else if (rawVp.includes('deepgram')) vapiVoiceProvider = 'deepgram';
+      else if (rawVp.includes('openai')) vapiVoiceProvider = 'openai';
+      else if (rawVp.includes('azure')) vapiVoiceProvider = 'azure';
+      else if (rawVp.includes('inworld')) vapiVoiceProvider = 'inworld';
+      else if (rawVp.includes('minimax')) vapiVoiceProvider = 'minimax';
+      else if (rawVp.includes('rime')) vapiVoiceProvider = 'rime-ai';
+      else if (rawVp.includes('smallest')) vapiVoiceProvider = 'smallest-ai';
+      else if (rawVp.includes('xai')) vapiVoiceProvider = 'xai';
+
+      let cleanVoiceId = options.voiceId || 'Elliot';
+      const elevenMap: Record<string, string> = { rachel: '21m00Tcm4TlvDq8ikWAM', adam: 'pNInz6obpgDQGcFmaJgB', antoni: 'ErXwobaYiN019PkySvjV', josh: 'TxGEqnHWrfWFTfGW9XjX', viraj: 'iWNf11sz1GrUE4ppxTOL' };
+      if (elevenMap[cleanVoiceId.toLowerCase()]) {
+        cleanVoiceId = elevenMap[cleanVoiceId.toLowerCase()];
+        vapiVoiceProvider = '11labs';
+      } else if (cleanVoiceId === 'iWNf11sz1GrUE4ppxTOL' || cleanVoiceId === '21m00Tcm4TlvDq8ikWAM' || cleanVoiceId === 'pNInz6obpgDQGcFmaJgB') {
+        vapiVoiceProvider = '11labs';
+      }
+
+      // 3. Map Model Provider and Model ID
+      let vapiModelProvider = 'openai';
+      let vapiModel = options.llmModel?.replace(/^(openai\/|azure\/)/, '') || 'gpt-4o-mini';
+
+      if (options.llmModel?.includes('claude')) {
+        vapiModelProvider = 'anthropic';
+        vapiModel = 'claude-3-5-sonnet-20241022';
+      } else if (options.llmModel?.includes('llama') || options.llmModel?.includes('groq')) {
+        vapiModelProvider = 'groq';
+        vapiModel = 'llama-3.3-70b-versatile';
+      } else if (options.llmModel?.includes('gemini')) {
+        vapiModelProvider = 'google';
+        vapiModel = 'gemini-2.0-flash';
+      } else if (options.llmModel?.includes('deepseek')) {
+        vapiModelProvider = 'deep-seek';
+        vapiModel = 'deepseek-chat';
       }
 
       if (isAssistantId) {
@@ -84,65 +143,45 @@ export class VapiAgentClient implements IVoiceAgentProvider {
         payload.assistantId = options.llmModel;
         payload.assistantOverrides = {
           variableValues: options.variables || {},
+          firstMessage: options.firstMessage,
+          voicemailDetection: 'off',
+          maxDurationSeconds: options.maxDurationSeconds || 600,
         };
         if (options.scriptPrompt) {
           payload.assistantOverrides.model = {
+            provider: vapiModelProvider,
+            model: vapiModel,
             messages: [{ role: 'system', content: options.scriptPrompt }],
           };
         }
-        if (options.firstMessage) {
-          payload.assistantOverrides.firstMessage = options.firstMessage;
-        }
-        if (options.voiceSpeed) {
-          payload.assistantOverrides.voice = { speed: options.voiceSpeed };
-        }
-        if (options.backgroundSound) {
-          payload.assistantOverrides.backgroundSound = options.backgroundSound;
-        }
-        if (options.voicemailDetection) {
-          payload.assistantOverrides.voicemailDetection = options.voicemailDetection;
-        }
-        if (options.maxDurationSeconds) {
-          payload.assistantOverrides.maxDurationSeconds = options.maxDurationSeconds;
-        }
       } else {
-        // Create full dynamic assistant payload
-        const sttProvider = options.transcriberModel?.includes('assembly')
-          ? 'assembly-ai'
-          : options.transcriberModel?.includes('whisper')
-            ? 'talkscriber'
-            : 'deepgram';
-
-        payload.assistantOverrides = {
+        // Build inline full assistant object
+        payload.assistant = {
           transcriber: {
-            provider: sttProvider,
-            model: options.transcriberModel || 'nova-3',
+            provider: 'deepgram',
+            model: 'nova-2',
             language: options.transcriberLanguage || 'en',
-            maxTurnSilence: options.maxTurnSilenceMs || 400,
           },
           model: {
-            provider: options.llmModel?.includes('claude') ? 'anthropic' : options.llmModel?.includes('llama') ? 'groq' : 'openai',
-            model: options.llmModel || 'gpt-4o-mini',
+            provider: vapiModelProvider,
+            model: vapiModel,
             messages: [
               {
                 role: 'system',
-                content: options.scriptPrompt || 'You are a helpful real estate assistant.',
+                content: options.scriptPrompt || 'You are an intelligent real estate sales advisor.',
               },
             ],
           },
           voice: {
-            provider: options.voiceProvider || 'vapi',
-            voiceId: options.voiceId || 'Elliot',
-            ...(options.voiceProvider === 'vapi' ? { version: 2 } : {}),
-            ...(options.voiceModel ? { model: options.voiceModel } : {}),
+            provider: vapiVoiceProvider,
+            voiceId: cleanVoiceId,
             speed: options.voiceSpeed || 1.0,
           },
           firstMessage: options.firstMessage,
           firstMessageMode: options.firstMessageMode || 'assistant-speaks-first',
-          voicemailDetection: options.voicemailDetection || 'off',
+          voicemailDetection: 'off',
           backgroundSound: options.backgroundSound || 'off',
           maxDurationSeconds: options.maxDurationSeconds || 600,
-          variableValues: options.variables || {},
         };
       }
 
@@ -166,7 +205,7 @@ export class VapiAgentClient implements IVoiceAgentProvider {
 
       return {
         success: false,
-        error: data.message || `Vapi dispatch failed with HTTP ${res.status}`,
+        error: data.message || (Array.isArray(data.message) ? data.message.join('; ') : `Vapi dispatch failed with HTTP ${res.status}`),
       };
     } catch (err: any) {
       return {
@@ -611,7 +650,7 @@ export class VapiAgentClient implements IVoiceAgentProvider {
         provider: 'cartesia',
         accent: 'American Conversational',
         gender: 'Female',
-        tags: ['Cartesia', 'Sub-100ms', 'Sonic-3.5'],
+        tags: ['Cartesia', 'Sub-100ms', 'Sonic'],
         previewText: 'Hey there! I am following up on your luxury penthouse selection.',
       },
       {
@@ -620,7 +659,7 @@ export class VapiAgentClient implements IVoiceAgentProvider {
         provider: 'cartesia',
         accent: 'British Executive',
         gender: 'Male',
-        tags: ['Cartesia', 'Luxury', 'Sonic-3.5'],
+        tags: ['Cartesia', 'Luxury', 'Sonic'],
         previewText: 'Good day. Presenting the exclusive penthouse collection at Signature Towers.',
       },
 
