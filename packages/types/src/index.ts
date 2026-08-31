@@ -293,6 +293,7 @@ export interface VoiceTelephonyCredentials {
 
 export interface VoiceAgentCredentials {
   apiKey?: string;
+  apiSecret?: string;
   orgId?: string;
   serverUrl?: string;
 }
