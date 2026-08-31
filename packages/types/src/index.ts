@@ -319,6 +319,22 @@ export interface SendVoiceOptions {
   voicemailDetection?: string;
   backgroundSound?: string;
   maxDurationSeconds?: number;
+  // Retell Specific Dynamic Parameters
+  voiceModel?: string;
+  voiceEmotion?: string;
+  enableExpressiveMode?: boolean;
+  expressiveEmotionTags?: string[];
+  enableBackchannel?: boolean;
+  backchannelFrequency?: number;
+  ambientSound?: string;
+  ambientSoundVolume?: number;
+  reminderTriggerMs?: number;
+  reminderMaxCount?: number;
+  language?: string | string[];
+  responsiveness?: number;
+  interruptionSensitivity?: number;
+  enableDynamicVoiceSpeed?: boolean;
+  beginMessageDelayMs?: number;
 }
 
 export interface SendVoiceResult {
@@ -385,6 +401,7 @@ export interface IVoiceAgentProvider {
   parseWebhookEvent(headers: Record<string, any>, payload: any): VoiceWebhookEvent[];
   getAvailableModels(credentials?: VoiceAgentCredentials): Promise<VoiceModelItem[]>;
   getAvailableVoices(credentials?: VoiceAgentCredentials): Promise<VoicePersonaItem[]>;
+  getAccountAssistants?(credentials?: VoiceAgentCredentials): Promise<any[]>;
 }
 
 export interface VoiceAudienceEstimationResult {
