@@ -33,12 +33,23 @@ export class SarvamAgentClient implements IVoiceAgentProvider {
     if (!key) {
       return {
         audioBuffer: Buffer.from(text, 'utf-8'),
-        contentType: 'audio/wav',
+        contentType: 'audio/mpeg',
       };
     }
 
     try {
-      const speaker = voiceId.includes('rahul') ? 'rahul' : 'priya';
+      // Map voiceId to valid lowercase Sarvam speaker
+      const validSpeakers = [
+        'shubh', 'aditya', 'ritu', 'priya', 'neha', 'rahul', 'pooja', 'rohan',
+        'simran', 'kavya', 'amit', 'dev', 'ishita', 'shreya', 'ratan', 'varun',
+        'manan', 'sumit', 'roopa', 'kabir', 'aayan', 'ashutosh', 'advait',
+        'anand', 'tanya', 'tarun', 'sunny', 'mani', 'gokul', 'vijay',
+        'shruti', 'suhani', 'mohit', 'kavitha', 'rehan', 'soham', 'rupali'
+      ];
+
+      const cleanedId = (voiceId || '').toLowerCase().trim();
+      const speaker = validSpeakers.includes(cleanedId) ? cleanedId : (cleanedId.includes('rahul') ? 'rahul' : 'priya');
+
       const res = await fetch('https://api.sarvam.ai/text-to-speech', {
         method: 'POST',
         headers: {
@@ -46,15 +57,14 @@ export class SarvamAgentClient implements IVoiceAgentProvider {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: [text],
-          target_language_code: 'hi-IN',
+          text,
+          language_code: 'hi-IN',
           speaker,
-          pitch: 0,
-          pace: 1.0,
-          loudness: 1.5,
-          speech_sample_rate: 8000,
-          enable_preprocessing: true,
           model: 'bulbul:v3',
+          pace: 1.0,
+          temperature: 0.6,
+          speech_sample_rate: 24000,
+          output_audio_codec: 'mp3',
         }),
       });
 
@@ -64,19 +74,19 @@ export class SarvamAgentClient implements IVoiceAgentProvider {
         if (base64Audio) {
           return {
             audioBuffer: Buffer.from(base64Audio, 'base64'),
-            contentType: 'audio/wav',
+            contentType: 'audio/mpeg',
           };
         }
       }
 
       return {
         audioBuffer: Buffer.from(text, 'utf-8'),
-        contentType: 'audio/wav',
+        contentType: 'audio/mpeg',
       };
     } catch {
       return {
         audioBuffer: Buffer.from(text, 'utf-8'),
-        contentType: 'audio/wav',
+        contentType: 'audio/mpeg',
       };
     }
   }
@@ -115,20 +125,89 @@ export class SarvamAgentClient implements IVoiceAgentProvider {
   }
 
   async getAvailableModels(credentials?: VoiceAgentCredentials): Promise<VoiceModelItem[]> {
-    return [
-      { id: 'sarvam-2b', name: 'Sarvam 2B (Indic Conversational)', provider: 'Sarvam AI', badge: '10 Indian Languages', description: 'Optimized for native Hindi, Hinglish, Tamil, Telugu, Marathi dialogues' },
-      { id: 'saaras:v3', name: 'Saaras v3 (Indic Speech Recognition)', provider: 'Sarvam AI', badge: 'Accurate STT', description: 'Real-time multilingual Indian accent speech-to-text' },
-      { id: 'bulbul:v3', name: 'Bulbul v3 (Neural Speech Engine)', provider: 'Sarvam AI', badge: 'Ultra Natural', description: 'Expressive Indian voice synthesizer with regional cadence' },
+    const key = credentials?.apiKey || this.apiKey;
+
+    const nativeSarvamModels: VoiceModelItem[] = [
+      {
+        id: 'bulbul:v3',
+        name: 'Bulbul v3 (Neural Speech Engine)',
+        provider: 'Sarvam AI',
+        badge: '30+ Voices',
+        description: 'Latest Indic speech synthesis with expressive cadence across 11 languages',
+      },
+      {
+        id: 'sarvam-2b',
+        name: 'Sarvam 2B (Indic Conversational LLM)',
+        provider: 'Sarvam AI',
+        badge: '10 Indian Languages',
+        description: 'Optimized for native Hindi, Hinglish, Tamil, Telugu, Marathi sales dialogues',
+      },
+      {
+        id: 'saaras:v3',
+        name: 'Saaras v3 (Indic Speech Recognition)',
+        provider: 'Sarvam AI',
+        badge: 'Accurate STT',
+        description: 'Real-time multilingual Indian accent speech-to-text',
+      },
+      {
+        id: 'sarvam-105b',
+        name: 'Sarvam 105B (Indic Foundation LLM)',
+        provider: 'Sarvam AI',
+        badge: 'Enterprise Reasoning',
+        description: 'Advanced multilingual foundation model for deep consultative conversations',
+      },
     ];
+
+    let openSourceModels: VoiceModelItem[] = [];
+
+    if (key) {
+      try {
+        const res = await fetch('https://api.sarvam.ai/v2/models', {
+          headers: { 'api-subscription-key': key },
+        });
+
+        if (res.ok) {
+          const data = (await res.json()) as any;
+          const modelsList = data.data || [];
+          if (Array.isArray(modelsList) && modelsList.length > 0) {
+            openSourceModels = modelsList
+              .filter((m: any) => !nativeSarvamModels.some((nm) => nm.id === m.id))
+              .map((m: any) => ({
+                id: m.id,
+                name: m.id.replace(/:/g, ' ').replace(/-/g, ' ').toUpperCase(),
+                provider: 'Sarvam AI',
+                badge: 'Open Source',
+                description: `Sarvam AI ${m.id} model (hosted by ${m.owned_by || 'sarvam'})`,
+              }));
+          }
+        }
+      } catch {
+        // Fallback gracefully
+      }
+    }
+
+    return [...nativeSarvamModels, ...openSourceModels];
   }
 
   async getAvailableVoices(credentials?: VoiceAgentCredentials): Promise<VoicePersonaItem[]> {
     return [
-      { id: 'priya', name: 'Priya (Warm Hindi/English Advisor)', provider: 'Sarvam AI', accent: 'Hindi / Hinglish', gender: 'Female', previewText: 'Namaste! Main Skyline Realty se bol rahi hoon aapke naye ghar ki jankari ke liye.' },
-      { id: 'rahul', name: 'Rahul (Consultant Hindi)', provider: 'Sarvam AI', accent: 'Hindi Professional', gender: 'Male', previewText: 'Namaste sir! Kya aap is weekend sample flat dekhne aa sakte hain?' },
-      { id: 'ananya', name: 'Ananya (Tamil / English)', provider: 'Sarvam AI', accent: 'Tamil / South Indian', gender: 'Female', previewText: 'Vanakkam! Chennai project details share panna call panren.' },
-      { id: 'arvind', name: 'Arvind (Telugu / English)', provider: 'Sarvam AI', accent: 'Telugu / Hyderabadi', gender: 'Male', previewText: 'Namaskaram! Hyderabad luxury apartments gurinchi matladataniki call chesanu.' },
-      { id: 'meera', name: 'Meera (Marathi / Hinglish)', provider: 'Sarvam AI', accent: 'Marathi / Mumbai English', gender: 'Female', previewText: 'Namaskar! Mumbai pre-launch offer sathi call kela ahe.' },
+      // Female Indic Voices (bulbul:v3)
+      { id: 'priya', name: 'Priya (Warm Hindi/English Advisor)', provider: 'Sarvam AI', accent: 'Hindi / Hinglish', gender: 'Female', previewText: 'Namaste! Main Skyline Realty se bol rahi hoon aapke naye luxury flat ke baare mein.' },
+      { id: 'ritu', name: 'Ritu (Consultative Hindi)', provider: 'Sarvam AI', accent: 'Hindi Professional', gender: 'Female', previewText: 'Namaste ji, kya aap is weekend DLF Privana ka sample flat dekhne aa sakte hain?' },
+      { id: 'pooja', name: 'Pooja (Friendly Conversational)', provider: 'Sarvam AI', accent: 'Hindi / North Indian', gender: 'Female', previewText: 'Hello sir! Pre-launch spot discount offer aaj shaam tak valid hai.' },
+      { id: 'kavitha', name: 'Kavitha (Tamil / South Indian)', provider: 'Sarvam AI', accent: 'Tamil / English', gender: 'Female', previewText: 'Vanakkam! Chennai luxury residential apartments pathi details share panren.' },
+      { id: 'simran', name: 'Simran (Punjabi / Hinglish)', provider: 'Sarvam AI', accent: 'Punjabi / Delhi English', gender: 'Female', previewText: 'Sat Sri Akal! Signature Towers ke penthouse allocation details aa gaye hain.' },
+      { id: 'shreya', name: 'Shreya (Modern Conversational)', provider: 'Sarvam AI', accent: 'Hinglish Corporate', gender: 'Female', previewText: 'Hi there! We have released 5 exclusive corner units with a spot booking discount.' },
+      { id: 'rupali', name: 'Rupali (Marathi / Mumbai English)', provider: 'Sarvam AI', accent: 'Marathi / Mumbai English', gender: 'Female', previewText: 'Namaskar! Mumbai pre-launch offers sathi aamhi call kela ahe.' },
+
+      // Male Indic Voices (bulbul:v3)
+      { id: 'shubh', name: 'Shubh (Official Default Male)', provider: 'Sarvam AI', accent: 'Hindi Professional', gender: 'Male', previewText: 'Namaste sir, aapke luxury villa inquiry ke relation mein follow up call hai.' },
+      { id: 'rahul', name: 'Rahul (Consultant Hindi)', provider: 'Sarvam AI', accent: 'Hindi Executive', gender: 'Male', previewText: 'Namaste! Main Rahul baat kar raha hoon Skyline Realty se.' },
+      { id: 'aditya', name: 'Aditya (Energetic Sales)', provider: 'Sarvam AI', accent: 'Hindi / Hinglish', gender: 'Male', previewText: 'Namaste sir! Good news, top floor 3BHK unit available ho gaya hai.' },
+      { id: 'rohan', name: 'Rohan (Executive Consultant)', provider: 'Sarvam AI', accent: 'Indian English Corporate', gender: 'Male', previewText: 'Hello sir, presenting the exclusive penthouse collection at Signature Towers.' },
+      { id: 'kabir', name: 'Kabir (Deep Authoritative)', provider: 'Sarvam AI', accent: 'Hindi Deep', gender: 'Male', previewText: 'Namaste. Commercial investment portfolio review ke liye call kiya hai.' },
+      { id: 'gokul', name: 'Gokul (Telugu / South Indian)', provider: 'Sarvam AI', accent: 'Telugu / Hyderabadi', gender: 'Male', previewText: 'Namaskaram! Hyderabad premium gated community villa project details.' },
+      { id: 'ashutosh', name: 'Ashutosh (Steady Consultant)', provider: 'Sarvam AI', accent: 'Hindi Steady', gender: 'Male', previewText: 'Namaste, aapka private site visit appointment confirm kar diya gaya hai.' },
     ];
   }
 }

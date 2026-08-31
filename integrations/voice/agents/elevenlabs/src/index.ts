@@ -165,6 +165,42 @@ export class ElevenLabsAgentClient implements IVoiceAgentProvider {
     ];
   }
 
+  async getAccountAssistants(credentials?: VoiceAgentCredentials): Promise<any[]> {
+    const key = credentials?.apiKey || this.apiKey;
+    if (!key) return [];
+
+    try {
+      const res = await fetch('https://api.elevenlabs.io/v1/convai/agents', {
+        method: 'GET',
+        headers: {
+          'xi-api-key': key,
+        },
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        const agentsList = Array.isArray(data) ? data : data.agents || [];
+        return agentsList.map((a: any) => ({
+          id: a.agent_id,
+          name: a.name || a.agent_id,
+          voice: {
+            voiceId: a.conversation_config?.tts?.voice_id || '21m00Tcm4TlvDq8ikWAM',
+            model: a.conversation_config?.tts?.model_id || 'eleven_flash_v2_5',
+          },
+          model: {
+            model: a.conversation_config?.agent?.prompt?.llm || 'gpt-4o',
+            systemPrompt: a.conversation_config?.agent?.prompt?.prompt || '',
+          },
+          firstMessage: a.conversation_config?.agent?.first_message || '',
+          language: a.conversation_config?.agent?.language || 'en',
+        }));
+      }
+    } catch {
+      // Fallback gracefully
+    }
+    return [];
+  }
+
   async getAvailableVoices(credentials?: VoiceAgentCredentials): Promise<VoicePersonaItem[]> {
     const key = credentials?.apiKey || this.apiKey;
     if (key) {
@@ -179,11 +215,11 @@ export class ElevenLabsAgentClient implements IVoiceAgentProvider {
               id: v.voice_id,
               name: v.name,
               provider: 'ElevenLabs',
-              accent: v.labels?.accent || v.labels?.['accent / dialect'] || 'Global English',
-              gender: v.labels?.gender || (v.category === 'premade' ? 'Female' : 'Universal'),
-              tags: [v.category, v.labels?.use_case].filter(Boolean),
+              accent: v.labels?.accent || v.labels?.['accent / dialect'] || (v.labels?.gender ? `${v.labels.gender} Natural` : 'Global English'),
+              gender: v.labels?.gender ? (v.labels.gender.toLowerCase() === 'male' ? 'Male' : 'Female') : 'Female',
+              tags: [v.category, v.labels?.use_case, v.labels?.description].filter(Boolean),
               previewUrl: v.preview_url,
-              previewText: 'Hello! I am excited to share details about this exclusive real estate project.',
+              previewText: `Hello! I am ${v.name}, sharing exclusive real estate opportunities with you.`,
             }));
           }
         }
