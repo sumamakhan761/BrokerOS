@@ -10,102 +10,49 @@ async function probeVapiAccount() {
     'Content-Type': 'application/json',
   };
 
-  // 1. Fetch Assistants
-  console.log('1. Querying GET https://api.vapi.ai/assistant ...');
-  try {
-    const res = await fetch('https://api.vapi.ai/assistant', { headers });
-    console.log(`   Status: HTTP ${res.status} ${res.statusText}`);
-    const data = (await res.json().catch(() => ({}))) as any;
+  const endpoints = [
+    { name: '1. List Assistants (GET /assistant)', url: 'https://api.vapi.ai/assistant' },
+    { name: '2. List Voices (GET /voice)', url: 'https://api.vapi.ai/voice' },
+    { name: '3. List Phone Numbers (GET /phone-number)', url: 'https://api.vapi.ai/phone-number' },
+    { name: '4. List Files (GET /file)', url: 'https://api.vapi.ai/file' },
+    { name: '5. List Tools (GET /tool)', url: 'https://api.vapi.ai/tool' },
+  ];
 
-    if (res.ok) {
-      const assistants = Array.isArray(data) ? data : [];
-      console.log(`   ✅ Assistants Found: ${assistants.length}\n`);
-
-      assistants.forEach((asst, idx) => {
-        console.log(`   ──────────────── Assistant #${idx + 1} ────────────────`);
-        console.log(`   • ID                 : ${asst.id}`);
-        console.log(`   • Name               : ${asst.name || 'Untitled'}`);
-        console.log(`   • First Message      : "${asst.firstMessage || 'None'}"`);
-        console.log(`   • First Message Mode : ${asst.firstMessageMode || 'assistant-speaks-first'}`);
-        console.log(`   • Voicemail Detection: ${asst.voicemailDetection || 'off'}`);
-        console.log(`   • Background Sound   : ${asst.backgroundSound || 'off'}`);
-        console.log(`   • Max Duration (sec) : ${asst.maxDurationSeconds || 600}s`);
-
-        console.log(`\n   [🧠 LLM Model Configuration]:`);
-        console.log(`     - Provider         : ${asst.model?.provider || 'openai'}`);
-        console.log(`     - Model            : ${asst.model?.model || 'gpt-4o-mini'}`);
-        console.log(`     - Temperature      : ${asst.model?.temperature ?? 'default'}`);
-        console.log(`     - Max Tokens       : ${asst.model?.maxTokens ?? 'default'}`);
-        console.log(`     - Tools Configured : ${asst.model?.tools?.length || 0}`);
-
-        console.log(`\n   [🗣️ Voice (TTS) Configuration]:`);
-        console.log(`     - Provider         : ${asst.voice?.provider || '11labs'}`);
-        console.log(`     - Voice ID         : ${asst.voice?.voiceId || 'default'}`);
-        console.log(`     - Speed            : ${asst.voice?.speed ?? 1.0}`);
-        console.log(`     - Chunk Plan       : ${asst.voice?.chunkPlan ? JSON.stringify(asst.voice.chunkPlan) : 'default'}`);
-
-        console.log(`\n   [🎙️ Transcriber (STT) Configuration]:`);
-        console.log(`     - Provider         : ${asst.transcriber?.provider || 'deepgram'}`);
-        console.log(`     - Model            : ${asst.transcriber?.model || asst.transcriber?.speechModel || 'nova-2'}`);
-        console.log(`     - Language         : ${asst.transcriber?.language || 'en'}`);
-        console.log(`     - Confidence Thresh: ${asst.transcriber?.confidenceThreshold ?? 'default'}`);
-        console.log(`     - Max Turn Silence : ${asst.transcriber?.maxTurnSilence ?? 'default'} ms`);
-        console.log(`     - End Of Turn Conf : ${asst.transcriber?.endOfTurnConfidenceThreshold ?? 'default'}`);
-        console.log(`     - VAD Endpointing  : ${asst.transcriber?.vadAssistedEndpointingEnabled ?? 'default'}`);
-        console.log(`     - Keywords Boost   : ${asst.transcriber?.keywords ? JSON.stringify(asst.transcriber.keywords) : 'None'}`);
-        console.log(`   ────────────────────────────────────────────────\n`);
-      });
-
-      if (assistants.length === 0) {
-        console.log('   ℹ️ No custom assistants created on this Vapi account yet.');
-        console.log('      (BrokerOS will dynamically configure model, voice, transcriber, silence ms, and prompt on dispatch!)\n');
+  for (const ep of endpoints) {
+    console.log(`📡 Probing ${ep.name}...`);
+    try {
+      const res = await fetch(ep.url, { headers });
+      console.log(`   Status: HTTP ${res.status} ${res.statusText}`);
+      const text = await res.text();
+      let json: any;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = text;
       }
-    } else {
-      console.log('   ❌ Error Response:', data);
+
+      if (res.ok) {
+        if (Array.isArray(json)) {
+          console.log(`   ✅ Success! Returned array with ${json.length} items.`);
+          if (json.length > 0) {
+            console.log(`   Sample item:`, JSON.stringify(json[0], null, 2).slice(0, 500) + '...\n');
+          } else {
+            console.log(`   (Array is empty: 0 items configured)\n`);
+          }
+        } else {
+          console.log(`   ✅ Success! Response:`, JSON.stringify(json, null, 2).slice(0, 500) + '...\n');
+        }
+      } else {
+        console.log(`   ℹ️ Response:`, JSON.stringify(json, null, 2).slice(0, 300) + '\n');
+      }
+    } catch (err: any) {
+      console.log(`   ⚠️ Request failed: ${err?.message}\n`);
     }
-  } catch (err: any) {
-    console.log('   ❌ Network Error:', err?.message);
   }
 
-  // 2. Fetch Phone Numbers
-  console.log('2. Querying GET https://api.vapi.ai/phone-number ...');
-  try {
-    const res = await fetch('https://api.vapi.ai/phone-number', { headers });
-    console.log(`   Status: HTTP ${res.status} ${res.statusText}`);
-    const data = (await res.json().catch(() => ({}))) as any;
-    if (res.ok) {
-      const numbers = Array.isArray(data) ? data : [];
-      console.log(`   ✅ Phone Numbers Found: ${numbers.length}`);
-      numbers.forEach((n) => {
-        console.log(`     - Phone: ${n.number || n.id} | Provider: ${n.provider || 'Twilio'} | Name: ${n.name || 'DID'}`);
-      });
-    } else {
-      console.log('   Response:', data);
-    }
-  } catch (err: any) {
-    console.log('   Network Error:', err?.message);
-  }
-
-  // 3. Fetch Tools / Functions
-  console.log('\n3. Querying GET https://api.vapi.ai/tool ...');
-  try {
-    const res = await fetch('https://api.vapi.ai/tool', { headers });
-    console.log(`   Status: HTTP ${res.status} ${res.statusText}`);
-    const data = (await res.json().catch(() => ({}))) as any;
-    if (res.ok) {
-      const tools = Array.isArray(data) ? data : [];
-      console.log(`   ✅ Custom Tools/Functions Found: ${tools.length}`);
-      tools.forEach((t) => {
-        console.log(`     - Tool: ${t.function?.name || t.name || t.id} | Type: ${t.type}`);
-      });
-    }
-  } catch (err: any) {
-    console.log('   Network Error:', err?.message);
-  }
-
-  console.log('\n===============================================================');
-  console.log('🏁 VAPI API PROBE COMPLETE');
-  console.log('===============================================================\n');
+  console.log('===============================================================');
+  console.log('🏁 VAPI PROBE COMPLETE');
+  console.log('===============================================================');
 }
 
-probeVapiAccount();
+probeVapiAccount().catch(console.error);
