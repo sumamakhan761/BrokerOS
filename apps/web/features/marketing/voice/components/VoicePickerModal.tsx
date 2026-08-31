@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Search,
   Check,
@@ -37,6 +37,8 @@ export interface VoicePickerModalProps {
     previewText?: string;
   }) => void;
   onPlayPreview?: (voiceId: string, provider: string, previewText: string) => void;
+  apiBaseUrl?: string;
+  agentPlatformId?: string;
 }
 
 export function VoicePickerModal({
@@ -46,53 +48,216 @@ export function VoicePickerModal({
   voices,
   onSelectVoice,
   onPlayPreview,
+  apiBaseUrl = "",
+  agentPlatformId,
 }: VoicePickerModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGender, setSelectedGender] = useState<string>("ALL");
+  const [selectedProvider, setSelectedProvider] = useState<string>("ALL");
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
 
-  const playVoiceSample = (voice: any) => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const urlRef = useRef<string | null>(null);
 
-    if (playingVoiceId === voice.id && window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
+  // Clean up audio on unmount or modal close
+  React.useEffect(() => {
+    if (!isOpen) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      if (urlRef.current) {
+        URL.revokeObjectURL(urlRef.current);
+        urlRef.current = null;
+      }
+      setPlayingVoiceId(null);
+    }
+  }, [isOpen]);
+
+  const playVoiceSample = async (voice: any) => {
+    if (typeof window === "undefined") return;
+
+    // If already playing this voice, stop it
+    if (playingVoiceId === voice.id) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current = null;
+      }
+      if (window.speechSynthesis && window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+      }
       setPlayingVoiceId(null);
       return;
     }
 
-    window.speechSynthesis.cancel();
-    const sampleText = voice.previewText || `Hello! This is ${voice.name}. How may I help you with your property search today?`;
-    const utterance = new SpeechSynthesisUtterance(sampleText);
-
-    const voices = window.speechSynthesis.getVoices();
-    const isFemale = voice.gender?.toLowerCase() === "female";
-    const isHindi = /hindi|sarvam|indic/i.test(voice.provider) || /hindi/i.test(voice.accent);
-
-    if (voices.length > 0) {
-      let matchingVoice = voices.find((v) => {
-        if (isHindi && (v.lang.startsWith("hi") || v.lang.includes("IN"))) return true;
-        if (isFemale && /female|jenny|sonia|zira|samantha|karen|victoria/i.test(v.name)) return true;
-        if (!isFemale && /male|guy|david|ryan|george|alex/i.test(v.name)) return true;
-        return false;
-      });
-
-      if (!matchingVoice) matchingVoice = voices.find((v) => v.lang.startsWith("en")) || voices[0];
-      if (matchingVoice) utterance.voice = matchingVoice;
+    // Stop any existing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
     }
 
-    utterance.pitch = isFemale ? 1.1 : 0.95;
-    utterance.rate = 1.0;
+    const sampleText = voice.previewText || `Hello! This is ${voice.name}. How may I help you with your property search today?`;
 
-    utterance.onstart = () => setPlayingVoiceId(voice.id);
-    utterance.onend = () => setPlayingVoiceId(null);
-    utterance.onerror = () => setPlayingVoiceId(null);
+    // 1. Direct verified preview URL
+    if (voice.previewUrl) {
+      try {
+        const audio = new Audio(voice.previewUrl);
+        audioRef.current = audio;
+        setPlayingVoiceId(voice.id);
 
-    window.speechSynthesis.speak(utterance);
+        audio.onended = () => {
+          setPlayingVoiceId(null);
+          audioRef.current = null;
+        };
+        audio.onerror = () => {
+          setPlayingVoiceId(null);
+          audioRef.current = null;
+        };
+
+        await audio.play();
+        return;
+      } catch (err) {
+        console.warn("Direct audio playback failed, trying backend synthesis", err);
+      }
+    }
+
+    const resolvedBase = (apiBaseUrl && apiBaseUrl.trim().length > 0)
+      ? apiBaseUrl
+      : (typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_API_URL || "/api/proxy") : "/api/proxy");
+    const previewEndpoint = `${resolvedBase.replace(/\/$/, '')}/api/marketing/voice/audio/preview`;
+
+    // 2. Try Backend Neural TTS API (Sarvam Bulbul v3, ElevenLabs, OpenAI, Deepgram, Cartesia)
+    try {
+      setIsLoadingAudio(true);
+      const res = await fetch(previewEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: sampleText,
+          voiceId: voice.id,
+          voiceProvider: voice.provider,
+          agentPlatformId,
+        }),
+      });
+
+      if (res.ok) {
+        const blob = await res.blob();
+        if (blob.size > 500) {
+          if (urlRef.current) {
+            URL.revokeObjectURL(urlRef.current);
+          }
+          const url = URL.createObjectURL(blob);
+          urlRef.current = url;
+
+          const audio = new Audio(url);
+          audioRef.current = audio;
+          setPlayingVoiceId(voice.id);
+          setIsLoadingAudio(false);
+
+          audio.onended = () => {
+            setPlayingVoiceId(null);
+            audioRef.current = null;
+          };
+          audio.onerror = () => {
+            setPlayingVoiceId(null);
+            audioRef.current = null;
+          };
+
+          await audio.play();
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Backend TTS preview fallback to distinctive persona synthesis", err);
+    } finally {
+      setIsLoadingAudio(false);
+    }
+
+    // 3. Fallback: Distinct Persona Speech Synthesis
+    if (window.speechSynthesis) {
+      const utterance = new SpeechSynthesisUtterance(sampleText);
+      const voicesList = window.speechSynthesis.getVoices();
+      const isFemale = voice.gender?.toLowerCase() === "female" || /female|savannah|emma|clara|layla|naina|sarah|rachel|bella|domi|asteria|luna|stella|nova|shimmer|jenny|priya|ritu|pooja|kavitha|simran|shreya|rupali/i.test(voice.name || voice.id);
+      const isHindi = /hindi|sarvam|indic/i.test(voice.provider) || /hindi|indian/i.test(voice.accent || "") || /rohan|sagar|neil|naina|priya|rahul|shubh|ritu|pooja|kabir|aditya/i.test(voice.name || voice.id);
+      const isBritish = /british/i.test(voice.accent || "") || /michael|helios|brian|fable/i.test(voice.name || voice.id);
+
+      if (voicesList.length > 0) {
+        let matchingVoice = voicesList.find((v) => {
+          const vName = v.name.toLowerCase();
+          const isVFemale = /female|zira|heera|kalpana|samantha|karen|victoria|hazel|jenny|veena/i.test(vName);
+          const isVMale = /male|david|ravi|mark|george|alex|ryan/i.test(vName);
+
+          if (isFemale && isVMale) return false;
+          if (!isFemale && isVFemale) return false;
+
+          if (isHindi && (v.lang.startsWith("hi") || v.lang.includes("IN"))) {
+            if (isFemale && isVFemale) return true;
+            if (!isFemale && isVMale) return true;
+            return true;
+          }
+
+          if (isFemale && isVFemale) return true;
+          if (!isFemale && isVMale) return true;
+          return false;
+        });
+
+        if (!matchingVoice) {
+          matchingVoice = isFemale
+            ? voicesList.find((v) => /female|zira|heera|kalpana|samantha|karen|victoria|hazel|jenny/i.test(v.name))
+            : voicesList.find((v) => /male|david|ravi|mark|alex|ryan/i.test(v.name));
+        }
+
+        if (!matchingVoice) matchingVoice = voicesList.find((v) => v.lang.startsWith("en")) || voicesList[0];
+        if (matchingVoice) utterance.voice = matchingVoice;
+      }
+
+      // Persona-specific pitch & speed tuning so each character sounds distinct
+      if (/sid|onyx|adam|zeus|orion/i.test(voice.name || voice.id)) {
+        utterance.pitch = 0.78; // Deep-toned
+        utterance.rate = 0.95;
+      } else if (/elliot|antoni|michael/i.test(voice.name || voice.id)) {
+        utterance.pitch = 0.92; // Soothing executive
+        utterance.rate = 1.0;
+      } else if (/godfrey|kai|josh/i.test(voice.name || voice.id)) {
+        utterance.pitch = 1.05; // Young energetic
+        utterance.rate = 1.08;
+      } else if (/sagar|neil|rohan/i.test(voice.name || voice.id)) {
+        utterance.pitch = 0.88; // Indian professional
+        utterance.rate = 1.02;
+      } else if (/layla|bella|nova/i.test(voice.name || voice.id)) {
+        utterance.pitch = 1.25; // Bright cheerful
+        utterance.rate = 1.05;
+      } else if (/savannah|clara|sarah/i.test(voice.name || voice.id)) {
+        utterance.pitch = 1.10; // Warm consultative
+        utterance.rate = 0.98;
+      } else {
+        utterance.pitch = isFemale ? 1.15 : 0.88;
+        utterance.rate = 1.0;
+      }
+
+      utterance.onstart = () => setPlayingVoiceId(voice.id);
+      utterance.onend = () => setPlayingVoiceId(null);
+      utterance.onerror = () => setPlayingVoiceId(null);
+
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   if (!isOpen) return null;
 
   const catalog = (voices && voices.length > 0) ? voices : VOICE_TTS_CATALOG;
+
+  // Extract distinct providers for tabs
+  const availableProviders = ["ALL", ...Array.from(new Set(catalog.map((v) => v.provider.toLowerCase())))];
 
   const filteredVoices = catalog.filter((v) => {
     const matchesSearch =
@@ -101,8 +266,9 @@ export function VoicePickerModal({
       (v.tags && v.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())));
 
     const matchesGender = selectedGender === "ALL" || v.gender.toLowerCase() === selectedGender.toLowerCase();
+    const matchesProvider = selectedProvider === "ALL" || v.provider.toLowerCase() === selectedProvider.toLowerCase();
 
-    return matchesSearch && matchesGender;
+    return matchesSearch && matchesGender && matchesProvider;
   });
 
   return (
@@ -146,7 +312,8 @@ export function VoicePickerModal({
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+            {/* Gender Filters */}
             <div className="flex items-center gap-1 overflow-x-auto py-1">
               <span className="text-[11px] font-extrabold text-slate-400 mr-1 uppercase">Gender:</span>
               {["ALL", "Female", "Male"].map((g) => (
@@ -159,7 +326,25 @@ export function VoicePickerModal({
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200/80"
                     }`}
                 >
-                  {g === "ALL" ? "All Voices" : g}
+                  {g === "ALL" ? "All" : g}
+                </button>
+              ))}
+            </div>
+
+            {/* Provider Filters */}
+            <div className="flex items-center gap-1 overflow-x-auto py-1 max-w-full">
+              <span className="text-[11px] font-extrabold text-slate-400 mr-1 uppercase">Provider:</span>
+              {availableProviders.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setSelectedProvider(p)}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all whitespace-nowrap ${selectedProvider === p
+                    ? "bg-slate-900 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200/80"
+                    }`}
+                >
+                  {p === "ALL" ? "All" : p}
                 </button>
               ))}
             </div>

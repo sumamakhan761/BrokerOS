@@ -9,6 +9,10 @@ export interface InBrowserAudioPlayerProps {
   voiceId: string;
   voiceName?: string;
   voiceProvider?: string;
+  voiceSpeed?: number;
+  gender?: string;
+  accent?: string;
+  previewUrl?: string;
   agentPlatformId?: string;
   apiBaseUrl?: string;
   className?: string;
@@ -18,7 +22,11 @@ export function InBrowserAudioPlayer({
   text,
   voiceId,
   voiceName = "Selected Voice",
-  voiceProvider = "sarvam",
+  voiceProvider = "vapi",
+  voiceSpeed = 1.0,
+  gender,
+  accent,
+  previewUrl,
   agentPlatformId,
   apiBaseUrl = "",
   className = "",
@@ -31,25 +39,122 @@ export function InBrowserAudioPlayer({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
+  const urlRef = useRef<string | null>(null);
   const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Clean up speech synthesis on unmount
+  // Clean up strictly on unmount
   useEffect(() => {
     return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
       if (timerRef.current) clearInterval(timerRef.current);
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
+      if (urlRef.current) {
+        URL.revokeObjectURL(urlRef.current);
+        urlRef.current = null;
+      }
     };
-  }, [audioUrl]);
+  }, []);
+
+  const fallbackSynth = (sampleText: string) => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(sampleText);
+    synthRef.current = utterance;
+
+    const voices = window.speechSynthesis.getVoices();
+    const isFemale =
+      gender?.toLowerCase() === "female" ||
+      /female|bella|rachel|domi|priya|sarah|emma|ananya|pooja|cleo|asteria|clara|layla|naina|savannah|ritu|kavitha|simran|shreya|rupali/i.test(voiceName) ||
+      /female|bella|rachel|domi|priya|cleo|asteria|clara|layla|naina|ritu|pooja|kavitha|simran|shreya|rupali/i.test(voiceId);
+    const isHindi =
+      /hindi|sarvam|indic|priya|arjun|rohan|sagar|neil|naina|rahul|shubh|ritu|pooja/i.test(voiceProvider) ||
+      /hindi|indian/i.test(voiceName) ||
+      /indian/i.test(accent || "") ||
+      /priya|rahul|shubh|ritu|pooja|rohan|kabir|aditya|ashutosh|gokul/i.test(voiceId);
+
+    if (voices.length > 0) {
+      let matchingVoice = voices.find((v) => {
+        const vName = v.name.toLowerCase();
+        const isVFemale = /female|zira|heera|kalpana|samantha|karen|victoria|hazel|jenny|veena/i.test(vName);
+        const isVMale = /male|david|ravi|mark|george|alex|ryan/i.test(vName);
+
+        if (isFemale && isVMale) return false;
+        if (!isFemale && isVFemale) return false;
+
+        if (isHindi && (v.lang.startsWith("hi") || v.lang.includes("IN"))) {
+          if (isFemale && isVFemale) return true;
+          if (!isFemale && isVMale) return true;
+          return true;
+        }
+
+        if (isFemale && isVFemale) return true;
+        if (!isFemale && isVMale) return true;
+        return false;
+      });
+
+      if (!matchingVoice) {
+        matchingVoice = isFemale
+          ? voices.find((v) => /female|zira|heera|kalpana|samantha|karen|victoria|hazel|jenny/i.test(v.name))
+          : voices.find((v) => /male|david|ravi|mark|alex|ryan/i.test(v.name));
+      }
+
+      if (!matchingVoice) {
+        matchingVoice = voices.find((v) => v.lang.startsWith("en")) || voices[0];
+      }
+
+      if (matchingVoice) utterance.voice = matchingVoice;
+    }
+
+    utterance.rate = voiceSpeed || 1.0;
+    utterance.pitch = isFemale ? 1.15 : 0.88;
+    utterance.volume = isMuted ? 0 : 1;
+
+    const wordCount = sampleText.split(/\s+/).length;
+    const estimatedSecs = Math.max(2, Math.round((wordCount / (130 * (voiceSpeed || 1.0))) * 60));
+    setDuration(estimatedSecs);
+    setCurrentTime(0);
+
+    utterance.onstart = () => {
+      setIsLoading(false);
+      setIsPlaying(true);
+
+      let elapsed = 0;
+      timerRef.current = setInterval(() => {
+        elapsed += 0.2;
+        setCurrentTime(Math.min(estimatedSecs, Math.round(elapsed)));
+      }, 200);
+    };
+
+    utterance.onend = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+
+    utterance.onerror = () => {
+      setIsPlaying(false);
+      setIsLoading(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
 
   const handlePlayPause = async () => {
     if (typeof window === "undefined") return;
 
     if (isPlaying) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       if (window.speechSynthesis && window.speechSynthesis.speaking) {
         window.speechSynthesis.cancel();
       }
@@ -64,68 +169,82 @@ export function InBrowserAudioPlayer({
     try {
       setIsLoading(true);
 
-      // Stop any existing speech
-      window.speechSynthesis.cancel();
+      // Stop any existing playback
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      window.speechSynthesis?.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(sampleText);
-      synthRef.current = utterance;
+      const resolvedBase = (apiBaseUrl && apiBaseUrl.trim().length > 0)
+        ? apiBaseUrl
+        : (typeof window !== "undefined" ? (process.env.NEXT_PUBLIC_API_URL || "/api/proxy") : "/api/proxy");
+      const previewEndpoint = `${resolvedBase.replace(/\/$/, '')}/api/marketing/voice/audio/preview`;
 
-      // Select matching voice
-      const voices = window.speechSynthesis.getVoices();
-      const isFemale =
-        /bella|rachel|domi|priya|sarah|emma|ananya|pooja/i.test(voiceName) ||
-        /bella|rachel|domi|priya/i.test(voiceId);
-      const isHindi = /hindi|sarvam|indic|priya|arjun/i.test(voiceProvider) || /hindi/i.test(voiceName);
-
-      if (voices.length > 0) {
-        let matchingVoice = voices.find((v) => {
-          if (isHindi && (v.lang.startsWith("hi") || v.lang.includes("IN"))) return true;
-          if (isFemale && /female|jenny|sonia|zira|samantha|karen|victoria/i.test(v.name)) return true;
-          if (!isFemale && /male|guy|david|ryan|george|alex/i.test(v.name)) return true;
-          return false;
+      // 1. Try Live Dynamic Neural TTS via Backend Endpoint (Sarvam Bulbul v3 / ElevenLabs / OpenAI)
+      try {
+        const res = await fetch(previewEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: sampleText,
+            voiceId,
+            voiceProvider,
+            agentPlatformId,
+          }),
         });
 
-        if (!matchingVoice) {
-          matchingVoice = voices.find((v) => v.lang.startsWith("en")) || voices[0];
-        }
+        if (res.ok) {
+          const blob = await res.blob();
+          if (blob.size > 500) {
+            if (urlRef.current) {
+              URL.revokeObjectURL(urlRef.current);
+            }
+            const url = URL.createObjectURL(blob);
+            urlRef.current = url;
+            setAudioUrl(url);
 
-        if (matchingVoice) utterance.voice = matchingVoice;
+            const audio = new Audio(url);
+            audioRef.current = audio;
+            audio.volume = isMuted ? 0 : 1;
+            audio.playbackRate = voiceSpeed || 1.0;
+
+            audio.onloadedmetadata = () => {
+              setDuration(Math.round(audio.duration || 4));
+            };
+
+            audio.onplay = () => {
+              setIsLoading(false);
+              setIsPlaying(true);
+            };
+
+            audio.ontimeupdate = () => {
+              setCurrentTime(Math.round(audio.currentTime));
+              if (audio.duration) setDuration(Math.round(audio.duration));
+            };
+
+            audio.onended = () => {
+              setIsPlaying(false);
+              setCurrentTime(0);
+            };
+
+            audio.onerror = () => {
+              setIsPlaying(false);
+              setIsLoading(false);
+              fallbackSynth(sampleText);
+            };
+
+            await audio.play();
+            setIsLoading(false);
+            setIsPlaying(true);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Backend TTS endpoint not reachable, falling back to persona speech engine", err);
       }
 
-      utterance.rate = 1.0;
-      utterance.pitch = isFemale ? 1.1 : 0.95;
-      utterance.volume = isMuted ? 0 : 1;
-
-      // Calculate approximate duration
-      const wordCount = sampleText.split(/\s+/).length;
-      const estimatedSecs = Math.max(2, Math.round((wordCount / 140) * 60));
-      setDuration(estimatedSecs);
-      setCurrentTime(0);
-
-      utterance.onstart = () => {
-        setIsLoading(false);
-        setIsPlaying(true);
-
-        let elapsed = 0;
-        timerRef.current = setInterval(() => {
-          elapsed += 0.2;
-          setCurrentTime(Math.min(estimatedSecs, Math.round(elapsed)));
-        }, 200);
-      };
-
-      utterance.onend = () => {
-        setIsPlaying(false);
-        setCurrentTime(0);
-        if (timerRef.current) clearInterval(timerRef.current);
-      };
-
-      utterance.onerror = () => {
-        setIsPlaying(false);
-        setIsLoading(false);
-        if (timerRef.current) clearInterval(timerRef.current);
-      };
-
-      window.speechSynthesis.speak(utterance);
+      // 2. Fallback to Persona Speech Synthesis
+      fallbackSynth(sampleText);
     } catch (err) {
       console.error("Audio preview synthesis error:", err);
       setIsLoading(false);
@@ -134,6 +253,10 @@ export function InBrowserAudioPlayer({
   };
 
   const handleStop = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
