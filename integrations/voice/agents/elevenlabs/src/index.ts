@@ -23,7 +23,7 @@ export class ElevenLabsAgentClient implements IVoiceAgentProvider {
     if (!key) return false;
 
     try {
-      const res = await fetch('https://api.elevenlabs.io/v1/user', {
+      const res = await fetch('https://api.elevenlabs.io/v1/models', {
         method: 'GET',
         headers: {
           'xi-api-key': key,
