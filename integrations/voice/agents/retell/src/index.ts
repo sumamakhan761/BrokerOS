@@ -111,12 +111,60 @@ export class RetellAgentClient implements IVoiceAgentProvider {
         options.llmModel?.startsWith('agent_') ||
         options.voiceId?.startsWith('agent_');
 
-      const targetAgentId = isAgentId
+      let targetAgentId = isAgentId
         ? (options.llmModel?.startsWith('agent_') ? options.llmModel : options.voiceId)
-        : 'agent_default';
+        : null;
+
+      // 1. Auto-discover active Retell Agent if not explicitly passed
+      if (!targetAgentId) {
+        try {
+          const aRes = await fetch('https://api.retellai.com/list-agents', {
+            headers: { Authorization: `Bearer ${key}` },
+          });
+          if (aRes.ok) {
+            const agents = await aRes.json();
+            if (Array.isArray(agents) && agents.length > 0) {
+              targetAgentId = agents[0].agent_id;
+            }
+          }
+        } catch {
+          // fallback
+        }
+      }
+
+      if (!targetAgentId) {
+        return {
+          success: false,
+          error: 'No active Retell Agent found. Please create an agent in your Retell AI dashboard first.',
+        };
+      }
+
+      // 2. Resolve verified Retell from_number
+      let fromNumber = options.fromNumber;
+      try {
+        const numRes = await fetch('https://api.retellai.com/list-phone-numbers', {
+          headers: { Authorization: `Bearer ${key}` },
+        });
+        if (numRes.ok) {
+          const numbers = await numRes.json();
+          if (Array.isArray(numbers) && numbers.length > 0) {
+            const matched = numbers.find((n: any) => n.phone_number === fromNumber || n.phone_number_pretty === fromNumber);
+            fromNumber = matched ? matched.phone_number : numbers[0].phone_number;
+          }
+        }
+      } catch {
+        // fallback to original
+      }
+
+      if (!fromNumber) {
+        return {
+          success: false,
+          error: 'No phone number registered in your Retell AI account. Please add/buy a phone number in your Retell dashboard.',
+        };
+      }
 
       const payload: any = {
-        from_number: options.fromNumber,
+        from_number: fromNumber,
         to_number: options.toPhone,
         override_agent_id: targetAgentId,
         retell_llm_dynamic_variables: {
@@ -147,7 +195,7 @@ export class RetellAgentClient implements IVoiceAgentProvider {
 
       return {
         success: false,
-        error: data.message || `Retell dispatch failed with HTTP ${res.status}`,
+        error: data.message || `Retell dispatch failed with HTTP ${res.status}: ${JSON.stringify(data)}`,
       };
     } catch (err: any) {
       return {
