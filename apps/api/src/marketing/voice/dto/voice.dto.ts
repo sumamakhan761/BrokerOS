@@ -402,6 +402,34 @@ export class TestVoiceAiCallDto {
   @IsOptional()
   @IsNumber()
   maxDurationSeconds?: number;
+
+  @IsOptional()
+  @IsString()
+  retellVoiceModel?: string;
+
+  @IsOptional()
+  @IsString()
+  retellEmotion?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  enableExpressiveMode?: boolean;
+
+  @IsOptional()
+  @IsString()
+  retellAmbientSound?: string;
+
+  @IsOptional()
+  @IsString()
+  retellLanguage?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  retellBackchannel?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  retellReminderMs?: number;
 }
 
 export class PreviewAudioTtsDto {

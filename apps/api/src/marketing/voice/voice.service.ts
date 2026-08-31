@@ -534,6 +534,13 @@ export class VoiceService {
       voicemailDetection: dto.voicemailDetection,
       backgroundSound: dto.backgroundSound,
       maxDurationSeconds: dto.maxDurationSeconds,
+      voiceModel: dto.retellVoiceModel,
+      voiceEmotion: dto.retellEmotion,
+      enableExpressiveMode: dto.enableExpressiveMode,
+      ambientSound: dto.retellAmbientSound,
+      language: dto.retellLanguage,
+      enableBackchannel: dto.retellBackchannel,
+      reminderTriggerMs: dto.retellReminderMs,
     };
 
     return voiceAgentProvider.dispatchOutboundCall(sendOptions, agentCreds);
