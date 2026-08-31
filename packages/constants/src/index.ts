@@ -660,7 +660,7 @@ export const VOICE_TTS_CATALOG = [
     provider: 'cartesia',
     accent: 'American Conversational',
     gender: 'Female',
-    tags: ['Cartesia', 'Sub-100ms', 'Sonic-3.5'],
+    tags: ['Cartesia', 'Sub-100ms', 'Sonic'],
     previewText: 'Hey there! I am following up on your luxury penthouse selection.',
   },
   {
@@ -669,7 +669,7 @@ export const VOICE_TTS_CATALOG = [
     provider: 'cartesia',
     accent: 'British Executive',
     gender: 'Male',
-    tags: ['Cartesia', 'Luxury', 'Sonic-3.5'],
+    tags: ['Cartesia', 'Luxury', 'Sonic'],
     previewText: 'Good day. Presenting the exclusive penthouse collection at Signature Towers.',
   },
 
