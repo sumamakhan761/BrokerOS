@@ -110,8 +110,8 @@ export class VapiAgentClient implements IVoiceAgentProvider {
         const sttProvider = options.transcriberModel?.includes('assembly')
           ? 'assembly-ai'
           : options.transcriberModel?.includes('whisper')
-          ? 'talkscriber'
-          : 'deepgram';
+            ? 'talkscriber'
+            : 'deepgram';
 
         payload.assistantOverrides = {
           transcriber: {
@@ -131,8 +131,10 @@ export class VapiAgentClient implements IVoiceAgentProvider {
             ],
           },
           voice: {
-            provider: options.voiceProvider || '11labs',
-            voiceId: options.voiceId || '21m00Tcm4TlvDq8ikWAM',
+            provider: options.voiceProvider || 'vapi',
+            voiceId: options.voiceId || 'Elliot',
+            ...(options.voiceProvider === 'vapi' ? { version: 2 } : {}),
+            ...(options.voiceModel ? { model: options.voiceModel } : {}),
             speed: options.voiceSpeed || 1.0,
           },
           firstMessage: options.firstMessage,
@@ -244,8 +246,8 @@ export class VapiAgentClient implements IVoiceAgentProvider {
               systemPrompt: asst.model?.messages?.find((m: any) => m.role === 'system')?.content || '',
             },
             voice: {
-              provider: asst.voice?.provider || '11labs',
-              voiceId: asst.voice?.voiceId || '21m00Tcm4TlvDq8ikWAM',
+              provider: asst.voice?.provider || 'vapi',
+              voiceId: asst.voice?.voiceId || 'Elliot',
               speed: asst.voice?.speed || 1.0,
             },
             transcriber: {
@@ -319,11 +321,11 @@ export class VapiAgentClient implements IVoiceAgentProvider {
               if (asst.voice?.voiceId) {
                 accountVoices.push({
                   id: asst.voice.voiceId,
-                  name: `${asst.name || 'Assistant'} Voice (${asst.voice.provider || '11labs'})`,
-                  provider: asst.voice.provider || '11labs',
-                  accent: 'Assistant Assigned',
+                  name: `${asst.name || 'Assistant'} Voice (${asst.voice.provider || 'vapi'})`,
+                  provider: asst.voice.provider || 'vapi',
+                  accent: 'Assistant Configured',
                   gender: 'Female',
-                  tags: [asst.voice.provider, 'Vapi Assistant'].filter(Boolean),
+                  tags: [asst.voice.provider, 'My Assistant'].filter(Boolean),
                   previewText: asst.firstMessage || 'Hello! I am calling regarding your real estate inquiry.',
                 });
               }
@@ -336,38 +338,357 @@ export class VapiAgentClient implements IVoiceAgentProvider {
     }
 
     const nativeVapiVoices: VoicePersonaItem[] = [
-      // 11Labs Voices in Vapi
-      { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel (11Labs)', provider: '11labs', accent: 'American Professional', gender: 'Female', previewText: 'Hello! I am calling from DLF Privana West sales gallery.' },
-      { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi (11Labs)', provider: '11labs', accent: 'Indian / Global English', gender: 'Female', previewText: 'Hi! Let me share the floor plans and pricing for the luxury 3BHK residences.' },
-      { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella (11Labs)', provider: '11labs', accent: 'Warm & Conversational', gender: 'Female', previewText: 'Hi there! I would love to assist you in booking your private site visit.' },
-      { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni (11Labs)', provider: '11labs', accent: 'Calm & Trustworthy', gender: 'Male', previewText: 'Good afternoon, this is Antoni with an update on your property application.' },
-      { id: 'flq6f7yk4E4fJM5XTYuZ', name: 'Michael (11Labs)', provider: '11labs', accent: 'Corporate Executive', gender: 'Male', previewText: 'Hello sir, I am following up on the pre-launch allocation details.' },
+      // ── 1. Curated Vapi Native Voices V2 (provider: "vapi") ──
+      {
+        id: 'Elliot',
+        name: 'Elliot (Vapi V2)',
+        provider: 'vapi',
+        accent: 'Canadian (Soothing)',
+        gender: 'Male',
+        tags: ['V2', 'Realistic', 'Friendly', 'Professional', 'Default'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/elliot-sample.wav',
+        previewText: 'Hello! I am calling regarding your recent luxury property inquiry.',
+      },
+      {
+        id: 'Savannah',
+        name: 'Savannah (Vapi V2)',
+        provider: 'vapi',
+        accent: 'American Southern',
+        gender: 'Female',
+        tags: ['V2', 'Realistic', 'Straightforward'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/savannah-sample.wav',
+        previewText: 'Hi there, calling with an update on your property application.',
+      },
+      {
+        id: 'Rohan',
+        name: 'Rohan (Vapi)',
+        provider: 'vapi',
+        accent: 'Indian American',
+        gender: 'Male',
+        tags: ['Energetic', 'Bright', 'Consultative'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/sagar-sample.wav',
+        previewText: 'Namaste! Are you interested in the new pre-launch apartments in Bangalore?',
+      },
+      {
+        id: 'Emma',
+        name: 'Emma (Vapi V2)',
+        provider: 'vapi',
+        accent: 'Asian American',
+        gender: 'Female',
+        tags: ['V2', 'Warm', 'Conversational'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/emma-sample.wav',
+        previewText: 'Hello! Let me walk you through the pricing and floor plans for Skyline Luxuria.',
+      },
+      {
+        id: 'Clara',
+        name: 'Clara (Vapi V2)',
+        provider: 'vapi',
+        accent: 'American (Warm)',
+        gender: 'Female',
+        tags: ['V2', 'Warm', 'Professional'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/clara-sample.wav',
+        previewText: 'Good afternoon, I am following up on your luxury villa inquiry.',
+      },
+      {
+        id: 'Nico',
+        name: 'Nico (Vapi V2)',
+        provider: 'vapi',
+        accent: 'American (Casual)',
+        gender: 'Male',
+        tags: ['V2', 'Casual', 'Natural'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/nico-sample.wav',
+        previewText: 'Hey there! Are you looking for a 2BHK or 3BHK penthouse?',
+      },
+      {
+        id: 'Kai',
+        name: 'Kai (Vapi V2)',
+        provider: 'vapi',
+        accent: 'American (Friendly)',
+        gender: 'Male',
+        tags: ['V2', 'Friendly', 'Approachable'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/kai-sample.wav',
+        previewText: 'Hi! Can I help you schedule a VIP site visit this weekend?',
+      },
+      {
+        id: 'Sagar',
+        name: 'Sagar (Vapi V2)',
+        provider: 'vapi',
+        accent: 'Indian American',
+        gender: 'Male',
+        tags: ['V2', 'Steady', 'Professional'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/sagar-sample.wav',
+        previewText: 'Hello sir, sharing exclusive pre-launch booking details with you.',
+      },
+      {
+        id: 'Godfrey',
+        name: 'Godfrey (Vapi V2)',
+        provider: 'vapi',
+        accent: 'American (Young)',
+        gender: 'Male',
+        tags: ['V2', 'Young', 'Energetic'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/godfrey-sample.wav',
+        previewText: 'Hi! Great news, 5 exclusive corner units have just been released.',
+      },
+      {
+        id: 'Neil',
+        name: 'Neil (Vapi V2)',
+        provider: 'vapi',
+        accent: 'Indian American',
+        gender: 'Male',
+        tags: ['V2', 'Clear', 'Professional'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/neil-sample.wav',
+        previewText: 'Hello! I am calling to confirm your private site visit pass.',
+      },
+      {
+        id: 'Layla',
+        name: 'Layla (Vapi V2)',
+        provider: 'vapi',
+        accent: 'American (Bright)',
+        gender: 'Female',
+        tags: ['V2', 'Bright', 'Cheerful'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/layla-sample.wav',
+        previewText: 'Hi! Your appointment for Saturday morning has been confirmed.',
+      },
+      {
+        id: 'Sid',
+        name: 'Sid (Vapi V2)',
+        provider: 'vapi',
+        accent: 'American (Deep-Toned)',
+        gender: 'Male',
+        tags: ['V2', 'Smooth', 'Deep-Toned'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/sid-sample.wav',
+        previewText: 'Good day. Presenting the exclusive penthouse collection at Signature Towers.',
+      },
+      {
+        id: 'Naina',
+        name: 'Naina (Vapi V2)',
+        provider: 'vapi',
+        accent: 'Indian American',
+        gender: 'Female',
+        tags: ['V2', 'Calm', 'Professional'],
+        previewUrl: 'https://docs.vapi.ai/static/audio/naina-sample.wav',
+        previewText: 'Namaste, I am following up on your luxury residence inquiry.',
+      },
 
-      // Cartesia Sonic Voices in Vapi
-      { id: '248be419-c632-4f23-adf1-5324ed7dbf10', name: 'Sonic English (Cartesia)', provider: 'cartesia', accent: 'Ultra Low Latency (~100ms)', gender: 'Female', previewText: 'Hello! How can I assist you with your property inquiry today?' },
-      { id: 'a0e99841-438c-4a64-b679-ae501e7d6091', name: 'Barbershop Man (Cartesia)', provider: 'cartesia', accent: 'Deep & Conversational', gender: 'Male', previewText: 'Hey there! Are you looking for a 2BHK or 3BHK penthouse?' },
+      // ── 2. ElevenLabs Voices on Vapi (provider: "11labs") ──
+      {
+        id: '21m00Tcm4TlvDq8ikWAM',
+        name: 'Rachel (11Labs)',
+        provider: '11labs',
+        accent: 'American Professional',
+        gender: 'Female',
+        tags: ['11labs', 'Calm', 'Consultative'],
+        previewUrl: 'https://storage.googleapis.com/eleven-public-prod/previews/models/eleven_multilingual_v2/21m00Tcm4TlvDq8ikWAM.mp3',
+        previewText: 'Hello! I am following up on your luxury apartment inquiry from yesterday.',
+      },
+      {
+        id: 'pNInz6obpgDQGcFmaJgB',
+        name: 'Adam (11Labs)',
+        provider: '11labs',
+        accent: 'American Deep',
+        gender: 'Male',
+        tags: ['11labs', 'Authoritative', 'High-Net-Worth'],
+        previewUrl: 'https://storage.googleapis.com/eleven-public-prod/previews/models/eleven_multilingual_v2/pNInz6obpgDQGcFmaJgB.mp3',
+        previewText: 'Good day. I am presenting the exclusive penthouse collection.',
+      },
+      {
+        id: 'ErXwobaYiN019PkySvjV',
+        name: 'Antoni (11Labs)',
+        provider: '11labs',
+        accent: 'American Executive',
+        gender: 'Male',
+        tags: ['11labs', 'Calm', 'Trustworthy'],
+        previewUrl: 'https://storage.googleapis.com/eleven-public-prod/previews/models/eleven_multilingual_v2/ErXwobaYiN019PkySvjV.mp3',
+        previewText: 'Good afternoon, this is Antoni with an update on your property application.',
+      },
+      {
+        id: 'TxGEqnHWrfWFTfGW9XjX',
+        name: 'Josh (11Labs)',
+        provider: '11labs',
+        accent: 'American Conversational',
+        gender: 'Male',
+        tags: ['11labs', 'Casual', 'Friendly'],
+        previewUrl: 'https://storage.googleapis.com/eleven-public-prod/previews/models/eleven_multilingual_v2/TxGEqnHWrfWFTfGW9XjX.mp3',
+        previewText: 'Hey! Quick question, are you looking for an investment or ready-to-move home?',
+      },
+      {
+        id: 'EXAVITQu4vr4xnSDxMaL',
+        name: 'Sarah (11Labs Default)',
+        provider: '11labs',
+        accent: 'American Professional',
+        gender: 'Female',
+        tags: ['11labs', 'Conversational', 'Pre-Sales'],
+        previewUrl: 'https://storage.googleapis.com/eleven-public-prod/previews/models/eleven_multilingual_v2/EXAVITQu4vr4xnSDxMaL.mp3',
+        previewText: 'Hi there, I am calling from the sales gallery to check your preferred unit.',
+      },
+      {
+        id: 'AZnzlk1XvdvUeBnXmlld',
+        name: 'Domi (11Labs)',
+        provider: '11labs',
+        accent: 'Indian / Global English',
+        gender: 'Female',
+        tags: ['11labs', 'Engaging', 'Warm'],
+        previewUrl: 'https://storage.googleapis.com/eleven-public-prod/previews/models/eleven_multilingual_v2/AZnzlk1XvdvUeBnXmlld.mp3',
+        previewText: 'Hi! Let me share the floor plans and pricing for the luxury 3BHK residences.',
+      },
+      {
+        id: 'flq6f7yk4E4fJM5XTYuZ',
+        name: 'Michael (11Labs)',
+        provider: '11labs',
+        accent: 'British Executive',
+        gender: 'Male',
+        tags: ['11labs', 'Corporate', 'Commercial'],
+        previewUrl: 'https://storage.googleapis.com/eleven-public-prod/previews/models/eleven_multilingual_v2/flq6f7yk4E4fJM5XTYuZ.mp3',
+        previewText: 'Hello sir, I am following up on the pre-launch allocation details.',
+      },
 
-      // Deepgram Aura Voices in Vapi
-      { id: 'aura-asteria-en', name: 'Asteria (Deepgram Aura)', provider: 'deepgram', accent: 'Crisp & Natural', gender: 'Female', previewText: 'Hello, I am Asteria from the sales office following up on your inquiry.' },
-      { id: 'aura-orion-en', name: 'Orion (Deepgram Aura)', provider: 'deepgram', accent: 'Confident Real Estate Consultant', gender: 'Male', previewText: 'Good day! Let me guide you through the latest payment plans and inventory.' },
+      // ── 3. Deepgram Aura Voices on Vapi (provider: "deepgram") ──
+      {
+        id: 'aura-asteria-en',
+        name: 'Asteria (Deepgram Aura)',
+        provider: 'deepgram',
+        accent: 'American Clear',
+        gender: 'Female',
+        tags: ['Deepgram', 'Ultra Fast', 'Crisp'],
+        previewUrl: 'https://static.deepgram.com/audio/voices/asteria.wav',
+        previewText: 'Hello, this is Asteria following up on your property inquiry.',
+      },
+      {
+        id: 'aura-luna-en',
+        name: 'Luna (Deepgram Aura)',
+        provider: 'deepgram',
+        accent: 'American Warm',
+        gender: 'Female',
+        tags: ['Deepgram', 'Warm', 'Follow-up'],
+        previewUrl: 'https://static.deepgram.com/audio/voices/luna.wav',
+        previewText: 'Hi! We have an exclusive early-bird discount on the new tower launch.',
+      },
+      {
+        id: 'aura-stella-en',
+        name: 'Stella (Deepgram Aura)',
+        provider: 'deepgram',
+        accent: 'American Crisp',
+        gender: 'Female',
+        tags: ['Deepgram', 'Direct', 'Accurate'],
+        previewUrl: 'https://static.deepgram.com/audio/voices/stella.wav',
+        previewText: 'Hello, this is Stella following up on your property inquiry from yesterday.',
+      },
+      {
+        id: 'aura-orion-en',
+        name: 'Orion (Deepgram Aura)',
+        provider: 'deepgram',
+        accent: 'American Deep',
+        gender: 'Male',
+        tags: ['Deepgram', 'Confident', 'Advisor'],
+        previewUrl: 'https://static.deepgram.com/audio/voices/orion.wav',
+        previewText: 'Good day! Let me guide you through the latest payment plans and inventory.',
+      },
+      {
+        id: 'aura-zeus-en',
+        name: 'Zeus (Deepgram Aura)',
+        provider: 'deepgram',
+        accent: 'American Resonant',
+        gender: 'Male',
+        tags: ['Deepgram', 'Resonant', 'Authoritative'],
+        previewUrl: 'https://static.deepgram.com/audio/voices/zeus.wav',
+        previewText: 'Welcome to Skyline Realty. How may I direct your property inquiry?',
+      },
+      {
+        id: 'aura-helios-en',
+        name: 'Helios (Deepgram Aura)',
+        provider: 'deepgram',
+        accent: 'British Articulate',
+        gender: 'Male',
+        tags: ['Deepgram', 'Articulate', 'Clear'],
+        previewUrl: 'https://static.deepgram.com/audio/voices/helios.wav',
+        previewText: 'Good afternoon. I am calling to confirm your private site visit pass.',
+      },
 
-      // OpenAI Voices in Vapi
-      { id: 'alloy', name: 'Alloy (OpenAI)', provider: 'openai', accent: 'Balanced & Neutral', gender: 'Neutral', previewText: 'Hello! I am calling to confirm your appointment for this Saturday.' },
-      { id: 'shimmer', name: 'Shimmer (OpenAI)', provider: 'openai', accent: 'Expressive & Cheerful', gender: 'Female', previewText: 'Hi! We have an exclusive early-bird discount on the new tower launch.' },
-      { id: 'echo', name: 'Echo (OpenAI)', provider: 'openai', accent: 'Warm & Clear', gender: 'Male', previewText: 'Welcome to Skyline Realty! How can I help you find your dream home?' },
+      // ── 4. Cartesia Sonic Voices on Vapi (provider: "cartesia") ──
+      {
+        id: 'a0e99841-438c-4a64-b679-ae501e7d6091',
+        name: 'Sarah (Cartesia Sonic)',
+        provider: 'cartesia',
+        accent: 'American Conversational',
+        gender: 'Female',
+        tags: ['Cartesia', 'Sub-100ms', 'Sonic-3.5'],
+        previewText: 'Hey there! I am following up on your luxury penthouse selection.',
+      },
+      {
+        id: '694f9389-aac1-45b6-b726-9d9369183238',
+        name: 'James (Cartesia Sonic)',
+        provider: 'cartesia',
+        accent: 'British Executive',
+        gender: 'Male',
+        tags: ['Cartesia', 'Luxury', 'Sonic-3.5'],
+        previewText: 'Good day. Presenting the exclusive penthouse collection at Signature Towers.',
+      },
 
-      // Azure Voices in Vapi
-      { id: 'andrew', name: 'Andrew (Azure Neural)', provider: 'azure', accent: 'American Professional', gender: 'Male', previewText: 'Hello! Calling to share details on the commercial retail space.' },
-      { id: 'jenny', name: 'Jenny (Azure Neural)', provider: 'azure', accent: 'Clear Conversational', gender: 'Female', previewText: 'Hello! Would you like to schedule a virtual tour of the property?' },
+      // ── 5. OpenAI Voices on Vapi (provider: "openai") ──
+      {
+        id: 'alloy',
+        name: 'Alloy (OpenAI)',
+        provider: 'openai',
+        accent: 'Balanced & Neutral',
+        gender: 'Neutral',
+        tags: ['OpenAI', 'Adaptive', 'Realtime'],
+        previewText: 'Hello! I am calling to confirm your appointment for this Saturday.',
+      },
+      {
+        id: 'echo',
+        name: 'Echo (OpenAI)',
+        provider: 'openai',
+        accent: 'Warm & Clear',
+        gender: 'Male',
+        tags: ['OpenAI', 'Warm', 'Clear'],
+        previewText: 'Welcome to Skyline Realty! How can I help you find your dream home?',
+      },
+      {
+        id: 'fable',
+        name: 'Fable (OpenAI)',
+        provider: 'openai',
+        accent: 'British Expressive',
+        gender: 'Male',
+        tags: ['OpenAI', 'Expressive', 'Nuanced'],
+        previewText: 'Good day. Let me share details regarding the exclusive new release.',
+      },
+      {
+        id: 'onyx',
+        name: 'Onyx (OpenAI)',
+        provider: 'openai',
+        accent: 'Deep & Authoritative',
+        gender: 'Male',
+        tags: ['OpenAI', 'Deep', 'Executive'],
+        previewText: 'Hello, calling regarding the commercial office leasing schedule.',
+      },
+      {
+        id: 'nova',
+        name: 'Nova (OpenAI)',
+        provider: 'openai',
+        accent: 'Energetic & Bright',
+        gender: 'Female',
+        tags: ['OpenAI', 'Energetic', 'Modern'],
+        previewText: 'Hi there! We have released 5 exclusive corner units with a spot discount.',
+      },
+      {
+        id: 'shimmer',
+        name: 'Shimmer (OpenAI)',
+        provider: 'openai',
+        accent: 'Expressive & Cheerful',
+        gender: 'Female',
+        tags: ['OpenAI', 'Expressive', 'Cheerful'],
+        previewText: 'Hi! Let me walk you through the pricing and floor plans for Skyline Luxuria.',
+      },
     ];
 
-    // Deduplicate by id
+    // Deduplicate by id + provider
     const seen = new Set<string>();
     const combined: VoicePersonaItem[] = [];
 
     for (const v of [...accountVoices, ...nativeVapiVoices]) {
-      if (!seen.has(v.id)) {
-        seen.add(v.id);
+      const key = `${v.provider}_${v.id}`;
+      if (!seen.has(key)) {
+        seen.add(key);
         combined.push(v);
       }
     }

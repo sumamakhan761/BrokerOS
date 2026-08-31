@@ -23,14 +23,14 @@ export class RetellAgentClient implements IVoiceAgentProvider {
     if (!key) return false;
 
     try {
-      const res = await fetch('https://api.retellai.com/get-agent', {
+      const res = await fetch('https://api.retellai.com/list-agents', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${key}`,
         },
       });
 
-      return res.status === 200 || res.status === 404;
+      return res.status === 200;
     } catch {
       return key.startsWith('key_') || key.length >= 20;
     }
@@ -47,6 +47,55 @@ export class RetellAgentClient implements IVoiceAgentProvider {
     };
   }
 
+  async getAccountAssistants(credentials?: VoiceAgentCredentials): Promise<any[]> {
+    const key = credentials?.apiKey || this.apiKey;
+    if (!key) return [];
+
+    try {
+      const res = await fetch('https://api.retellai.com/list-agents', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${key}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        if (Array.isArray(data)) {
+          return data.map((a: any) => ({
+            id: a.agent_id,
+            name: a.agent_name || a.agent_id,
+            voice: {
+              voiceId: a.voice_id,
+              model: a.voice_model,
+              speed: a.voice_speed,
+              emotion: a.voice_emotion,
+              temperature: a.voice_temperature,
+            },
+            model: {
+              model: a.response_engine?.llm_id || 'retell-llm',
+              type: a.response_engine?.type || 'retell-llm',
+            },
+            language: a.language || 'en-US',
+            ambientSound: a.ambient_sound,
+            ambientSoundVolume: a.ambient_sound_volume,
+            enableBackchannel: a.enable_backchannel,
+            backchannelFrequency: a.backchannel_frequency,
+            reminderTriggerMs: a.reminder_trigger_ms,
+            reminderMaxCount: a.reminder_max_count,
+            maxCallDurationMs: a.max_call_duration_ms,
+            voicemailOption: a.voicemail_option,
+            raw: a,
+          }));
+        }
+      }
+    } catch {
+      // Graceful fallback
+    }
+
+    return [];
+  }
+
   async dispatchOutboundCall(
     options: SendVoiceOptions,
     credentials?: VoiceAgentCredentials,
@@ -58,21 +107,33 @@ export class RetellAgentClient implements IVoiceAgentProvider {
     }
 
     try {
+      const isAgentId =
+        options.llmModel?.startsWith('agent_') ||
+        options.voiceId?.startsWith('agent_');
+
+      const targetAgentId = isAgentId
+        ? (options.llmModel?.startsWith('agent_') ? options.llmModel : options.voiceId)
+        : 'agent_default';
+
+      const payload: any = {
+        from_number: options.fromNumber,
+        to_number: options.toPhone,
+        override_agent_id: targetAgentId,
+        retell_llm_dynamic_variables: {
+          ...options.variables,
+          customer_name: options.variables?.firstName || options.variables?.fullName || 'Valued Client',
+          script_prompt: options.scriptPrompt,
+          first_message: options.firstMessage,
+        },
+      };
+
       const res = await fetch('https://api.retellai.com/v2/create-phone-call', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${key}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          from_number: options.fromNumber,
-          to_number: options.toPhone,
-          override_agent_id: options.voiceId || 'agent_default',
-          retell_llm_dynamic_variables: {
-            ...options.variables,
-            script_prompt: options.scriptPrompt,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = (await res.json()) as any;
@@ -128,6 +189,13 @@ export class RetellAgentClient implements IVoiceAgentProvider {
 
   async getAvailableModels(credentials?: VoiceAgentCredentials): Promise<VoiceModelItem[]> {
     const key = credentials?.apiKey || this.apiKey;
+    const standardModels: VoiceModelItem[] = [
+      { id: 'gpt-4o', name: 'GPT-4o (Retell Ultra Intelligent)', provider: 'OpenAI', badge: 'Recommended', description: 'Real-time complex sales negotiation and objection handling' },
+      { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Retell Fast)', provider: 'OpenAI', badge: 'Ultra Fast', description: 'Low latency real-time conversation (~110ms)' },
+      { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', badge: 'High Nuance', description: 'Top-tier natural cadence and emotional reasoning' },
+      { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'Google', badge: 'Speed Leader', description: 'Blazing fast responses with multilingual depth' },
+    ];
+
     if (key) {
       try {
         const res = await fetch('https://api.retellai.com/v2/list-retell-llms', {
@@ -135,27 +203,24 @@ export class RetellAgentClient implements IVoiceAgentProvider {
         });
         if (res.ok) {
           const data = (await res.json()) as any;
-          if (Array.isArray(data) && data.length > 0) {
-            const dynamicLlms: VoiceModelItem[] = data.map((llm: any) => ({
+          const llmList = Array.isArray(data) ? data : data?.items || [];
+          if (llmList.length > 0) {
+            const dynamicLlms: VoiceModelItem[] = llmList.map((llm: any) => ({
               id: llm.llm_id || llm.id,
-              name: llm.model || llm.general_prompt?.substring(0, 30) || 'Custom Retell LLM',
-              provider: llm.model?.includes('claude') ? 'Anthropic' : 'OpenAI',
-              badge: 'Account Configured',
-              description: `Retell Managed LLM (${llm.model || 'Custom'})`,
+              name: `Custom LLM: ${llm.model || 'gpt-4o'} (${(llm.general_prompt || '').slice(0, 24)}...)`,
+              provider: 'Retell Account LLM',
+              badge: 'Configured LLM',
+              description: `Retell Custom LLM (${llm.model || 'gpt-4o'})`,
             }));
-            return dynamicLlms;
+            return [...dynamicLlms, ...standardModels];
           }
         }
       } catch {
         // Fallback gracefully
       }
     }
-    return [
-      { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Retell Fast)', provider: 'OpenAI', badge: 'Recommended', description: 'Low latency real-time conversation (~120ms)' },
-      { id: 'gpt-4o', name: 'GPT-4o (Retell Reasoning)', provider: 'OpenAI', badge: 'High Intelligence', description: 'Advanced objection handling and negotiation' },
-      { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', badge: 'Super Smart', description: 'Top-tier complex real estate sales dialogue' },
-      { id: 'retell-custom-llm', name: 'Retell Custom LLM Webhook', provider: 'Retell', badge: 'Enterprise Custom', description: 'Route dialogue to your private backend LLM' },
-    ];
+
+    return standardModels;
   }
 
   async getAvailableVoices(credentials?: VoiceAgentCredentials): Promise<VoicePersonaItem[]> {
@@ -167,16 +232,16 @@ export class RetellAgentClient implements IVoiceAgentProvider {
         });
         if (res.ok) {
           const data = (await res.json()) as any;
-          if (Array.isArray(data)) {
+          if (Array.isArray(data) && data.length > 0) {
             return data.map((v: any) => ({
               id: v.voice_id,
               name: v.voice_name || v.voice_id,
               provider: v.provider || 'Retell',
               accent: v.accent || 'Global English',
               gender: v.gender || 'Female',
-              tags: [v.provider, v.accent].filter(Boolean),
+              tags: [v.provider, v.accent, v.gender, v.age].filter(Boolean),
               previewUrl: v.preview_audio_url,
-              previewText: 'Hello! I am excited to connect with you regarding prime luxury properties.',
+              previewText: 'Hello! I am delighted to speak with you regarding our exclusive luxury real estate opportunities.',
             }));
           }
         }
@@ -184,10 +249,11 @@ export class RetellAgentClient implements IVoiceAgentProvider {
         // Fallback gracefully
       }
     }
+
     return [
-      { id: '11labs-Adrian', name: 'Adrian (Energetic Sales)', provider: 'Retell', accent: 'American Professional', gender: 'Male', previewText: 'Hi, this is Adrian with Skyline Realty regarding your project inquiry.' },
-      { id: '11labs-Chloe', name: 'Chloe (Warm & Polite)', provider: 'Retell', accent: 'British Executive', gender: 'Female', previewText: 'Hello! I am calling to confirm your site visit for this weekend.' },
-      { id: 'deepgram-Asteria', name: 'Asteria (Ultra Fast)', provider: 'Retell', accent: 'Neutral Professional', gender: 'Female', previewText: 'Good day! Would you like to review the updated payment plan?' },
+      { id: 'cartesia-Cleo', name: 'Cleo (Warm Executive)', provider: 'Cartesia', accent: 'American', gender: 'Female', previewText: 'Hello! I am calling to confirm your site visit for this weekend.' },
+      { id: '11labs-Adrian', name: 'Adrian (Energetic Sales)', provider: 'ElevenLabs', accent: 'American Professional', gender: 'Male', previewText: 'Hi, this is Adrian with Skyline Realty regarding your project inquiry.' },
+      { id: 'deepgram-Asteria', name: 'Asteria (Ultra Fast)', provider: 'Deepgram', accent: 'Neutral Professional', gender: 'Female', previewText: 'Good day! Would you like to review the updated payment plan?' },
     ];
   }
 }
