@@ -43,6 +43,89 @@ export class PipecatAgentClient implements IVoiceAgentProvider {
     options: SendVoiceOptions,
     credentials?: VoiceAgentCredentials,
   ): Promise<SendVoiceResult> {
+    // 1. If Vobiz carrier is selected, dispatch outbound PSTN call directly via Vobiz line
+    if (options.telephonyCredentials?.apiKey && options.telephonyCredentials?.apiToken && !options.telephonyCredentials?.subdomain && !options.telephonyCredentials?.accountSid) {
+      const id = options.telephonyCredentials.apiKey;
+      const token = options.telephonyCredentials.apiToken;
+      const cleanTo = options.toPhone.replace(/[^\d+]/g, '');
+      const cleanFrom = (options.fromNumber || options.telephonyCredentials.fromNumbers?.[0] || '').replace(/[^\d+]/g, '');
+      const message = options.firstMessage || 'Hello! Thank you for connecting with us.';
+
+      try {
+        const publicUrl = (process.env.API_PUBLIC_URL || '').replace(/\/$/, '');
+        const answerUrl = `${publicUrl}/api/marketing/voice/webhooks/vobiz-answer?campaignId=${options.campaignId || 'direct_test'}&firstMessage=${encodeURIComponent(message)}&scriptPrompt=${encodeURIComponent(options.scriptPrompt || '')}&agent=PIPECAT`;
+
+        const res = await fetch(`https://api.vobiz.ai/api/v1/Account/${id}/Call/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth-ID': id,
+            'X-Auth-Token': token,
+            Authorization: `Basic ${Buffer.from(`${id}:${token}`).toString('base64')}`,
+          },
+          body: JSON.stringify({
+            to: cleanTo,
+            from: cleanFrom,
+            answer_url: answerUrl,
+            answer_method: 'GET',
+          }),
+        });
+
+        if (res.status >= 200 && res.status < 300) {
+          const data = (await res.json().catch(() => ({}))) as any;
+          return {
+            success: true,
+            providerCallId: data.callId || data.call_uuid || `vobiz_pipecat_${Date.now()}`,
+          };
+        }
+      } catch {
+        // fallback to Pipecat API
+      }
+    }
+
+    // 2. If Exotel carrier is selected, dispatch outbound PSTN call directly via Exotel line
+    if (options.telephonyCredentials?.apiKey && options.telephonyCredentials?.apiToken && options.telephonyCredentials?.accountSid && options.telephonyCredentials?.subdomain) {
+      const k = options.telephonyCredentials.apiKey;
+      const tok = options.telephonyCredentials.apiToken;
+      const sid = options.telephonyCredentials.accountSid;
+      const domain = options.telephonyCredentials.subdomain;
+      const cleanFrom = (options.fromNumber || options.telephonyCredentials.fromNumbers?.[0] || '').replace(/[^\d]/g, '');
+      let cleanTo = options.toPhone.replace(/[^\d]/g, '');
+      if (cleanTo.startsWith('91') && cleanTo.length === 12) cleanTo = '0' + cleanTo.slice(2);
+      else if (cleanTo.length === 10) cleanTo = '0' + cleanTo;
+
+      try {
+        const authHeader = Buffer.from(`${k}:${tok}`).toString('base64');
+        const body = new URLSearchParams({
+          From: cleanTo,
+          To: cleanFrom,
+          CallerId: cleanFrom,
+          CallType: 'trans',
+          TimeLimit: '60',
+          TimeOut: '30',
+        });
+
+        const res = await fetch(`https://${domain}/v1/Accounts/${sid}/Calls/connect.json`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Basic ${authHeader}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: body.toString(),
+        });
+
+        if (res.status >= 200 && res.status < 300) {
+          const data = (await res.json().catch(() => ({}))) as any;
+          return {
+            success: true,
+            providerCallId: data?.Call?.Sid || data?.sid || `exotel_pipecat_${Date.now()}`,
+          };
+        }
+      } catch {
+        // fallback to Pipecat API
+      }
+    }
+
     const url = credentials?.serverUrl || this.serverUrl;
 
     try {
@@ -128,3 +211,5 @@ export class PipecatAgentClient implements IVoiceAgentProvider {
     ];
   }
 }
+
+
