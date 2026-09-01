@@ -652,7 +652,9 @@ export default function NewVoiceCampaignPage() {
             callerIdNumber={callerIdNumber}
             onSelectTelephony={(id, cid) => {
               setTelephonyId(id);
-              if (cid) setCallerIdNumber(cid);
+              const matchedTel = telephonyIntegrations.find((t) => t.id === id);
+              const did = cid || matchedTel?.fromNumbers?.[0] || "";
+              setCallerIdNumber(did);
             }}
             onSelectCallerId={setCallerIdNumber}
             apiBaseUrl={baseUrl}
@@ -759,6 +761,7 @@ export default function NewVoiceCampaignPage() {
               retellReminderMs,
             }}
             totalRecipients={estimatedCount}
+            csvRecipients={csvRecipients}
             projects={projects}
             telephonyIntegrations={telephonyIntegrations}
             agentIntegrations={agentIntegrations}
