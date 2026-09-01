@@ -339,6 +339,13 @@ export class TestVoiceAiCallDto {
   @IsNotEmpty()
   toPhone!: string;
 
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  variables?: Record<string, any>;
+
   @IsString()
   @IsNotEmpty()
   telephonyId!: string;

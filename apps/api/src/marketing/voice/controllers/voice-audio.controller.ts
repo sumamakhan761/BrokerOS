@@ -1,8 +1,10 @@
 import { Controller, Post, Body, Res, HttpStatus } from '@nestjs/common';
+import { Public } from '@thallesp/nestjs-better-auth';
 import type { Response } from 'express';
 import { VoiceAudioService } from '../services/voice-audio.service.js';
 import { PreviewAudioTtsDto } from '../dto/voice.dto.js';
 
+@Public()
 @Controller('api/marketing/voice/audio')
 export class VoiceAudioController {
   constructor(private readonly audioService: VoiceAudioService) { }
