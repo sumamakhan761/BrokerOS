@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { prismaClient } from '@brokeros/prisma';
 import { getVoiceAgentProvider } from '@brokeros/int-voice';
+import { normalizeVoiceLeadVariables, interpolateVoiceTemplate } from '@brokeros/constants';
 import type {
   VoiceAgentPlatform,
   VoiceTelephonyCredentials,
@@ -207,19 +208,21 @@ export class MarketingVoiceProcessor implements OnModuleInit, OnModuleDestroy {
       await Promise.all(
         chunk.map(async (recipient) => {
           const normalizedPhone = MarketingVoiceProcessor.normalizePhoneNumber(recipient.phone);
-          const mergeData = (recipient.mergeData as Record<string, any>) || {};
+          const normalizedVariables = normalizeVoiceLeadVariables(
+            recipient,
+            campaign.project ? {
+              name: campaign.project.name,
+              city: campaign.project.city || undefined,
+              address: campaign.project.address || undefined,
+            } : undefined,
+            campaign.createdBy ? {
+              name: campaign.createdBy.name || undefined,
+              phone: campaign.createdBy.phoneNumber || undefined,
+            } : undefined,
+          );
 
-          const variables = {
-            firstName: recipient.name?.split(' ')[0] || mergeData.firstName || 'Valued Client',
-            fullName: recipient.name || mergeData.fullName || 'Valued Client',
-            phone: normalizedPhone,
-            projectName: campaign.project?.name || 'Exclusive Luxury Residences',
-            projectLocation: campaign.project?.address || campaign.project?.city || 'Prime Location',
-            startingPrice: 'Attractive Pre-Launch Rates',
-            agentName: campaign.createdBy?.name || 'Senior Real Estate Advisor',
-            agentPhone: campaign.createdBy?.phoneNumber || '',
-            ...mergeData,
-          };
+          const resolvedFirstMessage = interpolateVoiceTemplate(campaign.firstMessage || undefined, normalizedVariables);
+          const resolvedScriptPrompt = interpolateVoiceTemplate(campaign.scriptPrompt || undefined, normalizedVariables);
 
           const sendOptions: SendVoiceOptions = {
             toPhone: normalizedPhone,
@@ -230,15 +233,37 @@ export class MarketingVoiceProcessor implements OnModuleInit, OnModuleDestroy {
             voiceProvider: campaign.voiceProvider,
             voiceId: campaign.voiceId,
             voiceName: campaign.voiceName,
-            scriptPrompt: campaign.scriptPrompt,
-            firstMessage: campaign.firstMessage || undefined,
+            scriptPrompt: resolvedScriptPrompt,
+            firstMessage: resolvedFirstMessage,
             telephonyCredentials: telephonyCreds,
             agentCredentials: agentCreds,
-            variables,
+            variables: normalizedVariables,
           };
 
           try {
-            const result = await voiceAgentProvider.dispatchOutboundCall(sendOptions, agentCreds);
+            let result = await voiceAgentProvider.dispatchOutboundCall(sendOptions, agentCreds);
+
+            // Carrier Failover: If primary carrier failed, attempt secondary carrier line
+            if (!result.success && campaign.telephonyId) {
+              const fallbackTelephony = await this.prisma.voiceTelephonyIntegration.findFirst({
+                where: { isActive: true, id: { not: campaign.telephonyId } },
+                orderBy: { isDefault: 'desc' },
+              });
+
+              if (fallbackTelephony) {
+                this.logger.warn(`Primary carrier failed for ${recipient.phone}: ${result.error}. Retrying with fallback carrier ${fallbackTelephony.provider}...`);
+                const fallbackCreds: VoiceTelephonyCredentials = {
+                  accountSid: fallbackTelephony.accountSid || undefined,
+                  authToken: fallbackTelephony.authToken || undefined,
+                  apiKey: fallbackTelephony.apiKey || undefined,
+                  apiToken: fallbackTelephony.apiToken || undefined,
+                  fromNumbers: fallbackTelephony.fromNumbers,
+                };
+                sendOptions.telephonyCredentials = fallbackCreds;
+                sendOptions.fromNumber = fallbackTelephony.fromNumbers?.[0] || fromNumber;
+                result = await voiceAgentProvider.dispatchOutboundCall(sendOptions, agentCreds);
+              }
+            }
 
             if (result.success) {
               await this.prisma.voiceRecipient.update({
