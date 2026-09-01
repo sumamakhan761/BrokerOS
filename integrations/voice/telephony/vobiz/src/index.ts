@@ -58,6 +58,8 @@ export class VobizTelephonyClient implements IVoiceTelephonyProvider {
     ];
 
     let lastError = 'Failed to trigger Vobiz test call';
+    const publicUrl = (process.env.API_PUBLIC_URL || '').replace(/\/$/, '');
+    const answerUrl = `${publicUrl}/api/marketing/voice/webhooks/vobiz-answer?firstMessage=${encodeURIComponent('Hello! This is a carrier verification test call from BrokerOS. Your Vobiz AI telephony line is active.')}`;
 
     for (const url of endpoints) {
       try {
@@ -74,8 +76,8 @@ export class VobizTelephonyClient implements IVoiceTelephonyProvider {
             from: cleanFrom,
             from_number: cleanFrom,
             to_number: cleanTo,
-            answer_url: 'https://brokeros.com/api/voice/vobiz-answer',
-            voiceXml: '<Response><Speak>Hello! This is a carrier verification test call from BrokerOS. Your Vobiz AI telephony line is active.</Speak></Response>',
+            answer_url: answerUrl,
+            answer_method: 'GET',
           }),
         });
 
@@ -97,3 +99,4 @@ export class VobizTelephonyClient implements IVoiceTelephonyProvider {
     };
   }
 }
+
