@@ -736,7 +736,7 @@ export const DEFAULT_VOICE_SCRIPTS = [
     name: 'Project Pre-Launch Invitation & Qualification',
     category: 'PROJECT_LAUNCH',
     firstMessage:
-      'Hi {{lead.firstName}}, this is Rahul calling from the {{project.name}} sales team. Am I speaking with {{lead.fullName}}?',
+      'Hi {{lead.firstName}}, this is {{agent.name}} calling from the {{project.name}} sales team. Am I speaking with {{lead.fullName}}?',
     systemPrompt: `You are an expert, courteous real estate sales advisor representing {{project.name}}.
 Your goal is to qualify the prospect and secure a VIP site visit.
 
@@ -812,5 +812,172 @@ Amit Verma,+919823456789,Bangalore,22000000,Signature Towers,COLD
 Sneha Reddy,+919834567890,Hyderabad,12000000,Skyline Luxuria,HOT
 Vikram Malhotra,+919845678901,Delhi NCR,18000000,Signature Towers,WARM
 `;
+
+export function normalizeVoiceLeadVariables(
+  recipient?: any,
+  project?: { name?: string; city?: string; address?: string; location?: string; startingPrice?: string },
+  agent?: { name?: string; phone?: string; email?: string }
+): Record<string, string> {
+  const rec = recipient || {};
+  const merge = rec.mergeData || rec.variables || rec.customAttributes || {};
+
+  const rawFullName = (
+    rec.name ||
+    rec.fullName ||
+    rec['Full Name'] ||
+    rec['full_name'] ||
+    rec['Lead Name'] ||
+    rec['lead_name'] ||
+    rec['Customer Name'] ||
+    rec['customer_name'] ||
+    rec['Name'] ||
+    rec['Contact Name'] ||
+    rec['contact_name'] ||
+    merge.fullName ||
+    merge.name ||
+    (rec.firstName ? `${rec.firstName} ${rec.lastName || ''}`.trim() : '') ||
+    'Valued Client'
+  ).trim();
+
+  let firstName = rec.firstName || rec['First Name'] || rec['first_name'] || merge.firstName;
+  if (!firstName && rawFullName) {
+    firstName = rawFullName.split(' ')[0] || 'Valued Client';
+  }
+  firstName = (firstName || 'Valued Client').trim();
+
+  const projectName = (
+    project?.name ||
+    rec.projectName ||
+    rec['Interested Project'] ||
+    rec['Project Name'] ||
+    rec['Project'] ||
+    rec['project_name'] ||
+    merge.projectName ||
+    merge.project ||
+    'Featured Residences'
+  ).trim();
+
+  const city = (
+    project?.city ||
+    rec.city ||
+    rec['City'] ||
+    rec['city'] ||
+    rec['Location'] ||
+    merge.city ||
+    'Prime City Location'
+  ).trim();
+
+  const location = (
+    project?.address ||
+    project?.location ||
+    rec.location ||
+    rec['Location'] ||
+    city
+  ).trim();
+
+  const budget = (
+    rec.budget ||
+    rec['Budget (INR)'] ||
+    rec['Budget'] ||
+    rec['budget'] ||
+    merge.budget ||
+    'Attractive Pre-Launch Pricing'
+  ).toString().trim();
+
+  const agentName = (
+    agent?.name ||
+    rec.agentName ||
+    merge.agentName ||
+    'Senior Property Advisor'
+  ).trim();
+
+  const agentPhone = (
+    agent?.phone ||
+    rec.agentPhone ||
+    merge.agentPhone ||
+    ''
+  ).trim();
+
+  const phone = (
+    rec.phone ||
+    rec['Phone Number'] ||
+    rec['Phone'] ||
+    rec['phone_number'] ||
+    merge.phone ||
+    ''
+  ).trim();
+
+  const vars: Record<string, string> = {
+    'lead.firstName': firstName,
+    'lead.fullName': rawFullName,
+    'lead.name': rawFullName,
+    'lead.city': city,
+    'lead.budget': budget,
+    'lead.phone': phone,
+    'firstName': firstName,
+    'first_name': firstName,
+    'fullName': rawFullName,
+    'full_name': rawFullName,
+    'name': rawFullName,
+    'customer_name': rawFullName,
+    'customerName': rawFullName,
+    'phone': phone,
+    'budget': budget,
+    'project.name': projectName,
+    'project.city': city,
+    'project.location': location,
+    'project.startingPrice': project?.startingPrice || 'Exclusive Pricing',
+    'projectName': projectName,
+    'project_name': projectName,
+    'city': city,
+    'location': location,
+    'startingPrice': project?.startingPrice || 'Exclusive Pricing',
+    'agent.name': agentName,
+    'agent.phone': agentPhone,
+    'agentName': agentName,
+    'agentPhone': agentPhone,
+    'broker.name': rawFullName,
+    'brokerName': rawFullName,
+    'company.name': 'Skyline Realty Advisory',
+    'companyName': 'Skyline Realty Advisory',
+  };
+
+  for (const [k, v] of Object.entries(merge)) {
+    if (v !== undefined && v !== null) {
+      vars[k] = String(v);
+      vars[`lead.${k}`] = String(v);
+    }
+  }
+
+  for (const [k, v] of Object.entries(rec)) {
+    if (typeof v === 'string' || typeof v === 'number') {
+      vars[k] = String(v);
+    }
+  }
+
+  return vars;
+}
+
+export function interpolateVoiceTemplate(template?: string, variables: Record<string, any> = {}): string {
+  if (!template) return '';
+  return template
+    .replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (match, key) => {
+      if (variables[key] !== undefined && variables[key] !== null) return String(variables[key]);
+      const lower = key.toLowerCase();
+      for (const [k, v] of Object.entries(variables)) {
+        if (k.toLowerCase() === lower && v !== undefined && v !== null) return String(v);
+      }
+      return match;
+    })
+    .replace(/\{\s*([a-zA-Z0-9_.]+)\s*\}/g, (match, key) => {
+      if (variables[key] !== undefined && variables[key] !== null) return String(variables[key]);
+      const lower = key.toLowerCase();
+      for (const [k, v] of Object.entries(variables)) {
+        if (k.toLowerCase() === lower && v !== undefined && v !== null) return String(v);
+      }
+      return match;
+    });
+}
+
 
 
