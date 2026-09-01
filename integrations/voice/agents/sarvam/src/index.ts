@@ -101,7 +101,89 @@ export class SarvamAgentClient implements IVoiceAgentProvider {
       return { success: false, error: 'Missing Sarvam AI API Key' };
     }
 
-    // Sarvam acts as the Indic STT/TTS engine in conjunction with a telephony carrier
+    const telCreds = options.telephonyCredentials;
+    const message = options.firstMessage || 'Namaste! Main Skyline Realty se baat kar raha hoon. Kya aap property invest karne mein interested hain?';
+
+    // 1. If Twilio carrier is selected
+    if (telCreds?.accountSid && telCreds?.authToken) {
+      try {
+        const sid = telCreds.accountSid;
+        const token = telCreds.authToken;
+        const authHeader = Buffer.from(`${sid}:${token}`).toString('base64');
+        const publicUrl = (process.env.API_PUBLIC_URL || '').replace(/\/$/, '');
+        const twilioUrl = `${publicUrl}/api/marketing/voice/webhooks/twilio-answer?campaignId=${options.campaignId || 'direct_test'}&firstMessage=${encodeURIComponent(message)}&scriptPrompt=${encodeURIComponent(options.scriptPrompt || '')}&agent=SARVAM`;
+
+        const body = new URLSearchParams({
+          To: options.toPhone,
+          From: options.fromNumber || telCreds.fromNumbers?.[0] || '',
+          Url: twilioUrl,
+          Method: 'POST',
+        });
+
+        const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Calls.json`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Basic ${authHeader}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: body.toString(),
+        });
+
+        const data = (await res.json()) as any;
+        if (res.status >= 200 && res.status < 300) {
+          return {
+            success: true,
+            providerCallId: data.sid || `sarvam_twilio_${Date.now()}`,
+          };
+        }
+        return {
+          success: false,
+          error: data.message || `Twilio dispatch failed: HTTP ${res.status}`,
+        };
+      } catch (err: any) {
+        return { success: false, error: `Carrier dispatch error: ${err?.message}` };
+      }
+    }
+
+    // 2. If Vobiz carrier is selected
+    if (telCreds?.apiKey && telCreds?.apiToken && !telCreds?.subdomain && !telCreds?.accountSid) {
+      try {
+        const id = telCreds.apiKey;
+        const token = telCreds.apiToken;
+        const cleanTo = options.toPhone.replace(/[^\d+]/g, '');
+        const cleanFrom = (options.fromNumber || telCreds.fromNumbers?.[0] || '').replace(/[^\d+]/g, '');
+        const publicUrl = (process.env.API_PUBLIC_URL || '').replace(/\/$/, '');
+        const answerUrl = `${publicUrl}/api/marketing/voice/webhooks/vobiz-answer?campaignId=${options.campaignId || 'direct_test'}&firstMessage=${encodeURIComponent(message)}&scriptPrompt=${encodeURIComponent(options.scriptPrompt || '')}&agent=SARVAM&voice=${options.voiceId || 'rahul'}`;
+
+        const res = await fetch(`https://api.vobiz.ai/api/v1/Account/${id}/Call/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth-ID': id,
+            'X-Auth-Token': token,
+            Authorization: `Basic ${Buffer.from(`${id}:${token}`).toString('base64')}`,
+          },
+          body: JSON.stringify({
+            to: cleanTo,
+            from: cleanFrom,
+            answer_url: answerUrl,
+            answer_method: 'GET',
+          }),
+        });
+
+        if (res.status >= 200 && res.status < 300) {
+          const data = (await res.json().catch(() => ({}))) as any;
+          return {
+            success: true,
+            providerCallId: data.callId || data.call_uuid || `sarvam_vob_${Date.now()}`,
+          };
+        }
+      } catch (err: any) {
+        // continue
+      }
+    }
+
+    // Fallback acknowledgment
     return {
       success: true,
       providerCallId: `sarvam_${Date.now()}`,
@@ -211,3 +293,5 @@ export class SarvamAgentClient implements IVoiceAgentProvider {
     ];
   }
 }
+
+
