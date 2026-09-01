@@ -30,6 +30,7 @@ import { VoiceAnalyticsService } from './voice/services/voice-analytics.service.
 import { VoiceIntegrationsService } from './voice/services/voice-integrations.service.js';
 import { VoiceAudioService } from './voice/services/voice-audio.service.js';
 import { VoiceTrackingService } from './voice/services/voice-tracking.service.js';
+import { VoiceMediaStreamGateway } from './voice/gateway/voice-media-stream.gateway.js';
 import { VoiceCampaignsController } from './voice/controllers/voice-campaigns.controller.js';
 import { VoiceIntegrationsController } from './voice/controllers/voice-integrations.controller.js';
 import { VoiceAudioController } from './voice/controllers/voice-audio.controller.js';
@@ -85,6 +86,7 @@ import { SampleCsvController } from './shared/sample-csv.controller.js';
     VoiceIntegrationsService,
     VoiceAudioService,
     VoiceTrackingService,
+    VoiceMediaStreamGateway,
     VoiceService,
   ],
   exports: [
@@ -106,6 +108,7 @@ import { SampleCsvController } from './shared/sample-csv.controller.js';
     VoiceIntegrationsService,
     VoiceAudioService,
     VoiceTrackingService,
+    VoiceMediaStreamGateway,
   ],
 })
 export class MarketingModule {}

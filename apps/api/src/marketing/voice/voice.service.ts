@@ -12,6 +12,7 @@ import type {
   TestTelephonyCarrierDto,
   TestVoiceAiCallDto,
 } from './dto/voice.dto.js';
+import { normalizeVoiceLeadVariables, interpolateVoiceTemplate } from '@brokeros/constants';
 import type { VoiceTelephonyCredentials, VoiceAgentCredentials, SendVoiceOptions } from '@brokeros/types';
 
 @Injectable()
@@ -479,16 +480,33 @@ export class VoiceService {
   }
 
   async testVoiceAiCall(dto: TestVoiceAiCallDto) {
-    const [telephony, agent] = await Promise.all([
-      this.prisma.voiceTelephonyIntegration.findUnique({ where: { id: dto.telephonyId } }),
-      this.prisma.voiceAgentIntegration.findUnique({ where: { id: dto.agentPlatformId } }),
-    ]);
+    let telephony = dto.telephonyId
+      ? await this.prisma.voiceTelephonyIntegration.findUnique({ where: { id: dto.telephonyId } })
+      : null;
 
     if (!telephony) {
-      throw new NotFoundException(`Telephony Gateway ${dto.telephonyId} not found`);
+      telephony = await this.prisma.voiceTelephonyIntegration.findFirst({
+        where: { isActive: true },
+        orderBy: { isDefault: 'desc' },
+      });
+    }
+
+    let agent = dto.agentPlatformId
+      ? await this.prisma.voiceAgentIntegration.findUnique({ where: { id: dto.agentPlatformId } })
+      : null;
+
+    if (!agent) {
+      agent = await this.prisma.voiceAgentIntegration.findFirst({
+        where: { isActive: true },
+        orderBy: { isDefault: 'desc' },
+      });
+    }
+
+    if (!telephony) {
+      throw new NotFoundException('No active Telephony Gateway configured. Please connect Twilio, Vobiz, or Exotel in Voice Settings.');
     }
     if (!agent) {
-      throw new NotFoundException(`Voice Agent Platform ${dto.agentPlatformId} not found`);
+      throw new NotFoundException('No active Voice AI Platform configured. Please connect Vapi, Retell, Sarvam, or Bolna in Voice Settings.');
     }
 
     const telephonyCreds: VoiceTelephonyCredentials = {
@@ -508,7 +526,30 @@ export class VoiceService {
     };
 
     const voiceAgentProvider = getVoiceAgentProvider(agent.platform, agentCreds);
-    const fromNumber = dto.fromNumber || telephony.fromNumbers[0] || '+14155550199';
+    const validDids = telephony.fromNumbers || [];
+    const fromNumber = (dto.fromNumber && validDids.includes(dto.fromNumber))
+      ? dto.fromNumber
+      : (validDids[0] || '');
+
+    // Resolve project details dynamically from database if project is selected
+    let project: any = null;
+    if (dto.projectId) {
+      project = await this.prisma.project.findUnique({
+        where: { id: dto.projectId },
+        select: { name: true, city: true, address: true },
+      }).catch(() => null);
+    }
+
+    const dynamicVariables = normalizeVoiceLeadVariables(
+      {
+        phone: dto.toPhone,
+        ...(dto.variables || {}),
+      },
+      project || undefined,
+    );
+
+    const resolvedFirstMessage = interpolateVoiceTemplate(dto.firstMessage, dynamicVariables);
+    const resolvedScriptPrompt = interpolateVoiceTemplate(dto.scriptPrompt, dynamicVariables);
 
     const sendOptions: SendVoiceOptions = {
       toPhone: dto.toPhone,
@@ -517,15 +558,11 @@ export class VoiceService {
       llmModel: dto.llmModel,
       voiceProvider: dto.voiceProvider,
       voiceId: dto.voiceId,
-      scriptPrompt: dto.scriptPrompt,
-      firstMessage: dto.firstMessage,
+      scriptPrompt: resolvedScriptPrompt,
+      firstMessage: resolvedFirstMessage,
       telephonyCredentials: telephonyCreds,
       agentCredentials: agentCreds,
-      variables: {
-        firstName: 'Tester',
-        fullName: 'VIP Test Client',
-        projectName: 'Skyline Luxuria',
-      },
+      variables: dynamicVariables,
       transcriberModel: dto.transcriberModel,
       transcriberLanguage: dto.transcriberLanguage,
       maxTurnSilenceMs: dto.maxTurnSilenceMs,
@@ -543,6 +580,29 @@ export class VoiceService {
       reminderTriggerMs: dto.retellReminderMs,
     };
 
-    return voiceAgentProvider.dispatchOutboundCall(sendOptions, agentCreds);
+    const primaryResult = await voiceAgentProvider.dispatchOutboundCall(sendOptions, agentCreds);
+    if (primaryResult.success) return primaryResult;
+
+    // Carrier Failover: If primary dispatch failed, attempt secondary active telephony line
+    const fallbackTelephony = await this.prisma.voiceTelephonyIntegration.findFirst({
+      where: { isActive: true, id: { not: telephony.id } },
+      orderBy: { isDefault: 'desc' },
+    });
+
+    if (fallbackTelephony) {
+      this.logger.warn(`Primary carrier ${telephony.provider} failed: ${primaryResult.error}. Attempting failover to ${fallbackTelephony.provider}...`);
+      const fallbackCreds: VoiceTelephonyCredentials = {
+        accountSid: fallbackTelephony.accountSid || undefined,
+        authToken: fallbackTelephony.authToken || undefined,
+        apiKey: fallbackTelephony.apiKey || undefined,
+        apiToken: fallbackTelephony.apiToken || undefined,
+        fromNumbers: fallbackTelephony.fromNumbers,
+      };
+      sendOptions.telephonyCredentials = fallbackCreds;
+      sendOptions.fromNumber = fallbackTelephony.fromNumbers?.[0] || fromNumber;
+      return voiceAgentProvider.dispatchOutboundCall(sendOptions, agentCreds);
+    }
+
+    return primaryResult;
   }
 }
