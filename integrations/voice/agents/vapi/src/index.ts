@@ -68,74 +68,248 @@ export class VapiAgentClient implements IVoiceAgentProvider {
         },
       };
 
-      // 1. Phone number configuration
+      // 1. If Vobiz carrier is selected, dispatch outbound PSTN call directly via Vobiz line
+      if (options.telephonyCredentials?.apiKey && options.telephonyCredentials?.apiToken && !options.telephonyCredentials?.subdomain && !options.telephonyCredentials?.accountSid) {
+        const id = options.telephonyCredentials.apiKey;
+        const token = options.telephonyCredentials.apiToken;
+        const cleanTo = options.toPhone.replace(/[^\d+]/g, '');
+        const cleanFrom = (options.fromNumber || options.telephonyCredentials.fromNumbers?.[0] || '').replace(/[^\d+]/g, '');
+        const message = options.firstMessage || 'Hello! Thank you for connecting with us.';
+
+        try {
+          const publicUrl = (process.env.API_PUBLIC_URL || '').replace(/\/$/, '');
+          const answerUrl = `${publicUrl}/api/marketing/voice/webhooks/vobiz-answer?campaignId=${options.campaignId || 'direct_test'}&firstMessage=${encodeURIComponent(message)}&scriptPrompt=${encodeURIComponent(options.scriptPrompt || '')}&agent=VAPI`;
+
+          const res = await fetch(`https://api.vobiz.ai/api/v1/Account/${id}/Call/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth-ID': id,
+              'X-Auth-Token': token,
+              Authorization: `Basic ${Buffer.from(`${id}:${token}`).toString('base64')}`,
+            },
+            body: JSON.stringify({
+              to: cleanTo,
+              from: cleanFrom,
+              answer_url: answerUrl,
+              answer_method: 'GET',
+            }),
+          });
+
+          if (res.status >= 200 && res.status < 300) {
+            const data = (await res.json().catch(() => ({}))) as any;
+            return {
+              success: true,
+              providerCallId: data.callId || data.call_uuid || `vobiz_vapi_${Date.now()}`,
+            };
+          }
+        } catch {
+          // fallback to Vapi API
+        }
+      }
+
+      // 2. If Exotel carrier is selected, dispatch outbound PSTN call directly via Exotel line
+      if (options.telephonyCredentials?.apiKey && options.telephonyCredentials?.apiToken && options.telephonyCredentials?.accountSid && options.telephonyCredentials?.subdomain) {
+        const key = options.telephonyCredentials.apiKey;
+        const token = options.telephonyCredentials.apiToken;
+        const sid = options.telephonyCredentials.accountSid;
+        const domain = options.telephonyCredentials.subdomain;
+        const cleanFrom = (options.fromNumber || options.telephonyCredentials.fromNumbers?.[0] || '').replace(/[^\d]/g, '');
+        let cleanTo = options.toPhone.replace(/[^\d]/g, '');
+        if (cleanTo.startsWith('91') && cleanTo.length === 12) cleanTo = '0' + cleanTo.slice(2);
+        else if (cleanTo.length === 10) cleanTo = '0' + cleanTo;
+
+        try {
+          const authHeader = Buffer.from(`${key}:${token}`).toString('base64');
+          const body = new URLSearchParams({
+            From: cleanTo,
+            To: cleanFrom,
+            CallerId: cleanFrom,
+            CallType: 'trans',
+            TimeLimit: '60',
+            TimeOut: '30',
+          });
+
+          const res = await fetch(`https://${domain}/v1/Accounts/${sid}/Calls/connect.json`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Basic ${authHeader}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: body.toString(),
+          });
+
+          if (res.status >= 200 && res.status < 300) {
+            const data = (await res.json().catch(() => ({}))) as any;
+            return {
+              success: true,
+              providerCallId: data?.Call?.Sid || data?.sid || `exotel_vapi_${Date.now()}`,
+            };
+          }
+        } catch {
+          // fallback to Vapi API
+        }
+      }
+
+      // 3. Phone number configuration for Vapi API (Twilio / BYOT)
       const isUUID = (val?: string) => !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
       if (options.telephonyCredentials?.accountSid && options.telephonyCredentials?.authToken) {
         payload.phoneNumber = {
-          twilioPhoneNumber: options.fromNumber,
+          twilioPhoneNumber: options.fromNumber || options.telephonyCredentials.fromNumbers?.[0] || '+18393335029',
           twilioAccountSid: options.telephonyCredentials.accountSid,
           twilioAuthToken: options.telephonyCredentials.authToken,
         };
       } else if (isUUID(options.fromNumber)) {
         payload.phoneNumberId = options.fromNumber;
-      } else {
-        // Look up user's active phone numbers in Vapi
-        try {
-          const pRes = await fetch('https://api.vapi.ai/phone-number', {
-            headers: { Authorization: `Bearer ${key}` },
-          });
-          if (pRes.ok) {
-            const numbers = await pRes.json();
-            if (Array.isArray(numbers) && numbers.length > 0) {
-              const matched = numbers.find((n: any) => n.number === options.fromNumber || n.id === options.fromNumber);
-              payload.phoneNumberId = matched ? matched.id : numbers[0].id;
-            }
-          }
-        } catch {
-          // continue without explicit phoneNumberId
-        }
       }
 
       // 2. Map Voice Provider to valid Vapi enum
       let vapiVoiceProvider: any = 'vapi';
       const rawVp = (options.voiceProvider || '').toLowerCase();
-      if (rawVp.includes('eleven') || rawVp === '11labs') vapiVoiceProvider = '11labs';
-      else if (rawVp.includes('cartesia')) vapiVoiceProvider = 'cartesia';
-      else if (rawVp.includes('deepgram')) vapiVoiceProvider = 'deepgram';
-      else if (rawVp.includes('openai')) vapiVoiceProvider = 'openai';
-      else if (rawVp.includes('azure')) vapiVoiceProvider = 'azure';
-      else if (rawVp.includes('inworld')) vapiVoiceProvider = 'inworld';
-      else if (rawVp.includes('minimax')) vapiVoiceProvider = 'minimax';
-      else if (rawVp.includes('rime')) vapiVoiceProvider = 'rime-ai';
-      else if (rawVp.includes('smallest')) vapiVoiceProvider = 'smallest-ai';
-      else if (rawVp.includes('xai')) vapiVoiceProvider = 'xai';
+      let cleanVoiceId = (options.voiceId || 'Elliot').trim();
 
-      let cleanVoiceId = options.voiceId || 'Elliot';
-      const elevenMap: Record<string, string> = { rachel: '21m00Tcm4TlvDq8ikWAM', adam: 'pNInz6obpgDQGcFmaJgB', antoni: 'ErXwobaYiN019PkySvjV', josh: 'TxGEqnHWrfWFTfGW9XjX', viraj: 'iWNf11sz1GrUE4ppxTOL' };
-      if (elevenMap[cleanVoiceId.toLowerCase()]) {
-        cleanVoiceId = elevenMap[cleanVoiceId.toLowerCase()];
+      // Detect provider from prefix (e.g. deepgram-orion, 11labs-rachel, cartesia-sarah)
+      if (/^(11labs|elevenlabs|eleven)[-_]/i.test(cleanVoiceId)) {
         vapiVoiceProvider = '11labs';
-      } else if (cleanVoiceId === 'iWNf11sz1GrUE4ppxTOL' || cleanVoiceId === '21m00Tcm4TlvDq8ikWAM' || cleanVoiceId === 'pNInz6obpgDQGcFmaJgB') {
+        cleanVoiceId = cleanVoiceId.replace(/^(11labs|elevenlabs|eleven)[-_]/i, '');
+      } else if (/^deepgram[-_]/i.test(cleanVoiceId)) {
+        vapiVoiceProvider = 'deepgram';
+        cleanVoiceId = cleanVoiceId.replace(/^deepgram[-_]/i, '');
+      } else if (/^cartesia[-_]/i.test(cleanVoiceId)) {
+        vapiVoiceProvider = 'cartesia';
+        cleanVoiceId = cleanVoiceId.replace(/^cartesia[-_]/i, '');
+      } else if (/^openai[-_]/i.test(cleanVoiceId)) {
+        vapiVoiceProvider = 'openai';
+        cleanVoiceId = cleanVoiceId.replace(/^openai[-_]/i, '');
+      } else if (/^azure[-_]/i.test(cleanVoiceId)) {
+        vapiVoiceProvider = 'azure';
+        cleanVoiceId = cleanVoiceId.replace(/^azure[-_]/i, '');
+      } else if (rawVp.includes('eleven') || rawVp === '11labs') {
         vapiVoiceProvider = '11labs';
+      } else if (rawVp.includes('cartesia')) {
+        vapiVoiceProvider = 'cartesia';
+      } else if (rawVp.includes('deepgram')) {
+        vapiVoiceProvider = 'deepgram';
+      } else if (rawVp.includes('openai')) {
+        vapiVoiceProvider = 'openai';
+      } else if (rawVp.includes('azure')) {
+        vapiVoiceProvider = 'azure';
+      } else if (rawVp.includes('inworld')) {
+        vapiVoiceProvider = 'inworld';
+      } else if (rawVp.includes('minimax')) {
+        vapiVoiceProvider = 'minimax';
+      } else if (rawVp.includes('rime')) {
+        vapiVoiceProvider = 'rime-ai';
+      } else if (rawVp.includes('smallest')) {
+        vapiVoiceProvider = 'smallest-ai';
+      } else if (rawVp.includes('xai')) {
+        vapiVoiceProvider = 'xai';
+      }
+
+      // Auto-detect 20-char ElevenLabs voice ID
+      if (/^[a-zA-Z0-9]{20}$/.test(cleanVoiceId)) {
+        vapiVoiceProvider = '11labs';
+      }
+
+      // Deepgram Aura normalizer: Strip "aura-" prefix, lowercase, validate against Vapi enum
+      if (vapiVoiceProvider === 'deepgram') {
+        cleanVoiceId = cleanVoiceId.toLowerCase().replace(/^aura-/, '').replace(/-en$/, '').trim();
+        const validDeepgramVoices = [
+          'asteria', 'luna', 'stella', 'athena', 'hera', 'orion', 'arcas', 'perseus',
+          'angus', 'orpheus', 'helios', 'zeus', 'thalia', 'andromeda', 'helena', 'apollo',
+          'aries', 'amalthea', 'atlas', 'aurora', 'callista', 'cora', 'cordelia', 'delia',
+          'draco', 'electra', 'harmonia', 'hermes', 'hyperion', 'iris', 'janus', 'juno',
+          'jupiter', 'mars', 'minerva', 'neptune', 'odysseus', 'ophelia', 'pandora', 'phoebe',
+          'pluto', 'saturn', 'selene', 'theia', 'vesta', 'celeste', 'estrella', 'nestor',
+          'sirio', 'carina', 'alvaro', 'diana', 'aquila', 'javier', 'viktoria', 'kara',
+          'fabian', 'julius', 'lara', 'elara', 'aurelia'
+        ];
+        if (!validDeepgramVoices.includes(cleanVoiceId)) {
+          const found = validDeepgramVoices.find(v => cleanVoiceId.includes(v));
+          cleanVoiceId = found || 'orion';
+        }
+      }
+
+      // ElevenLabs normalizer: map voice names to UUIDs
+      if (vapiVoiceProvider === '11labs') {
+        const elevenMap: Record<string, string> = {
+          rachel: '21m00Tcm4TlvDq8ikWAM',
+          adam: 'pNInz6obpgDQGcFmaJgB',
+          antoni: 'ErXwobaYiN019PkySvjV',
+          josh: 'TxGEqnHWrfWFTfGW9XjX',
+          sarah: 'EXAVITQu4vr4xnSDxMaL',
+          domi: 'AZnzlk1XvdvUeBnXmlld',
+          michael: 'flq6f7yk4E4fJM5XTYuZ',
+          viraj: 'iWNf11sz1GrUE4ppxTOL',
+        };
+        if (elevenMap[cleanVoiceId.toLowerCase()]) {
+          cleanVoiceId = elevenMap[cleanVoiceId.toLowerCase()];
+        }
+      }
+
+      // OpenAI normalizer
+      if (vapiVoiceProvider === 'openai') {
+        cleanVoiceId = cleanVoiceId.toLowerCase();
+        const validOpenAiVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer', 'sage', 'coral', 'ash', 'ballad', 'verse'];
+        if (!validOpenAiVoices.includes(cleanVoiceId)) {
+          cleanVoiceId = 'alloy';
+        }
+      }
+
+      // Cartesia normalizer
+      if (vapiVoiceProvider === 'cartesia') {
+        const cartesiaMap: Record<string, string> = {
+          sarah: 'a0e99841-438c-4a64-b679-ae501e7d6091',
+          james: '694f9389-aac1-45b6-b726-9d9369183238',
+          katie: 'f114a467-c40a-4db8-964d-aaba01609c68',
+          brooke: 'e90c6678-f0d3-4767-970c-26b69b4c32ea',
+          cali: 'a0e99841-438c-4a64-b679-ae501e7d6091',
+        };
+        if (cartesiaMap[cleanVoiceId.toLowerCase()]) {
+          cleanVoiceId = cartesiaMap[cleanVoiceId.toLowerCase()];
+        }
+      }
+
+      // Vapi built-in normalizer
+      if (vapiVoiceProvider === 'vapi') {
+        const validVapiVoices = ['Elliot', 'Kylie', 'Rohan', 'Lily', 'Savannah', 'Hana'];
+        const matched = validVapiVoices.find(v => v.toLowerCase() === cleanVoiceId.toLowerCase());
+        cleanVoiceId = matched || 'Elliot';
       }
 
       // 3. Map Model Provider and Model ID
       let vapiModelProvider = 'openai';
-      let vapiModel = options.llmModel?.replace(/^(openai\/|azure\/)/, '') || 'gpt-4o-mini';
+      let cleanModel = (options.llmModel || '').toLowerCase().replace(/^(openai\/|azure\/|groq\/|google\/|anthropic\/)/, '');
 
-      if (options.llmModel?.includes('claude')) {
+      let vapiModel = 'gpt-4o-mini';
+      if (cleanModel.includes('gpt-4o-mini') || cleanModel.includes('gpt-4.1-mini') || cleanModel.includes('gpt-5.4-mini') || cleanModel.includes('mini')) {
+        vapiModelProvider = 'openai';
+        vapiModel = 'gpt-4o-mini';
+      } else if (cleanModel.includes('gpt-4o') || cleanModel.includes('gpt-4.1') || cleanModel.includes('gpt-5') || cleanModel.includes('gpt-4')) {
+        vapiModelProvider = 'openai';
+        vapiModel = 'gpt-4o';
+      } else if (cleanModel.includes('claude-3-5-sonnet') || cleanModel.includes('sonnet')) {
         vapiModelProvider = 'anthropic';
         vapiModel = 'claude-3-5-sonnet-20241022';
-      } else if (options.llmModel?.includes('llama') || options.llmModel?.includes('groq')) {
+      } else if (cleanModel.includes('claude-3-haiku') || cleanModel.includes('haiku') || cleanModel.includes('claude')) {
+        vapiModelProvider = 'anthropic';
+        vapiModel = 'claude-3-haiku-20240307';
+      } else if (cleanModel.includes('llama') || cleanModel.includes('groq')) {
         vapiModelProvider = 'groq';
         vapiModel = 'llama-3.3-70b-versatile';
-      } else if (options.llmModel?.includes('gemini')) {
+      } else if (cleanModel.includes('gemini-2') || cleanModel.includes('gemini-2.0')) {
         vapiModelProvider = 'google';
         vapiModel = 'gemini-2.0-flash';
-      } else if (options.llmModel?.includes('deepseek')) {
+      } else if (cleanModel.includes('gemini')) {
+        vapiModelProvider = 'google';
+        vapiModel = 'gemini-1.5-flash';
+      } else if (cleanModel.includes('deepseek')) {
         vapiModelProvider = 'deep-seek';
         vapiModel = 'deepseek-chat';
+      } else if (cleanModel.includes('grok') || cleanModel.includes('xai')) {
+        vapiModelProvider = 'xai';
+        vapiModel = 'grok-beta';
       }
 
       if (isAssistantId) {
@@ -175,7 +349,6 @@ export class VapiAgentClient implements IVoiceAgentProvider {
           voice: {
             provider: vapiVoiceProvider,
             voiceId: cleanVoiceId,
-            speed: options.voiceSpeed || 1.0,
           },
           firstMessage: options.firstMessage,
           firstMessageMode: options.firstMessageMode || 'assistant-speaks-first',
@@ -735,3 +908,5 @@ export class VapiAgentClient implements IVoiceAgentProvider {
     return combined;
   }
 }
+
+
