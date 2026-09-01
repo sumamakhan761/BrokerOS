@@ -16,7 +16,7 @@ import {
   ArrowLeft,
   ArrowRight,
 } from "lucide-react";
-import { DEFAULT_VOICE_SCRIPTS, VOICE_AGENT_PLATFORMS } from "@brokeros/constants";
+import { DEFAULT_VOICE_SCRIPTS, VOICE_AGENT_PLATFORMS, normalizeVoiceLeadVariables, interpolateVoiceTemplate } from "@brokeros/constants";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { VoiceModelSelector } from "../components/VoiceModelSelector";
@@ -77,21 +77,25 @@ export function VoiceStep4AgentComposer({
 
   // Dynamic Variable Interpolation from 1st Lead / Project
   const firstLead = csvRecipients?.[0];
+  const dynamicVars = normalizeVoiceLeadVariables(
+    firstLead,
+    selectedProject
+      ? {
+        name: selectedProject.name,
+        city: selectedProject.city || undefined,
+      }
+      : undefined
+  );
+
   const sampleLead = {
-    firstName: firstLead?.name ? firstLead.name.trim().split(" ")[0] : "Rahul",
-    fullName: firstLead?.name || "Rahul Sharma",
-    budget: firstLead?.budget ? `₹${firstLead.budget}` : "₹3.5 Cr",
+    firstName: dynamicVars["lead.firstName"],
+    fullName: dynamicVars["lead.fullName"],
+    budget: dynamicVars["lead.budget"],
   };
-  const sampleProject = selectedProject || { name: "DLF Privana West", city: "Gurugram" };
+  const sampleProject = selectedProject || { name: dynamicVars["project.name"], city: dynamicVars["project.city"] };
 
   const interpolateVariables = (template: string) => {
-    if (!template) return "";
-    return template
-      .replace(/\{\{\s*lead\.firstName\s*\}\}/gi, sampleLead.firstName)
-      .replace(/\{\{\s*lead\.fullName\s*\}\}/gi, sampleLead.fullName)
-      .replace(/\{\{\s*project\.name\s*\}\}/gi, sampleProject.name)
-      .replace(/\{\{\s*project\.city\s*\}\}/gi, sampleProject.city || "Gurugram")
-      .replace(/\{\{\s*lead\.budget\s*\}\}/gi, sampleLead.budget);
+    return interpolateVoiceTemplate(template, dynamicVars);
   };
 
   // Vapi Advanced Studio Values

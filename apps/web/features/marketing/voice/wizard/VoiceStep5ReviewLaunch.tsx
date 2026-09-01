@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { normalizeVoiceLeadVariables } from "@brokeros/constants";
 import type { VoiceTelephonyIntegrationRecord, VoiceAgentIntegrationRecord } from "@/features/marketing/types";
 
 export interface VoiceStep5ReviewLaunchProps {
@@ -55,7 +56,8 @@ export interface VoiceStep5ReviewLaunchProps {
     retellReminderMs?: number;
   };
   totalRecipients: number;
-  projects?: Array<{ id: string; name: string }>;
+  csvRecipients?: any[];
+  projects?: Array<{ id: string; name: string; city?: string; location?: string }>;
   telephonyIntegrations?: VoiceTelephonyIntegrationRecord[];
   agentIntegrations?: VoiceAgentIntegrationRecord[];
   onLaunch: () => Promise<void>;
@@ -67,6 +69,7 @@ export interface VoiceStep5ReviewLaunchProps {
 export function VoiceStep5ReviewLaunch({
   formData,
   totalRecipients,
+  csvRecipients = [],
   projects = [],
   telephonyIntegrations = [],
   agentIntegrations = [],
@@ -93,11 +96,25 @@ export function VoiceStep5ReviewLaunch({
       setTestingAiCall(true);
       setTestAiResult(null);
 
+      // 1. Dynamically extract the first lead / contact variables from uploaded CSV or database
+      const firstRecipient = csvRecipients?.[0] || { name: "Valued Client", phone: testPhone };
+      const dynamicVariables = normalizeVoiceLeadVariables(
+        firstRecipient,
+        selectedProject
+          ? {
+              name: selectedProject.name,
+              city: selectedProject.city || undefined,
+            }
+          : undefined
+      );
+
       const res = await fetch(`${apiBaseUrl}/api/marketing/voice/test/ai-call`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           toPhone: testPhone,
+          projectId: formData.projectId,
+          variables: dynamicVariables,
           telephonyId: formData.telephonyId,
           agentPlatformId: formData.agentPlatformId,
           llmModel: formData.llmModel,

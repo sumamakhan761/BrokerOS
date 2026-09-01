@@ -108,30 +108,35 @@ export function VoicePickerModal({
     const sampleText = voice.previewText || `Hello! This is ${voice.name}. How may I help you with your property search today?`;
 
     // 1. Direct verified preview URL
-    if (voice.previewUrl && voice.previewUrl.trim().length > 0) {
+    let playedDirect = false;
+    if (voice.previewUrl && voice.previewUrl.trim().length > 0 && voice.previewUrl.startsWith('http')) {
       try {
         const audio = new Audio();
         audio.preload = "auto";
         audio.src = voice.previewUrl;
         audioRef.current = audio;
-        setPlayingVoiceId(voice.id);
 
         audio.onended = () => {
           setPlayingVoiceId(null);
           audioRef.current = null;
         };
-        audio.onerror = () => {
-          setPlayingVoiceId(null);
-          audioRef.current = null;
-        };
 
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          await playPromise;
-        }
-        return;
-      } catch (err) {
-        console.warn("Direct audio playback failed, trying backend synthesis", err);
+        await new Promise<void>((resolve, reject) => {
+          audio.onloadeddata = () => {
+            audio.play().then(() => {
+              setPlayingVoiceId(voice.id);
+              playedDirect = true;
+              resolve();
+            }).catch(reject);
+          };
+          audio.onerror = (e) => reject(e);
+          // Set a 1.5s timeout so if audio stalls, fallback executes immediately
+          setTimeout(() => reject(new Error("Audio load timeout")), 1500);
+        });
+
+        if (playedDirect) return;
+      } catch {
+        // Direct playback failed, proceed directly to backend neural TTS synthesis
       }
     }
 
