@@ -1,0 +1,19 @@
+{
+  "name": "@brokeros/int-ads-meta",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Meta Graph API (Facebook & Instagram Ads) Adapter for BrokerOS",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@brokeros/constants": "workspace:*",
+    "@brokeros/types": "workspace:*"
+  }
+}
