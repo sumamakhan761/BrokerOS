@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { prismaClient } from '@brokeros/prisma';
-import { getVoiceAgentProvider } from '@brokeros/int-voice';
+import { getVoiceAgentProvider, tryCarrierBridgeDispatch } from '@brokeros/int-voice';
 import { normalizeVoiceLeadVariables, interpolateVoiceTemplate } from '@brokeros/constants';
 import type {
   VoiceAgentPlatform,
@@ -210,15 +210,14 @@ export class MarketingVoiceProcessor implements OnModuleInit, OnModuleDestroy {
           const normalizedPhone = MarketingVoiceProcessor.normalizePhoneNumber(recipient.phone);
           const normalizedVariables = normalizeVoiceLeadVariables(
             recipient,
-            campaign.project ? {
-              name: campaign.project.name,
-              city: campaign.project.city || undefined,
-              address: campaign.project.address || undefined,
-            } : undefined,
-            campaign.createdBy ? {
-              name: campaign.createdBy.name || undefined,
-              phone: campaign.createdBy.phoneNumber || undefined,
-            } : undefined,
+            campaign.project
+              ? {
+                  name: campaign.project.name,
+                  city: campaign.project.city || undefined,
+                  address: campaign.project.address || undefined,
+                }
+              : undefined,
+            campaign.createdBy?.name || 'Senior Property Advisor',
           );
 
           const resolvedFirstMessage = interpolateVoiceTemplate(campaign.firstMessage || undefined, normalizedVariables);
@@ -241,7 +240,11 @@ export class MarketingVoiceProcessor implements OnModuleInit, OnModuleDestroy {
           };
 
           try {
-            let result = await voiceAgentProvider.dispatchOutboundCall(sendOptions, agentCreds);
+            // 1. Centralized carrier bridge dispatch (Vobiz, Exotel, Twilio, Telnyx)
+            const carrierBridge = await tryCarrierBridgeDispatch(platform, sendOptions);
+            let result = (carrierBridge.handled && carrierBridge.result)
+              ? carrierBridge.result
+              : await voiceAgentProvider.dispatchOutboundCall(sendOptions, agentCreds);
 
             // Carrier Failover: If primary carrier failed, attempt secondary carrier line
             if (!result.success && campaign.telephonyId) {
