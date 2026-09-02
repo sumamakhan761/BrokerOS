@@ -27,6 +27,9 @@ packages/*/node_modules/
 integrations/*/node_modules/
 
 # Build outputs
+dist/
+**/dist/
+*.tsbuildinfo
 apps/api/dist/
 apps/web/.next/
 apps/mobile/.expo/
