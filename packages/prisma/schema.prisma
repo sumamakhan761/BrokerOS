@@ -964,6 +964,7 @@ model Lead {
   campaignRecipients    CampaignRecipient[]
   smsRecipients         SmsRecipient[]
   voiceRecipients       VoiceRecipient[]
+  metaLeadLogs          MetaLeadWebhookLog[]    @relation("MetaLeadLog")
 
   @@index([status])
   @@index([temperature])
@@ -3074,5 +3075,94 @@ model VoiceCallLog {
   @@index([campaignId])
   @@index([recipientId])
   @@map("voice_call_log")
+}
+
+// ─────────────────────────────────────────────
+// 17. DOMAIN 13: ADS MARKETING & META GRAPH API
+// ─────────────────────────────────────────────
+
+model MetaAdIntegration {
+  id            String    @id @default(uuid())
+  name          String
+  adAccountId   String    // e.g. "act_1234567890"
+  accessToken   String    @db.Text
+  appId         String?
+  appSecret     String?
+  pageIds       String[]  @default([])
+  currency      String    @default("INR")
+  timezone      String?
+  accountStatus Int       @default(1)
+  isActive      Boolean   @default(true)
+  isDefault     Boolean   @default(false)
+  lastSyncedAt  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  campaigns     MetaCampaignCache[]
+  webhookLogs   MetaLeadWebhookLog[]
+
+  @@index([adAccountId])
+  @@index([isActive])
+  @@map("meta_ad_integration")
+}
+
+model MetaCampaignCache {
+  id              String             @id // Meta Campaign ID
+  integrationId   String
+  integration     MetaAdIntegration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  name            String
+  objective       String
+  status          String             // "ACTIVE", "PAUSED", "ARCHIVED"
+  effectiveStatus String?
+  dailyBudget     Float?
+  lifetimeBudget  Float?
+  spend           Float              @default(0)
+  impressions     Int                @default(0)
+  reach           Int                @default(0)
+  clicks          Int                @default(0)
+  ctr             Float              @default(0)
+  cpc             Float              @default(0)
+  cpm             Float              @default(0)
+  leadsCount      Int                @default(0)
+  costPerLead     Float              @default(0)
+  startTime       DateTime?
+  stopTime        DateTime?
+  adSetsData      Json?              // Cached ad sets with targeting
+  creativesData   Json?              // Cached creatives with preview details
+  lastSyncedAt    DateTime           @default(now())
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  webhookLogs     MetaLeadWebhookLog[]
+
+  @@index([integrationId])
+  @@index([status])
+  @@index([objective])
+  @@map("meta_campaign_cache")
+}
+
+model MetaLeadWebhookLog {
+  id              String             @id @default(uuid())
+  integrationId   String?
+  integration     MetaAdIntegration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+  campaignCacheId String?
+  campaignCache   MetaCampaignCache? @relation(fields: [campaignCacheId], references: [id], onDelete: SetNull)
+  leadgenId       String             // Meta leadgen_id
+  pageId          String
+  formId          String?
+  adId            String?
+  campaignId      String?
+  leadId          String?
+  lead            Lead?              @relation("MetaLeadLog", fields: [leadId], references: [id], onDelete: SetNull)
+  fieldData       Json?
+  rawPayload      Json?
+  status          String             @default("PROCESSED") // "PROCESSED", "FAILED"
+  errorMessage    String?
+  createdAt       DateTime           @default(now())
+
+  @@index([leadgenId])
+  @@index([campaignId])
+  @@index([pageId])
+  @@map("meta_lead_webhook_log")
 }
 
