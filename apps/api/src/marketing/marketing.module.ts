@@ -39,6 +39,13 @@ import { VoiceAudioController } from './voice/controllers/voice-audio.controller
 import { VoiceTestController } from './voice/controllers/voice-test.controller.js';
 import { VoiceWebhooksController } from './voice/controllers/voice-webhooks.controller.js';
 
+// Meta Ads Domain
+import { MetaAdsController } from './ads/meta/controllers/meta-ads.controller.js';
+import { MetaWebhooksController } from './ads/meta/controllers/meta-webhooks.controller.js';
+import { MetaAdsService } from './ads/meta/services/meta-ads.service.js';
+import { MetaSyncService } from './ads/meta/services/meta-sync.service.js';
+import { MetaLeadsService } from './ads/meta/services/meta-leads.service.js';
+
 // Shared
 import { SampleCsvController } from './shared/sample-csv.controller.js';
 
@@ -63,6 +70,10 @@ import { SampleCsvController } from './shared/sample-csv.controller.js';
     VoiceAudioController,
     VoiceTestController,
     VoiceWebhooksController,
+
+    // Meta Ads Controllers
+    MetaAdsController,
+    MetaWebhooksController,
 
     // Shared Controllers
     SampleCsvController,
@@ -92,6 +103,11 @@ import { SampleCsvController } from './shared/sample-csv.controller.js';
     VoiceDispatcherService,
     VoiceMediaStreamGateway,
     VoiceService,
+
+    // Meta Ads Services
+    MetaAdsService,
+    MetaSyncService,
+    MetaLeadsService,
   ],
   exports: [
     EmailService,
@@ -115,6 +131,10 @@ import { SampleCsvController } from './shared/sample-csv.controller.js';
     VoiceCampaignService,
     VoiceDispatcherService,
     VoiceMediaStreamGateway,
+
+    MetaAdsService,
+    MetaSyncService,
+    MetaLeadsService,
   ],
 })
 export class MarketingModule {}
