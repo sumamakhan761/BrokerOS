@@ -14,3 +14,6 @@ export * from './sms.js';
 // Voice & AI Agent Marketing Constants
 export * from './voice/index.js';
 
+// Ads Marketing Constants (Meta & Google)
+export * from './ads/index.js';
+
