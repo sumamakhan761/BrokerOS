@@ -4,12 +4,12 @@
 
 **The open-source, AI-powered CRM built for real estate brokerages.**
 
-Manage your entire brokerage and channel partner operation — agentic call processing, leads, inventory, bookings, commissions, post-sales, finance — from one platform with web and mobile apps.
+Manage your entire brokerage and channel partner operation — agentic AI voice calling, email & SMS broadcasts, leads, inventory, bookings, commissions, post-sales, finance — from one platform with web and mobile apps.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![NestJS](https://img.shields.io/badge/Backend-NestJS%2011-E0234E?logo=nestjs)](backend/)
-[![Next.js](https://img.shields.io/badge/Frontend-Next.js%2016-000000?logo=next.js)](frontend/)
-[![Expo](https://img.shields.io/badge/Mobile-Expo%2054-4630EB?logo=expo)](mobile/)
+[![NestJS](https://img.shields.io/badge/Backend-NestJS%2011-E0234E?logo=nestjs)](apps/api/)
+[![Next.js](https://img.shields.io/badge/Frontend-Next.js%2016-000000?logo=next.js)](apps/web/)
+[![Expo](https://img.shields.io/badge/Mobile-Expo%2054-4630EB?logo=expo)](apps/mobile/)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -30,6 +30,16 @@ Same database. Same inventory. Separated by one flag: `isCpProject`. No data lea
 ---
 
 ## ✨ Features
+
+### Omnichannel Marketing Suite (Email · SMS · AI Voice)
+- **AI Voice Campaigns**: Dispatch thousands of outbound AI calls using your choice of 8 AI voice agent platforms (Vapi, Retell, Sarvam Bulbul v3, Bolna, ElevenLabs, LiveKit, OpenAI Realtime, Pipecat) bridged to 4 PSTN telephony carriers (Vobiz, Exotel, Twilio, Telnyx).
+- **5-Step Voice Campaign Wizard**: Configure project, schedule, audience (CSV or CRM leads), PSTN carrier, and the AI Agent Composer Studio — which exposes platform-specific settings (Vapi transcriber, Retell emotion/backchannel, Sarvam Indic language) and a live script prompt editor with merge tag auto-insertion.
+- **SMS Campaigns**: 4-step wizard — project gateway selection, CSV/lead audience, message + phone mockup preview, schedule & launch — via Twilio, Gupshup, Sinch, or AWS SNS.
+- **Email Campaigns**: 4-step wizard — project/sender identity, audience, HTML template editor, schedule & launch — via SendGrid, Brevo, Mailchimp, or AWS SES.
+- **Live Prompt Variable Preview**: The AI voice composer shows real-time interpolation of `{{lead.firstName}}`, `{{project.name}}`, and other merge tags using actual CSV data.
+- **In-Browser Audio Preview**: Test any TTS voice persona with backend neural synthesis or browser speech synthesis fallback.
+- **Campaign Analytics**: Funnel charts (Dialed → Answered → Converted), per-call outcome logs, deliverability metrics.
+- **BullMQ Async Workers**: All campaign dispatches (email, SMS, voice) run as background jobs via `apps/workers/` processors, never blocking the API request cycle.
 
 ### Lead Management & AI
 - **AI-Powered Call Processing**: Integrates with AI via a background `p-queue` to automatically transcribe calls, summarize intent, and extract budget/location requirements.
@@ -80,7 +90,7 @@ Same database. Same inventory. Separated by one flag: `isCpProject`. No data lea
 - **Brokerage Settlements**: Sourcing Managers and Finance use a 2-step approval workflow to verify and pay external agents securely.
 
 ### Approvals & Finance
-- **Ticket-Based Approvals**: Employees can create approval requests (e.g., for discounts or refunds) and send them to their managers or the finance team. 
+- **Ticket-Based Approvals**: Employees can create approval requests (e.g., for discounts or refunds) and send them to their managers or the finance team.
 - **Collaboration**: Features chat-style threads inside `ApprovalRequest` so employees can talk directly with managers and finance to coordinate and resolve the request quickly.
 - **Formal Financial Approvals**: 2-level hierarchical approvals (`FinancialApproval`) for strict expense tracking and final sign-offs.
 
@@ -114,23 +124,29 @@ Every role gets a dedicated dashboard with relevant KPIs, charts, and action ite
 BrokerOS/
 ├── apps/
 │   ├── api/          NestJS 11 REST API + Socket.IO
-│   │   ├── src/
-│   │   │   ├── auth/           Better Auth + RBAC guards
-│   │   │   ├── leads/          Leads, follow-ups, calls, notes, site visits, bookings
-│   │   │   ├── inventory/      Projects, towers, floors, units, documents
-│   │   │   ├── brokers/        Broker CRUD, meetings, referrals, settlements
-│   │   │   ├── approvals/      Approval workflows
-│   │   │   ├── chat/           Real-time chat (Socket.IO)
-│   │   │   ├── notifications/  Push + in-app notifications
-│   │   │   ├── dashboard/      12 role-specific analytics services
-│   │   │   └── lib/            Prisma, auth config, storage helpers
-│   │   └── prisma/             Schema (74 models, 43 enums) + migrations
+│   │   └── src/
+│   │       ├── auth/           Better Auth + RBAC guards
+│   │       ├── leads/          Leads, follow-ups, calls, notes, site visits, bookings
+│   │       ├── inventory/      Projects, towers, floors, units, documents
+│   │       ├── brokers/        Broker CRUD, meetings, referrals, settlements
+│   │       ├── approvals/      Approval workflows
+│   │       ├── chat/           Real-time chat (Socket.IO)
+│   │       ├── notifications/  Push + in-app notifications
+│   │       ├── dashboard/      12 role-specific analytics services
+│   │       ├── marketing/      Email + SMS + AI Voice campaigns
+│   │       │   ├── email/      4 controllers, 4 services, facade
+│   │       │   ├── sms/        4 controllers, 4 services, facade
+│   │       │   └── voice/      5 controllers, 7 services, WebSocket gateway, facade
+│   │       └── lib/            Prisma, auth config, storage helpers
 │   │
 │   ├── web/          Next.js 16 (App Router) web dashboard
 │   │   ├── app/
 │   │   │   ├── login/          Public login page
 │   │   │   └── dashboard/      Role-based shell + 12 role sub-routes
-│   │   ├── features/           Domain feature UI (leads, inventory, brokers, approvals)
+│   │   │       └── marketing/  Email / SMS / Voice campaign management
+│   │   ├── features/           Domain feature UI
+│   │   │   └── marketing/      Email, SMS, Voice — wizard steps + analytics
+│   │   │       └── voice/components/composer/ 6 studio subcomponents
 │   │   ├── components/         Shared UI, charts, chat widget, notifications
 │   │   └── lib/                Auth client, utilities
 │   │
@@ -142,14 +158,28 @@ BrokerOS/
 │   │   │   └── auto-dialer/    Custom native Android module (local package)
 │   │   └── lib/                Auth client, socket context, GPS tracking
 │   │
-│   └── workers/      BullMQ async background processors (Coming soon)
+│   └── workers/      BullMQ async background processors
+│       └── src/processors/
+│           ├── marketing-email.processor.ts
+│           ├── marketing-sms.processor.ts
+│           └── marketing-voice.processor.ts   (+ carrier bridge dispatch)
 │
 ├── packages/
 │   ├── prisma/       Prisma ORM schema, migrations, and client (@brokeros/prisma)
 │   ├── storage/      Vercel Blob storage wrappers (@brokeros/storage)
-│   ├── types/        Shared TS interfaces (@brokeros/types)
+│   ├── types/        Shared TS interfaces with domain sub-modules (@brokeros/types)
+│   │                 (common, email, sms, voice/telephony, voice/agent, voice/options...)
 │   ├── validators/   Shared Zod schemas (@brokeros/validators)
-│   └── constants/    Shared constants and pure logic (@brokeros/constants)
+│   └── constants/    Shared constants with domain sub-modules (@brokeros/constants)
+│                     (campaign, email, sms, voice/agents, voice/voices, voice/scripts...)
+│
+├── integrations/
+│   ├── voice/        @brokeros/int-voice — 8 AI agents + 4 PSTN carriers
+│   │   ├── agents/   vapi, retell, sarvam, bolna, elevenlabs, livekit, openai-realtime, pipecat
+│   │   ├── bridge/   carrier-bridge-dispatcher.ts
+│   │   └── telephony/ vobiz, exotel, twilio, telnyx
+│   ├── mail/         sendgrid, brevo, mailchimp, aws-ses
+│   └── sms/          twilio, gupshup, sinch, aws-sns
 │
 └── docker-compose.yml      PostgreSQL + API + Web (one command)
 ```
@@ -165,9 +195,14 @@ BrokerOS/
 | **Mobile** | Expo 54 · Expo Router 6 · React Native · NativeWind |
 | **Auth** | Better Auth (all platforms) |
 | **Real-time** | Socket.IO 4 |
+| **Async Jobs** | BullMQ (marketing campaign processors) |
 | **File Storage** | Vercel Blob |
 | **Push Notifications** | Expo Push SDK |
-| **AI** | Groq (call transcription) |
+| **AI (Calls)** | Groq (call transcription + AI tower generation) |
+| **AI Voice Agents** | Vapi · Retell · Sarvam · Bolna · ElevenLabs · LiveKit · OpenAI Realtime · Pipecat |
+| **PSTN Carriers** | Vobiz · Exotel · Twilio · Telnyx |
+| **Email Providers** | SendGrid · Brevo · Mailchimp · AWS SES |
+| **SMS Gateways** | Twilio · Gupshup · Sinch · AWS SNS |
 | **Maps** | Google Maps (web + mobile) |
 | **Containerization** | Docker + Docker Compose |
 
@@ -203,10 +238,10 @@ cp apps/mobile/.env.example apps/mobile/.env
 
 **Split Environment Architecture**
 We separate `.env` files to prevent backend secrets from leaking to the frontend.
-- **Root `/.env`**: Core infrastructure keys (DB, Auth, AI, Storage). You **must** configure this.
+- **Root `/.env`**: Core infrastructure keys (DB, Auth, AI, Storage, telephony/voice keys). You **must** configure this.
 - **App `.env`s**: Local routing URLs and client-specific keys (like Google Maps).
 
-**How to get these values?** 
+**How to get these values?**
 
 #### A. Authentication (`BETTER_AUTH_SECRET`)
 Better Auth requires a strong, randomly generated 32-character secret to sign sessions.
@@ -228,12 +263,13 @@ Set in `.env`:
  - 🟢 **[Backend API Guide](apps/api/README.md)**
  - 🔵 **[Frontend Web Guide](apps/web/README.md)**
  - 📱 **[Mobile App Guide](apps/mobile/README.md)**
+ - 🔗 **[Integrations Guide](integrations/README.md)**
 
 ---
 
 ### 🤖 AI Agent Setup
 
-If you are using the **AI IDE / CLII**, you don't need to manually run the setup commands. Simply use the built-in AI skills:
+If you are using the **AI IDE / CLI**, you don't need to manually run the setup commands. Simply use the built-in AI skills:
 
 1. Type **`/setup-codebase`** in the agent chat. The AI will automatically create your `.env` files, install all dependencies, start the database, and launch all services.
 2. Type **`/codebase-tour`** after setup to have the AI generate an exhaustive, customized markdown map of the codebase and its business logic.
@@ -298,9 +334,9 @@ npx expo run:android
 
 | Document | Description |
 |---|---|
-| [Backend README](backend/README.md) | Backend architecture, API modules, database, development guide |
-| [Frontend README](frontend/README.md) | Frontend architecture, routing, components, development guide |
-| [Mobile README](mobile/README.md) | Mobile architecture, native modules, Android setup |
+| [Backend README](apps/api/README.md) | Backend architecture, API modules (leads, inventory, marketing), database, development guide |
+| [Frontend README](apps/web/README.md) | Frontend architecture, routing, marketing campaign wizards, components, development guide |
+| [Integrations Guide](integrations/README.md) | Voice agent adapters, PSTN carrier bridge, email & SMS provider adapters |
 | [Contributing Guide](CONTRIBUTING.md) | How to contribute to the project |
 | [Code of Conduct](CODE_OF_CONDUCT.md) | Community standards |
 | [Security Policy](SECURITY.md) | Reporting vulnerabilities |

@@ -50,7 +50,7 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 
 ### 🤖 AI Agent Setup 
 
-If you are using the **AI IDE / CLII**, you can skip running commands manually. Use the built-in agent skills:
+If you are using the **AI IDE / CLI**, you can skip running commands manually. Use the built-in agent skills:
 
 - Type **`/setup-codebase`** in the chat to have the AI automatically install dependencies, copy `.env` files, run migrations, and start all services.
 - Type **`/codebase-tour`** to have the AI generate a deep-dive, customized architectural map of the system to help you understand where to make your PR changes.
@@ -140,6 +140,7 @@ cd apps/mobile && npx expo run:android
 > - 🟢 **[Backend API Guide](apps/api/README.md)**
 > - 🔵 **[Frontend Web Guide](apps/web/README.md)**
 > - 📱 **[Mobile App Guide](apps/mobile/README.md)**
+> - 🔗 **[Integrations Guide](integrations/README.md)**
 
 ---
 
@@ -149,19 +150,49 @@ cd apps/mobile && npx expo run:android
 BrokerOS/
 ├── apps/
 │   ├── api/       NestJS 11 API + Socket.IO (TypeScript ESM)
+│   │              Modules: auth, leads, inventory, brokers, approvals,
+│   │              chat, notifications, dashboard, marketing (email/sms/voice)
 │   ├── web/       Next.js 16 App Router web dashboard
+│   │              Features: leads, inventory, brokers, approvals,
+│   │              marketing (email/sms/voice campaign wizards)
 │   ├── mobile/    Expo 54 React Native Android app
 │   └── workers/   BullMQ async background processors
+│                  (marketing-email, marketing-sms, marketing-voice processors)
 ├── packages/
 │   ├── prisma/      Prisma ORM schema, migrations, and client (@brokeros/prisma)
 │   ├── storage/     Vercel Blob storage wrappers (@brokeros/storage)
-│   ├── types/       Shared TS interfaces (@brokeros/types)
+│   ├── types/       Shared TS interfaces with domain sub-modules (@brokeros/types)
 │   ├── validators/  Shared Zod schemas (@brokeros/validators)
-│   └── constants/   Shared logic and constants (@brokeros/constants)
+│   └── constants/   Shared logic and constants with domain sub-modules (@brokeros/constants)
+├── integrations/
+│   ├── voice/       @brokeros/int-voice — 8 AI voice agents + 4 PSTN carriers
+│   ├── mail/        Email provider adapters (SendGrid, Brevo, Mailchimp, AWS SES)
+│   └── sms/         SMS gateway adapters (Twilio, Gupshup, Sinch, AWS SNS)
 └── docs/          Project documentation
 ```
 
 This is a **pnpm monorepo** managed by Turborepo. You can run commands globally via `pnpm --filter <package_name> <command>`, or work within specific subtrees.
+
+---
+
+## Making Changes
+
+### Key Conventions
+
+1. **Always read the scoped `AGENTS.md`** before touching a subtree:
+   - `apps/api/AGENTS.md` — for backend changes
+   - `apps/web/AGENTS.md` — for frontend changes
+   - `apps/mobile/AGENTS.md` — for mobile changes
+
+2. **Shared constants/types** go in `packages/constants/` or `packages/types/`, not in app-level files. See `AGENTS.md` root for the migration policy.
+
+3. **External API calls** must go through `integrations/` adapters, not directly in NestJS services.
+
+4. **Database** — use Prisma only. No raw SQL. Multi-model writes use `$transaction`.
+
+5. **Auth** — use Better Auth only. No custom JWT or session logic.
+
+6. **Workers** — any heavy I/O (CSV parsing, external API blasting) must be enqueued to BullMQ, not done inline in the request cycle.
 
 ---
 
@@ -170,6 +201,7 @@ This is a **pnpm monorepo** managed by Turborepo. You can run commands globally 
 1. **Ensure your code works:**
    - Run type checks and linters from the root: `pnpm lint` and `pnpm build`
    - Test backend specifically: `pnpm --filter @brokeros/api test`
+   - Verify Next.js build: `pnpm --filter @brokeros/web exec next build`
 
 2. **Write a clear PR description:**
    - What does this PR do?
@@ -190,6 +222,7 @@ feat(leads): add bulk CSV import for leads
 fix(auth): session not persisting after page refresh
 docs(api): update API endpoint documentation
 chore(deps): upgrade Prisma to 7.x
+feat(marketing): add voice campaign retry logic
 ```
 
 ---
@@ -218,15 +251,16 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Scopes
 
-Use the app/package or module name: `api`, `web`, `mobile`, `workers`, `types`, `validators`, `constants`, `leads`, `inventory`, `brokers`, `auth`, `dashboard`, `docs`
+Use the app/package or module name: `api`, `web`, `mobile`, `workers`, `types`, `validators`, `constants`, `integrations`, `leads`, `inventory`, `brokers`, `auth`, `dashboard`, `marketing`, `email`, `sms`, `voice`, `docs`
 
 ### Examples
 
 ```
-feat(leads): add lead temperature auto-scoring based on activity
-fix(frontend): sidebar not collapsing on mobile viewport
-docs(mobile): add auto-dialer troubleshooting section
-chore(backend): upgrade NestJS to 11.2
+feat(marketing): add 5-step voice campaign wizard
+fix(voice): fix carrier bridge fallback on Vobiz timeout
+refactor(api): decompose voice.service.ts into sub-services
+feat(constants): add voice normalizer for lead merge tags
+chore(workers): wire tryCarrierBridgeDispatch in marketing-voice processor
 ```
 
 ---
@@ -253,6 +287,7 @@ Open an issue with:
 3. **Alternatives considered:** Other approaches you thought about
 4. **Which role(s) benefit:** Which of the 12 roles would use this?
 5. **Which business line:** Brokerage, Channel Partner, or both?
+6. **Which channel (if marketing):** Email, SMS, or AI Voice?
 
 ---
 
@@ -265,4 +300,3 @@ Open an issue with:
 ## Questions?
 
 If you have questions about contributing, open a [Discussion](https://github.com/sumamakhan761/BrokerOS/discussions) on GitHub.
-

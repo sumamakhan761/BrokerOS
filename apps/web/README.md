@@ -2,7 +2,7 @@
 
 # Frontend — BrokerOS
 
-**Next.js 16 web dashboard with role-based views**
+**Next.js 16 web dashboard with role-based views and omnichannel marketing campaigns**
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -15,7 +15,7 @@
 
 ## Overview
 
-The frontend is a Next.js 16 App Router application that serves as the web dashboard for the CRM. It provides 12 role-specific views — each role sees a tailored sidebar, dashboard, and feature set based on their `session.user.role`.
+The frontend is a Next.js 16 App Router application that serves as the web dashboard for the CRM. It provides 12 role-specific views and a full omnichannel marketing platform (Email, SMS, AI Voice campaigns) accessible to the Marketing role.
 
 ## Directory Structure
 
@@ -27,27 +27,75 @@ apps/web/
 │   ├── page.tsx                Root redirect → /dashboard or /login
 │   ├── login/                  Public login page (no auth guard)
 │   └── dashboard/
-│       ├── layout.tsx          THE MAIN SHELL — role-based sidebar,
-│       │                       NotificationBell, ChatWidget
+│       ├── layout.tsx          THE MAIN SHELL — role-based sidebar, NotificationBell, ChatWidget
 │       ├── page.tsx            Dashboard home (redirects to role view)
-│       ├── business-manager/   Business Manager screens
-│       ├── channel-partner/    Channel Partner screens
-│       ├── closing-manager/    Closing Manager screens
-│       ├── director/           Director screens
-│       ├── finance/            Finance screens
-│       ├── post-sales/         Post-Sales screens
-│       ├── pre-sales/          Pre-Sales screens
-│       ├── pre-sales-manager/  Pre-Sales Manager screens
-│       ├── sales/              Sales screens
-│       ├── sales-executive/    Sales Executive screens
-│       ├── sales-manager/      Sales Manager screens
-│       └── sourcing-manager/   Sourcing Manager screens
+│       ├── [12 role dirs]/     business-manager, channel-partner, closing-manager,
+│       │                       director, finance, post-sales, pre-sales,
+│       │                       pre-sales-manager, sales, sales-executive,
+│       │                       sales-manager, sourcing-manager
+│       └── marketing/
+│           ├── email/
+│           │   ├── campaigns/new/     4-step email campaign wizard
+│           │   ├── campaigns/[id]/    Campaign detail + analytics
+│           │   └── settings/          Email provider integrations
+│           ├── sms/
+│           │   ├── campaigns/new/     4-step SMS campaign wizard
+│           │   ├── campaigns/[id]/    Campaign detail + analytics
+│           │   └── settings/          SMS gateway integrations
+│           └── voice/
+│               ├── campaigns/new/     5-step AI voice campaign wizard
+│               ├── campaigns/[id]/    Campaign detail + analytics
+│               └── settings/          AI voice platform integrations
 │
 ├── features/                   Domain feature UI
 │   ├── leads/                  Lead list, detail, follow-ups, call history
 │   ├── inventory/              Project/unit browser
 │   ├── brokers/                Broker management
-│   └── approvals/              Approval request UI
+│   ├── approvals/              Approval request UI
+│   └── marketing/
+│       ├── shared/
+│       │   ├── AudienceSelector.tsx   Shared CSV/lead audience picker
+│       │   └── CampaignWizardStepper.tsx  Shared step progress bar
+│       ├── components/         Shared marketing components (funnels, provider cards, etc.)
+│       ├── email/
+│       │   ├── components/     EmailCampaignListTable, EmailFunnelAnalytics,
+│       │   │                   EmailTemplatePicker, EmailProviderConfigCard, etc.
+│       │   └── wizard/
+│       │       ├── EmailStep1ProjectSender.tsx   Project + sender identity + provider
+│       │       ├── EmailStep2Audience.tsx         CSV upload or lead segment
+│       │       ├── EmailStep3TemplateEditor.tsx   Rich HTML template editor
+│       │       └── EmailStep4ReviewLaunch.tsx     Preview, schedule, launch
+│       ├── sms/
+│       │   ├── components/     SmsCampaignListTable, SmsFunnelAnalytics,
+│       │   │                   SmsMessageEditor, SmsPhoneMockup, etc.
+│       │   └── wizard/
+│       │       ├── SmsStep1ProjectGateway.tsx     Project + SMS gateway
+│       │       ├── SmsStep2Audience.tsx            CSV / lead audience
+│       │       ├── SmsStep3MessageMockup.tsx       Message + phone preview
+│       │       └── SmsStep4ReviewLaunch.tsx        Review + launch
+│       └── voice/
+│           ├── components/
+│           │   ├── InBrowserAudioPlayer.tsx        TTS preview player
+│           │   ├── VoiceCampaignListTable.tsx
+│           │   ├── VoiceCampaignFunnel.tsx
+│           │   ├── VoiceCallLogsTable.tsx
+│           │   ├── VoiceModelSelector.tsx           LLM model picker
+│           │   ├── VoicePickerModal.tsx             TTS voice persona browser
+│           │   ├── VoiceProviderConfigCard.tsx
+│           │   └── composer/                        Studio subcomponents
+│           │       ├── AgentPlatformSelector.tsx    Platform grid + workspace agents
+│           │       ├── StudioVapiSettings.tsx        Vapi STT, silence, ambience
+│           │       ├── StudioRetellSettings.tsx      Retell emotion, ambient, backchannel
+│           │       ├── StudioSarvamSettings.tsx      Sarvam Indic language + pace
+│           │       ├── LivePromptVariablePreview.tsx Real-time variable interpolation
+│           │       ├── VoiceScriptEditor.tsx         Script templates + prompt composer
+│           │       └── index.ts                      Barrel export
+│           └── wizard/
+│               ├── VoiceStep1ProjectSchedule.tsx   Project + schedule
+│               ├── VoiceStep2Audience.tsx           CSV / lead audience
+│               ├── VoiceStep3TelephonyCarrier.tsx   PSTN carrier (Vobiz/Exotel/Twilio/Telnyx)
+│               ├── VoiceStep4AgentComposer.tsx       Coordinator (~250 lines) — imports composer/
+│               └── VoiceStep5ReviewLaunch.tsx        Review + test call + launch
 │
 ├── components/                 Shared components
 │   ├── analytics/              Recharts-based chart components
@@ -120,7 +168,7 @@ pnpm --filter @brokeros/web dev
 
 #### Production
 ```bash
-pnpm --filter @brokeros/web build             # Production build
+pnpm --filter @brokeros/web exec next build   # Full verified production build
 pnpm --filter @brokeros/web start             # Serve production build
 ```
 
