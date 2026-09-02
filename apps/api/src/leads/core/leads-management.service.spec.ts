@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-jest.mock('@brokeros/prisma', () => ({ NotificationType: { LEAD_ASSIGNED: 'LEAD_ASSIGNED' }, PrismaClient: class {} }));
+jest.mock('@brokeros/prisma', () => ({
+  NotificationType: { LEAD_ASSIGNED: 'LEAD_ASSIGNED' },
+  PrismaClient: class {},
+}));
 jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 jest.mock('../../notifications/notifications.service.js');
 
@@ -13,7 +16,13 @@ describe('LeadsManagementService', () => {
   const mockPrisma = {
     leadSource: { findMany: jest.fn(), findFirst: jest.fn() },
     project: { findMany: jest.fn() },
-    lead: { createMany: jest.fn(), update: jest.fn(), updateMany: jest.fn(), findUnique: jest.fn(), create: jest.fn() },
+    lead: {
+      createMany: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+      findUnique: jest.fn(),
+      create: jest.fn(),
+    },
     user: { findMany: jest.fn() },
     booking: { findFirst: jest.fn() },
     unit: { update: jest.fn() },
@@ -38,7 +47,10 @@ describe('LeadsManagementService', () => {
     mockPrisma.leadSource.findMany.mockResolvedValue([]);
     mockPrisma.project.findMany.mockResolvedValue([]);
     mockPrisma.lead.createMany.mockResolvedValue({ count: 2 });
-    await service.bulkCreate([{ firstName: 'A' }, { firstName: 'B' }] as CreateLeadDto[], 'm-1');
+    await service.bulkCreate(
+      [{ firstName: 'A' }, { firstName: 'B' }] as CreateLeadDto[],
+      'm-1',
+    );
     expect(mockPrisma.lead.createMany).toHaveBeenCalled();
     expect(mockNotifs.createNotification).toHaveBeenCalled();
   });

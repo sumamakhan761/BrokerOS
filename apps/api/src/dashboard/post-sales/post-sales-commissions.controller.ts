@@ -4,7 +4,9 @@ import { ReceiveCommissionDto } from './dto/post-sales.dto.js';
 
 @Controller('api/dashboard/post-sales/commissions')
 export class PostSalesCommissionsController {
-  constructor(private readonly commissionsService: PostSalesCommissionsService) {}
+  constructor(
+    private readonly commissionsService: PostSalesCommissionsService,
+  ) {}
 
   @Get()
   async getCommissions(@Req() req: any) {
@@ -14,7 +16,15 @@ export class PostSalesCommissionsController {
   }
 
   @Put(':id/receive')
-  async markAsReceived(@Param('id') id: string, @Req() req: any, @Body() body: ReceiveCommissionDto) {
-    return this.commissionsService.markAsReceived(id, req.user?.id || 'SYSTEM', body);
+  async markAsReceived(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Body() body: ReceiveCommissionDto,
+  ) {
+    return this.commissionsService.markAsReceived(
+      id,
+      req.user?.id || 'SYSTEM',
+      body,
+    );
   }
 }

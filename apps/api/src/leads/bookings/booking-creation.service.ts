@@ -8,8 +8,8 @@ import { CreateBookingDto, UpdateBookingDto } from './dto/booking.dto.js';
 export class BookingCreationService {
   constructor(
     private prisma: PrismaService,
-    private notificationsService: NotificationsService
-  ) { }
+    private notificationsService: NotificationsService,
+  ) {}
 
   async createBooking(leadId: string, data: CreateBookingDto) {
     const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
@@ -24,7 +24,7 @@ export class BookingCreationService {
           lastName: lead.lastName,
           phone: lead.phone,
           email: lead.email,
-        }
+        },
       });
     }
 
@@ -35,10 +35,11 @@ export class BookingCreationService {
       if (data.unitId) {
         unit = await tx.unit.findUnique({
           where: { id: data.unitId },
-          include: { floor: { include: { tower: true } } }
+          include: { floor: { include: { tower: true } } },
         });
         if (!unit) throw new Error('Unit not found');
-        if (unit.status !== 'AVAILABLE') throw new Error('Selected unit is no longer available');
+        if (unit.status !== 'AVAILABLE')
+          throw new Error('Selected unit is no longer available');
 
         let finalCommPercent = data.commissionPercentage;
         let finalCommAmount = data.commissionAmount;
@@ -49,9 +50,9 @@ export class BookingCreationService {
             where: {
               brokerId_projectId: {
                 brokerId: lead.brokerId,
-                projectId: unit.floor.tower.projectId
-              }
-            }
+                projectId: unit.floor.tower.projectId,
+              },
+            },
           });
 
           if (dealCard && dealCard.brokeragePercent) {
@@ -69,8 +70,10 @@ export class BookingCreationService {
             status: 'RESERVED',
             reservedAt: new Date(),
             reservedForId: data.userId,
-            ...(finalCommPercent !== undefined ? { commissionPercentage: finalCommPercent } : {})
-          }
+            ...(finalCommPercent !== undefined
+              ? { commissionPercentage: finalCommPercent }
+              : {}),
+          },
         });
 
         await tx.unitStatusHistory.create({
@@ -79,8 +82,8 @@ export class BookingCreationService {
             fromStatus: unit.status,
             toStatus: 'RESERVED',
             changedById: data.userId,
-            reason: 'Booking initiated'
-          }
+            reason: 'Booking initiated',
+          },
         });
 
         // Re-assign data so the booking record gets the updated commission
@@ -108,7 +111,7 @@ export class BookingCreationService {
           commissionAmount: data.commissionAmount,
           status: 'DOCUMENTATION_PENDING',
           cancelReason: data.remarks,
-        }
+        },
       });
 
       await tx.note.create({
@@ -120,9 +123,9 @@ export class BookingCreationService {
             paymentMode: data.paymentMode,
             transactionRef: data.transactionRef,
             loanRequired: data.loanRequired,
-            remarks: data.remarks
-          })
-        }
+            remarks: data.remarks,
+          }),
+        },
       });
 
       return booking;
@@ -140,7 +143,8 @@ export class BookingCreationService {
     });
 
     if (!booking) throw new NotFoundException('Booking not found');
-    if (booking.status === 'CONFIRMED') throw new Error('Cannot edit confirmed booking');
+    if (booking.status === 'CONFIRMED')
+      throw new Error('Cannot edit confirmed booking');
 
     await this.prisma.$transaction(async (tx) => {
       let finalUnitId = booking.unitId;
@@ -153,14 +157,18 @@ export class BookingCreationService {
         if (booking.unitId) {
           await tx.unit.update({
             where: { id: booking.unitId },
-            data: { status: 'AVAILABLE', reservedAt: null, reservedForId: null }
+            data: {
+              status: 'AVAILABLE',
+              reservedAt: null,
+              reservedForId: null,
+            },
           });
         }
 
         // Reserve new unit
         const newUnit = await tx.unit.findUnique({
           where: { id: data.unitId },
-          include: { floor: { include: { tower: true } } }
+          include: { floor: { include: { tower: true } } },
         });
         if (!newUnit || newUnit.status !== 'AVAILABLE') {
           throw new Error('New selected unit is not available');
@@ -169,7 +177,7 @@ export class BookingCreationService {
         // Auto-fetch commission if broker is attached
         const customer = await tx.customer.findUnique({
           where: { id: booking.customerId },
-          include: { lead: true }
+          include: { lead: true },
         });
 
         if (customer?.lead?.brokerId && newUnit.floor?.tower?.projectId) {
@@ -177,9 +185,9 @@ export class BookingCreationService {
             where: {
               brokerId_projectId: {
                 brokerId: customer.lead.brokerId,
-                projectId: newUnit.floor.tower.projectId
-              }
-            }
+                projectId: newUnit.floor.tower.projectId,
+              },
+            },
           });
 
           if (dealCard && dealCard.brokeragePercent) {
@@ -196,8 +204,10 @@ export class BookingCreationService {
             status: 'RESERVED',
             reservedAt: new Date(),
             reservedForId: data.userId,
-            ...(finalCommPercent !== undefined ? { commissionPercentage: finalCommPercent } : {})
-          }
+            ...(finalCommPercent !== undefined
+              ? { commissionPercentage: finalCommPercent }
+              : {}),
+          },
         });
 
         finalUnitId = data.unitId;
@@ -210,16 +220,22 @@ export class BookingCreationService {
           agreedPrice: data.agreedPrice || booking.agreedPrice,
           totalPayable: data.agreedPrice || booking.totalPayable,
           tokenAmount: data.bookingAmount || booking.tokenAmount,
-          commissionPercentage: finalCommPercent !== undefined ? finalCommPercent : booking.commissionPercentage,
-          commissionAmount: finalCommAmount !== undefined ? finalCommAmount : booking.commissionAmount,
+          commissionPercentage:
+            finalCommPercent !== undefined
+              ? finalCommPercent
+              : booking.commissionPercentage,
+          commissionAmount:
+            finalCommAmount !== undefined
+              ? finalCommAmount
+              : booking.commissionAmount,
           cancelReason: data.remarks || booking.cancelReason,
-        }
+        },
       });
 
       // Find the first note for this booking (which contains the form details)
       const firstNote = await tx.note.findFirst({
         where: { bookingId },
-        orderBy: { createdAt: 'asc' }
+        orderBy: { createdAt: 'asc' },
       });
 
       if (firstNote) {
@@ -231,9 +247,9 @@ export class BookingCreationService {
               paymentMode: data.paymentMode,
               transactionRef: data.transactionRef,
               loanRequired: data.loanRequired,
-              remarks: data.remarks
-            })
-          }
+              remarks: data.remarks,
+            }),
+          },
         });
       }
     });

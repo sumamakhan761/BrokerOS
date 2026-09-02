@@ -1,17 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 jest.mock('../../lib/database/prisma-client.js', () => ({
-  prismaClient: {}
+  prismaClient: {},
 }));
 jest.mock('../../lib/database/prisma.service.js', () => ({
-  PrismaService: class {}
+  PrismaService: class {},
 }));
 jest.mock('@brokeros/prisma', () => ({
   NotificationType: {},
-  PrismaClient: class {}
+  PrismaClient: class {},
 }));
-jest.mock('expo-server-sdk', () => ({ Expo: class { } }));
+jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 jest.mock('expo-server-sdk', () => ({
-  Expo: class {}
+  Expo: class {},
 }));
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
@@ -29,7 +29,9 @@ describe('ManagerAnnouncementsService', () => {
       ],
     }).compile();
 
-    service = module.get<ManagerAnnouncementsService>(ManagerAnnouncementsService);
+    service = module.get<ManagerAnnouncementsService>(
+      ManagerAnnouncementsService,
+    );
   });
 
   afterEach(() => jest.clearAllMocks());

@@ -12,4 +12,4 @@ import { BookingsModule } from '../leads/bookings/bookings.module.js';
   providers: [ApprovalsService],
   exports: [ApprovalsService],
 })
-export class ApprovalsModule { }
+export class ApprovalsModule {}

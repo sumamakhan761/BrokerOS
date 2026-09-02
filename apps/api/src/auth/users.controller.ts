@@ -5,7 +5,7 @@ import { AuthGuard } from '@thallesp/nestjs-better-auth';
 @Controller('api/users')
 @UseGuards(AuthGuard)
 export class UsersController {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   @Get('subordinates')
   async getSubordinates(@Req() req: any) {
@@ -16,9 +16,9 @@ export class UsersController {
         id: true,
         name: true,
         email: true,
-        role: { select: { code: true, name: true } }
+        role: { select: { code: true, name: true } },
       },
-      orderBy: { name: 'asc' }
+      orderBy: { name: 'asc' },
     });
   }
 }

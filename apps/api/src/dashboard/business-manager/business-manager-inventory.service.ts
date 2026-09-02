@@ -29,18 +29,23 @@ export class BusinessManagerInventoryService {
               include: {
                 units: {
                   include: {
-                    bookings: dateFilter ? {
-                      where: { bookingDate: dateFilter, status: { not: 'CANCELLED' } },
-                    } : {
-                      where: { status: { not: 'CANCELLED' } }
-                    }
-                  }
-                }
-              }
-            }
-          }
+                    bookings: dateFilter
+                      ? {
+                          where: {
+                            bookingDate: dateFilter,
+                            status: { not: 'CANCELLED' },
+                          },
+                        }
+                      : {
+                          where: { status: { not: 'CANCELLED' } },
+                        },
+                  },
+                },
+              },
+            },
+          },
         },
-      }
+      },
     });
 
     // 1. Total inventory stats
@@ -51,12 +56,12 @@ export class BusinessManagerInventoryService {
       soldBrokerage: 0,
       soldCp: 0,
       reservedBrokerage: 0,
-      reservedCp: 0
+      reservedCp: 0,
     };
 
     // 2. Project-wise unit status
     const projectWiseStatus: any[] = [];
-    
+
     // 3. Construction status per project
     const constructionStatus: any[] = [];
 
@@ -103,7 +108,7 @@ export class BusinessManagerInventoryService {
       revenueContribution.push({
         name: p.name,
         revenue: pRevenue,
-        isCp: p.isCpProject
+        isCp: p.isCpProject,
       });
 
       projectWiseStatus.push({
@@ -113,23 +118,23 @@ export class BusinessManagerInventoryService {
         reserved: pReserved,
         sold: pSold,
         blocked: pBlocked,
-        isCp: p.isCpProject
+        isCp: p.isCpProject,
       });
 
       constructionStatus.push({
         name: p.name,
         status: p.constructionStatus || 'NOT_STARTED',
-        isCp: p.isCpProject
+        isCp: p.isCpProject,
       });
     }
 
     revenueContribution.sort((a, b) => b.revenue - a.revenue);
-    
+
     return {
       totalInventory,
       projectWiseStatus,
       constructionStatus,
-      revenueContribution
+      revenueContribution,
     };
   }
 }

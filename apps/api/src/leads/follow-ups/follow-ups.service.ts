@@ -18,7 +18,9 @@ export class FollowUpsService {
       where: { leadId },
       orderBy: { scheduledDate: 'desc' },
       include: {
-        user: { select: { username: true, email: true, displayUsername: true } },
+        user: {
+          select: { username: true, email: true, displayUsername: true },
+        },
       },
     });
   }
@@ -37,7 +39,9 @@ export class FollowUpsService {
         status: 'SCHEDULED',
       },
       include: {
-        user: { select: { username: true, email: true, displayUsername: true } },
+        user: {
+          select: { username: true, email: true, displayUsername: true },
+        },
       },
     });
 
@@ -54,21 +58,30 @@ export class FollowUpsService {
     const updated = await this.prisma.followUp.update({
       where: { id: followUpId },
       data: {
-        ...(data.scheduledDate && { scheduledDate: new Date(data.scheduledDate) }),
+        ...(data.scheduledDate && {
+          scheduledDate: new Date(data.scheduledDate),
+        }),
         ...(data.type !== undefined && { type: data.type }),
         ...(data.remarks !== undefined && { remarks: data.remarks }),
         ...(data.status !== undefined && { status: data.status as any }),
         ...(data.status === 'COMPLETED' && { completedAt: new Date() }),
       },
       include: {
-        user: { select: { username: true, email: true, displayUsername: true } },
+        user: {
+          select: { username: true, email: true, displayUsername: true },
+        },
       },
     });
 
     if (data.status === 'COMPLETED') {
-      this.notificationsService.checkDailyTaskCompletion(updated.userId, 'FOLLOW_UPS').catch(err => {
-        console.error("Failed to check daily follow-up task completion:", err);
-      });
+      this.notificationsService
+        .checkDailyTaskCompletion(updated.userId, 'FOLLOW_UPS')
+        .catch((err) => {
+          console.error(
+            'Failed to check daily follow-up task completion:',
+            err,
+          );
+        });
     }
 
     return updated;

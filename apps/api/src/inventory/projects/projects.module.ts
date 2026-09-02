@@ -9,4 +9,4 @@ import { NotificationsModule } from '../../notifications/notifications.module.js
   providers: [InventoryProjectsService],
   exports: [InventoryProjectsService],
 })
-export class ProjectsModule { }
+export class ProjectsModule {}

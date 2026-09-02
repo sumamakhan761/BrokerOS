@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Req,
+  Query,
+} from '@nestjs/common';
 import { DashboardService } from './dashboard.service.js';
 import { EmployeesService } from '../employees/employees.service.js';
 import { PreSalesDashboardService } from '../pre-sales/pre-sales-dashboard.service.js';
@@ -11,7 +21,12 @@ import { PostSalesDashboardService } from '../post-sales/post-sales-dashboard.se
 import { PostSalesAnalyticsService } from '../post-sales/post-sales-analytics.service.js';
 import { SourcingManagerDashboardService } from '../sourcing-manager/sourcing-manager-dashboard.service.js';
 import { ClosingManagerDashboardService } from '../closing-manager/closing-manager-dashboard.service.js';
-import { CreateTaskDto, UpdateTaskDto, CreateAnnouncementDto, UpdateAnnouncementDto } from './dto/dashboard.dto.js';
+import {
+  CreateTaskDto,
+  UpdateTaskDto,
+  CreateAnnouncementDto,
+  UpdateAnnouncementDto,
+} from './dto/dashboard.dto.js';
 
 // ─── Pre-Sales Agent Dashboard ────────────────────────────────────────────────
 
@@ -21,7 +36,7 @@ export class DashboardController {
     private readonly dashboardService: DashboardService,
     private readonly employeesService: EmployeesService,
     private readonly preSalesAnalytics: PreSalesAnalyticsService,
-  ) { }
+  ) {}
 
   /** Main dashboard data */
   @Get()
@@ -64,7 +79,7 @@ export class DashboardController {
 
 @Controller('api/dashboard/pre-sales-manager')
 export class DashboardManagerController {
-  constructor(private readonly dashboardService: DashboardService) { }
+  constructor(private readonly dashboardService: DashboardService) {}
 
   @Get()
   getManagerDashboard(@Req() req: any) {
@@ -73,7 +88,10 @@ export class DashboardManagerController {
 
   @Get('analytics')
   getManagerAnalytics(@Req() req: any, @Query('timeRange') timeRange?: string) {
-    return this.dashboardService.getPreSalesManagerAnalytics(req.user?.id, timeRange);
+    return this.dashboardService.getPreSalesManagerAnalytics(
+      req.user?.id,
+      timeRange,
+    );
   }
 
   @Get('leaderboard')
@@ -88,8 +106,8 @@ export class DashboardManagerController {
 export class SalesManagerDashboardController {
   constructor(
     private readonly salesManagerService: SalesManagerDashboardService,
-    private readonly salesManagerAnalytics: SalesManagerAnalyticsService
-  ) { }
+    private readonly salesManagerAnalytics: SalesManagerAnalyticsService,
+  ) {}
 
   @Get()
   getDashboard(@Req() req: any) {
@@ -99,16 +117,18 @@ export class SalesManagerDashboardController {
   @Get('analytics')
   async getAnalytics(@Req() req: any, @Query('timeRange') timeRange?: string) {
     const userId = req.user?.id;
-    const subs = await this.salesManagerAnalytics.getManagerSubordinates(userId);
+    const subs =
+      await this.salesManagerAnalytics.getManagerSubordinates(userId);
     const userIds = [userId, ...subs];
 
-    const [financial, funnel, leaderboard, inventory, detailedMetrics] = await Promise.all([
-      this.salesManagerAnalytics.getTeamFinancialMetrics(userIds, timeRange),
-      this.salesManagerAnalytics.getTeamFunnelMetrics(userIds, timeRange),
-      this.salesManagerAnalytics.getTeamLeaderboard(userIds, timeRange),
-      this.salesManagerAnalytics.getInventoryAnalytics(userId),
-      this.salesManagerAnalytics.getDetailedMetrics(userIds, timeRange)
-    ]);
+    const [financial, funnel, leaderboard, inventory, detailedMetrics] =
+      await Promise.all([
+        this.salesManagerAnalytics.getTeamFinancialMetrics(userIds, timeRange),
+        this.salesManagerAnalytics.getTeamFunnelMetrics(userIds, timeRange),
+        this.salesManagerAnalytics.getTeamLeaderboard(userIds, timeRange),
+        this.salesManagerAnalytics.getInventoryAnalytics(userId),
+        this.salesManagerAnalytics.getDetailedMetrics(userIds, timeRange),
+      ]);
 
     return { financial, funnel, leaderboard, inventory, detailedMetrics };
   }
@@ -122,13 +142,13 @@ export class SalesManagerDashboardController {
       if (!tower) return { message: 'No towers exist' };
 
       const existing = await tx.towerAssignment.findFirst({
-        where: { userId, towerId: tower.id, role: 'SOURCING_MANAGER' }
+        where: { userId, towerId: tower.id, role: 'SOURCING_MANAGER' },
       });
 
       if (existing) return { message: 'Already assigned', tower: tower.name };
 
       await tx.towerAssignment.create({
-        data: { userId, towerId: tower.id, role: 'SOURCING_MANAGER' }
+        data: { userId, towerId: tower.id, role: 'SOURCING_MANAGER' },
       });
 
       return { message: 'Assigned successfully', tower: tower.name };
@@ -142,8 +162,8 @@ export class SalesManagerDashboardController {
 export class SalesExecDashboardController {
   constructor(
     private readonly dashboardService: DashboardService,
-    private readonly salesExecAnalytics: SalesExecAnalyticsService
-  ) { }
+    private readonly salesExecAnalytics: SalesExecAnalyticsService,
+  ) {}
 
   @Get()
   getDashboard(@Req() req: any) {
@@ -158,13 +178,15 @@ export class SalesExecDashboardController {
   @Get('analytics')
   async getAnalytics(@Req() req: any) {
     const userId = req.user?.id;
-    const [financial, funnel, inventory, project, activity] = await Promise.all([
-      this.salesExecAnalytics.getFinancialMetrics(userId),
-      this.salesExecAnalytics.getFunnelMetrics(userId),
-      this.salesExecAnalytics.getInventoryAnalytics(userId),
-      this.salesExecAnalytics.getProjectAnalytics(userId),
-      this.salesExecAnalytics.getActivityAnalytics(userId)
-    ]);
+    const [financial, funnel, inventory, project, activity] = await Promise.all(
+      [
+        this.salesExecAnalytics.getFinancialMetrics(userId),
+        this.salesExecAnalytics.getFunnelMetrics(userId),
+        this.salesExecAnalytics.getInventoryAnalytics(userId),
+        this.salesExecAnalytics.getProjectAnalytics(userId),
+        this.salesExecAnalytics.getActivityAnalytics(userId),
+      ],
+    );
     return { financial, funnel, inventory, project, activity };
   }
 }
@@ -175,17 +197,24 @@ export class SalesExecDashboardController {
 export class PostSalesDashboardController {
   constructor(
     private readonly postSalesDashboardService: PostSalesDashboardService,
-    private readonly postSalesAnalyticsService: PostSalesAnalyticsService
-  ) { }
+    private readonly postSalesAnalyticsService: PostSalesAnalyticsService,
+  ) {}
 
   @Get()
   getDashboard(@Req() req: any) {
-    return this.postSalesDashboardService.getPostSalesDashboard(req.user?.id, req.user?.roleId);
+    return this.postSalesDashboardService.getPostSalesDashboard(
+      req.user?.id,
+      req.user?.roleId,
+    );
   }
 
   @Get('analytics')
   getAnalytics(@Req() req: any, @Query('timeRange') timeRange?: string) {
-    return this.postSalesAnalyticsService.getPostSalesAnalytics(req.user?.id, timeRange, req.user?.roleId);
+    return this.postSalesAnalyticsService.getPostSalesAnalytics(
+      req.user?.id,
+      timeRange,
+      req.user?.roleId,
+    );
   }
 }
 
@@ -197,7 +226,7 @@ export class EmployeesController {
     private readonly employeesService: EmployeesService,
     private readonly preSalesDashboard: PreSalesDashboardService,
     private readonly preSalesAnalytics: PreSalesAnalyticsService,
-  ) { }
+  ) {}
 
   /** Employee cards grid with this-month stats */
   @Get()
@@ -209,18 +238,31 @@ export class EmployeesController {
 
   /** Manager views a specific employee's full pre-sales dashboard data */
   @Get(':employeeId/dashboard')
-  async getEmployeeDashboard(@Param('employeeId') employeeId: string, @Req() req: any) {
+  async getEmployeeDashboard(
+    @Param('employeeId') employeeId: string,
+    @Req() req: any,
+  ) {
     // Validate manager-employee relationship first
-    await this.employeesService.getEmployeeDashboardData(req.user?.id, employeeId);
+    await this.employeesService.getEmployeeDashboardData(
+      req.user?.id,
+      employeeId,
+    );
     // Return the actual pre-sales dashboard data scoped to the employee
     return this.preSalesDashboard.getPreSalesDashboard(employeeId);
   }
 
   /** Manager views a specific employee's analytics data */
   @Get(':employeeId/analytics')
-  async getEmployeeAnalytics(@Param('employeeId') employeeId: string, @Req() req: any, @Query('timeRange') timeRange?: string) {
+  async getEmployeeAnalytics(
+    @Param('employeeId') employeeId: string,
+    @Req() req: any,
+    @Query('timeRange') timeRange?: string,
+  ) {
     // Validate manager-employee relationship first
-    await this.employeesService.getEmployeeDashboardData(req.user?.id, employeeId);
+    await this.employeesService.getEmployeeDashboardData(
+      req.user?.id,
+      employeeId,
+    );
     // Return analytics for the specific employee
     return this.preSalesAnalytics.getPreSalesAnalytics(employeeId, timeRange);
   }
@@ -235,10 +277,7 @@ export class EmployeesController {
 
   /** Create a new cold-call task */
   @Post('tasks')
-  createTask(
-    @Req() req: any,
-    @Body() body: CreateTaskDto,
-  ) {
+  createTask(@Req() req: any, @Body() body: CreateTaskDto) {
     return this.employeesService.createTask(req.user?.id, body);
   }
 
@@ -268,10 +307,7 @@ export class EmployeesController {
 
   /** Create a new announcement */
   @Post('announcements')
-  createAnnouncement(
-    @Req() req: any,
-    @Body() body: CreateAnnouncementDto,
-  ) {
+  createAnnouncement(@Req() req: any, @Body() body: CreateAnnouncementDto) {
     return this.employeesService.createAnnouncement(req.user?.id, body);
   }
 
@@ -300,7 +336,7 @@ export class SalesManagerEmployeesController {
     private readonly employeesService: EmployeesService,
     private readonly salesExecDashboard: SalesExecDashboardService,
     private readonly salesExecAnalytics: SalesExecAnalyticsService,
-  ) { }
+  ) {}
 
   /** Employee cards grid with this-month stats */
   @Get()
@@ -312,26 +348,40 @@ export class SalesManagerEmployeesController {
 
   /** Manager views a specific employee's full sales exec dashboard data */
   @Get(':employeeId/dashboard')
-  async getEmployeeDashboard(@Param('employeeId') employeeId: string, @Req() req: any) {
+  async getEmployeeDashboard(
+    @Param('employeeId') employeeId: string,
+    @Req() req: any,
+  ) {
     // Validate manager-employee relationship first
-    await this.employeesService.getSalesEmployeeDashboardData(req.user?.id, employeeId);
+    await this.employeesService.getSalesEmployeeDashboardData(
+      req.user?.id,
+      employeeId,
+    );
     // Return the actual sales exec dashboard data scoped to the employee
     return this.salesExecDashboard.getSalesExecDashboard(employeeId);
   }
 
   /** Manager views a specific employee's analytics data */
   @Get(':employeeId/analytics')
-  async getEmployeeAnalytics(@Param('employeeId') employeeId: string, @Req() req: any) {
+  async getEmployeeAnalytics(
+    @Param('employeeId') employeeId: string,
+    @Req() req: any,
+  ) {
     // Validate manager-employee relationship first
-    await this.employeesService.getSalesEmployeeDashboardData(req.user?.id, employeeId);
+    await this.employeesService.getSalesEmployeeDashboardData(
+      req.user?.id,
+      employeeId,
+    );
     // Return analytics for the specific employee
-    const [financial, funnel, inventory, project, activity] = await Promise.all([
-      this.salesExecAnalytics.getFinancialMetrics(employeeId),
-      this.salesExecAnalytics.getFunnelMetrics(employeeId),
-      this.salesExecAnalytics.getInventoryAnalytics(employeeId),
-      this.salesExecAnalytics.getProjectAnalytics(employeeId),
-      this.salesExecAnalytics.getActivityAnalytics(employeeId)
-    ]);
+    const [financial, funnel, inventory, project, activity] = await Promise.all(
+      [
+        this.salesExecAnalytics.getFinancialMetrics(employeeId),
+        this.salesExecAnalytics.getFunnelMetrics(employeeId),
+        this.salesExecAnalytics.getInventoryAnalytics(employeeId),
+        this.salesExecAnalytics.getProjectAnalytics(employeeId),
+        this.salesExecAnalytics.getActivityAnalytics(employeeId),
+      ],
+    );
     return { financial, funnel, inventory, project, activity };
   }
 
@@ -345,10 +395,7 @@ export class SalesManagerEmployeesController {
 
   /** Create a new announcement */
   @Post('announcements')
-  createAnnouncement(
-    @Req() req: any,
-    @Body() body: CreateAnnouncementDto,
-  ) {
+  createAnnouncement(@Req() req: any, @Body() body: CreateAnnouncementDto) {
     return this.employeesService.createAnnouncement(req.user?.id, body);
   }
 
@@ -369,7 +416,6 @@ export class SalesManagerEmployeesController {
   }
 }
 
-
 // --- Channel Partner Employees --------------------------------------------------
 
 @Controller('api/dashboard/channel-partner/employees')
@@ -378,7 +424,7 @@ export class ChannelPartnerEmployeesController {
     private readonly employeesService: EmployeesService,
     private readonly sourcingDashboardService: SourcingManagerDashboardService,
     private readonly closingDashboardService: ClosingManagerDashboardService,
-  ) { }
+  ) {}
 
   @Get('sourcing-managers')
   getSourcingManagerCards(@Req() req: any) {
@@ -391,13 +437,19 @@ export class ChannelPartnerEmployeesController {
   }
 
   @Get(':employeeId/sourcing/dashboard')
-  async getSourcingEmployeeDashboard(@Param('employeeId') employeeId: string, @Req() req: any) {
+  async getSourcingEmployeeDashboard(
+    @Param('employeeId') employeeId: string,
+    @Req() req: any,
+  ) {
     // Note: If you want to validate relation, do it here. We'll fetch dashboard directly for now.
     return this.sourcingDashboardService.getDashboard(employeeId);
   }
 
   @Get(':employeeId/closing/dashboard')
-  async getClosingEmployeeDashboard(@Param('employeeId') employeeId: string, @Req() req: any) {
+  async getClosingEmployeeDashboard(
+    @Param('employeeId') employeeId: string,
+    @Req() req: any,
+  ) {
     return this.closingDashboardService.getDashboard(employeeId);
   }
 }
@@ -410,7 +462,7 @@ export class PostSalesManagerEmployeesController {
     private readonly employeesService: EmployeesService,
     private readonly postSalesDashboard: PostSalesDashboardService,
     private readonly postSalesAnalytics: PostSalesAnalyticsService,
-  ) { }
+  ) {}
 
   /** Employee cards grid with this-month stats */
   @Get()
@@ -422,18 +474,31 @@ export class PostSalesManagerEmployeesController {
 
   /** Manager views a specific employee's full post-sales dashboard data */
   @Get(':employeeId/dashboard')
-  async getEmployeeDashboard(@Param('employeeId') employeeId: string, @Req() req: any) {
+  async getEmployeeDashboard(
+    @Param('employeeId') employeeId: string,
+    @Req() req: any,
+  ) {
     // Validate manager-employee relationship first
-    await this.employeesService.getPostSalesEmployeeDashboardData(req.user?.id, employeeId);
+    await this.employeesService.getPostSalesEmployeeDashboardData(
+      req.user?.id,
+      employeeId,
+    );
     // Return the actual post-sales dashboard data scoped to the employee
     return this.postSalesDashboard.getPostSalesDashboard(employeeId);
   }
 
   /** Manager views a specific employee's analytics data */
   @Get(':employeeId/analytics')
-  async getEmployeeAnalytics(@Param('employeeId') employeeId: string, @Req() req: any, @Query('timeRange') timeRange?: string) {
+  async getEmployeeAnalytics(
+    @Param('employeeId') employeeId: string,
+    @Req() req: any,
+    @Query('timeRange') timeRange?: string,
+  ) {
     // Validate manager-employee relationship first
-    await this.employeesService.getPostSalesEmployeeDashboardData(req.user?.id, employeeId);
+    await this.employeesService.getPostSalesEmployeeDashboardData(
+      req.user?.id,
+      employeeId,
+    );
     // Return analytics for the specific employee (no roleId override needed, it falls back to employee role)
     return this.postSalesAnalytics.getPostSalesAnalytics(employeeId, timeRange);
   }
@@ -448,10 +513,7 @@ export class PostSalesManagerEmployeesController {
 
   /** Create a new announcement */
   @Post('announcements')
-  createAnnouncement(
-    @Req() req: any,
-    @Body() body: CreateAnnouncementDto,
-  ) {
+  createAnnouncement(@Req() req: any, @Body() body: CreateAnnouncementDto) {
     return this.employeesService.createAnnouncement(req.user?.id, body);
   }
 

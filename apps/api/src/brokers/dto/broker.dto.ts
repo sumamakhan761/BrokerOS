@@ -1,4 +1,13 @@
-import { IsString, IsOptional, IsArray, IsNumber, IsBoolean, IsDateString, IsEnum, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  IsNumber,
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
 export enum BrokerStatus {
@@ -12,7 +21,7 @@ export enum BrokerSubStatus {
   PENDING = 'PENDING',
   CONTACTED = 'CONTACTED',
   DONE = 'DONE',
-  REJECTED = 'REJECTED'
+  REJECTED = 'REJECTED',
 }
 
 export class CreateBrokerDto {
@@ -111,12 +120,12 @@ export class UpdateDealCardDto {
   towerId?: string;
 
   @IsOptional()
-  @Transform(({ value }) => value ? parseFloat(value) : null)
+  @Transform(({ value }) => (value ? parseFloat(value) : null))
   @IsNumber()
   brokeragePercent?: number | null;
 
   @IsOptional()
-  @Transform(({ value }) => value ? parseFloat(value) : null)
+  @Transform(({ value }) => (value ? parseFloat(value) : null))
   @IsNumber()
   brokerageFlat?: number | null;
 

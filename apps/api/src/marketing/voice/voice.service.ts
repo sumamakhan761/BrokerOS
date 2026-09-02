@@ -71,7 +71,11 @@ export class VoiceService {
     return this.campaignService.getCampaignById(id);
   }
 
-  async saveDraftCampaign(dto: SaveDraftVoiceCampaignDto, userId?: string, existingId?: string) {
+  async saveDraftCampaign(
+    dto: SaveDraftVoiceCampaignDto,
+    userId?: string,
+    existingId?: string,
+  ) {
     return this.campaignService.saveDraftCampaign(dto, userId, existingId);
   }
 

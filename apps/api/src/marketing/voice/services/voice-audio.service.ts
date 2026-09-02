@@ -9,7 +9,9 @@ export class VoiceAudioService {
   private readonly logger = new Logger(VoiceAudioService.name);
   private readonly prisma = prismaClient;
 
-  async previewTtsAudio(dto: PreviewAudioTtsDto): Promise<{ audioBuffer: Buffer; contentType: string }> {
+  async previewTtsAudio(
+    dto: PreviewAudioTtsDto,
+  ): Promise<{ audioBuffer: Buffer; contentType: string }> {
     let apiKey = '';
     let platform: VoiceAgentPlatform = 'VAPI';
 
@@ -19,7 +21,7 @@ export class VoiceAudioService {
       });
       if (integration) {
         apiKey = integration.apiKey;
-        platform = integration.platform as VoiceAgentPlatform;
+        platform = integration.platform;
       }
     }
 
@@ -88,21 +90,72 @@ export class VoiceAudioService {
     };
 
     const sarvamSpeakers = [
-      'shubh', 'aditya', 'ritu', 'priya', 'neha', 'rahul', 'pooja', 'rohan',
-      'simran', 'kavya', 'amit', 'dev', 'ishita', 'shreya', 'ratan', 'varun',
-      'manan', 'sumit', 'roopa', 'kabir', 'aayan', 'ashutosh', 'advait',
-      'anand', 'tanya', 'tarun', 'sunny', 'mani', 'gokul', 'vijay',
-      'shruti', 'suhani', 'mohit', 'kavitha', 'rehan', 'soham', 'rupali',
-      'ananya', 'arvind', 'meera'
+      'shubh',
+      'aditya',
+      'ritu',
+      'priya',
+      'neha',
+      'rahul',
+      'pooja',
+      'rohan',
+      'simran',
+      'kavya',
+      'amit',
+      'dev',
+      'ishita',
+      'shreya',
+      'ratan',
+      'varun',
+      'manan',
+      'sumit',
+      'roopa',
+      'kabir',
+      'aayan',
+      'ashutosh',
+      'advait',
+      'anand',
+      'tanya',
+      'tarun',
+      'sunny',
+      'mani',
+      'gokul',
+      'vijay',
+      'shruti',
+      'suhani',
+      'mohit',
+      'kavitha',
+      'rehan',
+      'soham',
+      'rupali',
+      'ananya',
+      'arvind',
+      'meera',
     ];
 
-    const isSarvam = providerLower.includes('sarvam') || platform === 'SARVAM' || sarvamSpeakers.includes(voiceIdLower);
-    const isEleven = providerLower.includes('11labs') || providerLower.includes('eleven') || platform === 'ELEVENLABS' || !!elevenVoiceMap[voiceIdLower];
-    const isOpenai = providerLower.includes('openai') || platform === 'OPENAI_REALTIME';
-    const isDeepgram = providerLower.includes('deepgram') || voiceIdLower.startsWith('aura-') || !!deepgramMap[voiceIdLower];
-    const isCartesia = providerLower.includes('cartesia') || platform === 'PIPECAT' || (cleanVoiceId.includes('-') && cleanVoiceId.length === 36);
+    const isSarvam =
+      providerLower.includes('sarvam') ||
+      platform === 'SARVAM' ||
+      sarvamSpeakers.includes(voiceIdLower);
+    const isEleven =
+      providerLower.includes('11labs') ||
+      providerLower.includes('eleven') ||
+      platform === 'ELEVENLABS' ||
+      !!elevenVoiceMap[voiceIdLower];
+    const isOpenai =
+      providerLower.includes('openai') || platform === 'OPENAI_REALTIME';
+    const isDeepgram =
+      providerLower.includes('deepgram') ||
+      voiceIdLower.startsWith('aura-') ||
+      !!deepgramMap[voiceIdLower];
+    const isCartesia =
+      providerLower.includes('cartesia') ||
+      platform === 'PIPECAT' ||
+      (cleanVoiceId.includes('-') && cleanVoiceId.length === 36);
 
-    const isMale = /male|adrian|adam|antoni|josh|michael|george|callum|liam|will|brian|orion|zeus|helios|orpheus|arcas|perseus|james|elliot|nico|kai|sagar|godfrey|neil|sid|rohan|rahul|shubh|kabir|aditya|varun|manan|sumit/i.test(cleanVoiceId);
+    const isMale =
+      /male|adrian|adam|antoni|josh|michael|george|callum|liam|will|brian|orion|zeus|helios|orpheus|arcas|perseus|james|elliot|nico|kai|sagar|godfrey|neil|sid|rohan|rahul|shubh|kabir|aditya|varun|manan|sumit/i.test(
+        cleanVoiceId,
+      );
 
     // 1. Check Sarvam AI Cloud TTS (Bulbul v3)
     let sarvamKey = process.env.SARVAM_API_KEY;
@@ -117,7 +170,9 @@ export class VoiceAudioService {
       try {
         const speaker = sarvamSpeakers.includes(voiceIdLower)
           ? voiceIdLower
-          : (voiceIdLower.includes('rahul') || voiceIdLower.includes('shubh') ? 'rahul' : 'priya');
+          : voiceIdLower.includes('rahul') || voiceIdLower.includes('shubh')
+            ? 'rahul'
+            : 'priya';
 
         const res = await fetch('https://api.sarvam.ai/text-to-speech', {
           method: 'POST',
@@ -137,7 +192,7 @@ export class VoiceAudioService {
           }),
         });
         if (res.ok) {
-          const data = (await res.json()) as any;
+          const data = await res.json();
           if (data.audios?.[0]) {
             return {
               audioBuffer: Buffer.from(data.audios[0], 'base64'),
@@ -162,19 +217,28 @@ export class VoiceAudioService {
 
     if (isEleven && elevenKey) {
       try {
-        const resolvedElevenVoiceId = elevenVoiceMap[voiceIdLower] || (cleanVoiceId.length > 15 ? cleanVoiceId : (isMale ? 'pNInz6obpgDQGcFmaJgB' : '21m00Tcm4TlvDq8ikWAM'));
-        const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${resolvedElevenVoiceId}`, {
-          method: 'POST',
-          headers: {
-            'xi-api-key': elevenKey,
-            'Content-Type': 'application/json',
+        const resolvedElevenVoiceId =
+          elevenVoiceMap[voiceIdLower] ||
+          (cleanVoiceId.length > 15
+            ? cleanVoiceId
+            : isMale
+              ? 'pNInz6obpgDQGcFmaJgB'
+              : '21m00Tcm4TlvDq8ikWAM');
+        const res = await fetch(
+          `https://api.elevenlabs.io/v1/text-to-speech/${resolvedElevenVoiceId}`,
+          {
+            method: 'POST',
+            headers: {
+              'xi-api-key': elevenKey,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              text: dto.text,
+              model_id: 'eleven_flash_v2_5',
+              voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+            }),
           },
-          body: JSON.stringify({
-            text: dto.text,
-            model_id: 'eleven_flash_v2_5',
-            voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-          }),
-        });
+        );
         if (res.ok) {
           const arrayBuf = await res.arrayBuffer();
           return {
@@ -191,15 +255,22 @@ export class VoiceAudioService {
     const deepgramKey = process.env.DEEPGRAM_API_KEY;
     if (isDeepgram && deepgramKey) {
       try {
-        const model = deepgramMap[voiceIdLower] || (voiceIdLower.startsWith('aura-') ? voiceIdLower : `aura-${voiceIdLower}-en`);
-        const res = await fetch(`https://api.deepgram.com/v1/speak?model=${model}`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Token ${deepgramKey}`,
-            'Content-Type': 'application/json',
+        const model =
+          deepgramMap[voiceIdLower] ||
+          (voiceIdLower.startsWith('aura-')
+            ? voiceIdLower
+            : `aura-${voiceIdLower}-en`);
+        const res = await fetch(
+          `https://api.deepgram.com/v1/speak?model=${model}`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Token ${deepgramKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text: dto.text }),
           },
-          body: JSON.stringify({ text: dto.text }),
-        });
+        );
         if (res.ok) {
           const arrayBuf = await res.arrayBuffer();
           return {
@@ -224,7 +295,13 @@ export class VoiceAudioService {
           cali: 'a0e99841-438c-4a64-b679-ae501e7d6091',
         };
 
-        const resolvedCartesiaId = cartesiaVoiceMap[voiceIdLower] || (cleanVoiceId.length === 36 ? cleanVoiceId : (isMale ? '694f9389-aac1-45b6-b726-9d9369183238' : 'a0e99841-438c-4a64-b679-ae501e7d6091'));
+        const resolvedCartesiaId =
+          cartesiaVoiceMap[voiceIdLower] ||
+          (cleanVoiceId.length === 36
+            ? cleanVoiceId
+            : isMale
+              ? '694f9389-aac1-45b6-b726-9d9369183238'
+              : 'a0e99841-438c-4a64-b679-ae501e7d6091');
 
         const res = await fetch('https://api.cartesia.ai/tts/bytes', {
           method: 'POST',
@@ -237,7 +314,11 @@ export class VoiceAudioService {
             model_id: 'sonic-3.5',
             transcript: dto.text,
             voice: { mode: 'id', id: resolvedCartesiaId },
-            output_format: { container: 'mp3', bit_rate: 128000, sample_rate: 44100 },
+            output_format: {
+              container: 'mp3',
+              bit_rate: 128000,
+              sample_rate: 44100,
+            },
           }),
         });
         if (res.ok) {
@@ -256,7 +337,14 @@ export class VoiceAudioService {
     const openaiKey = process.env.OPENAI_API_KEY;
     if (isOpenai && openaiKey) {
       try {
-        const validVoice = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'].includes(voiceIdLower)
+        const validVoice = [
+          'alloy',
+          'echo',
+          'fable',
+          'onyx',
+          'nova',
+          'shimmer',
+        ].includes(voiceIdLower)
           ? voiceIdLower
           : 'alloy';
 
@@ -286,7 +374,9 @@ export class VoiceAudioService {
 
     // 6. Check MiniMax Cloud TTS (speech-01-turbo)
     const minimaxKey = process.env.MINIMAX_API_KEY;
-    const isMinimax = providerLower.includes('minimax') || rawVoiceId.toLowerCase().startsWith('minimax');
+    const isMinimax =
+      providerLower.includes('minimax') ||
+      rawVoiceId.toLowerCase().startsWith('minimax');
     if (isMinimax && minimaxKey) {
       try {
         const res = await fetch('https://api.minimaxi.chat/v1/t2a_v2', {
@@ -299,7 +389,8 @@ export class VoiceAudioService {
             model: 'speech-01-turbo',
             text: dto.text,
             voice_setting: {
-              voice_id: cleanVoiceId || (isMale ? 'male-qn-qingse' : 'female-shaonv'),
+              voice_id:
+                cleanVoiceId || (isMale ? 'male-qn-qingse' : 'female-shaonv'),
               speed: 1.0,
               vol: 1.0,
               pitch: 0,
@@ -313,7 +404,7 @@ export class VoiceAudioService {
           }),
         });
         if (res.ok) {
-          const data = (await res.json()) as any;
+          const data = await res.json();
           if (data.data?.audio) {
             return {
               audioBuffer: Buffer.from(data.data.audio, 'hex'),
@@ -328,7 +419,9 @@ export class VoiceAudioService {
 
     // 7. Check Fish Audio Cloud TTS
     const fishKey = process.env.FISH_AUDIO_API_KEY;
-    const isFishAudio = providerLower.includes('fish') || rawVoiceId.toLowerCase().startsWith('fishaudio');
+    const isFishAudio =
+      providerLower.includes('fish') ||
+      rawVoiceId.toLowerCase().startsWith('fishaudio');
     if (isFishAudio && fishKey) {
       try {
         const res = await fetch('https://api.fish.audio/v1/tts', {
@@ -359,14 +452,17 @@ export class VoiceAudioService {
     if (deepgramKey) {
       try {
         const auraVoice = isMale ? 'aura-orion-en' : 'aura-asteria-en';
-        const res = await fetch(`https://api.deepgram.com/v1/speak?model=${auraVoice}`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Token ${deepgramKey}`,
-            'Content-Type': 'application/json',
+        const res = await fetch(
+          `https://api.deepgram.com/v1/speak?model=${auraVoice}`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Token ${deepgramKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text: dto.text }),
           },
-          body: JSON.stringify({ text: dto.text }),
-        });
+        );
         if (res.ok) {
           const arrayBuf = await res.arrayBuffer();
           return {
@@ -381,19 +477,24 @@ export class VoiceAudioService {
 
     if (elevenKey) {
       try {
-        const elevenFallback = isMale ? 'pNInz6obpgDQGcFmaJgB' : '21m00Tcm4TlvDq8ikWAM';
-        const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${elevenFallback}`, {
-          method: 'POST',
-          headers: {
-            'xi-api-key': elevenKey,
-            'Content-Type': 'application/json',
+        const elevenFallback = isMale
+          ? 'pNInz6obpgDQGcFmaJgB'
+          : '21m00Tcm4TlvDq8ikWAM';
+        const res = await fetch(
+          `https://api.elevenlabs.io/v1/text-to-speech/${elevenFallback}`,
+          {
+            method: 'POST',
+            headers: {
+              'xi-api-key': elevenKey,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              text: dto.text,
+              model_id: 'eleven_flash_v2_5',
+              voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+            }),
           },
-          body: JSON.stringify({
-            text: dto.text,
-            model_id: 'eleven_flash_v2_5',
-            voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-          }),
-        });
+        );
         if (res.ok) {
           const arrayBuf = await res.arrayBuffer();
           return {
@@ -409,7 +510,9 @@ export class VoiceAudioService {
     // 7. Fallback to provider instance previewAudio
     const provider = getVoiceAgentProvider(platform, { apiKey });
     try {
-      const result = await provider.previewAudio(dto.text, dto.voiceId, { apiKey });
+      const result = await provider.previewAudio(dto.text, dto.voiceId, {
+        apiKey,
+      });
 
       if (result.audioBuffer && result.audioBuffer.length > 500) {
         return result;
@@ -420,7 +523,9 @@ export class VoiceAudioService {
         contentType: 'audio/mpeg',
       };
     } catch (err: any) {
-      this.logger.warn(`TTS audio synthesis fallback triggered: ${err?.message}`);
+      this.logger.warn(
+        `TTS audio synthesis fallback triggered: ${err?.message}`,
+      );
       return {
         audioBuffer: Buffer.alloc(0),
         contentType: 'audio/mpeg',

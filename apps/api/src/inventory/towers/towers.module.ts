@@ -8,4 +8,4 @@ import { PrismaModule } from '../../lib/database/prisma.module.js';
   providers: [InventoryTowerGenService],
   exports: [InventoryTowerGenService],
 })
-export class TowersModule { }
+export class TowersModule {}

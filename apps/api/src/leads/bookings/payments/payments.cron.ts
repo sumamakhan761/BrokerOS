@@ -13,16 +13,18 @@ export class PaymentsCron {
     timeZone: 'Asia/Kolkata',
   })
   async handleDailyPaymentChecks() {
-    this.logger.log('Running daily payment checks for upcoming and overdue payments...');
+    this.logger.log(
+      'Running daily payment checks for upcoming and overdue payments...',
+    );
 
     const getDayRange = (daysOffset: number) => {
       const targetDate = new Date();
       targetDate.setDate(targetDate.getDate() + daysOffset);
       targetDate.setHours(0, 0, 0, 0);
-      
+
       const nextDay = new Date(targetDate);
       nextDay.setDate(targetDate.getDate() + 1);
-      
+
       return { gte: targetDate, lt: nextDay };
     };
 
@@ -32,19 +34,19 @@ export class PaymentsCron {
       const upcomingPayments = await this.prisma.paymentSchedule.findMany({
         where: {
           status: 'PENDING',
-          dueDate: dueIn3DaysQuery
+          dueDate: dueIn3DaysQuery,
         },
         include: {
           booking: {
             include: {
               customer: {
                 include: {
-                  lead: true
-                }
-              }
-            }
-          }
-        }
+                  lead: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       for (const payment of upcomingPayments) {
@@ -59,9 +61,11 @@ export class PaymentsCron {
             type: 'Upcoming Payment Reminder',
             remarks: `Payment for ${payment.milestoneName} (Amount: ${payment.remainingAmount}) is due in 3 days on ${payment.dueDate.toLocaleDateString()}. Please remind the client.`,
             status: 'SCHEDULED',
-          }
+          },
         });
-        this.logger.log(`Created T-3 follow-up for Booking ${payment.booking.bookingNumber}`);
+        this.logger.log(
+          `Created T-3 follow-up for Booking ${payment.booking.bookingNumber}`,
+        );
       }
 
       // 2. Payments Overdue by exactly 1 Day
@@ -69,19 +73,19 @@ export class PaymentsCron {
       const overduePayments = await this.prisma.paymentSchedule.findMany({
         where: {
           status: 'PENDING',
-          dueDate: overdueBy1DayQuery
+          dueDate: overdueBy1DayQuery,
         },
         include: {
           booking: {
             include: {
               customer: {
                 include: {
-                  lead: true
-                }
-              }
-            }
-          }
-        }
+                  lead: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       for (const payment of overduePayments) {
@@ -96,11 +100,12 @@ export class PaymentsCron {
             type: 'URGENT: Payment Overdue',
             remarks: `Payment for ${payment.milestoneName} (Amount: ${payment.remainingAmount}) was due yesterday (${payment.dueDate.toLocaleDateString()}). Please follow up urgently. If payment was made, mark it as Paid in the system.`,
             status: 'SCHEDULED',
-          }
+          },
         });
-        this.logger.log(`Created T+1 overdue follow-up for Booking ${payment.booking.bookingNumber}`);
+        this.logger.log(
+          `Created T+1 overdue follow-up for Booking ${payment.booking.bookingNumber}`,
+        );
       }
-
     } catch (error) {
       this.logger.error('Error during daily payment checks', error);
     }

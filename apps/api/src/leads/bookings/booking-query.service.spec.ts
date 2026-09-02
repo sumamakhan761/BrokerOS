@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-jest.mock('@brokeros/prisma', () => ({ PrismaClient: class { } }));
-jest.mock('expo-server-sdk', () => ({ Expo: class { } }));
+jest.mock('@brokeros/prisma', () => ({ PrismaClient: class {} }));
+jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 
 import { BookingQueryService } from './booking-query.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
@@ -16,14 +16,14 @@ describe('BookingQueryService', () => {
     },
     role: {
       findUnique: jest.fn(),
-    }
+    },
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BookingQueryService,
-        { provide: PrismaService, useValue: mockPrisma }
+        { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
 
@@ -37,7 +37,11 @@ describe('BookingQueryService', () => {
 
   describe('getBooking', () => {
     it('should get a booking', async () => {
-      mockPrisma.booking.findFirst.mockResolvedValue({ id: 'b-1', documents: [], notes: [] });
+      mockPrisma.booking.findFirst.mockResolvedValue({
+        id: 'b-1',
+        documents: [],
+        notes: [],
+      });
       const result = await service.getBooking('l-1');
       expect(result?.id).toEqual('b-1');
       expect(mockPrisma.booking.findFirst).toHaveBeenCalled();
@@ -48,9 +52,11 @@ describe('BookingQueryService', () => {
       mockPrisma.booking.findMany.mockResolvedValue([{ id: 'b-1' }]);
       const result = await service.getAllBookings('u-1', 'r-1');
       expect(result).toHaveLength(1);
-      expect(mockPrisma.booking.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: expect.objectContaining({ salesExecId: 'u-1' })
-      }));
+      expect(mockPrisma.booking.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ salesExecId: 'u-1' }),
+        }),
+      );
     });
 
     it('should return null if not found', async () => {
@@ -63,14 +69,25 @@ describe('BookingQueryService', () => {
         id: 'b-1',
         unitId: 'u-1',
         unit: { unitNumber: '101' },
-        documents: [{ id: 'd-1', fileUrl: 'http://vercel-storage.com/d1', title: 'Doc', type: 'ID' }],
-        notes: [{ content: JSON.stringify({ paymentMode: 'CASH', remarks: 'Good' }) }]
+        documents: [
+          {
+            id: 'd-1',
+            fileUrl: 'http://vercel-storage.com/d1',
+            title: 'Doc',
+            type: 'ID',
+          },
+        ],
+        notes: [
+          { content: JSON.stringify({ paymentMode: 'CASH', remarks: 'Good' }) },
+        ],
       });
       const res = await service.getBooking('lead-1');
       expect(res).toBeDefined();
       expect(res?.paymentMode).toBe('CASH');
       expect(res?.unitDescription).toBe('Unit 101');
-      expect(res?.documents[0].url).toContain('/api/leads/booking-documents/d-1');
+      expect(res?.documents[0].url).toContain(
+        '/api/leads/booking-documents/d-1',
+      );
     });
   });
 
@@ -83,13 +100,18 @@ describe('BookingQueryService', () => {
     });
 
     it('should query bookings without assignedUserId for roles above SALES_MANAGER', async () => {
-      mockPrisma.role.findUnique.mockResolvedValue({ id: 'role-id', code: 'DIRECTOR' });
+      mockPrisma.role.findUnique.mockResolvedValue({
+        id: 'role-id',
+        code: 'DIRECTOR',
+      });
       mockPrisma.booking.findMany.mockResolvedValue([{ id: 'booking-id' }]);
 
       const result = await service.getAllBookings('user-id', 'role-id');
-      expect(mockPrisma.booking.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { status: 'CONFIRMED' }
-      }));
+      expect(mockPrisma.booking.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { status: 'CONFIRMED' },
+        }),
+      );
     });
   });
 });

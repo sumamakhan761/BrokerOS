@@ -62,44 +62,55 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException if user not found', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.validateUser('1234567890', 'password')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.validateUser('1234567890', 'password'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if account not found', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue({ id: 'user-id' });
       mockPrismaService.account.findFirst.mockResolvedValue(null);
 
-      await expect(service.validateUser('1234567890', 'password')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.validateUser('1234567890', 'password'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if password does not match', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue({ id: 'user-id' });
-      mockPrismaService.account.findFirst.mockResolvedValue({ password: 'hashed-password' });
+      mockPrismaService.account.findFirst.mockResolvedValue({
+        password: 'hashed-password',
+      });
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(service.validateUser('1234567890', 'wrong-password')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.validateUser('1234567890', 'wrong-password'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should return user if password matches', async () => {
       const mockUser = { id: 'user-id', phoneNumber: '1234567890' };
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-      mockPrismaService.account.findFirst.mockResolvedValue({ password: 'hashed-password' });
+      mockPrismaService.account.findFirst.mockResolvedValue({
+        password: 'hashed-password',
+      });
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      const result = await service.validateUser('1234567890', 'correct-password');
+      const result = await service.validateUser(
+        '1234567890',
+        'correct-password',
+      );
       expect(result).toEqual(mockUser);
     });
   });
 
   describe('login', () => {
     it('should return access token and user info', async () => {
-      const mockUser = { id: 'user-id', name: 'Test User', phoneNumber: '1234567890' };
+      const mockUser = {
+        id: 'user-id',
+        name: 'Test User',
+        phoneNumber: '1234567890',
+      };
       // Override validateUser for this test to avoid mocking all its internals again
       jest.spyOn(service, 'validateUser').mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('test-token');

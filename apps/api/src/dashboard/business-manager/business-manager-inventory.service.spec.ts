@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 jest.mock('../../lib/database/prisma-client.js', () => ({
-  prismaClient: {}
+  prismaClient: {},
 }));
 jest.mock('../../lib/database/prisma.service.js', () => ({
-  PrismaService: class {}
+  PrismaService: class {},
 }));
 jest.mock('@brokeros/prisma', () => ({
   NotificationType: {},
-  PrismaClient: class {}
+  PrismaClient: class {},
 }));
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { BusinessManagerInventoryService } from './business-manager-inventory.service.js';
@@ -23,7 +23,9 @@ describe('BusinessManagerInventoryService', () => {
       ],
     }).compile();
 
-    service = module.get<BusinessManagerInventoryService>(BusinessManagerInventoryService);
+    service = module.get<BusinessManagerInventoryService>(
+      BusinessManagerInventoryService,
+    );
   });
 
   afterEach(() => jest.clearAllMocks());

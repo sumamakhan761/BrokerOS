@@ -4,14 +4,13 @@ import { PrismaService } from '../../lib/database/prisma.service.js';
 // Fallback target when no manager task is assigned to an agent
 const DEFAULT_COLD_CALL_TARGET = 100;
 
-
 /**
  * Owns the midnight cron and daily performance snapshot logic.
  * Implements OnModuleInit so the timer is set up automatically on boot.
  */
 @Injectable()
 export class SnapshotService implements OnModuleInit {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   onModuleInit() {
     // Schedule midnight cron using pure Node.js timers (no @nestjs/schedule needed)
@@ -26,9 +25,12 @@ export class SnapshotService implements OnModuleInit {
     const scheduleMidnight = () => {
       setTimeout(() => {
         this.midnightDailySnapshot().catch(console.error);
-        setInterval(() => {
-          this.midnightDailySnapshot().catch(console.error);
-        }, 24 * 60 * 60 * 1000);
+        setInterval(
+          () => {
+            this.midnightDailySnapshot().catch(console.error);
+          },
+          24 * 60 * 60 * 1000,
+        );
       }, msUntilMidnight());
     };
 
@@ -66,14 +68,21 @@ export class SnapshotService implements OnModuleInit {
       try {
         await this.processAgentSnapshot(agent.id, yesterday, yesterdayEnd);
       } catch (err) {
-        console.error(`[DailySnapshot] Error processing agent ${agent.id}:`, err);
+        console.error(
+          `[DailySnapshot] Error processing agent ${agent.id}:`,
+          err,
+        );
       }
     }
 
     console.log(`[DailySnapshot] Done. Processed ${agents.length} agents.`);
   }
 
-  private async processAgentSnapshot(userId: string, dayStart: Date, dayEnd: Date) {
+  private async processAgentSnapshot(
+    userId: string,
+    dayStart: Date,
+    dayEnd: Date,
+  ) {
     // 1. Count cold calls done yesterday
     const callRecordsYesterday = await this.prisma.callRecord.findMany({
       where: {
@@ -131,28 +140,38 @@ export class SnapshotService implements OnModuleInit {
     });
 
     const prevBacklogIn = prevLog
-      ? Math.max(0, prevLog.coldCallBacklogIn - prevLog.coldCallBacklogCleared + (prevLog.coldCallTarget - prevLog.coldCallsDone))
+      ? Math.max(
+          0,
+          prevLog.coldCallBacklogIn -
+            prevLog.coldCallBacklogCleared +
+            (prevLog.coldCallTarget - prevLog.coldCallsDone),
+        )
       : 0;
 
     // 5. How much backlog was cleared yesterday?
     let backlogIn = prevLog
-      ? Math.max(0, prevLog.coldCallBacklogIn + Math.max(0, prevLog.coldCallTarget - prevLog.coldCallsDone) - prevLog.coldCallBacklogCleared)
+      ? Math.max(
+          0,
+          prevLog.coldCallBacklogIn +
+            Math.max(0, prevLog.coldCallTarget - prevLog.coldCallsDone) -
+            prevLog.coldCallBacklogCleared,
+        )
       : 0;
 
     const activeAssignment = await this.prisma.managerTaskUser.findFirst({
       where: { userId, task: { isActive: true } },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     if (activeAssignment) {
       if (activeAssignment.backlogOverride !== null) {
         backlogIn = activeAssignment.backlogOverride;
       }
-      
+
       // CLEAR the overrides so it resumes computing normally tomorrow
       await this.prisma.managerTaskUser.update({
         where: { id: activeAssignment.id },
-        data: { backlogOverride: null, targetOverride: null }
+        data: { backlogOverride: null, targetOverride: null },
       });
     }
 
@@ -160,7 +179,7 @@ export class SnapshotService implements OnModuleInit {
 
     // Prioritize today's task first
     const actualDailyCallsDone = Math.min(coldCallTarget, coldCallsDone);
-    
+
     // Any surplus goes towards clearing the backlog
     const surplusCalls = Math.max(0, coldCallsDone - coldCallTarget);
     const coldCallBacklogCleared = Math.min(backlogIn, surplusCalls);

@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@brokeros/constants": "workspace:*",
+    "@brokeros/int-ads-meta": "workspace:*",
     "@brokeros/int-mail-brevo": "workspace:*",
     "@brokeros/int-mail-mailchimp": "workspace:*",
     "@brokeros/int-mail-sendgrid": "workspace:*",

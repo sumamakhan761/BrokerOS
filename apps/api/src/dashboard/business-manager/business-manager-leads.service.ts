@@ -26,14 +26,30 @@ export class BusinessManagerLeadsService {
         source: true,
         interestedProject: true,
         customer: {
-          include: { bookings: true }
-        }
-      }
+          include: { bookings: true },
+        },
+      },
     });
 
     const leadFunnel = {
-      brokerage: { NEW: 0, CONTACTED: 0, INTERESTED: 0, QUALIFIED: 0, NEGOTIATION: 0, BOOKING: 0, LOST: 0 },
-      cp: { NEW: 0, CONTACTED: 0, INTERESTED: 0, QUALIFIED: 0, NEGOTIATION: 0, BOOKING: 0, LOST: 0 }
+      brokerage: {
+        NEW: 0,
+        CONTACTED: 0,
+        INTERESTED: 0,
+        QUALIFIED: 0,
+        NEGOTIATION: 0,
+        BOOKING: 0,
+        LOST: 0,
+      },
+      cp: {
+        NEW: 0,
+        CONTACTED: 0,
+        INTERESTED: 0,
+        QUALIFIED: 0,
+        NEGOTIATION: 0,
+        BOOKING: 0,
+        LOST: 0,
+      },
     };
 
     const sourceMap = new Map<string, { value: number; bookings: number }>();
@@ -43,9 +59,12 @@ export class BusinessManagerLeadsService {
 
     for (const l of leads) {
       // 1. Brokerage vs CP
-      const isCp = l.interestedProject?.isCpProject || l.source?.type === 'CHANNEL_PARTNER' || l.brokerId != null;
+      const isCp =
+        l.interestedProject?.isCpProject ||
+        l.source?.type === 'CHANNEL_PARTNER' ||
+        l.brokerId != null;
       const target = isCp ? leadFunnel.cp : leadFunnel.brokerage;
-      
+
       const statusKey = l.status as keyof typeof target;
       if (target[statusKey] !== undefined) {
         target[statusKey]++;
@@ -61,7 +80,8 @@ export class BusinessManagerLeadsService {
 
       // 2. Sources
       const sourceName = l.source?.name || l.source?.type || 'Unknown';
-      if (!sourceMap.has(sourceName)) sourceMap.set(sourceName, { value: 0, bookings: 0 });
+      if (!sourceMap.has(sourceName))
+        sourceMap.set(sourceName, { value: 0, bookings: 0 });
       sourceMap.get(sourceName)!.value++;
       if (hasBooking) sourceMap.get(sourceName)!.bookings++;
 
@@ -83,16 +103,20 @@ export class BusinessManagerLeadsService {
       }
     }
 
-    const sourcesBreakdown = Array.from(sourceMap.entries()).map(([name, data]) => ({
-      name,
-      value: data.value,
-      bookings: data.bookings
-    })).sort((a, b) => b.value - a.value);
+    const sourcesBreakdown = Array.from(sourceMap.entries())
+      .map(([name, data]) => ({
+        name,
+        value: data.value,
+        bookings: data.bookings,
+      }))
+      .sort((a, b) => b.value - a.value);
 
-    const lostAnalysis = Array.from(lostAnalysisMap.entries()).map(([reason, count]) => ({
-      reason,
-      count
-    })).sort((a, b) => b.count - a.count);
+    const lostAnalysis = Array.from(lostAnalysisMap.entries())
+      .map(([reason, count]) => ({
+        reason,
+        count,
+      }))
+      .sort((a, b) => b.count - a.count);
 
     return {
       leadFunnel,
@@ -101,10 +125,13 @@ export class BusinessManagerLeadsService {
       temperature,
       brokerConversionRate: {
         ...brokerConversion,
-        rate: brokerConversion.leads > 0 
-          ? Math.round((brokerConversion.bookings / brokerConversion.leads) * 100) 
-          : 0
-      }
+        rate:
+          brokerConversion.leads > 0
+            ? Math.round(
+                (brokerConversion.bookings / brokerConversion.leads) * 100,
+              )
+            : 0,
+      },
     };
   }
 }

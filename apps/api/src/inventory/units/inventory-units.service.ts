@@ -4,9 +4,13 @@ import { UpdateUnitStatusDto, UpdatePossessionDto } from './dto/unit.dto.js';
 
 @Injectable()
 export class InventoryUnitsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-  async updateUnitStatus(unitId: string, data: UpdateUnitStatusDto, userId: string) {
+  async updateUnitStatus(
+    unitId: string,
+    data: UpdateUnitStatusDto,
+    userId: string,
+  ) {
     return this.prisma.$transaction(async (tx) => {
       const unit = await tx.unit.findUnique({ where: { id: unitId } });
       if (!unit) throw new NotFoundException('Unit not found');
@@ -18,17 +22,21 @@ export class InventoryUnitsService {
             fromStatus: unit.status,
             toStatus: data.status as any,
             changedById: userId,
-            reason: data.reason
-          }
+            reason: data.reason,
+          },
         });
       }
 
       const updateData: any = {};
       if (data.status !== undefined) updateData.status = data.status;
-      if (data.basePrice !== undefined) updateData.basePrice = Number(data.basePrice);
-      if (data.commissionPercentage !== undefined) updateData.commissionPercentage = Number(data.commissionPercentage);
-      if (data.commissionAmount !== undefined) updateData.commissionAmount = Number(data.commissionAmount);
-      if (data.carpetArea !== undefined) updateData.carpetArea = Number(data.carpetArea);
+      if (data.basePrice !== undefined)
+        updateData.basePrice = Number(data.basePrice);
+      if (data.commissionPercentage !== undefined)
+        updateData.commissionPercentage = Number(data.commissionPercentage);
+      if (data.commissionAmount !== undefined)
+        updateData.commissionAmount = Number(data.commissionAmount);
+      if (data.carpetArea !== undefined)
+        updateData.carpetArea = Number(data.carpetArea);
       if (data.type !== undefined) updateData.type = data.type;
       if (data.facing !== undefined) updateData.facing = data.facing;
 
@@ -42,7 +50,7 @@ export class InventoryUnitsService {
 
       return tx.unit.update({
         where: { id: unitId },
-        data: updateData
+        data: updateData,
       });
     });
   }
@@ -51,11 +59,11 @@ export class InventoryUnitsService {
     const booking = await this.prisma.booking.findFirst({
       where: {
         unitId,
-        status: { notIn: ['CANCELLED'] }
+        status: { notIn: ['CANCELLED'] },
       },
       include: {
         customer: {
-          include: { lead: true }
+          include: { lead: true },
         },
         salesExec: true,
         loanCase: true,
@@ -63,7 +71,7 @@ export class InventoryUnitsService {
         possession: true,
         documents: true,
         brokerageRecords: {
-          include: { broker: true }
+          include: { broker: true },
         },
         unit: {
           include: {
@@ -71,15 +79,15 @@ export class InventoryUnitsService {
               include: {
                 tower: {
                   include: {
-                    project: true
-                  }
-                }
-              }
-            }
-          }
-        }
+                    project: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     if (!booking) return null;
@@ -90,18 +98,30 @@ export class InventoryUnitsService {
     return this.prisma.$transaction(async (tx) => {
       const proj = await tx.project.update({
         where: { id: projectId },
-        data: { constructionStatus: data.status as any, possessionTimeline: data.timeline }
+        data: {
+          constructionStatus: data.status as any,
+          possessionTimeline: data.timeline,
+        },
       });
       await tx.tower.updateMany({
         where: { projectId },
-        data: { constructionStatus: data.status as any, possessionTimeline: data.timeline }
+        data: {
+          constructionStatus: data.status as any,
+          possessionTimeline: data.timeline,
+        },
       });
-      const towers = await tx.tower.findMany({ where: { projectId }, select: { floors: { select: { id: true } } } });
-      const floorIds = towers.flatMap(t => t.floors.map(f => f.id));
+      const towers = await tx.tower.findMany({
+        where: { projectId },
+        select: { floors: { select: { id: true } } },
+      });
+      const floorIds = towers.flatMap((t) => t.floors.map((f) => f.id));
       if (floorIds.length > 0) {
         await tx.unit.updateMany({
           where: { floorId: { in: floorIds } },
-          data: { constructionStatus: data.status as any, possessionTimeline: data.timeline }
+          data: {
+            constructionStatus: data.status as any,
+            possessionTimeline: data.timeline,
+          },
         });
       }
       return proj;
@@ -112,14 +132,20 @@ export class InventoryUnitsService {
     return this.prisma.$transaction(async (tx) => {
       const tower = await tx.tower.update({
         where: { id: towerId },
-        data: { constructionStatus: data.status as any, possessionTimeline: data.timeline },
-        include: { floors: { select: { id: true } } }
+        data: {
+          constructionStatus: data.status as any,
+          possessionTimeline: data.timeline,
+        },
+        include: { floors: { select: { id: true } } },
       });
-      const floorIds = tower.floors.map(f => f.id);
+      const floorIds = tower.floors.map((f) => f.id);
       if (floorIds.length > 0) {
         await tx.unit.updateMany({
           where: { floorId: { in: floorIds } },
-          data: { constructionStatus: data.status as any, possessionTimeline: data.timeline }
+          data: {
+            constructionStatus: data.status as any,
+            possessionTimeline: data.timeline,
+          },
         });
       }
       return tower;
@@ -129,7 +155,10 @@ export class InventoryUnitsService {
   async updateUnitPossession(unitId: string, data: UpdatePossessionDto) {
     return this.prisma.unit.update({
       where: { id: unitId },
-      data: { constructionStatus: data.status as any, possessionTimeline: data.timeline }
+      data: {
+        constructionStatus: data.status as any,
+        possessionTimeline: data.timeline,
+      },
     });
   }
 }

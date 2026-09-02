@@ -21,14 +21,8 @@ import { UnitsController } from './units/units.controller.js';
     TowersModule,
     UnitsModule,
   ],
-  controllers: [
-    ProjectsController,
-    TowerGenController,
-    UnitsController,
-  ],
-  providers: [
-    InventoryService,
-  ],
+  controllers: [ProjectsController, TowerGenController, UnitsController],
+  providers: [InventoryService],
   exports: [InventoryService],
 })
-export class InventoryModule { }
+export class InventoryModule {}

@@ -1,10 +1,18 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { prismaClient } from '@brokeros/prisma';
 import {
   getVoiceTelephonyProvider,
   getVoiceAgentProvider,
 } from '@brokeros/int-voice';
-import type { ConnectVoiceTelephonyDto, ConnectVoiceAgentDto } from '../dto/voice.dto.js';
+import type {
+  ConnectVoiceTelephonyDto,
+  ConnectVoiceAgentDto,
+} from '../dto/voice.dto.js';
 
 @Injectable()
 export class VoiceIntegrationsService {
@@ -21,7 +29,9 @@ export class VoiceIntegrationsService {
 
     return items.map((item) => ({
       ...item,
-      fromNumbers: Array.from(new Set((item.fromNumbers || []).map((n) => n.trim()))).filter(Boolean),
+      fromNumbers: Array.from(
+        new Set((item.fromNumbers || []).map((n) => n.trim())),
+      ).filter(Boolean),
     }));
   }
 
@@ -147,10 +157,11 @@ export class VoiceIntegrationsService {
         };
       }
     } else {
-      const defaultIntegration = await this.prisma.voiceAgentIntegration.findFirst({
-        where: { platform: normalizedPlatform, isActive: true },
-        orderBy: { isDefault: 'desc' },
-      });
+      const defaultIntegration =
+        await this.prisma.voiceAgentIntegration.findFirst({
+          where: { platform: normalizedPlatform, isActive: true },
+          orderBy: { isDefault: 'desc' },
+        });
       if (defaultIntegration) {
         credentials = {
           apiKey: defaultIntegration.apiKey,
@@ -161,11 +172,20 @@ export class VoiceIntegrationsService {
     }
 
     try {
-      const provider = getVoiceAgentProvider(normalizedPlatform, credentials) as any;
+      const provider = getVoiceAgentProvider(
+        normalizedPlatform,
+        credentials,
+      ) as any;
       const [models, voices, assistants] = await Promise.all([
-        provider.getAvailableModels ? provider.getAvailableModels(credentials).catch(() => []) : Promise.resolve([]),
-        provider.getAvailableVoices ? provider.getAvailableVoices(credentials).catch(() => []) : Promise.resolve([]),
-        provider.getAccountAssistants ? provider.getAccountAssistants(credentials).catch(() => []) : Promise.resolve([]),
+        provider.getAvailableModels
+          ? provider.getAvailableModels(credentials).catch(() => [])
+          : Promise.resolve([]),
+        provider.getAvailableVoices
+          ? provider.getAvailableVoices(credentials).catch(() => [])
+          : Promise.resolve([]),
+        provider.getAccountAssistants
+          ? provider.getAccountAssistants(credentials).catch(() => [])
+          : Promise.resolve([]),
       ]);
 
       return {

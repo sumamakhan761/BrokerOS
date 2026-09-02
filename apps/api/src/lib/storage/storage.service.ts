@@ -10,7 +10,9 @@ export class StorageService {
     fileName: string,
     mimeType: string,
   ): Promise<string> {
-    this.logger.log(`Uploading ${fileName} to Vercel Blob via @brokeros/storage`);
+    this.logger.log(
+      `Uploading ${fileName} to Vercel Blob via @brokeros/storage`,
+    );
     try {
       const url = await uploadFileToBlob(fileBuffer, fileName);
       return url;

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../lib/database/prisma.service.js';
 import { MessageAttachmentDto } from './dto/chat.dto.js';
 
@@ -20,7 +24,7 @@ export class ChatService {
     }
 
     const roleCode = user.role?.code;
-    let allowedUserIds = new Set<string>();
+    const allowedUserIds = new Set<string>();
 
     // 1. Managers & Subordinates (Pre-Sales & Sales generic)
     // You can always talk to your manager
@@ -32,7 +36,7 @@ export class ChatService {
       where: { managerId: user.id },
       select: { id: true },
     });
-    subordinates.forEach(sub => allowedUserIds.add(sub.id));
+    subordinates.forEach((sub) => allowedUserIds.add(sub.id));
 
     // Role specific cross-department rules
     switch (roleCode) {
@@ -42,8 +46,8 @@ export class ChatService {
           where: { role: { code: 'SALES_MANAGER' } },
           select: { id: true },
         });
-        smUsers.forEach(u => allowedUserIds.add(u.id));
-        
+        smUsers.forEach((u) => allowedUserIds.add(u.id));
+
         // Also Pre-Sales Execs would be caught by the subordinate check above.
         break;
       }
@@ -53,83 +57,89 @@ export class ChatService {
           where: { role: { code: 'PRE_SALES_MANAGER' } },
           select: { id: true },
         });
-        psmUsers.forEach(u => allowedUserIds.add(u.id));
+        psmUsers.forEach((u) => allowedUserIds.add(u.id));
         break;
       }
       case 'POST_SALES':
       case 'CLOSING_MANAGER': {
         // Post-Sales / Closing Manager can chat with Sales Manager, Sales Exec, Pre-Sales Manager
-        const targetRoles = ['SALES_MANAGER', 'SALES_EXECUTIVE', 'PRE_SALES_MANAGER'];
+        const targetRoles = [
+          'SALES_MANAGER',
+          'SALES_EXECUTIVE',
+          'PRE_SALES_MANAGER',
+        ];
         const targets = await this.prisma.user.findMany({
           where: { role: { code: { in: targetRoles } } },
           select: { id: true },
         });
-        targets.forEach(u => allowedUserIds.add(u.id));
-        
+        targets.forEach((u) => allowedUserIds.add(u.id));
+
         // Channel Partner acts as manager to CM, and if CM and SM share project, they can chat.
         // Let's get SMs on the same project
         const myProjects = await this.prisma.projectAssignment.findMany({
           where: { userId: user.id, isActive: true },
-          select: { projectId: true }
+          select: { projectId: true },
         });
-        const projectIds = myProjects.map(p => p.projectId);
-        
+        const projectIds = myProjects.map((p) => p.projectId);
+
         if (projectIds.length > 0) {
           const sameProjectSms = await this.prisma.projectAssignment.findMany({
             where: {
               projectId: { in: projectIds },
               isActive: true,
-              user: { role: { code: 'SOURCING_MANAGER' } }
+              user: { role: { code: 'SOURCING_MANAGER' } },
             },
-            select: { userId: true }
+            select: { userId: true },
           });
-          sameProjectSms.forEach(sm => allowedUserIds.add(sm.userId));
+          sameProjectSms.forEach((sm) => allowedUserIds.add(sm.userId));
         }
 
         // CM can talk to their CP manager (assumed to be via project assignment or just all CPs?)
         // Let's allow CM to talk to all CPs for simplicity, or we check if there's a CP manager relation.
         const cps = await this.prisma.user.findMany({
           where: { role: { code: 'CHANNEL_PARTNER' } },
-          select: { id: true }
+          select: { id: true },
         });
-        cps.forEach(cp => allowedUserIds.add(cp.id));
+        cps.forEach((cp) => allowedUserIds.add(cp.id));
 
         break;
       }
       case 'CHANNEL_PARTNER': {
         // CP can talk to all Sourcing Managers and Closing Managers
         const smCmUsers = await this.prisma.user.findMany({
-          where: { role: { code: { in: ['SOURCING_MANAGER', 'CLOSING_MANAGER'] } } },
+          where: {
+            role: { code: { in: ['SOURCING_MANAGER', 'CLOSING_MANAGER'] } },
+          },
           select: { id: true },
         });
-        smCmUsers.forEach(u => allowedUserIds.add(u.id));
+        smCmUsers.forEach((u) => allowedUserIds.add(u.id));
         break;
       }
       case 'SOURCING_MANAGER': {
         // SM can talk to CPs
         const cps = await this.prisma.user.findMany({
           where: { role: { code: 'CHANNEL_PARTNER' } },
-          select: { id: true }
+          select: { id: true },
         });
-        cps.forEach(cp => allowedUserIds.add(cp.id));
+        cps.forEach((cp) => allowedUserIds.add(cp.id));
 
         // SM can talk to CMs if on same project
         const myProjects = await this.prisma.projectAssignment.findMany({
           where: { userId: user.id, isActive: true },
-          select: { projectId: true }
+          select: { projectId: true },
         });
-        const projectIds = myProjects.map(p => p.projectId);
-        
+        const projectIds = myProjects.map((p) => p.projectId);
+
         if (projectIds.length > 0) {
           const sameProjectCms = await this.prisma.projectAssignment.findMany({
             where: {
               projectId: { in: projectIds },
               isActive: true,
-              user: { role: { code: 'CLOSING_MANAGER' } }
+              user: { role: { code: 'CLOSING_MANAGER' } },
             },
-            select: { userId: true }
+            select: { userId: true },
           });
-          sameProjectCms.forEach(cm => allowedUserIds.add(cm.userId));
+          sameProjectCms.forEach((cm) => allowedUserIds.add(cm.userId));
         }
         break;
       }
@@ -145,8 +155,8 @@ export class ChatService {
         name: true,
         email: true,
         image: true,
-        role: { select: { name: true, code: true } }
-      }
+        role: { select: { name: true, code: true } },
+      },
     });
 
     return validContacts;
@@ -159,64 +169,77 @@ export class ChatService {
     const rooms = await this.prisma.chatRoom.findMany({
       where: {
         members: {
-          some: { userId }
-        }
+          some: { userId },
+        },
       },
       include: {
         members: {
           include: {
-            user: { select: { id: true, name: true, image: true, role: { select: { code: true } } } }
-          }
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                role: { select: { code: true } },
+              },
+            },
+          },
         },
         messages: {
           orderBy: { createdAt: 'desc' },
-          take: 1
-        }
-      }
+          take: 1,
+        },
+      },
     });
 
     // Compute unread counts manually for now (can be optimized in raw SQL for large scale)
-    const result = await Promise.all(rooms.map(async (room) => {
-      const myMembership = room.members.find(m => m.userId === userId);
-      let unreadCount = 0;
-      
-      if (myMembership) {
-        unreadCount = await this.prisma.chatMessage.count({
-          where: {
-            chatRoomId: room.id,
-            createdAt: { gt: myMembership.lastReadAt || new Date(0) },
-            senderId: { not: userId }
-          }
-        });
-      }
+    const result = await Promise.all(
+      rooms.map(async (room) => {
+        const myMembership = room.members.find((m) => m.userId === userId);
+        let unreadCount = 0;
 
-      // If it's a direct chat, determine the "other" person to show as room name/avatar
-      let computedName = room.name;
-      let computedAvatar = room.avatarUrl;
-
-      if (room.type === 'DIRECT') {
-        const otherMember = room.members.find(m => m.userId !== userId);
-        if (otherMember) {
-          computedName = otherMember.user.name || 'Unknown User';
-          computedAvatar = otherMember.user.image;
+        if (myMembership) {
+          unreadCount = await this.prisma.chatMessage.count({
+            where: {
+              chatRoomId: room.id,
+              createdAt: { gt: myMembership.lastReadAt || new Date(0) },
+              senderId: { not: userId },
+            },
+          });
         }
-      }
 
-      return {
-        id: room.id,
-        type: room.type,
-        name: computedName,
-        avatarUrl: computedAvatar,
-        lastMessage: room.messages[0] || null,
-        unreadCount,
-        members: room.members.map(m => m.user)
-      };
-    }));
+        // If it's a direct chat, determine the "other" person to show as room name/avatar
+        let computedName = room.name;
+        let computedAvatar = room.avatarUrl;
+
+        if (room.type === 'DIRECT') {
+          const otherMember = room.members.find((m) => m.userId !== userId);
+          if (otherMember) {
+            computedName = otherMember.user.name || 'Unknown User';
+            computedAvatar = otherMember.user.image;
+          }
+        }
+
+        return {
+          id: room.id,
+          type: room.type,
+          name: computedName,
+          avatarUrl: computedAvatar,
+          lastMessage: room.messages[0] || null,
+          unreadCount,
+          members: room.members.map((m) => m.user),
+        };
+      }),
+    );
 
     // Sort by last message date
     return result.sort((a, b) => {
-      const aTime = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
-      const bTime = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+      const aTime = a.lastMessage?.createdAt
+        ? new Date(a.lastMessage.createdAt).getTime()
+        : 0;
+      const bTime = b.lastMessage?.createdAt
+        ? new Date(b.lastMessage.createdAt).getTime()
+        : 0;
       return bTime - aTime;
     });
   }
@@ -231,8 +254,10 @@ export class ChatService {
 
     // Verify they are allowed to chat
     const validContacts = await this.getValidContacts(userId);
-    if (!validContacts.find(u => u.id === targetUserId)) {
-      throw new ForbiddenException('You are not permitted to chat with this user directly based on role hierarchy');
+    if (!validContacts.find((u) => u.id === targetUserId)) {
+      throw new ForbiddenException(
+        'You are not permitted to chat with this user directly based on role hierarchy',
+      );
     }
 
     // Find existing direct room
@@ -241,14 +266,19 @@ export class ChatService {
       where: {
         type: 'DIRECT',
         members: {
-          every: { userId: { in: [userId, targetUserId] } }
-        }
+          every: { userId: { in: [userId, targetUserId] } },
+        },
       },
-      include: { members: true }
+      include: { members: true },
     });
 
     // Filter to ensure exactly two members (prisma 'every' doesn't enforce length)
-    let existingRoom = existingRooms.find(r => r.members.length === 2 && r.members.some(m => m.userId === userId) && r.members.some(m => m.userId === targetUserId));
+    const existingRoom = existingRooms.find(
+      (r) =>
+        r.members.length === 2 &&
+        r.members.some((m) => m.userId === userId) &&
+        r.members.some((m) => m.userId === targetUserId),
+    );
 
     if (existingRoom) {
       return existingRoom;
@@ -260,13 +290,10 @@ export class ChatService {
         type: 'DIRECT',
         createdById: userId,
         members: {
-          create: [
-            { userId },
-            { userId: targetUserId }
-          ]
-        }
+          create: [{ userId }, { userId: targetUserId }],
+        },
       },
-      include: { members: true }
+      include: { members: true },
     });
 
     return newRoom;
@@ -278,8 +305,8 @@ export class ChatService {
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: {
-        sender: { select: { id: true, name: true, image: true } }
-      }
+        sender: { select: { id: true, name: true, image: true } },
+      },
     };
 
     if (cursor) {
@@ -291,10 +318,15 @@ export class ChatService {
     return messages; // they are in desc order, client may reverse
   }
 
-  async sendMessage(userId: string, roomId: string, content?: string, attachment?: MessageAttachmentDto) {
+  async sendMessage(
+    userId: string,
+    roomId: string,
+    content?: string,
+    attachment?: MessageAttachmentDto,
+  ) {
     // Verify membership
     const membership = await this.prisma.chatRoomMember.findUnique({
-      where: { chatRoomId_userId: { chatRoomId: roomId, userId } }
+      where: { chatRoomId_userId: { chatRoomId: roomId, userId } },
     });
 
     if (!membership) {
@@ -311,8 +343,8 @@ export class ChatService {
         attachmentName: attachment?.name,
       },
       include: {
-        sender: { select: { id: true, name: true, image: true } }
-      }
+        sender: { select: { id: true, name: true, image: true } },
+      },
     });
 
     // Also update sender's last read at so their unread count stays 0
@@ -324,7 +356,7 @@ export class ChatService {
   async markAsRead(userId: string, roomId: string) {
     return this.prisma.chatRoomMember.update({
       where: { chatRoomId_userId: { chatRoomId: roomId, userId } },
-      data: { lastReadAt: new Date() }
+      data: { lastReadAt: new Date() },
     });
   }
 }

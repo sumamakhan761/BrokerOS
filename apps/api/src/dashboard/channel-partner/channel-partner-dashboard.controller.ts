@@ -6,7 +6,7 @@ import { ChannelPartnerAnalyticsService } from './channel-partner-analytics.serv
 export class ChannelPartnerDashboardController {
   constructor(
     private readonly dashboardService: ChannelPartnerDashboardService,
-    private readonly analyticsService: ChannelPartnerAnalyticsService
+    private readonly analyticsService: ChannelPartnerAnalyticsService,
   ) {}
 
   @Get()

@@ -6,7 +6,7 @@ import { SourcingManagerAnalyticsService } from './sourcing-manager-analytics.se
 export class SourcingManagerDashboardController {
   constructor(
     private readonly dashboardService: SourcingManagerDashboardService,
-    private readonly analyticsService: SourcingManagerAnalyticsService
+    private readonly analyticsService: SourcingManagerAnalyticsService,
   ) {}
 
   @Get()

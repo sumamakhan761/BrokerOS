@@ -21,15 +21,13 @@ export class SalesManagerDashboardService {
     });
     const userIds = [managerId, ...subs.map((s) => s.id)];
 
-    const [
-      widgetsAndPipeline,
-      dailyTasks,
-      teamLeaderboard,
-    ] = await Promise.all([
-      this.salesManagerWidgets.getWidgetsAndPipeline(userIds),
-      this.salesManagerDailyTasks.getDailyTasks(userIds),
-      this.salesManagerTeamLeaderboard.getTeamLeaderboard(subs),
-    ]);
+    const [widgetsAndPipeline, dailyTasks, teamLeaderboard] = await Promise.all(
+      [
+        this.salesManagerWidgets.getWidgetsAndPipeline(userIds),
+        this.salesManagerDailyTasks.getDailyTasks(userIds),
+        this.salesManagerTeamLeaderboard.getTeamLeaderboard(subs),
+      ],
+    );
 
     return {
       widgets: widgetsAndPipeline.widgets,

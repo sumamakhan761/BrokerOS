@@ -4,7 +4,7 @@ import { getTodayRange } from '../core/dashboard.utils.js';
 
 @Injectable()
 export class SourcingManagerDashboardService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Get the CP project IDs assigned to this user via ProjectAssignment.
@@ -15,11 +15,11 @@ export class SourcingManagerDashboardService {
       where: {
         userId,
         isActive: true,
-        project: { isCpProject: true }
+        project: { isCpProject: true },
       },
-      select: { projectId: true }
+      select: { projectId: true },
     });
-    return assignments.map(a => a.projectId);
+    return assignments.map((a) => a.projectId);
   }
 
   async getDashboard(userId: string) {
@@ -69,7 +69,7 @@ export class SourcingManagerDashboardService {
       where: { sourcingManagerId: userId },
       select: { id: true },
     });
-    const brokerIds = brokers.map(b => b.id);
+    const brokerIds = brokers.map((b) => b.id);
 
     // Fetch bookings SCOPED TO ASSIGNED CP PROJECTS and related to these brokers
     const bookings = await this.prisma.booking.findMany({
@@ -78,36 +78,36 @@ export class SourcingManagerDashboardService {
         unit: {
           floor: {
             tower: {
-              projectId: { in: cpProjectIds }
-            }
-          }
+              projectId: { in: cpProjectIds },
+            },
+          },
         },
         // BROKER SCOPE: Only bookings linked to this manager's brokers
         OR: [
           {
             customer: {
               lead: {
-                brokerId: { in: brokerIds }
-              }
-            }
+                brokerId: { in: brokerIds },
+              },
+            },
           },
           {
             brokerageRecords: {
               some: {
-                brokerId: { in: brokerIds }
-              }
-            }
-          }
-        ]
+                brokerId: { in: brokerIds },
+              },
+            },
+          },
+        ],
       },
       include: {
         customer: {
-          include: { lead: true }
+          include: { lead: true },
         },
         brokerageRecords: {
-          where: { brokerId: { in: brokerIds } }
-        }
-      }
+          where: { brokerId: { in: brokerIds } },
+        },
+      },
     });
 
     let bookingsGenerated = 0;
@@ -122,8 +122,10 @@ export class SourcingManagerDashboardService {
       const bookingAmount = Number(booking.tokenAmount) || 0;
       bookingRevenueGenerated += bookingAmount;
 
-      const isHandoverDone = booking.status === 'HANDOVER_COMPLETED' ||
-        (booking.customer?.lead?.status === 'HANDOVER' && booking.customer?.lead?.subStatus === 'DONE');
+      const isHandoverDone =
+        booking.status === 'HANDOVER_COMPLETED' ||
+        (booking.customer?.lead?.status === 'HANDOVER' &&
+          booking.customer?.lead?.subStatus === 'DONE');
 
       if (isHandoverDone) {
         unitsSold += 1;
@@ -135,9 +137,11 @@ export class SourcingManagerDashboardService {
 
       for (const record of booking.brokerageRecords) {
         if (record.status === 'PAID') {
-          commission += Number(record.paidAmount) || Number(record.netPayable) || 0;
+          commission +=
+            Number(record.paidAmount) || Number(record.netPayable) || 0;
         } else {
-          commission += Number(record.paidAmount) || Number(record.netPayable) || 0;
+          commission +=
+            Number(record.paidAmount) || Number(record.netPayable) || 0;
         }
       }
 
@@ -173,22 +177,27 @@ export class SourcingManagerDashboardService {
         id: true,
         name: true,
         profilePhotoUrl: true,
-      }
+      },
     });
 
-    const brokerStatsMap = new Map<string, { bCount: number, units: number }>();
+    const brokerStatsMap = new Map<string, { bCount: number; units: number }>();
     for (const broker of brokersData) {
       brokerStatsMap.set(broker.id, { bCount: 0, units: 0 });
     }
 
     // Use project-scoped bookings for broker performance
     for (const booking of bookings) {
-      const isHandoverDone = booking.status === 'HANDOVER_COMPLETED' ||
-        (booking.customer?.lead?.status === 'HANDOVER' && booking.customer?.lead?.subStatus === 'DONE');
+      const isHandoverDone =
+        booking.status === 'HANDOVER_COMPLETED' ||
+        (booking.customer?.lead?.status === 'HANDOVER' &&
+          booking.customer?.lead?.subStatus === 'DONE');
 
       const involvedBrokerIds = new Set<string>();
 
-      if (booking.customer?.lead?.brokerId && brokerStatsMap.has(booking.customer.lead.brokerId)) {
+      if (
+        booking.customer?.lead?.brokerId &&
+        brokerStatsMap.has(booking.customer.lead.brokerId)
+      ) {
         involvedBrokerIds.add(booking.customer.lead.brokerId);
       }
 
@@ -207,21 +216,24 @@ export class SourcingManagerDashboardService {
       }
     }
 
-    const topPerformingBrokers = brokersData.map(broker => {
-      const stats = brokerStatsMap.get(broker.id)!;
-      const score = (stats.bCount * 10) + (stats.units * 50); // Weighted score
-      return {
-        id: broker.id,
-        name: broker.name,
-        image: broker.profilePhotoUrl,
-        bookingsGenerated: stats.bCount,
-        unitsSold: stats.units,
-        score
-      };
-    }).sort((a, b) => b.score - a.score).map((broker, idx) => ({
-      ...broker,
-      rank: idx + 1
-    }));
+    const topPerformingBrokers = brokersData
+      .map((broker) => {
+        const stats = brokerStatsMap.get(broker.id)!;
+        const score = stats.bCount * 10 + stats.units * 50; // Weighted score
+        return {
+          id: broker.id,
+          name: broker.name,
+          image: broker.profilePhotoUrl,
+          bookingsGenerated: stats.bCount,
+          unitsSold: stats.units,
+          score,
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .map((broker, idx) => ({
+        ...broker,
+        rank: idx + 1,
+      }));
 
     return {
       activeBrokers,
@@ -237,7 +249,7 @@ export class SourcingManagerDashboardService {
       },
       todayFollowUpList,
       todayMeetingList,
-      topPerformingBrokers
+      topPerformingBrokers,
     };
   }
 }

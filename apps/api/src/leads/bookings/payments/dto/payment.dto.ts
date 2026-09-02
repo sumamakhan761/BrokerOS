@@ -1,8 +1,14 @@
-import { IsString, IsNumber, IsOptional, IsEnum, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  IsNotEmpty,
+} from 'class-validator';
 
 export enum FrequencyEnum {
   MONTHLY = 'MONTHLY',
-  QUARTERLY = 'QUARTERLY'
+  QUARTERLY = 'QUARTERLY',
 }
 
 export class CreateScheduleDto {

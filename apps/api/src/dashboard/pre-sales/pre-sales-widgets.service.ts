@@ -4,7 +4,7 @@ import { getTodayRange, getMonthRange } from '../core/dashboard.utils.js';
 
 @Injectable()
 export class PreSalesWidgetsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async getWidgets(userId: string) {
     const { start: todayStart, end: todayEnd } = getTodayRange();
@@ -55,7 +55,7 @@ export class PreSalesWidgetsService {
         where: {
           userId,
           status: 'MISSED',
-          scheduledDate: { lt: todayStart }
+          scheduledDate: { lt: todayStart },
         },
       }),
       // Site visits completed this month that were scheduled by this user
@@ -72,9 +72,9 @@ export class PreSalesWidgetsService {
           customer: {
             lead: {
               siteVisits: {
-                some: { createdById: userId }
-              }
-            }
+                some: { createdById: userId },
+              },
+            },
           },
           status: 'CONFIRMED',
           createdAt: { gte: monthStart, lte: monthEnd },

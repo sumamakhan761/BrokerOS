@@ -11,7 +11,9 @@ jest.mock('groq-sdk', () => {
   return jest.fn().mockImplementation(() => ({
     audio: {
       transcriptions: {
-        create: jest.fn().mockResolvedValue({ text: 'mocked transcription text' }),
+        create: jest
+          .fn()
+          .mockResolvedValue({ text: 'mocked transcription text' }),
       },
     },
     chat: {
@@ -61,7 +63,9 @@ describe('TranscriptionService', () => {
   describe('transcribeAudio', () => {
     it('should throw error if API key is missing', async () => {
       process.env.GROQ_API_KEY = '';
-      await expect(service.transcribeAudio('dummy.mp3')).rejects.toThrow('Groq API Key is missing');
+      await expect(service.transcribeAudio('dummy.mp3')).rejects.toThrow(
+        'Groq API Key is missing',
+      );
     });
 
     it('should transcribe audio successfully', async () => {
@@ -78,7 +82,9 @@ describe('TranscriptionService', () => {
     });
 
     it('should summarize successfully', async () => {
-      const result = await service.summarizeCall('test transcript', 'NEW', [{ id: 'p1', name: 'Project 1' } as AvailableProjectDto]);
+      const result = await service.summarizeCall('test transcript', 'NEW', [
+        { id: 'p1', name: 'Project 1' },
+      ]);
       expect(typeof result).toBe('object');
       if (typeof result === 'object') {
         expect(result.summary).toBe('Test summary');
@@ -96,8 +102,13 @@ describe('TranscriptionService', () => {
 
   describe('generateAutoStatusAndNote', () => {
     it('should generate auto status for LEAD', async () => {
-      const result = await service.generateAutoStatusAndNote('NEW', ['summary 1']);
-      expect(result).toEqual({ suggestedStatus: 'CONTACTED', transitionNote: 'Called' });
+      const result = await service.generateAutoStatusAndNote('NEW', [
+        'summary 1',
+      ]);
+      expect(result).toEqual({
+        suggestedStatus: 'CONTACTED',
+        transitionNote: 'Called',
+      });
     });
   });
 });

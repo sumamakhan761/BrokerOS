@@ -1,4 +1,14 @@
-import { Controller, Post, Get, Param, Body, UseInterceptors, UploadedFile, Query, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Body,
+  UseInterceptors,
+  UploadedFile,
+  Query,
+  BadRequestException,
+} from '@nestjs/common';
 import { PaymentsService } from './payments.service.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateScheduleDto, MarkAsPaidDto } from './dto/payment.dto.js';
@@ -10,10 +20,12 @@ export class PaymentsController {
   @Post('schedule/:bookingId')
   async createSchedule(
     @Param('bookingId') bookingId: string,
-    @Body() body: CreateScheduleDto
+    @Body() body: CreateScheduleDto,
   ) {
     if (!body.installmentsCount && !body.percentagePerMonth) {
-      throw new BadRequestException('Either installmentsCount or percentagePerMonth is required');
+      throw new BadRequestException(
+        'Either installmentsCount or percentagePerMonth is required',
+      );
     }
     return this.paymentsService.createSchedule(bookingId, body);
   }
@@ -33,7 +45,7 @@ export class PaymentsController {
   async markAsPaid(
     @Param('scheduleId') scheduleId: string,
     @Body() body: MarkAsPaidDto,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ) {
     if (!body.amountPaid) {
       throw new BadRequestException('Amount paid is required');
@@ -43,6 +55,11 @@ export class PaymentsController {
       throw new BadRequestException('Invalid amount paid');
     }
 
-    return this.paymentsService.markAsPaid(scheduleId, amount, body.remarks, file);
+    return this.paymentsService.markAsPaid(
+      scheduleId,
+      amount,
+      body.remarks,
+      file,
+    );
   }
 }

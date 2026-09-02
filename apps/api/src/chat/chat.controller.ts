@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Param, Req, Query, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Req,
+  Query,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { put } from '@vercel/blob';
 import { ChatService } from './chat.service.js';
@@ -6,7 +17,7 @@ import { SendMessageDto } from './dto/chat.dto.js';
 
 @Controller('api/chat')
 export class ChatController {
-  constructor(private readonly chatService: ChatService) { }
+  constructor(private readonly chatService: ChatService) {}
 
   @Get('contacts')
   async getContacts(@Req() req: any) {
@@ -21,11 +32,18 @@ export class ChatController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) return { success: false, url: null };
-    const blob = await put(`chat/${Date.now()}-${file.originalname}`, file.buffer, {
-      access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-    });
-    return { success: true, data: { url: blob.url, name: file.originalname, type: file.mimetype } };
+    const blob = await put(
+      `chat/${Date.now()}-${file.originalname}`,
+      file.buffer,
+      {
+        access: 'public',
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      },
+    );
+    return {
+      success: true,
+      data: { url: blob.url, name: file.originalname, type: file.mimetype },
+    };
   }
 
   @Get('rooms')
@@ -38,11 +56,17 @@ export class ChatController {
   }
 
   @Post('direct/:targetUserId')
-  async getOrCreateRoom(@Req() req: any, @Param('targetUserId') targetUserId: string) {
+  async getOrCreateRoom(
+    @Req() req: any,
+    @Param('targetUserId') targetUserId: string,
+  ) {
     const userId = req.user?.id;
     if (!userId) return { success: false, message: 'Unauthorized' };
 
-    const room = await this.chatService.getOrCreateDirectRoom(userId, targetUserId);
+    const room = await this.chatService.getOrCreateDirectRoom(
+      userId,
+      targetUserId,
+    );
     return { success: true, data: room };
   }
 
@@ -51,13 +75,17 @@ export class ChatController {
     @Req() req: any,
     @Param('roomId') roomId: string,
     @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string
+    @Query('limit') limit?: string,
   ) {
     const userId = req.user?.id;
     if (!userId) return { success: false, message: 'Unauthorized' };
 
     const parsedLimit = limit ? parseInt(limit, 10) : 20;
-    const messages = await this.chatService.getMessages(roomId, cursor, parsedLimit);
+    const messages = await this.chatService.getMessages(
+      roomId,
+      cursor,
+      parsedLimit,
+    );
     return { success: true, data: messages };
   }
 
@@ -65,12 +93,17 @@ export class ChatController {
   async sendMessage(
     @Req() req: any,
     @Param('roomId') roomId: string,
-    @Body() body: SendMessageDto
+    @Body() body: SendMessageDto,
   ) {
     const userId = req.user?.id;
     if (!userId) return { success: false, message: 'Unauthorized' };
 
-    const message = await this.chatService.sendMessage(userId, roomId, body.content, body.attachment);
+    const message = await this.chatService.sendMessage(
+      userId,
+      roomId,
+      body.content,
+      body.attachment,
+    );
     // Note: The real-time broadcast is typically handled by the Gateway or the service calling the Gateway.
     // We will let the Gateway listen to socket events instead, OR we can emit from here if we inject the Gateway.
     return { success: true, data: message };

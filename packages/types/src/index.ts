@@ -14,3 +14,6 @@ export * from './sms.js';
 // Voice & AI Agent Marketing
 export * from './voice/index.js';
 
+// Ads Marketing (Meta & Google)
+export * from './ads/index.js';
+

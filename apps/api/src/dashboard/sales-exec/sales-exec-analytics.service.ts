@@ -3,18 +3,18 @@ import { PrismaService } from '../../lib/database/prisma.service.js';
 
 @Injectable()
 export class SalesExecAnalyticsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async getFinancialMetrics(userId: string) {
     // We only care about units that are 'SOLD' for revenue, and 'RESERVED' + 'SOLD' for commission
     const bookings = await this.prisma.booking.findMany({
       where: {
         salesExecId: userId,
-        status: { in: ['CONFIRMED'] }
+        status: { in: ['CONFIRMED'] },
       },
       include: {
-        unit: true
-      }
+        unit: true,
+      },
     });
 
     let totalRevenue = 0;
@@ -40,43 +40,44 @@ export class SalesExecAnalyticsService {
       totalRevenue,
       realizedCommission,
       projectedCommission,
-      averageTicketSize
+      averageTicketSize,
     };
   }
 
   async getFunnelMetrics(userId: string) {
     const totalLeads = await this.prisma.lead.count({
-      where: { assignedUserId: userId }
+      where: { assignedUserId: userId },
     });
 
     const siteVisits = await this.prisma.siteVisit.count({
-      where: { salesExecId: userId }
+      where: { salesExecId: userId },
     });
 
     const negotiations = await this.prisma.approvalRequest.count({
-      where: { salesExecId: userId }
+      where: { salesExecId: userId },
     });
 
     // Reservations (deals in progress)
     const reservedUnits = await this.prisma.unit.count({
-      where: { reservedForId: userId, status: 'RESERVED' }
+      where: { reservedForId: userId, status: 'RESERVED' },
     });
 
     // Sold (closed deals)
     // Sometimes sold deals might drop the reservedForId, but let's assume it stays or we query via booking
     const soldBookings = await this.prisma.booking.findMany({
       where: { salesExecId: userId, status: 'CONFIRMED' },
-      include: { unit: true }
+      include: { unit: true },
     });
 
     let soldCount = 0;
-    soldBookings.forEach(b => {
+    soldBookings.forEach((b) => {
       if (b.unit && b.unit.status === 'SOLD') {
         soldCount++;
       }
     });
 
-    const conversionRate = totalLeads > 0 ? ((soldCount / totalLeads) * 100).toFixed(1) : "0.0";
+    const conversionRate =
+      totalLeads > 0 ? ((soldCount / totalLeads) * 100).toFixed(1) : '0.0';
 
     return {
       leads: totalLeads,
@@ -84,7 +85,7 @@ export class SalesExecAnalyticsService {
       negotiations,
       reserved: reservedUnits,
       sold: soldCount,
-      conversionRate
+      conversionRate,
     };
   }
 
@@ -109,39 +110,46 @@ export class SalesExecAnalyticsService {
                     unitNumber: true,
                     type: true,
                     facing: true,
-                    status: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                    status: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     const myBookings = await this.prisma.booking.findMany({
       where: { salesExecId: userId, status: 'CONFIRMED' },
-      include: { unit: true }
+      include: { unit: true },
     });
 
     const salesByType: Record<string, number> = {};
     const salesByFacing: Record<string, number> = {};
 
-    myBookings.forEach(b => {
+    myBookings.forEach((b) => {
       if (b.unit) {
         if (b.unit.type) {
           salesByType[b.unit.type] = (salesByType[b.unit.type] || 0) + 1;
         }
         if (b.unit.facing) {
-          salesByFacing[b.unit.facing] = (salesByFacing[b.unit.facing] || 0) + 1;
+          salesByFacing[b.unit.facing] =
+            (salesByFacing[b.unit.facing] || 0) + 1;
         }
       }
     });
 
     return {
       projects,
-      salesByType: Object.keys(salesByType).map(name => ({ name, value: salesByType[name] })),
-      salesByFacing: Object.keys(salesByFacing).map(name => ({ name, value: salesByFacing[name] }))
+      salesByType: Object.keys(salesByType).map((name) => ({
+        name,
+        value: salesByType[name],
+      })),
+      salesByFacing: Object.keys(salesByFacing).map((name) => ({
+        name,
+        value: salesByFacing[name],
+      })),
     };
   }
 
@@ -149,10 +157,10 @@ export class SalesExecAnalyticsService {
     // 1. Most Visited Projects
     const siteVisits = await this.prisma.siteVisit.findMany({
       where: { salesExecId: userId },
-      include: { project: { select: { name: true } } }
+      include: { project: { select: { name: true } } },
     });
     const visitCounts: Record<string, number> = {};
-    siteVisits.forEach(sv => {
+    siteVisits.forEach((sv) => {
       const pName = sv.project?.name || 'Unknown';
       visitCounts[pName] = (visitCounts[pName] || 0) + 1;
     });
@@ -166,16 +174,16 @@ export class SalesExecAnalyticsService {
             floor: {
               include: {
                 tower: {
-                  include: { project: { select: { name: true } } }
-                }
-              }
-            }
-          }
-        }
-      }
+                  include: { project: { select: { name: true } } },
+                },
+              },
+            },
+          },
+        },
+      },
     });
     const bookedCounts: Record<string, number> = {};
-    bookings.forEach(b => {
+    bookings.forEach((b) => {
       const pName = b.unit?.floor?.tower?.project?.name;
       if (pName) {
         bookedCounts[pName] = (bookedCounts[pName] || 0) + 1;
@@ -185,10 +193,10 @@ export class SalesExecAnalyticsService {
     // 3. Customer Interest by Project
     const leads = await this.prisma.lead.findMany({
       where: { assignedUserId: userId },
-      include: { interestedProject: { select: { name: true } } }
+      include: { interestedProject: { select: { name: true } } },
     });
     const interestCounts: Record<string, number> = {};
-    leads.forEach(l => {
+    leads.forEach((l) => {
       const pName = l.interestedProject?.name;
       if (pName) {
         interestCounts[pName] = (interestCounts[pName] || 0) + 1;
@@ -205,7 +213,7 @@ export class SalesExecAnalyticsService {
     return {
       mostVisited: mapToSortedArray(visitCounts),
       mostBooked: mapToSortedArray(bookedCounts),
-      customerInterest: mapToSortedArray(interestCounts)
+      customerInterest: mapToSortedArray(interestCounts),
     };
   }
 
@@ -216,37 +224,46 @@ export class SalesExecAnalyticsService {
     const siteVisits = await this.prisma.siteVisit.findMany({
       where: {
         salesExecId: userId,
-        scheduledDate: { gte: ninetyDaysAgo }
+        scheduledDate: { gte: ninetyDaysAgo },
       },
-      select: { scheduledDate: true, actualDate: true }
+      select: { scheduledDate: true, actualDate: true },
     });
 
     const followUps = await this.prisma.followUp.findMany({
       where: {
         userId: userId,
         status: 'COMPLETED',
-        scheduledDate: { gte: ninetyDaysAgo }
+        scheduledDate: { gte: ninetyDaysAgo },
       },
-      select: { scheduledDate: true }
+      select: { scheduledDate: true },
     });
 
-    const activityMap: Record<string, { siteVisits: number, followUps: number }> = {};
+    const activityMap: Record<
+      string,
+      { siteVisits: number; followUps: number }
+    > = {};
 
-    siteVisits.forEach(sv => {
-      const dateStr = (sv.actualDate || sv.scheduledDate).toISOString().split('T')[0];
-      if (!activityMap[dateStr]) activityMap[dateStr] = { siteVisits: 0, followUps: 0 };
+    siteVisits.forEach((sv) => {
+      const dateStr = (sv.actualDate || sv.scheduledDate)
+        .toISOString()
+        .split('T')[0];
+      if (!activityMap[dateStr])
+        activityMap[dateStr] = { siteVisits: 0, followUps: 0 };
       activityMap[dateStr].siteVisits += 1;
     });
 
-    followUps.forEach(fu => {
+    followUps.forEach((fu) => {
       const dateStr = fu.scheduledDate.toISOString().split('T')[0];
-      if (!activityMap[dateStr]) activityMap[dateStr] = { siteVisits: 0, followUps: 0 };
+      if (!activityMap[dateStr])
+        activityMap[dateStr] = { siteVisits: 0, followUps: 0 };
       activityMap[dateStr].followUps += 1;
     });
 
-    return Object.entries(activityMap).map(([date, counts]) => ({
-      date,
-      ...counts
-    })).sort((a, b) => a.date.localeCompare(b.date));
+    return Object.entries(activityMap)
+      .map(([date, counts]) => ({
+        date,
+        ...counts,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   }
 }

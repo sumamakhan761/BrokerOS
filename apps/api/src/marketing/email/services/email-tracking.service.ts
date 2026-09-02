@@ -8,7 +8,12 @@ export class EmailTrackingService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async recordOpenEvent(campaignId: string, recipientId: string, ip?: string, userAgent?: string) {
+  async recordOpenEvent(
+    campaignId: string,
+    recipientId: string,
+    ip?: string,
+    userAgent?: string,
+  ) {
     try {
       await this.prisma.$transaction([
         this.prisma.emailTrackingEvent.create({
@@ -38,13 +43,20 @@ export class EmailTrackingService {
     }
   }
 
-  async recordClickEvent(campaignId: string, recipientId: string, url: string, ip?: string, userAgent?: string) {
+  async recordClickEvent(
+    campaignId: string,
+    recipientId: string,
+    url: string,
+    ip?: string,
+    userAgent?: string,
+  ) {
     try {
       const recipient = await this.prisma.campaignRecipient.findUnique({
         where: { id: recipientId },
       });
 
-      const isFirstOpen = !recipient?.firstOpenedAt || recipient.openCount === 0;
+      const isFirstOpen =
+        !recipient?.firstOpenedAt || recipient.openCount === 0;
 
       const txOps: any[] = [
         this.prisma.emailTrackingEvent.create({
@@ -124,29 +136,51 @@ export class EmailTrackingService {
   async processWebhookEvents(events: EmailWebhookEvent[]) {
     for (const ev of events) {
       if (ev.eventType === 'UNSUBSCRIBED') {
-        await this.recordUnsubscribe(ev.recipientEmail, ev.campaignId, ev.metadata?.bounceReason);
+        await this.recordUnsubscribe(
+          ev.recipientEmail,
+          ev.campaignId,
+          ev.metadata?.bounceReason,
+        );
       } else if (ev.eventType === 'BOUNCED') {
         if (ev.campaignId) {
-          await this.prisma.marketingCampaign.update({
-            where: { id: ev.campaignId },
-            data: { bouncedCount: { increment: 1 } },
-          }).catch(() => null);
+          await this.prisma.marketingCampaign
+            .update({
+              where: { id: ev.campaignId },
+              data: { bouncedCount: { increment: 1 } },
+            })
+            .catch(() => null);
         }
-        await this.prisma.campaignRecipient.updateMany({
-          where: { email: ev.recipientEmail, ...(ev.campaignId ? { campaignId: ev.campaignId } : {}) },
-          data: { status: 'BOUNCED', bounceReason: ev.metadata?.bounceReason || 'Bounced', bouncedAt: new Date() },
-        }).catch(() => null);
+        await this.prisma.campaignRecipient
+          .updateMany({
+            where: {
+              email: ev.recipientEmail,
+              ...(ev.campaignId ? { campaignId: ev.campaignId } : {}),
+            },
+            data: {
+              status: 'BOUNCED',
+              bounceReason: ev.metadata?.bounceReason || 'Bounced',
+              bouncedAt: new Date(),
+            },
+          })
+          .catch(() => null);
       } else if (ev.eventType === 'DELIVERED') {
         if (ev.campaignId) {
-          await this.prisma.marketingCampaign.update({
-            where: { id: ev.campaignId },
-            data: { deliveredCount: { increment: 1 } },
-          }).catch(() => null);
+          await this.prisma.marketingCampaign
+            .update({
+              where: { id: ev.campaignId },
+              data: { deliveredCount: { increment: 1 } },
+            })
+            .catch(() => null);
         }
-        await this.prisma.campaignRecipient.updateMany({
-          where: { email: ev.recipientEmail, ...(ev.campaignId ? { campaignId: ev.campaignId } : {}) },
-          data: { status: 'DELIVERED', deliveredAt: new Date() },
-        }).catch(() => null);
+        await this.prisma.campaignRecipient
+          .updateMany({
+            where: {
+              email: ev.recipientEmail,
+              ...(ev.campaignId ? { campaignId: ev.campaignId } : {}),
+            },
+            data: { status: 'DELIVERED', deliveredAt: new Date() },
+          })
+          .catch(() => null);
       }
     }
   }

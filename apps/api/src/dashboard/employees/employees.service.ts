@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { EmployeeCardsService } from './employee-cards.service.js';
 import { ManagerTasksService } from '../manager/manager-tasks.service.js';
 import { ManagerAnnouncementsService } from '../manager/manager-announcements.service.js';
-import { CreateTaskDto, UpdateTaskDto, CreateAnnouncementDto, UpdateAnnouncementDto } from '../core/dto/dashboard.dto.js';
+import {
+  CreateTaskDto,
+  UpdateTaskDto,
+  CreateAnnouncementDto,
+  UpdateAnnouncementDto,
+} from '../core/dto/dashboard.dto.js';
 
 @Injectable()
 export class EmployeesService {
@@ -10,7 +15,7 @@ export class EmployeesService {
     private employeeCards: EmployeeCardsService,
     private managerTasks: ManagerTasksService,
     private managerAnnouncements: ManagerAnnouncementsService,
-  ) { }
+  ) {}
 
   // ─── Employee Cards ────────────────────────────────────────────────────────
 
@@ -27,15 +32,24 @@ export class EmployeesService {
   }
 
   async getSalesEmployeeDashboardData(managerId: string, employeeId: string) {
-    return this.employeeCards.getSalesEmployeeDashboardData(managerId, employeeId);
+    return this.employeeCards.getSalesEmployeeDashboardData(
+      managerId,
+      employeeId,
+    );
   }
 
   async getPostSalesManagerEmployeeCards(managerId: string) {
     return this.employeeCards.getPostSalesManagerEmployeeCards(managerId);
   }
 
-  async getPostSalesEmployeeDashboardData(managerId: string, employeeId: string) {
-    return this.employeeCards.getPostSalesEmployeeDashboardData(managerId, employeeId);
+  async getPostSalesEmployeeDashboardData(
+    managerId: string,
+    employeeId: string,
+  ) {
+    return this.employeeCards.getPostSalesEmployeeDashboardData(
+      managerId,
+      employeeId,
+    );
   }
 
   async getCPSourcingManagerCards(managerId: string) {
@@ -52,11 +66,7 @@ export class EmployeesService {
     return this.managerTasks.createTask(managerId, data);
   }
 
-  async updateTask(
-    taskId: string,
-    managerId: string,
-    data: UpdateTaskDto,
-  ) {
+  async updateTask(taskId: string, managerId: string, data: UpdateTaskDto) {
     return this.managerTasks.updateTask(taskId, managerId, data);
   }
 
@@ -78,7 +88,11 @@ export class EmployeesService {
     return this.managerAnnouncements.createAnnouncement(managerId, data);
   }
 
-  async updateAnnouncement(id: string, managerId: string, data: UpdateAnnouncementDto) {
+  async updateAnnouncement(
+    id: string,
+    managerId: string,
+    data: UpdateAnnouncementDto,
+  ) {
     return this.managerAnnouncements.updateAnnouncement(id, managerId, data);
   }
 

@@ -7,13 +7,7 @@ import { PrismaModule } from '../../lib/database/prisma.module.js';
 @Module({
   imports: [PrismaModule],
   controllers: [SourcingManagerDashboardController],
-  providers: [
-    SourcingManagerDashboardService,
-    SourcingManagerAnalyticsService,
-  ],
-  exports: [
-    SourcingManagerDashboardService,
-    SourcingManagerAnalyticsService,
-  ],
+  providers: [SourcingManagerDashboardService, SourcingManagerAnalyticsService],
+  exports: [SourcingManagerDashboardService, SourcingManagerAnalyticsService],
 })
 export class SourcingManagerDashboardModule {}

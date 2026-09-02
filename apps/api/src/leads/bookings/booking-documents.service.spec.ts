@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-jest.mock('@brokeros/prisma', () => ({ PrismaClient: class { } }));
-jest.mock('expo-server-sdk', () => ({ Expo: class { } }));
+jest.mock('@brokeros/prisma', () => ({ PrismaClient: class {} }));
+jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 
 jest.mock('@vercel/blob', () => ({
-  put: jest.fn().mockResolvedValue({ url: 'http://example.com/blob' })
+  put: jest.fn().mockResolvedValue({ url: 'http://example.com/blob' }),
 }));
 
 import { BookingDocumentsService } from './booking-documents.service.js';
@@ -15,12 +15,15 @@ describe('BookingDocumentsService', () => {
 
   const mockPrisma = {
     booking: { findUnique: jest.fn() },
-    customerDocument: { create: jest.fn(), findUnique: jest.fn() }
+    customerDocument: { create: jest.fn(), findUnique: jest.fn() },
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BookingDocumentsService, { provide: PrismaService, useValue: mockPrisma }],
+      providers: [
+        BookingDocumentsService,
+        { provide: PrismaService, useValue: mockPrisma },
+      ],
     }).compile();
 
     service = module.get(BookingDocumentsService);
@@ -28,9 +31,15 @@ describe('BookingDocumentsService', () => {
   });
 
   it('should upload doc', async () => {
-    mockPrisma.booking.findUnique.mockResolvedValue({ id: 'b-1', customerId: 'c-1' });
+    mockPrisma.booking.findUnique.mockResolvedValue({
+      id: 'b-1',
+      customerId: 'c-1',
+    });
     mockPrisma.customerDocument.create.mockResolvedValue({ id: 'd-1' });
-    const res = await service.uploadDocument('b-1', 'ID', { buffer: Buffer.from(''), originalname: 'test.jpg' } as Express.Multer.File);
+    const res = await service.uploadDocument('b-1', 'ID', {
+      buffer: Buffer.from(''),
+      originalname: 'test.jpg',
+    } as Express.Multer.File);
     expect(res).toEqual({ id: 'd-1' });
   });
 

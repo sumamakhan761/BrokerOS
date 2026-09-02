@@ -7,13 +7,7 @@ import { PrismaModule } from '../../lib/database/prisma.module.js';
 @Module({
   imports: [PrismaModule],
   controllers: [ClosingManagerDashboardController],
-  providers: [
-    ClosingManagerDashboardService,
-    ClosingManagerAnalyticsService,
-  ],
-  exports: [
-    ClosingManagerDashboardService,
-    ClosingManagerAnalyticsService,
-  ],
+  providers: [ClosingManagerDashboardService, ClosingManagerAnalyticsService],
+  exports: [ClosingManagerDashboardService, ClosingManagerAnalyticsService],
 })
 export class ClosingManagerDashboardModule {}

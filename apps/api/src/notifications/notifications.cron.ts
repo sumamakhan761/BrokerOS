@@ -11,7 +11,7 @@ export class NotificationsCron {
   constructor(
     private readonly notificationsService: NotificationsService,
     private readonly schedulerRegistry: SchedulerRegistry,
-  ) { }
+  ) {}
 
   /**
    * Daily at 10:35 PM (for testing)
@@ -58,14 +58,17 @@ export class NotificationsCron {
       }
 
       // 1. Group by employee to send Notification #3
-      const employeeMissedMap = new Map<string, { count: number, roleCode: string, managerId: string | null }>();
+      const employeeMissedMap = new Map<
+        string,
+        { count: number; roleCode: string; managerId: string | null }
+      >();
 
       for (const fu of missedFollowUps) {
         if (!employeeMissedMap.has(fu.userId)) {
           employeeMissedMap.set(fu.userId, {
             count: 0,
             roleCode: fu.user.role?.code || '',
-            managerId: fu.user.managerId
+            managerId: fu.user.managerId,
           });
         }
         employeeMissedMap.get(fu.userId)!.count += 1;
@@ -104,12 +107,15 @@ export class NotificationsCron {
 
       // 2. Group by Manager to send Notification #4
       // We will group by managerId + department (based on subordinate's role)
-      const managerAlertMap = new Map<string, {
-        preSalesCount: number,
-        salesExecCount: number,
-        sourcingCount: number,
-        closingCount: number
-      }>();
+      const managerAlertMap = new Map<
+        string,
+        {
+          preSalesCount: number;
+          salesExecCount: number;
+          sourcingCount: number;
+          closingCount: number;
+        }
+      >();
 
       for (const [userId, data] of employeeMissedMap.entries()) {
         if (data.managerId) {
@@ -118,21 +124,28 @@ export class NotificationsCron {
               preSalesCount: 0,
               salesExecCount: 0,
               sourcingCount: 0,
-              closingCount: 0
+              closingCount: 0,
             });
           }
           const managerData = managerAlertMap.get(data.managerId)!;
 
-          if (data.roleCode === 'PRE_SALES') managerData.preSalesCount += data.count;
-          else if (data.roleCode === 'SALES_EXECUTIVE') managerData.salesExecCount += data.count;
-          else if (data.roleCode === 'SOURCING_MANAGER') managerData.sourcingCount += data.count;
-          else if (data.roleCode === 'CLOSING_MANAGER') managerData.closingCount += data.count;
+          if (data.roleCode === 'PRE_SALES')
+            managerData.preSalesCount += data.count;
+          else if (data.roleCode === 'SALES_EXECUTIVE')
+            managerData.salesExecCount += data.count;
+          else if (data.roleCode === 'SOURCING_MANAGER')
+            managerData.sourcingCount += data.count;
+          else if (data.roleCode === 'CLOSING_MANAGER')
+            managerData.closingCount += data.count;
         }
       }
 
       // Send Manager Notifications
       for (const [managerId, counts] of managerAlertMap.entries()) {
-        const manager = await prisma.user.findUnique({ where: { id: managerId }, include: { role: true } });
+        const manager = await prisma.user.findUnique({
+          where: { id: managerId },
+          include: { role: true },
+        });
         if (!manager || !manager.role) continue;
 
         const roleCode = manager.role.code;
@@ -144,7 +157,11 @@ export class NotificationsCron {
             title: `Your team missed ${counts.preSalesCount} follow-ups yesterday.`,
             body: `Pre-Sales team: ${counts.preSalesCount} missed follow-ups from yesterday.`,
             actionUrl: `/dashboard/pre-sales-manager/lead-management?followUpDate=${yesterdayFormatted}`,
-            metadata: { count: counts.preSalesCount, department: 'PRE_SALES', date: yesterdayFormatted },
+            metadata: {
+              count: counts.preSalesCount,
+              department: 'PRE_SALES',
+              date: yesterdayFormatted,
+            },
           });
         }
 
@@ -155,7 +172,11 @@ export class NotificationsCron {
             title: `Your team missed ${counts.salesExecCount} follow-ups yesterday.`,
             body: `Sales Executive team: ${counts.salesExecCount} missed follow-ups from yesterday.`,
             actionUrl: `/dashboard/sales-manager/lead-management?followUpDate=${yesterdayFormatted}`,
-            metadata: { count: counts.salesExecCount, department: 'SALES_EXECUTIVE', date: yesterdayFormatted },
+            metadata: {
+              count: counts.salesExecCount,
+              department: 'SALES_EXECUTIVE',
+              date: yesterdayFormatted,
+            },
           });
         }
 
@@ -167,7 +188,11 @@ export class NotificationsCron {
               title: `Your Sourcing team missed ${counts.sourcingCount} follow-ups yesterday.`,
               body: `Sourcing team missed ${counts.sourcingCount} follow-ups from yesterday.`,
               actionUrl: `/dashboard/channel-partner/broker-management?followUpDate=${yesterdayFormatted}`,
-              metadata: { count: counts.sourcingCount, department: 'SOURCING_MANAGER', date: yesterdayFormatted },
+              metadata: {
+                count: counts.sourcingCount,
+                department: 'SOURCING_MANAGER',
+                date: yesterdayFormatted,
+              },
             });
           }
           if (counts.closingCount > 0) {
@@ -177,13 +202,19 @@ export class NotificationsCron {
               title: `Your Closing team missed ${counts.closingCount} follow-ups yesterday.`,
               body: `Closing team missed ${counts.closingCount} follow-ups from yesterday.`,
               actionUrl: `/channel-partner/customer-management?followUpDate=${yesterdayFormatted}`,
-              metadata: { count: counts.closingCount, department: 'CLOSING_MANAGER', date: yesterdayFormatted },
+              metadata: {
+                count: counts.closingCount,
+                department: 'CLOSING_MANAGER',
+                date: yesterdayFormatted,
+              },
             });
           }
         }
       }
 
-      this.logger.log(`Missed follow-up cron job completed successfully. Processed ${missedFollowUps.length} missed follow-ups.`);
+      this.logger.log(
+        `Missed follow-up cron job completed successfully. Processed ${missedFollowUps.length} missed follow-ups.`,
+      );
     } catch (error) {
       this.logger.error('Failed to run missed follow-up cron job', error);
     }
@@ -217,9 +248,9 @@ export class NotificationsCron {
           scheduledDate: {
             gte: tomorrow,
             lt: dayAfterTomorrow,
-          }
+          },
         },
-        include: { lead: true }
+        include: { lead: true },
       });
 
       if (upcomingVisits.length === 0) {
@@ -227,11 +258,21 @@ export class NotificationsCron {
         return;
       }
 
-      const execMap = new Map<string, { id: string, customerName: string, time: string }[]>();
+      const execMap = new Map<
+        string,
+        { id: string; customerName: string; time: string }[]
+      >();
 
       for (const sv of upcomingVisits) {
-        const customerName = sv.lead.lastName ? `${sv.lead.firstName} ${sv.lead.lastName}` : sv.lead.firstName;
-        const time = new Date(sv.scheduledDate).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+        const customerName = sv.lead.lastName
+          ? `${sv.lead.firstName} ${sv.lead.lastName}`
+          : sv.lead.firstName;
+        const time = new Date(sv.scheduledDate).toLocaleTimeString('en-IN', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+          timeZone: 'Asia/Kolkata',
+        });
 
         if (!execMap.has(sv.salesExecId)) {
           execMap.set(sv.salesExecId, []);
@@ -240,8 +281,11 @@ export class NotificationsCron {
       }
 
       for (const [salesExecId, visits] of execMap.entries()) {
-        const customerNames = visits.map(v => v.customerName).join(', ');
-        const bodyText = customerNames.length > 50 ? customerNames.substring(0, 47) + '...' : customerNames;
+        const customerNames = visits.map((v) => v.customerName).join(', ');
+        const bodyText =
+          customerNames.length > 50
+            ? customerNames.substring(0, 47) + '...'
+            : customerNames;
 
         await this.notificationsService.createNotification({
           userId: salesExecId,
@@ -252,11 +296,13 @@ export class NotificationsCron {
           metadata: {
             count: visits.length,
             siteVisits: visits,
-            date: tomorrowFormatted
-          }
+            date: tomorrowFormatted,
+          },
         });
       }
-      this.logger.log(`Sent tomorrow site visit reminders for ${upcomingVisits.length} visits to ${execMap.size} executives.`);
+      this.logger.log(
+        `Sent tomorrow site visit reminders for ${upcomingVisits.length} visits to ${execMap.size} executives.`,
+      );
     } catch (e) {
       this.logger.error('Failed to run tomorrow site visit reminder cron', e);
     }
@@ -268,7 +314,9 @@ export class NotificationsCron {
    */
   @Cron('25 01 * * *')
   async scheduleTodaySiteVisitArrivePush() {
-    this.logger.log('Scheduling today\'s exact-time site visit Arrive pushes...');
+    this.logger.log(
+      "Scheduling today's exact-time site visit Arrive pushes...",
+    );
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -282,9 +330,9 @@ export class NotificationsCron {
           scheduledDate: {
             gte: today,
             lt: tomorrow,
-          }
+          },
         },
-        include: { lead: true, project: true }
+        include: { lead: true, project: true },
       });
 
       let scheduledCount = 0;
@@ -304,11 +352,21 @@ export class NotificationsCron {
 
           const timeout = setTimeout(async () => {
             try {
-              const currentSv = await prisma.siteVisit.findUnique({ where: { id: sv.id }, include: { lead: true, project: true } });
+              const currentSv = await prisma.siteVisit.findUnique({
+                where: { id: sv.id },
+                include: { lead: true, project: true },
+              });
               if (!currentSv) return;
 
-              if (['ASSIGNED', 'SCHEDULED', 'CONFIRMED', 'IN_PROGRESS'].includes(currentSv.status) && !currentSv.arriveNotifSentAt) {
-                const customerName = currentSv.lead.lastName ? `${currentSv.lead.firstName} ${currentSv.lead.lastName}` : currentSv.lead.firstName;
+              if (
+                ['ASSIGNED', 'SCHEDULED', 'CONFIRMED', 'IN_PROGRESS'].includes(
+                  currentSv.status,
+                ) &&
+                !currentSv.arriveNotifSentAt
+              ) {
+                const customerName = currentSv.lead.lastName
+                  ? `${currentSv.lead.firstName} ${currentSv.lead.lastName}`
+                  : currentSv.lead.firstName;
 
                 await this.notificationsService.createNotification({
                   userId: currentSv.salesExecId,
@@ -321,18 +379,23 @@ export class NotificationsCron {
                     siteVisitId: currentSv.id,
                     customerName: customerName,
                     projectName: currentSv.project.name,
-                  }
+                  },
                 });
 
                 await prisma.siteVisit.update({
                   where: { id: sv.id },
-                  data: { arriveNotifSentAt: new Date() }
+                  data: { arriveNotifSentAt: new Date() },
                 });
 
-                this.logger.log(`Sent exact-time arrive push for SV ${currentSv.id}`);
+                this.logger.log(
+                  `Sent exact-time arrive push for SV ${currentSv.id}`,
+                );
               }
             } catch (err) {
-              this.logger.error(`Failed to execute arrive push for SV ${sv.id}`, err);
+              this.logger.error(
+                `Failed to execute arrive push for SV ${sv.id}`,
+                err,
+              );
             }
           }, delay);
 
@@ -342,7 +405,7 @@ export class NotificationsCron {
       }
       this.logger.log(`Scheduled ${scheduledCount} arrive pushes for today.`);
     } catch (e) {
-      this.logger.error('Failed to schedule today\'s site visit pushes', e);
+      this.logger.error("Failed to schedule today's site visit pushes", e);
     }
   }
 
@@ -361,7 +424,7 @@ export class NotificationsCron {
 
       const users = await prisma.user.findMany({
         where: { status: 'ACTIVE' },
-        select: { id: true, role: { select: { code: true } } }
+        select: { id: true, role: { select: { code: true } } },
       });
 
       let count = 0;
@@ -384,13 +447,15 @@ export class NotificationsCron {
             month: monthName,
             year: year,
             role: roleCode,
-            isManagerReport: roleCode.includes('MANAGER')
-          }
+            isManagerReport: roleCode.includes('MANAGER'),
+          },
         });
         count++;
       }
 
-      this.logger.log(`Sent monthly analytics reports to ${count} users for ${monthName} ${year}.`);
+      this.logger.log(
+        `Sent monthly analytics reports to ${count} users for ${monthName} ${year}.`,
+      );
     } catch (e) {
       this.logger.error('Failed to send monthly analytics reports', e);
     }
@@ -406,15 +471,29 @@ export class NotificationsCron {
     try {
       const today = new Date();
       // Calculate previous month's start and end
-      const endOfMonth = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const endOfMonth = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
+      const startOfMonth = new Date(
+        today.getFullYear(),
+        today.getMonth() - 1,
+        1,
+      );
 
-      const monthName = startOfMonth.toLocaleString('default', { month: 'long' });
+      const monthName = startOfMonth.toLocaleString('default', {
+        month: 'long',
+      });
       const year = startOfMonth.getFullYear();
 
       const users = await prisma.user.findMany({
         where: { status: 'ACTIVE' },
-        include: { role: true }
+        include: { role: true },
       });
 
       const usersByRole: Record<string, typeof users> = {};
@@ -431,11 +510,11 @@ export class NotificationsCron {
         roleCodeMap: Record<string, string>,
         getScore: (userId: string) => Promise<number>,
         managersToNotify: typeof users = [],
-        boardName: string = ''
+        boardName: string = '',
       ) => {
         if (targetUsers.length === 0) return;
 
-        const scores: { userId: string, name: string, score: number }[] = [];
+        const scores: { userId: string; name: string; score: number }[] = [];
         for (const u of targetUsers) {
           const score = await getScore(u.id);
           scores.push({ userId: u.id, name: (u.name || '').trim(), score });
@@ -446,21 +525,27 @@ export class NotificationsCron {
         const leaderboardMeta = scores.map((s, index) => ({
           rank: index + 1,
           name: s.name,
-          score: s.score
+          score: s.score,
         }));
 
         for (let i = 0; i < scores.length; i++) {
-          const userObj = targetUsers.find(u => u.id === scores[i].userId);
+          const userObj = targetUsers.find((u) => u.id === scores[i].userId);
           if (!userObj || !userObj.role) continue;
 
           const rank = i + 1;
           let title = '';
-          if (rank === 1) title = `🥇 You ranked #1 this month! Congratulations!`;
-          else if (rank === 2) title = `🥈 You ranked #2 this month. Great work!`;
-          else if (rank === 3) title = `🥉 You ranked #3 this month. Well done!`;
-          else title = `📊 You ranked #${rank} out of ${scores.length} this month.`;
+          if (rank === 1)
+            title = `🥇 You ranked #1 this month! Congratulations!`;
+          else if (rank === 2)
+            title = `🥈 You ranked #2 this month. Great work!`;
+          else if (rank === 3)
+            title = `🥉 You ranked #3 this month. Well done!`;
+          else
+            title = `📊 You ranked #${rank} out of ${scores.length} this month.`;
 
-          const actionUrl = roleCodeMap[userObj.role.code] || `/dashboard/${userObj.role.code.toLowerCase().replace('_', '-')}/analytics`;
+          const actionUrl =
+            roleCodeMap[userObj.role.code] ||
+            `/dashboard/${userObj.role.code.toLowerCase().replace('_', '-')}/analytics`;
 
           await this.notificationsService.createNotification({
             userId: scores[i].userId,
@@ -474,16 +559,23 @@ export class NotificationsCron {
               rank,
               totalInTeam: scores.length,
               metric: metricName,
-              score: scores[i].score
-            }
+              score: scores[i].score,
+            },
           });
         }
 
-        const top3Names = scores.slice(0, 3).map((s, idx) => `${idx + 1}. ${s.name}`).join(', ');
-        const managerBody = top3Names ? `Top 3: ${top3Names}` : `See your team's performance rankings.`;
+        const top3Names = scores
+          .slice(0, 3)
+          .map((s, idx) => `${idx + 1}. ${s.name}`)
+          .join(', ');
+        const managerBody = top3Names
+          ? `Top 3: ${top3Names}`
+          : `See your team's performance rankings.`;
 
         for (const mgr of managersToNotify) {
-          const actionUrl = roleCodeMap[mgr.role!.code] || `/dashboard/${mgr.role!.code.toLowerCase().replace('_', '-')}/analytics`;
+          const actionUrl =
+            roleCodeMap[mgr.role!.code] ||
+            `/dashboard/${mgr.role!.code.toLowerCase().replace('_', '-')}/analytics`;
 
           await this.notificationsService.createNotification({
             userId: mgr.id,
@@ -496,8 +588,8 @@ export class NotificationsCron {
               year,
               totalInTeam: scores.length,
               metric: metricName,
-              leaderboard: leaderboardMeta
-            }
+              leaderboard: leaderboardMeta,
+            },
           });
         }
       };
@@ -506,95 +598,140 @@ export class NotificationsCron {
       await sendLeaderboard(
         usersByRole['PRE_SALES'] || [],
         'follow-ups',
-        { 'PRE_SALES': '/dashboard/pre-sales/analytics', 'PRE_SALES_MANAGER': '/dashboard/pre-sales-manager/analytics' },
+        {
+          PRE_SALES: '/dashboard/pre-sales/analytics',
+          PRE_SALES_MANAGER: '/dashboard/pre-sales-manager/analytics',
+        },
         async (userId) => {
           return prisma.followUp.count({
-            where: { userId, status: 'COMPLETED', updatedAt: { gte: startOfMonth, lte: endOfMonth } }
+            where: {
+              userId,
+              status: 'COMPLETED',
+              updatedAt: { gte: startOfMonth, lte: endOfMonth },
+            },
           });
         },
         usersByRole['PRE_SALES_MANAGER'] || [],
-        'Pre-Sales'
+        'Pre-Sales',
       );
 
       // 2. SALES_EXECUTIVE
       await sendLeaderboard(
         usersByRole['SALES_EXECUTIVE'] || [],
         'bookings',
-        { 'SALES_EXECUTIVE': '/dashboard/sales-executive/analytics', 'SALES_MANAGER': '/dashboard/sales-manager/analytics' },
+        {
+          SALES_EXECUTIVE: '/dashboard/sales-executive/analytics',
+          SALES_MANAGER: '/dashboard/sales-manager/analytics',
+        },
         async (userId) => {
           return prisma.booking.count({
-            where: { salesExecId: userId, createdAt: { gte: startOfMonth, lte: endOfMonth } }
+            where: {
+              salesExecId: userId,
+              createdAt: { gte: startOfMonth, lte: endOfMonth },
+            },
           });
         },
         usersByRole['SALES_MANAGER'] || [],
-        'Sales Executive'
+        'Sales Executive',
       );
 
       // 3. POST_SALES
       await sendLeaderboard(
         usersByRole['POST_SALES'] || [],
         'handovers',
-        { 'POST_SALES': '/dashboard/post-sales/analytics' },
+        { POST_SALES: '/dashboard/post-sales/analytics' },
         async (userId) => {
           return prisma.possessionHandover.count({
-            where: { handoverById: userId, status: 'HANDED_OVER', updatedAt: { gte: startOfMonth, lte: endOfMonth } }
+            where: {
+              handoverById: userId,
+              status: 'HANDED_OVER',
+              updatedAt: { gte: startOfMonth, lte: endOfMonth },
+            },
           });
-        }
+        },
       );
 
       // 4. SOURCING_MANAGER
       await sendLeaderboard(
         usersByRole['SOURCING_MANAGER'] || [],
         'deals_sourced',
-        { 'SOURCING_MANAGER': '/dashboard/sourcing-manager/analytics', 'CHANNEL_PARTNER': '/dashboard/channel-partner/analytics' },
+        {
+          SOURCING_MANAGER: '/dashboard/sourcing-manager/analytics',
+          CHANNEL_PARTNER: '/dashboard/channel-partner/analytics',
+        },
         async (userId) => {
           return prisma.booking.count({
             where: {
               createdAt: { gte: startOfMonth, lte: endOfMonth },
-              customer: { lead: { broker: { sourcingManagerId: userId } } }
-            }
+              customer: { lead: { broker: { sourcingManagerId: userId } } },
+            },
           });
         },
         usersByRole['CHANNEL_PARTNER'] || [],
-        'Sourcing Manager'
+        'Sourcing Manager',
       );
 
       // 5. CLOSING_MANAGER
       await sendLeaderboard(
         usersByRole['CLOSING_MANAGER'] || [],
         'cp_bookings',
-        { 'CLOSING_MANAGER': '/dashboard/closing-manager/analytics', 'CHANNEL_PARTNER': '/dashboard/channel-partner/analytics' },
+        {
+          CLOSING_MANAGER: '/dashboard/closing-manager/analytics',
+          CHANNEL_PARTNER: '/dashboard/channel-partner/analytics',
+        },
         async (userId) => {
           return prisma.booking.count({
             where: {
               createdAt: { gte: startOfMonth, lte: endOfMonth },
               unit: { floor: { tower: { project: { isCpProject: true } } } },
               OR: [
-                { unit: { floor: { tower: { towerAssignments: { some: { userId, role: 'CLOSING_MANAGER' } } } } } },
-                { unit: { floor: { tower: { project: { projectAssignments: { some: { userId, role: 'CLOSING_MANAGER' } } } } } } }
-              ]
-            }
+                {
+                  unit: {
+                    floor: {
+                      tower: {
+                        towerAssignments: {
+                          some: { userId, role: 'CLOSING_MANAGER' },
+                        },
+                      },
+                    },
+                  },
+                },
+                {
+                  unit: {
+                    floor: {
+                      tower: {
+                        project: {
+                          projectAssignments: {
+                            some: { userId, role: 'CLOSING_MANAGER' },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              ],
+            },
           });
         },
         usersByRole['CHANNEL_PARTNER'] || [],
-        'Closing Manager'
+        'Closing Manager',
       );
 
       // 6. Sourcing Manager's Broker Leaderboard
       const sourcingManagers = usersByRole['SOURCING_MANAGER'] || [];
       for (const sm of sourcingManagers) {
         const smBrokers = await prisma.broker.findMany({
-          where: { sourcingManagerId: sm.id, status: 'ACTIVE' }
+          where: { sourcingManagerId: sm.id, status: 'ACTIVE' },
         });
 
         if (smBrokers.length > 0) {
-          const scores: { id: string, name: string, score: number }[] = [];
+          const scores: { id: string; name: string; score: number }[] = [];
           for (const broker of smBrokers) {
             const bookings = await prisma.booking.count({
               where: {
                 createdAt: { gte: startOfMonth, lte: endOfMonth },
-                customer: { lead: { brokerId: broker.id } }
-              }
+                customer: { lead: { brokerId: broker.id } },
+              },
             });
             scores.push({ id: broker.id, name: broker.name, score: bookings });
           }
@@ -603,11 +740,16 @@ export class NotificationsCron {
           const leaderboardMeta = scores.map((s, idx) => ({
             rank: idx + 1,
             name: s.name,
-            score: s.score
+            score: s.score,
           }));
 
-          const top3Brokers = scores.slice(0, 3).map((s, idx) => `${idx + 1}. ${s.name}`).join(', ');
-          const brokerManagerBody = top3Brokers ? `Top 3 Brokers: ${top3Brokers}` : `See how your active brokers ranked.`;
+          const top3Brokers = scores
+            .slice(0, 3)
+            .map((s, idx) => `${idx + 1}. ${s.name}`)
+            .join(', ');
+          const brokerManagerBody = top3Brokers
+            ? `Top 3 Brokers: ${top3Brokers}`
+            : `See how your active brokers ranked.`;
 
           await this.notificationsService.createNotification({
             userId: sm.id,
@@ -620,8 +762,8 @@ export class NotificationsCron {
               year,
               totalInTeam: scores.length,
               metric: 'broker_bookings',
-              leaderboard: leaderboardMeta
-            }
+              leaderboard: leaderboardMeta,
+            },
           });
         }
       }

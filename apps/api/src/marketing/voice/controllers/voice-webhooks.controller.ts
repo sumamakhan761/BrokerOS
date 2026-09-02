@@ -1,4 +1,16 @@
-import { Controller, Post, Get, Param, Headers, Body, Query, Header, HttpStatus, HttpCode, Res } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Headers,
+  Body,
+  Query,
+  Header,
+  HttpStatus,
+  HttpCode,
+  Res,
+} from '@nestjs/common';
 import { Public } from '@thallesp/nestjs-better-auth';
 import type { Response } from 'express';
 import { VoiceTrackingService } from '../services/voice-tracking.service.js';
@@ -8,7 +20,7 @@ import type { VoiceAgentPlatform } from '@brokeros/types';
 @Public()
 @Controller('api/marketing/voice/webhooks')
 export class VoiceWebhooksController {
-  constructor(private readonly trackingService: VoiceTrackingService) { }
+  constructor(private readonly trackingService: VoiceTrackingService) {}
 
   @Get('vobiz-answer')
   @Post('vobiz-answer')

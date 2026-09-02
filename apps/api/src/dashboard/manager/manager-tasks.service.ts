@@ -1,4 +1,9 @@
-import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { CreateTaskDto, UpdateTaskDto } from '../core/dto/dashboard.dto.js';
 
@@ -55,7 +60,9 @@ export class ManagerTasksService {
       },
       include: {
         assignees: {
-          include: { user: { select: { id: true, name: true, username: true } } },
+          include: {
+            user: { select: { id: true, name: true, username: true } },
+          },
         },
       },
     });
@@ -66,19 +73,17 @@ export class ManagerTasksService {
    * - coldCallTarget: can increase or decrease
    * - backlogOverride: manager can only set it to a value <= current computed backlog (decrease only enforced in UI)
    */
-  async updateTask(
-    taskId: string,
-    managerId: string,
-    data: UpdateTaskDto,
-  ) {
+  async updateTask(taskId: string, managerId: string, data: UpdateTaskDto) {
     const task = await this.prisma.managerTask.findUnique({
       where: { id: taskId },
       select: { managerId: true, isActive: true },
     });
 
     if (!task) throw new NotFoundException('Task not found');
-    if (task.managerId !== managerId) throw new ForbiddenException('Not your task');
-    if (!task.isActive) throw new BadRequestException('Task is no longer active');
+    if (task.managerId !== managerId)
+      throw new ForbiddenException('Not your task');
+    if (!task.isActive)
+      throw new BadRequestException('Task is no longer active');
 
     // Update cold call target on the task itself or as a specific user override
     if (data.coldCallTarget !== undefined) {
@@ -114,7 +119,8 @@ export class ManagerTasksService {
     });
 
     if (!task) throw new NotFoundException('Task not found');
-    if (task.managerId !== managerId) throw new ForbiddenException('Not your task');
+    if (task.managerId !== managerId)
+      throw new ForbiddenException('Not your task');
 
     await this.prisma.managerTask.update({
       where: { id: taskId },
@@ -130,7 +136,9 @@ export class ManagerTasksService {
       where: { managerId, isActive: true },
       include: {
         assignees: {
-          include: { user: { select: { id: true, name: true, username: true } } },
+          include: {
+            user: { select: { id: true, name: true, username: true } },
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -153,7 +161,8 @@ export class ManagerTasksService {
       orderBy: { createdAt: 'desc' },
     });
 
-    if (!assignment) return { coldCallTarget: 100, backlogOverride: null, hasTask: false };
+    if (!assignment)
+      return { coldCallTarget: 100, backlogOverride: null, hasTask: false };
 
     return {
       coldCallTarget: assignment.task.coldCallTarget,

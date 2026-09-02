@@ -11,7 +11,11 @@ export class PreSalesDailyTasksService {
   async getDailyTasks(userId: string) {
     const { start: todayStart, end: todayEnd } = getTodayRange();
 
-    const { target: coldCallDailyTarget, taskId, taskUserId } = await this.resolveColdCallTarget(userId);
+    const {
+      target: coldCallDailyTarget,
+      taskId,
+      taskUserId,
+    } = await this.resolveColdCallTarget(userId);
 
     const [
       coldCallsDone,
@@ -81,7 +85,9 @@ export class PreSalesDailyTasksService {
   }
 
   /** Resolves the cold call daily target and task details from an active manager task. */
-  private async resolveColdCallTarget(userId: string): Promise<{ target: number; taskId?: string; taskUserId?: string }> {
+  private async resolveColdCallTarget(
+    userId: string,
+  ): Promise<{ target: number; taskId?: string; taskUserId?: string }> {
     const assignment = await this.prisma.managerTaskUser.findFirst({
       where: { userId, task: { isActive: true } },
       include: { task: { select: { coldCallTarget: true } } },
@@ -131,7 +137,10 @@ export class PreSalesDailyTasksService {
         select: { id: true },
       });
 
-      if (!earlierCall && (lead?.status === 'NEW' || lead?.status === 'CONTACTED')) {
+      if (
+        !earlierCall &&
+        (lead?.status === 'NEW' || lead?.status === 'CONTACTED')
+      ) {
         coldCallCount++;
       }
     }
@@ -183,7 +192,10 @@ export class PreSalesDailyTasksService {
       totalBacklog += shortfall;
     }
 
-    const totalCleared = logs.reduce((sum, log) => sum + log.coldCallBacklogCleared, 0);
+    const totalCleared = logs.reduce(
+      (sum, log) => sum + log.coldCallBacklogCleared,
+      0,
+    );
     return Math.max(0, totalBacklog - totalCleared);
   }
 

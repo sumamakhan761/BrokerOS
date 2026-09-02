@@ -1,6 +1,18 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+} from '@nestjs/common';
 import { SiteVisitsService } from './site-visits.service.js';
-import { CreateSiteVisitDto, UpdateSiteVisitDto, ArriveSiteVisitDto } from './dto/site-visit.dto.js';
+import {
+  CreateSiteVisitDto,
+  UpdateSiteVisitDto,
+  ArriveSiteVisitDto,
+} from './dto/site-visit.dto.js';
 
 @Controller('api/leads')
 export class SiteVisitsController {
@@ -35,7 +47,7 @@ export class SiteVisitsController {
   @Patch(':id/site-visits/:siteVisitId/arrive')
   arriveAtSiteVisit(
     @Param('siteVisitId') siteVisitId: string,
-    @Body() locationData: ArriveSiteVisitDto
+    @Body() locationData: ArriveSiteVisitDto,
   ) {
     return this.siteVisitsService.arriveAtSiteVisit(siteVisitId, locationData);
   }

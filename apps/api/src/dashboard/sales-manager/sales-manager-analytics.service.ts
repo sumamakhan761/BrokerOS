@@ -3,10 +3,11 @@ import { PrismaService } from '../../lib/database/prisma.service.js';
 
 @Injectable()
 export class SalesManagerAnalyticsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   private getDateBoundary(timeRange?: string): Date | undefined {
-    if (!timeRange || timeRange === 'all-time' || timeRange === 'all') return undefined;
+    if (!timeRange || timeRange === 'all-time' || timeRange === 'all')
+      return undefined;
     const now = new Date();
     const boundary = new Date();
     boundary.setHours(0, 0, 0, 0);
@@ -25,15 +26,29 @@ export class SalesManagerAnalyticsService {
       where: { managerId, status: 'ACTIVE' },
       select: { id: true },
     });
-    return subs.map(s => s.id);
+    return subs.map((s) => s.id);
   }
 
   async getDetailedMetrics(userIds: string[], timeRange?: string) {
     if (userIds.length === 0) {
       return {
-        salesFunnel: { assignedCustomers: 0, siteVisitsScheduled: 0, siteVisitsCompleted: 0, negotiations: 0, confirmedBookings: 0, conversionRate: "0.0" },
+        salesFunnel: {
+          assignedCustomers: 0,
+          siteVisitsScheduled: 0,
+          siteVisitsCompleted: 0,
+          negotiations: 0,
+          confirmedBookings: 0,
+          conversionRate: '0.0',
+        },
         teamAnalytics: { followUpsCompleted: 0, pendingSiteVisits: 0 },
-        revenueAnalytics: { daily: 0, weekly: 0, monthly: 0, quarterly: 0, averageBookingValue: 0, trend: [] }
+        revenueAnalytics: {
+          daily: 0,
+          weekly: 0,
+          monthly: 0,
+          quarterly: 0,
+          averageBookingValue: 0,
+          trend: [],
+        },
       };
     }
 
@@ -43,7 +58,11 @@ export class SalesManagerAnalyticsService {
     const now = new Date();
 
     // Date boundaries
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
 
     const startOfWeek = new Date(startOfToday);
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday as start of week
@@ -54,23 +73,55 @@ export class SalesManagerAnalyticsService {
     const startOfQuarter = new Date(now.getFullYear(), currentQuarter * 3, 1);
 
     // 1. Sales Funnel & Team Analytics Base Queries
-    const assignedCustomersCount = await this.prisma.lead.count({ where: { assignedUserId: { in: userIds }, createdAt: dateFilter } });
-    const siteVisitsScheduled = await this.prisma.siteVisit.count({ where: { salesExecId: { in: userIds }, status: { in: ['ASSIGNED', 'SCHEDULED'] }, scheduledDate: dateFilter } });
-    const siteVisitsCompleted = await this.prisma.siteVisit.count({ where: { salesExecId: { in: userIds }, status: 'COMPLETED', scheduledDate: dateFilter } });
-    const negotiationsCount = await this.prisma.approvalRequest.count({ where: { salesExecId: { in: userIds }, createdAt: dateFilter } });
+    const assignedCustomersCount = await this.prisma.lead.count({
+      where: { assignedUserId: { in: userIds }, createdAt: dateFilter },
+    });
+    const siteVisitsScheduled = await this.prisma.siteVisit.count({
+      where: {
+        salesExecId: { in: userIds },
+        status: { in: ['ASSIGNED', 'SCHEDULED'] },
+        scheduledDate: dateFilter,
+      },
+    });
+    const siteVisitsCompleted = await this.prisma.siteVisit.count({
+      where: {
+        salesExecId: { in: userIds },
+        status: 'COMPLETED',
+        scheduledDate: dateFilter,
+      },
+    });
+    const negotiationsCount = await this.prisma.approvalRequest.count({
+      where: { salesExecId: { in: userIds }, createdAt: dateFilter },
+    });
 
-    const followUpsCompleted = await this.prisma.followUp.count({ where: { userId: { in: userIds }, status: 'COMPLETED', updatedAt: dateFilter } });
+    const followUpsCompleted = await this.prisma.followUp.count({
+      where: {
+        userId: { in: userIds },
+        status: 'COMPLETED',
+        updatedAt: dateFilter,
+      },
+    });
 
     const confirmedBookings = await this.prisma.booking.findMany({
-      where: { salesExecId: { in: userIds }, status: 'CONFIRMED', bookingDate: dateFilter },
-      select: { agreedPrice: true, bookingDate: true }
+      where: {
+        salesExecId: { in: userIds },
+        status: 'CONFIRMED',
+        bookingDate: dateFilter,
+      },
+      select: { agreedPrice: true, bookingDate: true },
     });
 
     const confirmedBookingsCount = confirmedBookings.length;
-    const conversionRate = assignedCustomersCount > 0 ? ((confirmedBookingsCount / assignedCustomersCount) * 100).toFixed(1) : "0.0";
+    const conversionRate =
+      assignedCustomersCount > 0
+        ? ((confirmedBookingsCount / assignedCustomersCount) * 100).toFixed(1)
+        : '0.0';
 
     // 2. Revenue Analytics Calculations
-    let daily = 0, weekly = 0, monthly = 0, quarterly = 0;
+    let daily = 0,
+      weekly = 0,
+      monthly = 0,
+      quarterly = 0;
     let totalRevenue = 0;
 
     // Trend grouping: let's group by last 7 days for a quick sparkline trend
@@ -81,7 +132,7 @@ export class SalesManagerAnalyticsService {
       trendMap.set(d.toISOString().split('T')[0], 0);
     }
 
-    confirmedBookings.forEach(b => {
+    confirmedBookings.forEach((b) => {
       const p = Number(b.agreedPrice || 0);
       const d = new Date(b.bookingDate);
 
@@ -99,8 +150,12 @@ export class SalesManagerAnalyticsService {
       }
     });
 
-    const averageBookingValue = confirmedBookingsCount > 0 ? totalRevenue / confirmedBookingsCount : 0;
-    const trend = Array.from(trendMap.entries()).map(([date, value]) => ({ name: date, value }));
+    const averageBookingValue =
+      confirmedBookingsCount > 0 ? totalRevenue / confirmedBookingsCount : 0;
+    const trend = Array.from(trendMap.entries()).map(([date, value]) => ({
+      name: date,
+      value,
+    }));
 
     return {
       salesFunnel: {
@@ -109,11 +164,11 @@ export class SalesManagerAnalyticsService {
         siteVisitsCompleted,
         negotiations: negotiationsCount,
         confirmedBookings: confirmedBookingsCount,
-        conversionRate
+        conversionRate,
       },
       teamAnalytics: {
         followUpsCompleted,
-        pendingSiteVisits: siteVisitsScheduled // re-using the same count for Pending UI
+        pendingSiteVisits: siteVisitsScheduled, // re-using the same count for Pending UI
       },
       revenueAnalytics: {
         daily,
@@ -121,13 +176,20 @@ export class SalesManagerAnalyticsService {
         monthly,
         quarterly,
         averageBookingValue,
-        trend
-      }
+        trend,
+      },
     };
   }
 
   async getTeamFinancialMetrics(userIds: string[], timeRange?: string) {
-    if (userIds.length === 0) return { totalRevenue: 0, realizedCommission: 0, projectedCommission: 0, averageTicketSize: 0, activeDeals: 0 };
+    if (userIds.length === 0)
+      return {
+        totalRevenue: 0,
+        realizedCommission: 0,
+        projectedCommission: 0,
+        averageTicketSize: 0,
+        activeDeals: 0,
+      };
 
     const startDate = this.getDateBoundary(timeRange);
     const dateFilter = startDate ? { gte: startDate } : undefined;
@@ -136,11 +198,11 @@ export class SalesManagerAnalyticsService {
       where: {
         salesExecId: { in: userIds },
         status: { in: ['CONFIRMED'] },
-        bookingDate: dateFilter
+        bookingDate: dateFilter,
       },
       include: {
-        unit: true
-      }
+        unit: true,
+      },
     });
 
     let totalRevenue = 0;
@@ -164,7 +226,7 @@ export class SalesManagerAnalyticsService {
 
     // Active deals (Reservations + Negotiations)
     const reservedUnits = await this.prisma.unit.count({
-      where: { reservedForId: { in: userIds }, status: 'RESERVED' }
+      where: { reservedForId: { in: userIds }, status: 'RESERVED' },
     });
 
     return {
@@ -172,45 +234,58 @@ export class SalesManagerAnalyticsService {
       realizedCommission,
       projectedCommission,
       averageTicketSize,
-      activeDeals: reservedUnits
+      activeDeals: reservedUnits,
     };
   }
 
   async getTeamFunnelMetrics(userIds: string[], timeRange?: string) {
-    if (userIds.length === 0) return { leads: 0, siteVisits: 0, negotiations: 0, reserved: 0, sold: 0, conversionRate: "0.0" };
+    if (userIds.length === 0)
+      return {
+        leads: 0,
+        siteVisits: 0,
+        negotiations: 0,
+        reserved: 0,
+        sold: 0,
+        conversionRate: '0.0',
+      };
 
     const startDate = this.getDateBoundary(timeRange);
     const dateFilter = startDate ? { gte: startDate } : undefined;
 
     const totalLeads = await this.prisma.lead.count({
-      where: { assignedUserId: { in: userIds }, createdAt: dateFilter }
+      where: { assignedUserId: { in: userIds }, createdAt: dateFilter },
     });
 
     const siteVisits = await this.prisma.siteVisit.count({
-      where: { salesExecId: { in: userIds }, scheduledDate: dateFilter }
+      where: { salesExecId: { in: userIds }, scheduledDate: dateFilter },
     });
 
     const negotiations = await this.prisma.approvalRequest.count({
-      where: { salesExecId: { in: userIds }, createdAt: dateFilter }
+      where: { salesExecId: { in: userIds }, createdAt: dateFilter },
     });
 
     const reservedUnits = await this.prisma.unit.count({
-      where: { reservedForId: { in: userIds }, status: 'RESERVED' }
+      where: { reservedForId: { in: userIds }, status: 'RESERVED' },
     });
 
     const soldBookings = await this.prisma.booking.findMany({
-      where: { salesExecId: { in: userIds }, status: 'CONFIRMED', bookingDate: dateFilter },
-      include: { unit: true }
+      where: {
+        salesExecId: { in: userIds },
+        status: 'CONFIRMED',
+        bookingDate: dateFilter,
+      },
+      include: { unit: true },
     });
 
     let soldCount = 0;
-    soldBookings.forEach(b => {
+    soldBookings.forEach((b) => {
       if (b.unit && b.unit.status === 'SOLD') {
         soldCount++;
       }
     });
 
-    const conversionRate = totalLeads > 0 ? ((soldCount / totalLeads) * 100).toFixed(1) : "0.0";
+    const conversionRate =
+      totalLeads > 0 ? ((soldCount / totalLeads) * 100).toFixed(1) : '0.0';
 
     return {
       leads: totalLeads,
@@ -218,7 +293,7 @@ export class SalesManagerAnalyticsService {
       negotiations,
       reserved: reservedUnits,
       sold: soldCount,
-      conversionRate
+      conversionRate,
     };
   }
 
@@ -230,26 +305,38 @@ export class SalesManagerAnalyticsService {
 
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
-      select: { id: true, name: true, image: true }
+      select: { id: true, name: true, image: true },
     });
 
     const leaderboard: any[] = [];
 
     for (const user of users) {
-      const siteVisits = await this.prisma.siteVisit.count({ where: { salesExecId: user.id, scheduledDate: dateFilter } });
-      const bookings = await this.prisma.booking.findMany({ where: { salesExecId: user.id, status: 'CONFIRMED', bookingDate: dateFilter }, include: { unit: true } });
-      const leadsAssigned = await this.prisma.lead.count({ where: { assignedUserId: user.id, createdAt: dateFilter } });
+      const siteVisits = await this.prisma.siteVisit.count({
+        where: { salesExecId: user.id, scheduledDate: dateFilter },
+      });
+      const bookings = await this.prisma.booking.findMany({
+        where: {
+          salesExecId: user.id,
+          status: 'CONFIRMED',
+          bookingDate: dateFilter,
+        },
+        include: { unit: true },
+      });
+      const leadsAssigned = await this.prisma.lead.count({
+        where: { assignedUserId: user.id, createdAt: dateFilter },
+      });
 
       let revenue = 0;
       let unitsSold = 0;
-      bookings.forEach(b => {
+      bookings.forEach((b) => {
         if (b.unit?.status === 'SOLD') {
           revenue += Number(b.agreedPrice || 0);
           unitsSold++;
         }
       });
 
-      const conversionRate = leadsAssigned > 0 ? (unitsSold / leadsAssigned) * 100 : 0;
+      const conversionRate =
+        leadsAssigned > 0 ? (unitsSold / leadsAssigned) * 100 : 0;
 
       leaderboard.push({
         id: user.id,
@@ -261,12 +348,14 @@ export class SalesManagerAnalyticsService {
         activeNegotiations: 0, // Placeholder
         score: revenue > 0 ? (revenue / 1000000).toFixed(1) + 'M' : '0', // Added score
         rank: 0, // Placeholder, will assign during sort
-        conversionRate: conversionRate.toFixed(1)
+        conversionRate: conversionRate.toFixed(1),
       });
     }
 
     const sorted = leaderboard.sort((a, b) => b.revenue - a.revenue);
-    sorted.forEach((agent, index) => { agent.rank = index + 1; });
+    sorted.forEach((agent, index) => {
+      agent.rank = index + 1;
+    });
     return sorted;
   }
 
@@ -275,10 +364,12 @@ export class SalesManagerAnalyticsService {
     const userIds = [managerId, ...subs];
 
     const assignments = await this.prisma.towerAssignment.findMany({
-      where: { userId: { in: userIds } }
+      where: { userId: { in: userIds } },
     });
 
-    const assignedTowerIds = Array.from(new Set(assignments.map(a => a.towerId)));
+    const assignedTowerIds = Array.from(
+      new Set(assignments.map((a) => a.towerId)),
+    );
 
     // Fetch projects that are either assigned OR just fetch all internal projects (isCpProject: false) if there are no assignments.
     // Strictly isolate CP projects so Sales Managers never see them.
@@ -294,7 +385,8 @@ export class SalesManagerAnalyticsService {
         id: true,
         name: true,
         towers: {
-          where: assignedTowerIds.length > 0 ? { id: { in: assignedTowerIds } } : {},
+          where:
+            assignedTowerIds.length > 0 ? { id: { in: assignedTowerIds } } : {},
           select: {
             id: true,
             name: true,
@@ -309,39 +401,46 @@ export class SalesManagerAnalyticsService {
                     unitNumber: true,
                     type: true,
                     facing: true,
-                    status: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                    status: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     const teamBookings = await this.prisma.booking.findMany({
       where: { salesExecId: { in: userIds }, status: 'CONFIRMED' },
-      include: { unit: true }
+      include: { unit: true },
     });
 
     const salesByType: Record<string, number> = {};
     const salesByFacing: Record<string, number> = {};
 
-    teamBookings.forEach(b => {
+    teamBookings.forEach((b) => {
       if (b.unit) {
         if (b.unit.type) {
           salesByType[b.unit.type] = (salesByType[b.unit.type] || 0) + 1;
         }
         if (b.unit.facing) {
-          salesByFacing[b.unit.facing] = (salesByFacing[b.unit.facing] || 0) + 1;
+          salesByFacing[b.unit.facing] =
+            (salesByFacing[b.unit.facing] || 0) + 1;
         }
       }
     });
 
     return {
       projects,
-      salesByType: Object.keys(salesByType).map(name => ({ name, value: salesByType[name] })),
-      salesByFacing: Object.keys(salesByFacing).map(name => ({ name, value: salesByFacing[name] }))
+      salesByType: Object.keys(salesByType).map((name) => ({
+        name,
+        value: salesByType[name],
+      })),
+      salesByFacing: Object.keys(salesByFacing).map((name) => ({
+        name,
+        value: salesByFacing[name],
+      })),
     };
   }
 }

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-jest.mock('@brokeros/prisma', () => ({ PrismaClient: class { } }));
-jest.mock('expo-server-sdk', () => ({ Expo: class { } }));
+jest.mock('@brokeros/prisma', () => ({ PrismaClient: class {} }));
+jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 import { LeadsService } from './leads.service.js';
 import { LeadsQueryService } from './leads-query.service.js';
 import { LeadsManagementService } from './leads-management.service.js';
@@ -13,8 +13,20 @@ describe('LeadsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LeadsService,
-        { provide: LeadsQueryService, useValue: { findAll: jest.fn(), findOne: jest.fn() } },
-        { provide: LeadsManagementService, useValue: { bulkCreate: jest.fn(), assignLeads: jest.fn(), updateStatus: jest.fn(), create: jest.fn(), update: jest.fn() } },
+        {
+          provide: LeadsQueryService,
+          useValue: { findAll: jest.fn(), findOne: jest.fn() },
+        },
+        {
+          provide: LeadsManagementService,
+          useValue: {
+            bulkCreate: jest.fn(),
+            assignLeads: jest.fn(),
+            updateStatus: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+          },
+        },
         { provide: LeadsMediaService, useValue: { uploadAvatar: jest.fn() } },
       ],
     }).compile();

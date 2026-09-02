@@ -4,7 +4,7 @@ import { getMonthRange } from '../core/dashboard.utils.js';
 
 @Injectable()
 export class SalesExecLeaderboardService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /** Monthly leaderboard for the whole sales executive department */
   async getSalesExecLeaderboard(userId: string) {

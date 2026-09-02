@@ -19,13 +19,19 @@ describe('InventoryUnitsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [InventoryUnitsService, { provide: PrismaService, useValue: mockPrisma }],
+      providers: [
+        InventoryUnitsService,
+        { provide: PrismaService, useValue: mockPrisma },
+      ],
     }).compile();
     service = module.get(InventoryUnitsService);
   });
 
   it('should update unit status', async () => {
-    mockPrisma.unit.findUnique.mockResolvedValue({ id: 'u-1', status: 'AVAILABLE' });
+    mockPrisma.unit.findUnique.mockResolvedValue({
+      id: 'u-1',
+      status: 'AVAILABLE',
+    });
     mockPrisma.unit.update.mockResolvedValue({ id: 'u-1', status: 'RESERVED' });
     const dto = { status: 'RESERVED' } as UpdateUnitStatusDto;
     const res = await service.updateUnitStatus('u-1', dto, 'user-1');

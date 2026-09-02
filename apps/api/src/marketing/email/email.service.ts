@@ -26,7 +26,7 @@ export class EmailService {
     private readonly analyticsService: EmailAnalyticsService,
     private readonly integrationsService: EmailIntegrationsService,
     private readonly trackingService: EmailTrackingService,
-  ) { }
+  ) {}
 
   // ── FACADE DELEGATIONS ──
 
@@ -34,7 +34,9 @@ export class EmailService {
     return this.integrationsService.getAdapter(providerType);
   }
 
-  async previewAudience(dto: PreviewAudienceDto): Promise<AudienceEstimationResult> {
+  async previewAudience(
+    dto: PreviewAudienceDto,
+  ): Promise<AudienceEstimationResult> {
     return this.audienceService.previewAudience(dto);
   }
 
@@ -42,7 +44,9 @@ export class EmailService {
     return this.audienceService.promoteCsvRecipientToLead(recipientId, userId);
   }
 
-  async getCampaignAnalytics(campaignId: string): Promise<CampaignAnalyticsSummary> {
+  async getCampaignAnalytics(
+    campaignId: string,
+  ): Promise<CampaignAnalyticsSummary> {
     return this.analyticsService.getCampaignAnalytics(campaignId);
   }
 
@@ -73,12 +77,34 @@ export class EmailService {
     return this.integrationsService.deleteIntegration(id);
   }
 
-  async recordOpenEvent(campaignId: string, recipientId: string, ip?: string, userAgent?: string) {
-    return this.trackingService.recordOpenEvent(campaignId, recipientId, ip, userAgent);
+  async recordOpenEvent(
+    campaignId: string,
+    recipientId: string,
+    ip?: string,
+    userAgent?: string,
+  ) {
+    return this.trackingService.recordOpenEvent(
+      campaignId,
+      recipientId,
+      ip,
+      userAgent,
+    );
   }
 
-  async recordClickEvent(campaignId: string, recipientId: string, url: string, ip?: string, userAgent?: string) {
-    return this.trackingService.recordClickEvent(campaignId, recipientId, url, ip, userAgent);
+  async recordClickEvent(
+    campaignId: string,
+    recipientId: string,
+    url: string,
+    ip?: string,
+    userAgent?: string,
+  ) {
+    return this.trackingService.recordClickEvent(
+      campaignId,
+      recipientId,
+      url,
+      ip,
+      userAgent,
+    );
   }
 
   async recordUnsubscribe(email: string, campaignId?: string, reason?: string) {
@@ -106,7 +132,12 @@ export class EmailService {
   }
 
   private async resolveForeignKeys(
-    dto: { templateId?: string; projectId?: string; integrationId?: string; providerType?: string },
+    dto: {
+      templateId?: string;
+      projectId?: string;
+      integrationId?: string;
+      providerType?: string;
+    },
     userId?: string,
   ) {
     let validTemplateId: string | null = null;
@@ -135,11 +166,12 @@ export class EmailService {
       });
       if (exists) validIntegrationId = exists.id;
     } else if (dto.providerType && dto.providerType !== 'SYSTEM_DEFAULT') {
-      const defaultIntegration = await this.prisma.marketingIntegration.findFirst({
-        where: { provider: dto.providerType as any, isActive: true },
-        orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
-        select: { id: true },
-      });
+      const defaultIntegration =
+        await this.prisma.marketingIntegration.findFirst({
+          where: { provider: dto.providerType as any, isActive: true },
+          orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+          select: { id: true },
+        });
       if (defaultIntegration) validIntegrationId = defaultIntegration.id;
     }
 
@@ -161,8 +193,12 @@ export class EmailService {
   }
 
   async saveDraftCampaign(dto: SaveDraftCampaignDto, userId?: string) {
-    const { templateId, projectId, integrationId, userId: validUserId } =
-      await this.resolveForeignKeys(dto, userId);
+    const {
+      templateId,
+      projectId,
+      integrationId,
+      userId: validUserId,
+    } = await this.resolveForeignKeys(dto, userId);
 
     if (dto.campaignId) {
       const existing = await this.prisma.marketingCampaign.findUnique({
@@ -178,16 +214,33 @@ export class EmailService {
             providerType: dto.providerType ?? existing.providerType,
             audienceSource: dto.audienceSource ?? existing.audienceSource,
             isCpCampaign: dto.isCpCampaign ?? existing.isCpCampaign,
-            projectId: dto.projectId !== undefined ? projectId : existing.projectId,
-            integrationId: dto.integrationId !== undefined ? integrationId : existing.integrationId,
-            templateId: dto.templateId !== undefined ? templateId : existing.templateId,
+            projectId:
+              dto.projectId !== undefined ? projectId : existing.projectId,
+            integrationId:
+              dto.integrationId !== undefined
+                ? integrationId
+                : existing.integrationId,
+            templateId:
+              dto.templateId !== undefined ? templateId : existing.templateId,
             subject: dto.subject !== undefined ? dto.subject : existing.subject,
-            fromName: dto.fromName !== undefined ? dto.fromName : existing.fromName,
-            fromEmail: dto.fromEmail !== undefined ? dto.fromEmail : existing.fromEmail,
-            replyTo: dto.replyTo !== undefined ? (dto.replyTo || null) : existing.replyTo,
-            htmlContent: dto.htmlContent !== undefined ? dto.htmlContent : existing.htmlContent,
-            audienceFilters: dto.audienceFilters ? (dto.audienceFilters as any) : existing.audienceFilters,
-            scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : existing.scheduledAt,
+            fromName:
+              dto.fromName !== undefined ? dto.fromName : existing.fromName,
+            fromEmail:
+              dto.fromEmail !== undefined ? dto.fromEmail : existing.fromEmail,
+            replyTo:
+              dto.replyTo !== undefined
+                ? dto.replyTo || null
+                : existing.replyTo,
+            htmlContent:
+              dto.htmlContent !== undefined
+                ? dto.htmlContent
+                : existing.htmlContent,
+            audienceFilters: dto.audienceFilters
+              ? (dto.audienceFilters as any)
+              : existing.audienceFilters,
+            scheduledAt: dto.scheduledAt
+              ? new Date(dto.scheduledAt)
+              : existing.scheduledAt,
           },
         });
       }
@@ -209,7 +262,9 @@ export class EmailService {
         fromEmail: dto.fromEmail || '',
         replyTo: dto.replyTo || null,
         htmlContent: dto.htmlContent || '',
-        audienceFilters: dto.audienceFilters ? (dto.audienceFilters as any) : undefined,
+        audienceFilters: dto.audienceFilters
+          ? (dto.audienceFilters as any)
+          : undefined,
         totalRecipients: 0,
         scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
         createdById: validUserId,
@@ -218,8 +273,12 @@ export class EmailService {
   }
 
   async createCampaign(dto: CreateCampaignDto, userId?: string) {
-    const { templateId, projectId, integrationId, userId: validUserId } =
-      await this.resolveForeignKeys(dto, userId);
+    const {
+      templateId,
+      projectId,
+      integrationId,
+      userId: validUserId,
+    } = await this.resolveForeignKeys(dto, userId);
 
     const audienceResult = await this.previewAudience({
       audienceSource: dto.audienceSource || 'CRM_DATABASE',
@@ -249,10 +308,18 @@ export class EmailService {
             integrationId,
             templateId,
             subject: dto.subject !== undefined ? dto.subject : existing.subject,
-            fromName: dto.fromName !== undefined ? dto.fromName : existing.fromName,
-            fromEmail: dto.fromEmail !== undefined ? dto.fromEmail : existing.fromEmail,
-            replyTo: dto.replyTo !== undefined ? (dto.replyTo || null) : existing.replyTo,
-            htmlContent: dto.htmlContent !== undefined ? dto.htmlContent : existing.htmlContent,
+            fromName:
+              dto.fromName !== undefined ? dto.fromName : existing.fromName,
+            fromEmail:
+              dto.fromEmail !== undefined ? dto.fromEmail : existing.fromEmail,
+            replyTo:
+              dto.replyTo !== undefined
+                ? dto.replyTo || null
+                : existing.replyTo,
+            htmlContent:
+              dto.htmlContent !== undefined
+                ? dto.htmlContent
+                : existing.htmlContent,
             audienceFilters: dto.audienceFilters as any,
             totalRecipients: audienceResult.finalAudienceCount,
             scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
@@ -292,9 +359,11 @@ export class EmailService {
     // Populate Recipients
     if (dto.audienceSource === 'CSV_UPLOAD' && dto.csvRecipients?.length) {
       const unsubscribedSet = new Set(
-        (await this.prisma.marketingUnsubscribe.findMany({ select: { email: true } })).map((u) =>
-          u.email.toLowerCase().trim(),
-        ),
+        (
+          await this.prisma.marketingUnsubscribe.findMany({
+            select: { email: true },
+          })
+        ).map((u) => u.email.toLowerCase().trim()),
       );
       const seenEmails = new Set<string>();
 
@@ -303,7 +372,8 @@ export class EmailService {
 
       for (const row of dto.csvRecipients) {
         const email = row.email?.toLowerCase().trim();
-        if (!email || seenEmails.has(email) || unsubscribedSet.has(email)) continue;
+        if (!email || seenEmails.has(email) || unsubscribedSet.has(email))
+          continue;
         seenEmails.add(email);
 
         recipientData.push({
@@ -361,9 +431,11 @@ export class EmailService {
       });
 
       const unsubscribedSet = new Set(
-        (await this.prisma.marketingUnsubscribe.findMany({ select: { email: true } })).map((u) =>
-          u.email.toLowerCase().trim(),
-        ),
+        (
+          await this.prisma.marketingUnsubscribe.findMany({
+            select: { email: true },
+          })
+        ).map((u) => u.email.toLowerCase().trim()),
       );
       const seenEmails = new Set<string>();
       const recipientData: any[] = [];
@@ -410,7 +482,7 @@ export class EmailService {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ campaignId }),
-    }).catch(() => { });
+    }).catch(() => {});
   }
 
   async dispatchCampaign(id: string) {
@@ -443,10 +515,16 @@ export class EmailService {
     if (query?.status) {
       if (query.status !== 'ALL') {
         where.status = query.status;
-      } else if (query?.includeDrafts !== 'true' && query?.includeDrafts !== true) {
+      } else if (
+        query?.includeDrafts !== 'true' &&
+        query?.includeDrafts !== true
+      ) {
         where.status = { not: 'DRAFT' };
       }
-    } else if (query?.includeDrafts !== 'true' && query?.includeDrafts !== true) {
+    } else if (
+      query?.includeDrafts !== 'true' &&
+      query?.includeDrafts !== true
+    ) {
       where.status = { not: 'DRAFT' };
     }
 
@@ -497,11 +575,17 @@ export class EmailService {
   }
 
   async deleteCampaign(id: string) {
-    const campaign = await this.prisma.marketingCampaign.findUnique({ where: { id } });
+    const campaign = await this.prisma.marketingCampaign.findUnique({
+      where: { id },
+    });
     if (!campaign) throw new NotFoundException('Campaign not found');
 
-    await this.prisma.emailTrackingEvent.deleteMany({ where: { campaignId: id } });
-    await this.prisma.campaignRecipient.deleteMany({ where: { campaignId: id } });
+    await this.prisma.emailTrackingEvent.deleteMany({
+      where: { campaignId: id },
+    });
+    await this.prisma.campaignRecipient.deleteMany({
+      where: { campaignId: id },
+    });
     await this.prisma.marketingCampaign.delete({ where: { id } });
 
     return { success: true, message: `Deleted campaign ${id}` };

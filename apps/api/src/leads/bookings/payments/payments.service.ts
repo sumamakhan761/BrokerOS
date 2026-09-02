@@ -10,7 +10,7 @@ export class PaymentsService {
 
   async createSchedule(bookingId: string, data: CreateScheduleDto) {
     const booking = await this.prisma.booking.findUnique({
-      where: { id: bookingId }
+      where: { id: bookingId },
     });
 
     if (!booking) {
@@ -25,7 +25,9 @@ export class PaymentsService {
       // --- Mode 2: Percentage Per Month ---
       const monthlyAmount = (data.percentagePerMonth / 100) * netAmount;
       const fullMonths = Math.floor(netAmount / monthlyAmount);
-      const remainder = parseFloat((netAmount - fullMonths * monthlyAmount).toFixed(2));
+      const remainder = parseFloat(
+        (netAmount - fullMonths * monthlyAmount).toFixed(2),
+      );
       const totalInstallments = remainder > 0 ? fullMonths + 1 : fullMonths;
 
       for (let i = 0; i < totalInstallments; i++) {
@@ -90,26 +92,28 @@ export class PaymentsService {
     return this.prisma.paymentSchedule.findMany({
       where: {
         status: 'PENDING',
-        ...(closingManagerId ? {
-          booking: {
-            customer: {
-              lead: {
-                assignedUserId: closingManagerId
-              }
+        ...(closingManagerId
+          ? {
+              booking: {
+                customer: {
+                  lead: {
+                    assignedUserId: closingManagerId,
+                  },
+                },
+              },
             }
-          }
-        } : {})
+          : {}),
       },
       include: {
         booking: {
           include: {
             customer: {
               include: {
-                lead: true
-              }
-            }
-          }
-        }
+                lead: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { dueDate: 'asc' },
     });
@@ -120,8 +124,8 @@ export class PaymentsService {
       where: { bookingId },
       orderBy: { sequenceOrder: 'asc' },
       include: {
-        transactions: true
-      }
+        transactions: true,
+      },
     });
   }
 
@@ -129,10 +133,10 @@ export class PaymentsService {
     scheduleId: string,
     amountPaid: number,
     remarks?: string,
-    file?: Express.Multer.File
+    file?: Express.Multer.File,
   ) {
     const schedule = await this.prisma.paymentSchedule.findUnique({
-      where: { id: scheduleId }
+      where: { id: scheduleId },
     });
 
     if (!schedule) {
@@ -143,10 +147,14 @@ export class PaymentsService {
 
     // Upload receipt to Vercel Blob with private access
     if (file) {
-      const blob = await put(`receipts/${schedule.bookingId}-${Date.now()}-${file.originalname}`, file.buffer, {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      });
+      const blob = await put(
+        `receipts/${schedule.bookingId}-${Date.now()}-${file.originalname}`,
+        file.buffer,
+        {
+          access: 'public',
+          token: process.env.BLOB_READ_WRITE_TOKEN,
+        },
+      );
       receiptUrl = blob.url;
     }
 
@@ -162,9 +170,9 @@ export class PaymentsService {
         paymentMode: 'OTHER',
         remarks: remarks || 'Marked as paid',
         receiptUrl,
-        recordedById, 
+        recordedById,
         // status is not a valid field according to schema
-      }
+      },
     });
 
     // Update schedule

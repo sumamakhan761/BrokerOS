@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsEnum,
+} from 'class-validator';
 import { SiteVisitStatus, CustomerInterestLevel } from '@brokeros/prisma';
 
 export class CreateSiteVisitDto {

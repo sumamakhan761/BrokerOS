@@ -20,10 +20,16 @@ export class PreSalesPipelineService {
     });
 
     const pipelineStages = [
-      'NEW', 'CONTACTED', 'INTERESTED', 'QUALIFIED',
-      'SITE_VISIT_SCHEDULED', 'SITE_VISIT_COMPLETED', 'BOOKING', 'LOST',
+      'NEW',
+      'CONTACTED',
+      'INTERESTED',
+      'QUALIFIED',
+      'SITE_VISIT_SCHEDULED',
+      'SITE_VISIT_COMPLETED',
+      'BOOKING',
+      'LOST',
     ];
-    
+
     const pipelineMap: Record<string, number> = {};
     pipelineStages.forEach((stage) => (pipelineMap[stage] = 0));
     pipelineCounts.forEach((p) => {

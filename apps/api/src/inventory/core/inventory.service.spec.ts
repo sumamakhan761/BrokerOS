@@ -14,9 +14,18 @@ describe('InventoryService', () => {
     moduleRef = await Test.createTestingModule({
       providers: [
         InventoryService,
-        { provide: InventoryProjectsService, useValue: { getProjects: jest.fn() } },
-        { provide: InventoryTowerGenService, useValue: { generateTowerPrompt: jest.fn() } },
-        { provide: InventoryUnitsService, useValue: { updateUnitStatus: jest.fn() } },
+        {
+          provide: InventoryProjectsService,
+          useValue: { getProjects: jest.fn() },
+        },
+        {
+          provide: InventoryTowerGenService,
+          useValue: { generateTowerPrompt: jest.fn() },
+        },
+        {
+          provide: InventoryUnitsService,
+          useValue: { updateUnitStatus: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -29,8 +38,11 @@ describe('InventoryService', () => {
 
   it('should call getProjects with correct DTO', async () => {
     const mockQuery = { isCpProject: true };
-    await service.getProjects(mockQuery as any, 'user-1');
+    await service.getProjects(mockQuery, 'user-1');
     const projectsService = moduleRef.get(InventoryProjectsService);
-    expect(projectsService.getProjects).toHaveBeenCalledWith(mockQuery, 'user-1');
+    expect(projectsService.getProjects).toHaveBeenCalledWith(
+      mockQuery,
+      'user-1',
+    );
   });
 });

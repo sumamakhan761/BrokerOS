@@ -6,13 +6,13 @@ import { auth } from './lib/auth.js';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) { }
+  constructor(private readonly appService: AppService) {}
 
   @AllowAnonymous()
   @Patch('api/users/:id/location')
   async updateLocation(
     @Param('id') id: string,
-    @Body() locationData: { latitude: number; longitude: number }
+    @Body() locationData: { latitude: number; longitude: number },
   ) {
     return await prisma.user.update({
       where: { id },
@@ -20,7 +20,7 @@ export class AppController {
         lastLatitude: locationData.latitude,
         lastLongitude: locationData.longitude,
         lastLocationAt: new Date(),
-      }
+      },
     });
   }
 
@@ -28,11 +28,11 @@ export class AppController {
   @Patch('api/users/:id/push-token')
   async updatePushToken(
     @Param('id') id: string,
-    @Body() data: { token: string }
+    @Body() data: { token: string },
   ) {
     return await prisma.user.update({
       where: { id },
-      data: { expoPushToken: data.token }
+      data: { expoPushToken: data.token },
     });
   }
 
@@ -41,7 +41,12 @@ export class AppController {
   async getLocation(@Param('id') id: string) {
     const user = await prisma.user.findUnique({
       where: { id },
-      select: { lastLatitude: true, lastLongitude: true, lastLocationAt: true, name: true }
+      select: {
+        lastLatitude: true,
+        lastLongitude: true,
+        lastLocationAt: true,
+        name: true,
+      },
     });
     return { success: true, data: user };
   }
@@ -56,7 +61,7 @@ export class AppController {
   @Get('roles')
   async getRoles() {
     return await prisma.role.findMany({
-      select: { id: true, name: true, code: true }
+      select: { id: true, name: true, code: true },
     });
   }
 
@@ -64,7 +69,7 @@ export class AppController {
   @Get('sources')
   async getSources() {
     return await prisma.leadSource.findMany({
-      select: { id: true, name: true }
+      select: { id: true, name: true },
     });
   }
 
@@ -72,7 +77,7 @@ export class AppController {
   @Get('projects')
   async getProjects() {
     return await prisma.project.findMany({
-      select: { id: true, name: true, isCpProject: true }
+      select: { id: true, name: true, isCpProject: true },
     });
   }
 
@@ -83,7 +88,7 @@ export class AppController {
 
     return await prisma.user.findMany({
       where: { managerId: userId, status: 'ACTIVE' },
-      select: { id: true, name: true, username: true }
+      select: { id: true, name: true, username: true },
     });
   }
 
@@ -94,9 +99,13 @@ export class AppController {
 
     const assignments = await prisma.projectAssignment.findMany({
       where: { userId, isActive: true },
-      include: { project: { select: { id: true, name: true, slug: true, isCpProject: true } } },
+      include: {
+        project: {
+          select: { id: true, name: true, slug: true, isCpProject: true },
+        },
+      },
     });
-    return assignments.map(a => a.project);
+    return assignments.map((a) => a.project);
   }
 
   // --- Protected Department Endpoints ---
@@ -104,21 +113,31 @@ export class AppController {
   @Roles(['PRE_SALES', 'PRE_SALES_MANAGER'])
   @Get('dashboard/pre-sales')
   getPreSales() {
-    return { success: true, message: 'Welcome to the secure Pre-Sales Area', data: [] };
+    return {
+      success: true,
+      message: 'Welcome to the secure Pre-Sales Area',
+      data: [],
+    };
   }
 
   @Roles(['SALES_EXECUTIVE', 'SALES_MANAGER'])
   @Get('dashboard/sales')
   getSales() {
-    return { success: true, message: 'Welcome to the secure Sales Area', data: [] };
+    return {
+      success: true,
+      message: 'Welcome to the secure Sales Area',
+      data: [],
+    };
   }
-
-
 
   @Roles(['FINANCE'])
   @Get('dashboard/finance')
   getFinance() {
-    return { success: true, message: 'Welcome to the secure Finance Area', data: [] };
+    return {
+      success: true,
+      message: 'Welcome to the secure Finance Area',
+      data: [],
+    };
   }
 
   // NOTE: /api/dashboard/business-manager is now handled by
@@ -127,24 +146,40 @@ export class AppController {
   @Roles(['DIRECTOR'])
   @Get('dashboard/director')
   getDirector() {
-    return { success: true, message: 'Welcome to the secure Director Area', data: [] };
+    return {
+      success: true,
+      message: 'Welcome to the secure Director Area',
+      data: [],
+    };
   }
 
   @Roles(['ADMIN'])
   @Get('dashboard/admin')
   getAdmin() {
-    return { success: true, message: 'Welcome to the secure Admin Area', data: [] };
+    return {
+      success: true,
+      message: 'Welcome to the secure Admin Area',
+      data: [],
+    };
   }
 
   @Roles(['SOURCING_MANAGER'])
   @Get('dashboard/sourcing-manager')
   getSourcingManager() {
-    return { success: true, message: 'Welcome to the secure Sourcing Manager Area', data: [] };
+    return {
+      success: true,
+      message: 'Welcome to the secure Sourcing Manager Area',
+      data: [],
+    };
   }
 
   @Roles(['CHANNEL_PARTNER'])
   @Get('dashboard/channel-partner')
   getChannelPartner() {
-    return { success: true, message: 'Welcome to the secure Channel Partner Area', data: [] };
+    return {
+      success: true,
+      message: 'Welcome to the secure Channel Partner Area',
+      data: [],
+    };
   }
 }

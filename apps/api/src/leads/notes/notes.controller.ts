@@ -1,7 +1,10 @@
 import { Controller, Get, Post, Param, Body } from '@nestjs/common';
 import { NotesService } from './notes.service.js';
 import { LeadStatus } from '@brokeros/prisma';
-import { CreateNoteDto, GenerateAiTransitionDto } from './dto/create-note.dto.js';
+import {
+  CreateNoteDto,
+  GenerateAiTransitionDto,
+} from './dto/create-note.dto.js';
 
 @Controller('api/leads')
 export class NotesController {
@@ -13,10 +16,7 @@ export class NotesController {
   }
 
   @Post(':id/notes')
-  createNote(
-    @Param('id') id: string,
-    @Body() noteData: CreateNoteDto,
-  ) {
+  createNote(@Param('id') id: string, @Body() noteData: CreateNoteDto) {
     return this.notesService.createNote(id, {
       content: noteData.content,
       userId: noteData.userId,
@@ -28,7 +28,7 @@ export class NotesController {
   @Post(':id/ai-transition-note')
   async generateAiTransition(
     @Param('id') id: string,
-    @Body() data: GenerateAiTransitionDto
+    @Body() data: GenerateAiTransitionDto,
   ) {
     return this.notesService.generateAiTransition(id, data.userId);
   }

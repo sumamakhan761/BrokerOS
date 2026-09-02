@@ -1,17 +1,26 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../lib/database/prisma.service.js';
-import { CreateBrokerDto, UpdateBrokerDto, UpdateDealCardDto } from './dto/broker.dto.js';
+import {
+  CreateBrokerDto,
+  UpdateBrokerDto,
+  UpdateDealCardDto,
+} from './dto/broker.dto.js';
 
 @Injectable()
 export class BrokersService {
   private readonly logger = new Logger(BrokersService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   private async getUserRoleCode(userId: string): Promise<string> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { role: true }
+      include: { role: true },
     });
     return user?.role?.code || '';
   }
@@ -26,28 +35,33 @@ export class BrokersService {
       } else {
         whereClause.OR = [
           { sourcingManagerId: { not: null } },
-          { projectAssignments: { some: { project: { isCpProject: true } } } }
+          { projectAssignments: { some: { project: { isCpProject: true } } } },
         ];
       }
     } else if (roleCode === 'CLOSING_MANAGER') {
-      const pAssigns = await this.prisma.projectAssignment.findMany({ where: { userId } });
-      const tAssigns = await this.prisma.towerAssignment.findMany({ where: { userId }, include: { tower: true } });
+      const pAssigns = await this.prisma.projectAssignment.findMany({
+        where: { userId },
+      });
+      const tAssigns = await this.prisma.towerAssignment.findMany({
+        where: { userId },
+        include: { tower: true },
+      });
       const cmProjectIds = [
-        ...pAssigns.map(pa => pa.projectId),
-        ...tAssigns.map(ta => ta.tower.projectId)
+        ...pAssigns.map((pa) => pa.projectId),
+        ...tAssigns.map((ta) => ta.tower.projectId),
       ];
       let finalProjectIds = cmProjectIds;
       if (projectId) {
-        finalProjectIds = cmProjectIds.filter(id => id === projectId);
+        finalProjectIds = cmProjectIds.filter((id) => id === projectId);
       }
       whereClause = {
         status: 'DEAL',
         subStatus: 'DONE',
         projectAssignments: {
           some: {
-            projectId: { in: finalProjectIds }
-          }
-        }
+            projectId: { in: finalProjectIds },
+          },
+        },
       };
     } else {
       whereClause = { sourcingManagerId: userId };
@@ -63,8 +77,8 @@ export class BrokersService {
         nextDay.setDate(date.getDate() + 1);
         whereClause.followUps = {
           some: {
-            scheduledDate: { gte: date, lt: nextDay }
-          }
+            scheduledDate: { gte: date, lt: nextDay },
+          },
         };
       }
     }
@@ -74,8 +88,8 @@ export class BrokersService {
       orderBy: { createdAt: 'desc' },
       include: {
         projectAssignments: true,
-        sourcingManager: { select: { id: true, name: true, image: true } }
-      }
+        sourcingManager: { select: { id: true, name: true, image: true } },
+      },
     });
   }
 
@@ -84,11 +98,16 @@ export class BrokersService {
     let whereClause: any = { id };
 
     if (roleCode === 'CLOSING_MANAGER') {
-      const pAssigns = await this.prisma.projectAssignment.findMany({ where: { userId } });
-      const tAssigns = await this.prisma.towerAssignment.findMany({ where: { userId }, include: { tower: true } });
+      const pAssigns = await this.prisma.projectAssignment.findMany({
+        where: { userId },
+      });
+      const tAssigns = await this.prisma.towerAssignment.findMany({
+        where: { userId },
+        include: { tower: true },
+      });
       const cmProjectIds = [
-        ...pAssigns.map(pa => pa.projectId),
-        ...tAssigns.map(ta => ta.tower.projectId)
+        ...pAssigns.map((pa) => pa.projectId),
+        ...tAssigns.map((ta) => ta.tower.projectId),
       ];
       whereClause = {
         id,
@@ -96,18 +115,18 @@ export class BrokersService {
         subStatus: 'DONE',
         projectAssignments: {
           some: {
-            projectId: { in: cmProjectIds }
-          }
-        }
+            projectId: { in: cmProjectIds },
+          },
+        },
       };
     } else if (roleCode === 'CHANNEL_PARTNER') {
       whereClause = {
         id,
         OR: [
           { sourcingManagerId: { not: null } },
-          { projectAssignments: { some: { project: { isCpProject: true } } } }
-        ]
-      }
+          { projectAssignments: { some: { project: { isCpProject: true } } } },
+        ],
+      };
     } else {
       whereClause = { id, sourcingManagerId: userId };
     }
@@ -116,23 +135,32 @@ export class BrokersService {
       where: whereClause,
       include: {
         notes: {
-          include: { user: { select: { name: true, image: true, username: true, displayUsername: true } } },
-          orderBy: { createdAt: 'desc' }
+          include: {
+            user: {
+              select: {
+                name: true,
+                image: true,
+                username: true,
+                displayUsername: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
         },
         followUps: {
-          orderBy: { scheduledDate: 'asc' }
+          orderBy: { scheduledDate: 'asc' },
         },
         callRecords: {
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         },
         projectAssignments: {
-          include: { project: true }
+          include: { project: true },
         },
         meetings: {
-          orderBy: { scheduledDate: 'asc' }
+          orderBy: { scheduledDate: 'asc' },
         },
-        sourcingManager: { select: { id: true, name: true, image: true } }
-      }
+        sourcingManager: { select: { id: true, name: true, image: true } },
+      },
     });
 
     if (!broker) {
@@ -163,25 +191,35 @@ export class BrokersService {
         serviceAreas: Array.isArray(data.serviceAreas)
           ? data.serviceAreas
           : typeof data.serviceAreas === 'string'
-            ? (data.serviceAreas as string).split(',').map((s: string) => s.trim()).filter(Boolean)
+            ? data.serviceAreas
+                .split(',')
+                .map((s: string) => s.trim())
+                .filter(Boolean)
             : [],
         status: 'NEW',
         subStatus: 'PENDING',
         sourcingManagerId,
-        projectAssignments: Array.isArray(data.assignedProjects) && data.assignedProjects.length > 0 ? {
-          create: data.assignedProjects.map((projectId: string) => ({
-            projectId
-          }))
-        } : undefined,
-      }
+        projectAssignments:
+          Array.isArray(data.assignedProjects) &&
+          data.assignedProjects.length > 0
+            ? {
+                create: data.assignedProjects.map((projectId: string) => ({
+                  projectId,
+                })),
+              }
+            : undefined,
+      },
     });
   }
 
   async updateBroker(id: string, userId: string, data: UpdateBrokerDto) {
     const roleCode = await this.getUserRoleCode(userId);
-    const whereClause = roleCode === 'CHANNEL_PARTNER' ? { id } : { id, sourcingManagerId: userId };
+    const whereClause =
+      roleCode === 'CHANNEL_PARTNER'
+        ? { id }
+        : { id, sourcingManagerId: userId };
     const broker = await this.prisma.broker.findUnique({
-      where: whereClause
+      where: whereClause,
     });
     if (!broker) {
       throw new NotFoundException('Broker not found');
@@ -190,45 +228,66 @@ export class BrokersService {
       where: { id },
       data: {
         ...data,
-        serviceAreas: data.serviceAreas 
-          ? (Array.isArray(data.serviceAreas) 
-              ? data.serviceAreas 
-              : typeof data.serviceAreas === 'string' 
-                ? data.serviceAreas.split(',').map((s: string) => s.trim()).filter(Boolean) 
-                : undefined)
+        serviceAreas: data.serviceAreas
+          ? Array.isArray(data.serviceAreas)
+            ? data.serviceAreas
+            : typeof data.serviceAreas === 'string'
+              ? data.serviceAreas
+                  .split(',')
+                  .map((s: string) => s.trim())
+                  .filter(Boolean)
+              : undefined
           : undefined,
-        assignedProjects: undefined // Ignore assignedProjects for direct update if we are not handling relations here
-      } as any
+        assignedProjects: undefined, // Ignore assignedProjects for direct update if we are not handling relations here
+      } as any,
     });
   }
 
-  async updateDealCard(brokerId: string, userId: string, data: UpdateDealCardDto) {
+  async updateDealCard(
+    brokerId: string,
+    userId: string,
+    data: UpdateDealCardDto,
+  ) {
     const roleCode = await this.getUserRoleCode(userId);
-    const whereClause = roleCode === 'CHANNEL_PARTNER' ? { id: brokerId } : { id: brokerId, sourcingManagerId: userId };
+    const whereClause =
+      roleCode === 'CHANNEL_PARTNER'
+        ? { id: brokerId }
+        : { id: brokerId, sourcingManagerId: userId };
     const broker = await this.prisma.broker.findUnique({
-      where: whereClause
+      where: whereClause,
     });
     if (!broker) {
       throw new NotFoundException('Broker not found');
     }
 
     if (broker.status !== 'DEAL') {
-      throw new BadRequestException('Broker must be in DEAL status to update deal card');
+      throw new BadRequestException(
+        'Broker must be in DEAL status to update deal card',
+      );
     }
 
-    const { projectId, towerId, brokeragePercent, brokerageFlat, dealDocuments, isLocked } = data;
+    const {
+      projectId,
+      towerId,
+      brokeragePercent,
+      brokerageFlat,
+      dealDocuments,
+      isLocked,
+    } = data;
 
     let assignment = await this.prisma.brokerProjectAssignment.findFirst({
       where: {
         brokerId,
-        projectId
-      }
+        projectId,
+      },
     });
 
     if (assignment) {
       // If locked, only CP can unlock/edit.
       if (assignment.isLocked && roleCode !== 'CHANNEL_PARTNER') {
-        throw new BadRequestException('Deal card is locked and cannot be edited by Sourcing Manager');
+        throw new BadRequestException(
+          'Deal card is locked and cannot be edited by Sourcing Manager',
+        );
       }
       assignment = await this.prisma.brokerProjectAssignment.update({
         where: { id: assignment.id },
@@ -238,7 +297,7 @@ export class BrokersService {
           brokeragePercent: brokeragePercent ?? null,
           brokerageFlat: brokerageFlat ?? null,
           isLocked: isLocked || false,
-        }
+        },
       });
     } else {
       assignment = await this.prisma.brokerProjectAssignment.create({
@@ -250,7 +309,7 @@ export class BrokersService {
           brokeragePercent: brokeragePercent ?? null,
           brokerageFlat: brokerageFlat ?? null,
           isLocked: isLocked || false,
-        }
+        },
       });
     }
     return assignment;
@@ -259,7 +318,7 @@ export class BrokersService {
   async getSourcingManagers() {
     return this.prisma.user.findMany({
       where: { role: { code: 'SOURCING_MANAGER' } },
-      select: { id: true, name: true, image: true, email: true }
+      select: { id: true, name: true, image: true, email: true },
     });
   }
 }

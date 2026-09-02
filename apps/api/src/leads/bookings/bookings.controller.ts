@@ -6,7 +6,7 @@ export class BookingsController {
   constructor(private readonly bookingService: BookingService) {}
 
   @Get()
-  async getAllBookings(@Req() req: { user?: { id: string, roleId: string } }) {
+  async getAllBookings(@Req() req: { user?: { id: string; roleId: string } }) {
     const userId = req.user?.id || '';
     const roleId = req.user?.roleId || '';
     return this.bookingService.getAllBookings(userId, roleId);

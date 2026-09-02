@@ -4,9 +4,7 @@ import { getStartDate } from '../core/dashboard.utils.js';
 
 @Injectable()
 export class BusinessManagerDashboardService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -45,12 +43,20 @@ export class BusinessManagerDashboardService {
       // Brokerage bookings (isCpProject = false)
       this.prisma.booking.findMany({
         where: this.buildBookingWhere(false, startDate),
-        select: { agreedPrice: true, tokenAmount: true, commissionAmount: true },
+        select: {
+          agreedPrice: true,
+          tokenAmount: true,
+          commissionAmount: true,
+        },
       }),
       // CP bookings (isCpProject = true)
       this.prisma.booking.findMany({
         where: this.buildBookingWhere(true, startDate),
-        select: { agreedPrice: true, tokenAmount: true, commissionAmount: true },
+        select: {
+          agreedPrice: true,
+          tokenAmount: true,
+          commissionAmount: true,
+        },
       }),
       // Active employees
       this.prisma.user.count({ where: { status: 'ACTIVE', deletedAt: null } }),
@@ -103,17 +109,13 @@ export class BusinessManagerDashboardService {
 
     // ─── Leaderboards ─────────────────────────────────────────────────────────
 
-    const [
-      topSalesExecs,
-      topSourcingManagers,
-      topClosingManagers,
-      topBrokers,
-    ] = await Promise.all([
-      this.getTopSalesExecs(startDate),
-      this.getTopSourcingManagers(startDate),
-      this.getTopClosingManagers(startDate),
-      this.getTopBrokers(startDate),
-    ]);
+    const [topSalesExecs, topSourcingManagers, topClosingManagers, topBrokers] =
+      await Promise.all([
+        this.getTopSalesExecs(startDate),
+        this.getTopSourcingManagers(startDate),
+        this.getTopClosingManagers(startDate),
+        this.getTopBrokers(startDate),
+      ]);
 
     // ─── Action Items ─────────────────────────────────────────────────────────
 
@@ -176,18 +178,29 @@ export class BusinessManagerDashboardService {
       select: { salesExecId: true, agreedPrice: true },
     });
 
-    const map: Record<string, { id: string; name: string; bookings: number; revenue: number }> = {};
+    const map: Record<
+      string,
+      { id: string; name: string; bookings: number; revenue: number }
+    > = {};
     const userIds = [...new Set(bookings.map((b) => b.salesExecId as string))];
 
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { id: true, name: true, username: true },
     });
-    const userMap = new Map(users.map((u) => [u.id, u.name || u.username || 'Unknown']));
+    const userMap = new Map(
+      users.map((u) => [u.id, u.name || u.username || 'Unknown']),
+    );
 
     for (const b of bookings) {
       const id = b.salesExecId!;
-      if (!map[id]) map[id] = { id, name: userMap.get(id) || 'Unknown', bookings: 0, revenue: 0 };
+      if (!map[id])
+        map[id] = {
+          id,
+          name: userMap.get(id) || 'Unknown',
+          bookings: 0,
+          revenue: 0,
+        };
       map[id].bookings++;
       map[id].revenue += Number(b.agreedPrice) || 0;
     }
@@ -256,18 +269,31 @@ export class BusinessManagerDashboardService {
       select: { closingManagerId: true, agreedPrice: true },
     });
 
-    const map: Record<string, { id: string; name: string; bookings: number; revenue: number }> = {};
-    const userIds = [...new Set(cpBookings.map((b) => b.closingManagerId as string))];
+    const map: Record<
+      string,
+      { id: string; name: string; bookings: number; revenue: number }
+    > = {};
+    const userIds = [
+      ...new Set(cpBookings.map((b) => b.closingManagerId as string)),
+    ];
 
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { id: true, name: true, username: true },
     });
-    const userMap = new Map(users.map((u) => [u.id, u.name || u.username || 'Unknown']));
+    const userMap = new Map(
+      users.map((u) => [u.id, u.name || u.username || 'Unknown']),
+    );
 
     for (const b of cpBookings) {
       const id = b.closingManagerId!;
-      if (!map[id]) map[id] = { id, name: userMap.get(id) || 'Unknown', bookings: 0, revenue: 0 };
+      if (!map[id])
+        map[id] = {
+          id,
+          name: userMap.get(id) || 'Unknown',
+          bookings: 0,
+          revenue: 0,
+        };
       map[id].bookings++;
       map[id].revenue += Number(b.agreedPrice) || 0;
     }
@@ -293,13 +319,15 @@ export class BusinessManagerDashboardService {
 
     for (const b of cpBookings) {
       const brokerIdsForBooking = new Set<string>();
-      if (b.customer?.lead?.brokerId) brokerIdsForBooking.add(b.customer.lead.brokerId);
+      if (b.customer?.lead?.brokerId)
+        brokerIdsForBooking.add(b.customer.lead.brokerId);
       for (const br of b.brokerageRecords) {
         if (br.brokerId) brokerIdsForBooking.add(br.brokerId);
       }
 
       for (const brkId of brokerIdsForBooking) {
-        if (!map[brkId]) map[brkId] = { id: brkId, name: '', bookings: 0, commission: 0 };
+        if (!map[brkId])
+          map[brkId] = { id: brkId, name: '', bookings: 0, commission: 0 };
         map[brkId].bookings++;
         // Sum commission from brokerage records
         for (const br of b.brokerageRecords) {
@@ -331,58 +359,61 @@ export class BusinessManagerDashboardService {
   // ─── Action Items ─────────────────────────────────────────────────────────────
 
   private async getActionItems() {
-    const [pendingApprovals, overdueCollections, highBacklogTeams] = await Promise.all([
-      // Pending FinancialApprovals
-      this.prisma.financialApproval.findMany({
-        where: { status: 'PENDING' },
-        orderBy: { requestedAt: 'asc' },
-        take: 5,
-        select: {
-          id: true,
-          type: true,
-          title: true,
-          amount: true,
-          requestedAt: true,
-          requestedBy: { select: { id: true, name: true, username: true } },
-        },
-      }),
-      // Overdue collection records
-      this.prisma.collectionRecord.findMany({
-        where: { isOverdue: true },
-        orderBy: { overdueDays: 'desc' },
-        take: 5,
-        select: {
-          id: true,
-          outstanding: true,
-          overdueDays: true,
-          overdueAmount: true,
-          booking: {
-            select: {
-              bookingNumber: true,
-              customer: { select: { firstName: true, lastName: true } },
+    const [pendingApprovals, overdueCollections, highBacklogTeams] =
+      await Promise.all([
+        // Pending FinancialApprovals
+        this.prisma.financialApproval.findMany({
+          where: { status: 'PENDING' },
+          orderBy: { requestedAt: 'asc' },
+          take: 5,
+          select: {
+            id: true,
+            type: true,
+            title: true,
+            amount: true,
+            requestedAt: true,
+            requestedBy: { select: { id: true, name: true, username: true } },
+          },
+        }),
+        // Overdue collection records
+        this.prisma.collectionRecord.findMany({
+          where: { isOverdue: true },
+          orderBy: { overdueDays: 'desc' },
+          take: 5,
+          select: {
+            id: true,
+            outstanding: true,
+            overdueDays: true,
+            overdueAmount: true,
+            booking: {
+              select: {
+                bookingNumber: true,
+                customer: { select: { firstName: true, lastName: true } },
+              },
             },
           },
-        },
-      }),
-      // Teams with high missed follow-up counts (top 3)
-      this.prisma.followUp.groupBy({
-        by: ['userId'],
-        where: { status: 'MISSED' },
-        _count: { userId: true },
-        orderBy: { _count: { userId: 'desc' } },
-        take: 3,
-      }),
-    ]);
+        }),
+        // Teams with high missed follow-up counts (top 3)
+        this.prisma.followUp.groupBy({
+          by: ['userId'],
+          where: { status: 'MISSED' },
+          _count: { userId: true },
+          orderBy: { _count: { userId: 'desc' } },
+          take: 3,
+        }),
+      ]);
 
-    const missedUserIds = highBacklogTeams.map((t) => t.userId).filter(Boolean) as string[];
+    const missedUserIds = highBacklogTeams.map((t) => t.userId).filter(Boolean);
     const missedUsers =
       missedUserIds.length > 0
         ? await this.prisma.user.findMany({
-          where: { id: { in: missedUserIds } },
-          select: { id: true, name: true, username: true },
-        })
+            where: { id: { in: missedUserIds } },
+            select: { id: true, name: true, username: true },
+          })
         : [];
-    const missedUserMap = new Map(missedUsers.map((u) => [u.id, u.name || u.username || 'Unknown']));
+    const missedUserMap = new Map(
+      missedUsers.map((u) => [u.id, u.name || u.username || 'Unknown']),
+    );
 
     const actions = [
       ...pendingApprovals.map((a) => ({
@@ -401,13 +432,17 @@ export class BusinessManagerDashboardService {
         description: `Customer: ${c.booking?.customer?.firstName || ''} ${c.booking?.customer?.lastName || ''} — Outstanding ₹${Number(c.outstanding).toLocaleString('en-IN')} — ${c.overdueDays} days overdue`,
         severity: 'CRITICAL' as const,
         date: new Date(),
-        meta: { collectionId: c.id, overdueDays: c.overdueDays, outstanding: Number(c.outstanding) },
+        meta: {
+          collectionId: c.id,
+          overdueDays: c.overdueDays,
+          outstanding: Number(c.outstanding),
+        },
       })),
       ...highBacklogTeams.map((t) => ({
         id: `backlog-${t.userId}`,
         type: 'HIGH_BACKLOG' as const,
         title: `High Follow-up Backlog`,
-        description: `${missedUserMap.get(t.userId!) || 'An employee'} has ${t._count.userId} missed follow-ups`,
+        description: `${missedUserMap.get(t.userId) || 'An employee'} has ${t._count.userId} missed follow-ups`,
         severity: 'INFO' as const,
         date: new Date(),
         meta: { userId: t.userId, missedCount: t._count.userId },

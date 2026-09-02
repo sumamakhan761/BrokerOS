@@ -1,10 +1,13 @@
 import { Controller, Get, Post, Delete, Body, Param } from '@nestjs/common';
 import { VoiceIntegrationsService } from '../services/voice-integrations.service.js';
-import { ConnectVoiceTelephonyDto, ConnectVoiceAgentDto } from '../dto/voice.dto.js';
+import {
+  ConnectVoiceTelephonyDto,
+  ConnectVoiceAgentDto,
+} from '../dto/voice.dto.js';
 
 @Controller('api/marketing/voice/integrations')
 export class VoiceIntegrationsController {
-  constructor(private readonly integrationsService: VoiceIntegrationsService) { }
+  constructor(private readonly integrationsService: VoiceIntegrationsService) {}
 
   @Get()
   async getAllIntegrations() {
@@ -58,12 +61,16 @@ export class VoiceIntegrationsController {
 
   @Get('agents/:id/catalog')
   async getAgentIntegrationCatalog(@Param('id') id: string) {
-    const integration = await this.integrationsService.prisma.voiceAgentIntegration.findUnique({
-      where: { id },
-    });
+    const integration =
+      await this.integrationsService.prisma.voiceAgentIntegration.findUnique({
+        where: { id },
+      });
     if (!integration) {
       return { platform: 'VAPI', models: [], voices: [] };
     }
-    return this.integrationsService.getPlatformCatalog(integration.platform, id);
+    return this.integrationsService.getPlatformCatalog(
+      integration.platform,
+      id,
+    );
   }
 }

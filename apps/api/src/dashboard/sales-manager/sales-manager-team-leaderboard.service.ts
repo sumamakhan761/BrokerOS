@@ -6,20 +6,37 @@ import { getMonthRange } from '../core/dashboard.utils.js';
 export class SalesManagerTeamLeaderboardService {
   constructor(private prisma: PrismaService) {}
 
-  async getTeamLeaderboard(subs: { id: string; name: string | null; username: string | null; image: string | null }[]) {
+  async getTeamLeaderboard(
+    subs: {
+      id: string;
+      name: string | null;
+      username: string | null;
+      image: string | null;
+    }[],
+  ) {
     const { start: monthStart, end: monthEnd } = getMonthRange();
 
     const leaderboardData = await Promise.all(
       subs.map(async (sub) => {
         const [svCompleted, bookings, activeNegotiations] = await Promise.all([
           this.prisma.siteVisit.count({
-            where: { salesExecId: sub.id, status: 'COMPLETED', completedAt: { gte: monthStart, lte: monthEnd } },
+            where: {
+              salesExecId: sub.id,
+              status: 'COMPLETED',
+              completedAt: { gte: monthStart, lte: monthEnd },
+            },
           }),
           this.prisma.booking.count({
-            where: { salesExecId: sub.id, createdAt: { gte: monthStart, lte: monthEnd } },
+            where: {
+              salesExecId: sub.id,
+              createdAt: { gte: monthStart, lte: monthEnd },
+            },
           }),
           this.prisma.negotiation.count({
-            where: { salesExecId: sub.id, status: { notIn: ['CLOSED', 'REJECTED'] } },
+            where: {
+              salesExecId: sub.id,
+              status: { notIn: ['CLOSED', 'REJECTED'] },
+            },
           }),
         ]);
 
@@ -32,7 +49,7 @@ export class SalesManagerTeamLeaderboardService {
           activeNegotiations,
           score: bookings * 10 + svCompleted * 2 + activeNegotiations, // Simple score calculation
         };
-      })
+      }),
     );
 
     // Sort leaderboard by score descending

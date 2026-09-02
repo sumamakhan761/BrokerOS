@@ -57,7 +57,11 @@ export class SalesManagerWidgetsService {
     ]);
 
     const pipelineStages = [
-      'SITE_VISIT_SCHEDULED', 'SITE_VISIT_COMPLETED', 'NEGOTIATION', 'BOOKING', 'LOST'
+      'SITE_VISIT_SCHEDULED',
+      'SITE_VISIT_COMPLETED',
+      'NEGOTIATION',
+      'BOOKING',
+      'LOST',
     ];
     const pipelineMap: Record<string, number> = {};
     pipelineStages.forEach((s) => (pipelineMap[s] = 0));

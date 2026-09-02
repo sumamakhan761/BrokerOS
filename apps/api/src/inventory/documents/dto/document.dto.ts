@@ -13,7 +13,10 @@ export class UploadDocumentDto {
   category: string;
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true || value === 1 || value === '1')
+  @Transform(
+    ({ value }) =>
+      value === 'true' || value === true || value === 1 || value === '1',
+  )
   @IsBoolean()
   isPublic?: boolean;
 }

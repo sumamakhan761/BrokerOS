@@ -1,13 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 jest.mock('@brokeros/prisma', () => ({
-  PrismaClient: class { }
+  PrismaClient: class {},
 }));
-jest.mock('expo-server-sdk', () => ({ Expo: class { } }));
+jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 
 import { SiteVisitsService } from './site-visits.service.js';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
-import { CreateSiteVisitDto, UpdateSiteVisitDto, ArriveSiteVisitDto } from './dto/site-visit.dto.js';
+import {
+  CreateSiteVisitDto,
+  UpdateSiteVisitDto,
+  ArriveSiteVisitDto,
+} from './dto/site-visit.dto.js';
 import { SiteVisitStatus } from '@brokeros/prisma';
 
 jest.mock('../../lib/database/prisma.service.js', () => ({
@@ -53,7 +57,8 @@ describe('SiteVisitsService', () => {
 
     service = module.get<SiteVisitsService>(SiteVisitsService);
     prismaService = module.get<PrismaService>(PrismaService);
-    notificationsService = module.get<NotificationsService>(NotificationsService);
+    notificationsService =
+      module.get<NotificationsService>(NotificationsService);
   });
 
   afterEach(() => {
@@ -67,7 +72,9 @@ describe('SiteVisitsService', () => {
   describe('getSiteVisits', () => {
     it('should throw error if lead not found', async () => {
       mockPrismaService.lead.findUnique.mockResolvedValue(null);
-      await expect(service.getSiteVisits('invalid')).rejects.toThrow('Lead not found');
+      await expect(service.getSiteVisits('invalid')).rejects.toThrow(
+        'Lead not found',
+      );
     });
 
     it('should return site visits for a lead', async () => {
@@ -90,90 +97,138 @@ describe('SiteVisitsService', () => {
   describe('createSiteVisit', () => {
     it('should throw error if lead not found', async () => {
       mockPrismaService.lead.findUnique.mockResolvedValue(null);
-      
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-      
+
+      const consoleSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       await expect(
-        service.createSiteVisit('lead-1', { userId: 'u-1', projectId: 'p-1', scheduledDate: '2026-01-01' } as CreateSiteVisitDto)
+        service.createSiteVisit('lead-1', {
+          userId: 'u-1',
+          projectId: 'p-1',
+          scheduledDate: '2026-01-01',
+        }),
       ).rejects.toThrow('Lead not found');
-      
+
       consoleSpy.mockRestore();
     });
 
     it('should throw BadRequestException when no project assignments exist', async () => {
-      mockPrismaService.lead.findUnique.mockResolvedValue({ id: 'lead-1', firstName: 'John' });
+      mockPrismaService.lead.findUnique.mockResolvedValue({
+        id: 'lead-1',
+        firstName: 'John',
+      });
       mockPrismaService.projectAssignment.findMany.mockResolvedValue([]);
-      
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const consoleSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       await expect(
         service.createSiteVisit('lead-1', {
           userId: 'u-1',
           projectId: 'p-1',
           scheduledDate: '2026-01-01T00:00:00Z',
-        } as CreateSiteVisitDto)
-      ).rejects.toThrow('No Sales Executives are assigned to this project. Please contact a manager.');
-      
+        }),
+      ).rejects.toThrow(
+        'No Sales Executives are assigned to this project. Please contact a manager.',
+      );
+
       consoleSpy.mockRestore();
     });
 
     it('should assign round-robin to next project exec if last SV exists', async () => {
-      mockPrismaService.lead.findUnique.mockResolvedValue({ id: 'lead-1', firstName: 'John' });
-      mockPrismaService.projectAssignment.findMany.mockResolvedValue([{ userId: 'exec-1' }, { userId: 'exec-2' }]);
-      mockPrismaService.siteVisit.findFirst.mockResolvedValue({ salesExecId: 'exec-1' });
-      mockPrismaService.siteVisit.create.mockResolvedValue({ id: 'sv-1', project: { name: 'ProjA' } });
+      mockPrismaService.lead.findUnique.mockResolvedValue({
+        id: 'lead-1',
+        firstName: 'John',
+      });
+      mockPrismaService.projectAssignment.findMany.mockResolvedValue([
+        { userId: 'exec-1' },
+        { userId: 'exec-2' },
+      ]);
+      mockPrismaService.siteVisit.findFirst.mockResolvedValue({
+        salesExecId: 'exec-1',
+      });
+      mockPrismaService.siteVisit.create.mockResolvedValue({
+        id: 'sv-1',
+        project: { name: 'ProjA' },
+      });
 
       await service.createSiteVisit('lead-1', {
         userId: 'u-1',
         projectId: 'p-1',
         scheduledDate: '2026-01-01T00:00:00Z',
-      } as CreateSiteVisitDto);
+      });
 
       expect(mockPrismaService.siteVisit.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ salesExecId: 'exec-2' })
-        })
+          data: expect.objectContaining({ salesExecId: 'exec-2' }),
+        }),
       );
     });
 
     it('should assign to first project exec if no prior SVs exist', async () => {
-      mockPrismaService.lead.findUnique.mockResolvedValue({ id: 'lead-1', firstName: 'John' });
-      mockPrismaService.projectAssignment.findMany.mockResolvedValue([{ userId: 'exec-1' }, { userId: 'exec-2' }]);
+      mockPrismaService.lead.findUnique.mockResolvedValue({
+        id: 'lead-1',
+        firstName: 'John',
+      });
+      mockPrismaService.projectAssignment.findMany.mockResolvedValue([
+        { userId: 'exec-1' },
+        { userId: 'exec-2' },
+      ]);
       mockPrismaService.siteVisit.findFirst.mockResolvedValue(null);
-      mockPrismaService.siteVisit.create.mockResolvedValue({ id: 'sv-1', project: { name: 'ProjA' } });
+      mockPrismaService.siteVisit.create.mockResolvedValue({
+        id: 'sv-1',
+        project: { name: 'ProjA' },
+      });
 
       await service.createSiteVisit('lead-1', {
         userId: 'u-1',
         projectId: 'p-1',
         scheduledDate: '2026-01-01T00:00:00Z',
-      } as CreateSiteVisitDto);
+      });
 
       expect(mockPrismaService.siteVisit.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ salesExecId: 'exec-1' })
-        })
+          data: expect.objectContaining({ salesExecId: 'exec-1' }),
+        }),
       );
     });
   });
 
   describe('updateSiteVisit', () => {
     it('should update site visit', async () => {
-      mockPrismaService.siteVisit.update.mockResolvedValue({ id: 'sv-1', salesExecId: 'u-1' });
-      const result = await service.updateSiteVisit('sv-1', { status: 'CONDUCTED' } as unknown as UpdateSiteVisitDto);
+      mockPrismaService.siteVisit.update.mockResolvedValue({
+        id: 'sv-1',
+        salesExecId: 'u-1',
+      });
+      const result = await service.updateSiteVisit('sv-1', {
+        status: 'CONDUCTED',
+      } as unknown as UpdateSiteVisitDto);
       expect(result).toEqual({ id: 'sv-1', salesExecId: 'u-1' });
       expect(mockPrismaService.siteVisit.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'sv-1' },
-          data: expect.objectContaining({ status: 'CONDUCTED' })
-        })
+          data: expect.objectContaining({ status: 'CONDUCTED' }),
+        }),
       );
-      expect(mockNotificationsService.checkDailyTaskCompletion).not.toHaveBeenCalled();
+      expect(
+        mockNotificationsService.checkDailyTaskCompletion,
+      ).not.toHaveBeenCalled();
     });
 
     it('should trigger checkDailyTaskCompletion if status becomes COMPLETED', async () => {
-      mockPrismaService.siteVisit.update.mockResolvedValue({ id: 'sv-1', salesExecId: 'u-1', status: 'COMPLETED' });
-      await service.updateSiteVisit('sv-1', { status: 'COMPLETED' as SiteVisitStatus } as UpdateSiteVisitDto);
-      expect(mockNotificationsService.checkDailyTaskCompletion).toHaveBeenCalledWith('u-1', 'SITE_VISITS');
+      mockPrismaService.siteVisit.update.mockResolvedValue({
+        id: 'sv-1',
+        salesExecId: 'u-1',
+        status: 'COMPLETED',
+      });
+      await service.updateSiteVisit('sv-1', {
+        status: 'COMPLETED',
+      });
+      expect(
+        mockNotificationsService.checkDailyTaskCompletion,
+      ).toHaveBeenCalledWith('u-1', 'SITE_VISITS');
     });
   });
 
@@ -182,20 +237,36 @@ describe('SiteVisitsService', () => {
       mockPrismaService.siteVisit.delete.mockResolvedValue({ id: 'sv-1' });
       const result = await service.deleteSiteVisit('sv-1');
       expect(result).toEqual({ id: 'sv-1' });
-      expect(mockPrismaService.siteVisit.delete).toHaveBeenCalledWith({ where: { id: 'sv-1' } });
+      expect(mockPrismaService.siteVisit.delete).toHaveBeenCalledWith({
+        where: { id: 'sv-1' },
+      });
     });
   });
 
   describe('arriveAtSiteVisit', () => {
     it('should record arrival location and time', async () => {
-      mockPrismaService.siteVisit.update.mockResolvedValue({ id: 'sv-1', arriveLatitude: 10, arriveLongitude: 20 });
-      const result = await service.arriveAtSiteVisit('sv-1', { latitude: 10, longitude: 20 } as ArriveSiteVisitDto);
-      expect(result).toEqual({ id: 'sv-1', arriveLatitude: 10, arriveLongitude: 20 });
+      mockPrismaService.siteVisit.update.mockResolvedValue({
+        id: 'sv-1',
+        arriveLatitude: 10,
+        arriveLongitude: 20,
+      });
+      const result = await service.arriveAtSiteVisit('sv-1', {
+        latitude: 10,
+        longitude: 20,
+      });
+      expect(result).toEqual({
+        id: 'sv-1',
+        arriveLatitude: 10,
+        arriveLongitude: 20,
+      });
       expect(mockPrismaService.siteVisit.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'sv-1' },
-          data: expect.objectContaining({ arriveLatitude: 10, arriveLongitude: 20 }),
-        })
+          data: expect.objectContaining({
+            arriveLatitude: 10,
+            arriveLongitude: 20,
+          }),
+        }),
       );
     });
   });

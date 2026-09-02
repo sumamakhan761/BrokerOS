@@ -28,8 +28,15 @@ describe('BrokerAiService', () => {
   afterEach(() => jest.clearAllMocks());
 
   it('should generate ai transition note', async () => {
-    mockPrisma.broker.findUnique.mockResolvedValue({ id: 'b-1', status: 'NEW', callRecords: [{ aiSummary: 'test summary' }] });
-    mockTranscription.generateAutoStatusAndNote.mockResolvedValue({ suggestedStatus: 'HOT', transitionNote: 'Note' });
+    mockPrisma.broker.findUnique.mockResolvedValue({
+      id: 'b-1',
+      status: 'NEW',
+      callRecords: [{ aiSummary: 'test summary' }],
+    });
+    mockTranscription.generateAutoStatusAndNote.mockResolvedValue({
+      suggestedStatus: 'HOT',
+      transitionNote: 'Note',
+    });
     mockPrisma.note.create.mockResolvedValue({ id: 'n-1' });
 
     const res = await service.generateAiTransitionNote('b-1', 'u-1');

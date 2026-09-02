@@ -1,10 +1,14 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { getMonthRange } from '../core/dashboard.utils.js';
 
 @Injectable()
 export class EmployeeCardsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Returns a grid of cards for each subordinate of the given manager,
@@ -15,45 +19,53 @@ export class EmployeeCardsService {
 
     const subordinates = await this.prisma.user.findMany({
       where: { managerId, status: 'ACTIVE', deletedAt: null },
-      select: { id: true, name: true, username: true, image: true, employeeCode: true, isOnCall: true },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        image: true,
+        employeeCode: true,
+        isOnCall: true,
+      },
     });
 
     const cards = await Promise.all(
       subordinates.map(async (sub) => {
-        const [totalLeads, contactedLeads, followUpsDone, siteVisits] = await Promise.all([
-          // Total leads assigned this month
-          this.prisma.lead.count({
-            where: {
-              assignedUserId: sub.id,
-              createdAt: { gte: monthStart, lte: monthEnd },
-              deletedAt: null,
-            },
-          }),
-          // Leads with CONTACTED status this month
-          this.prisma.lead.count({
-            where: {
-              assignedUserId: sub.id,
-              status: 'CONTACTED',
-              createdAt: { gte: monthStart, lte: monthEnd },
-              deletedAt: null,
-            },
-          }),
-          // Follow-ups completed this month
-          this.prisma.followUp.count({
-            where: {
-              userId: sub.id,
-              status: 'COMPLETED',
-              completedAt: { gte: monthStart, lte: monthEnd },
-            },
-          }),
-          // Site visits scheduled this month
-          this.prisma.siteVisit.count({
-            where: {
-              salesExecId: sub.id,
-              scheduledDate: { gte: monthStart, lte: monthEnd },
-            },
-          }),
-        ]);
+        const [totalLeads, contactedLeads, followUpsDone, siteVisits] =
+          await Promise.all([
+            // Total leads assigned this month
+            this.prisma.lead.count({
+              where: {
+                assignedUserId: sub.id,
+                createdAt: { gte: monthStart, lte: monthEnd },
+                deletedAt: null,
+              },
+            }),
+            // Leads with CONTACTED status this month
+            this.prisma.lead.count({
+              where: {
+                assignedUserId: sub.id,
+                status: 'CONTACTED',
+                createdAt: { gte: monthStart, lte: monthEnd },
+                deletedAt: null,
+              },
+            }),
+            // Follow-ups completed this month
+            this.prisma.followUp.count({
+              where: {
+                userId: sub.id,
+                status: 'COMPLETED',
+                completedAt: { gte: monthStart, lte: monthEnd },
+              },
+            }),
+            // Site visits scheduled this month
+            this.prisma.siteVisit.count({
+              where: {
+                salesExecId: sub.id,
+                scheduledDate: { gte: monthStart, lte: monthEnd },
+              },
+            }),
+          ]);
 
         return {
           id: sub.id,
@@ -88,35 +100,43 @@ export class EmployeeCardsService {
 
     const subordinates = await this.prisma.user.findMany({
       where: { managerId, status: 'ACTIVE', deletedAt: null },
-      select: { id: true, name: true, username: true, image: true, employeeCode: true, isOnCall: true },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        image: true,
+        employeeCode: true,
+        isOnCall: true,
+      },
     });
 
     const cards = await Promise.all(
       subordinates.map(async (sub) => {
-        const [siteVisitsScheduled, siteVisitsCompleted, bookings] = await Promise.all([
-          // Site visits scheduled this month
-          this.prisma.siteVisit.count({
-            where: {
-              salesExecId: sub.id,
-              scheduledDate: { gte: monthStart, lte: monthEnd },
-            },
-          }),
-          // Site visits completed this month
-          this.prisma.siteVisit.count({
-            where: {
-              salesExecId: sub.id,
-              status: 'COMPLETED',
-              completedAt: { gte: monthStart, lte: monthEnd },
-            },
-          }),
-          // Bookings made this month
-          this.prisma.booking.count({
-            where: {
-              salesExecId: sub.id,
-              createdAt: { gte: monthStart, lte: monthEnd },
-            },
-          }),
-        ]);
+        const [siteVisitsScheduled, siteVisitsCompleted, bookings] =
+          await Promise.all([
+            // Site visits scheduled this month
+            this.prisma.siteVisit.count({
+              where: {
+                salesExecId: sub.id,
+                scheduledDate: { gte: monthStart, lte: monthEnd },
+              },
+            }),
+            // Site visits completed this month
+            this.prisma.siteVisit.count({
+              where: {
+                salesExecId: sub.id,
+                status: 'COMPLETED',
+                completedAt: { gte: monthStart, lte: monthEnd },
+              },
+            }),
+            // Bookings made this month
+            this.prisma.booking.count({
+              where: {
+                salesExecId: sub.id,
+                createdAt: { gte: monthStart, lte: monthEnd },
+              },
+            }),
+          ]);
 
         return {
           id: sub.id,
@@ -153,7 +173,14 @@ export class EmployeeCardsService {
 
     const subordinates = await this.prisma.user.findMany({
       where: { managerId, status: 'ACTIVE', deletedAt: null },
-      select: { id: true, name: true, username: true, image: true, employeeCode: true, isOnCall: true },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        image: true,
+        employeeCode: true,
+        isOnCall: true,
+      },
     });
 
     const cards = await Promise.all(
@@ -202,7 +229,10 @@ export class EmployeeCardsService {
    * Returns the full post-sales dashboard data for a specific employee,
    * but only if that employee reports to the requesting manager.
    */
-  async getPostSalesEmployeeDashboardData(managerId: string, employeeId: string) {
+  async getPostSalesEmployeeDashboardData(
+    managerId: string,
+    employeeId: string,
+  ) {
     await this.validateManagerEmployeeRelation(managerId, employeeId);
     return { employeeId };
   }
@@ -215,8 +245,19 @@ export class EmployeeCardsService {
     const { start: monthStart, end: monthEnd } = getMonthRange();
 
     const subordinates = await this.prisma.user.findMany({
-      where: { managerId, status: 'ACTIVE', deletedAt: null, role: { code: 'SOURCING_MANAGER' } },
-      select: { id: true, name: true, username: true, image: true, employeeCode: true },
+      where: {
+        managerId,
+        status: 'ACTIVE',
+        deletedAt: null,
+        role: { code: 'SOURCING_MANAGER' },
+      },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        image: true,
+        employeeCode: true,
+      },
     });
 
     const cards = await Promise.all(
@@ -269,8 +310,19 @@ export class EmployeeCardsService {
     const { start: monthStart, end: monthEnd } = getMonthRange();
 
     const subordinates = await this.prisma.user.findMany({
-      where: { managerId, status: 'ACTIVE', deletedAt: null, role: { code: 'CLOSING_MANAGER' } },
-      select: { id: true, name: true, username: true, image: true, employeeCode: true },
+      where: {
+        managerId,
+        status: 'ACTIVE',
+        deletedAt: null,
+        role: { code: 'CLOSING_MANAGER' },
+      },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        image: true,
+        employeeCode: true,
+      },
     });
 
     const cards = await Promise.all(
@@ -317,7 +369,10 @@ export class EmployeeCardsService {
     return cards;
   }
 
-  private async validateManagerEmployeeRelation(managerId: string, employeeId: string) {
+  private async validateManagerEmployeeRelation(
+    managerId: string,
+    employeeId: string,
+  ) {
     const employee = await this.prisma.user.findUnique({
       where: { id: employeeId },
       select: { managerId: true },

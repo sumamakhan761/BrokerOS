@@ -1,14 +1,18 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
-import { CreateSiteVisitDto, UpdateSiteVisitDto, ArriveSiteVisitDto } from './dto/site-visit.dto.js';
+import {
+  CreateSiteVisitDto,
+  UpdateSiteVisitDto,
+  ArriveSiteVisitDto,
+} from './dto/site-visit.dto.js';
 
 @Injectable()
 export class SiteVisitsService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
-  ) { }
+  ) {}
 
   async getSiteVisits(leadId: string) {
     const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
@@ -30,25 +34,37 @@ export class SiteVisitsService {
 
       // Fetch Sales Executives mapped to the project
       const projectExecs = await this.prisma.projectAssignment.findMany({
-        where: { projectId: data.projectId, isActive: true, user: { role: { code: 'SALES_EXECUTIVE' } } },
+        where: {
+          projectId: data.projectId,
+          isActive: true,
+          user: { role: { code: 'SALES_EXECUTIVE' } },
+        },
         orderBy: { assignedAt: 'asc' }, // Keep order deterministic
       });
 
       if (projectExecs.length === 0) {
-        throw new BadRequestException('No Sales Executives are assigned to this project. Please contact a manager.');
+        throw new BadRequestException(
+          'No Sales Executives are assigned to this project. Please contact a manager.',
+        );
       }
 
       let assignedExecId;
 
       // Find last assigned SV for this project among these execs
       const lastSV = await this.prisma.siteVisit.findFirst({
-        where: { projectId: data.projectId, salesExecId: { in: projectExecs.map(pe => pe.userId) } },
+        where: {
+          projectId: data.projectId,
+          salesExecId: { in: projectExecs.map((pe) => pe.userId) },
+        },
         orderBy: { createdAt: 'desc' },
       });
 
       if (lastSV) {
-        const lastIdx = projectExecs.findIndex(pe => pe.userId === lastSV.salesExecId);
-        assignedExecId = projectExecs[(lastIdx + 1) % projectExecs.length].userId;
+        const lastIdx = projectExecs.findIndex(
+          (pe) => pe.userId === lastSV.salesExecId,
+        );
+        assignedExecId =
+          projectExecs[(lastIdx + 1) % projectExecs.length].userId;
       } else {
         assignedExecId = projectExecs[0].userId;
       }
@@ -79,18 +95,25 @@ export class SiteVisitsService {
         },
       });
 
-      const updatedLead = await this.prisma.lead.findUnique({ where: { id: leadId } });
+      const updatedLead = await this.prisma.lead.findUnique({
+        where: { id: leadId },
+      });
       if (updatedLead) {
-        const customerName = updatedLead.lastName ? `${updatedLead.firstName} ${updatedLead.lastName}` : updatedLead.firstName;
+        const customerName = updatedLead.lastName
+          ? `${updatedLead.firstName} ${updatedLead.lastName}`
+          : updatedLead.firstName;
         const projectName = siteVisit.project.name;
-        const formattedDate = new Date(data.scheduledDate).toLocaleString('en-IN', {
-          day: 'numeric',
-          month: 'short',
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true,
-          timeZone: 'Asia/Kolkata',
-        });
+        const formattedDate = new Date(data.scheduledDate).toLocaleString(
+          'en-IN',
+          {
+            day: 'numeric',
+            month: 'short',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'Asia/Kolkata',
+          },
+        );
 
         await this.notificationsService.createNotification({
           userId: assignedExecId,
@@ -104,7 +127,7 @@ export class SiteVisitsService {
             customerName,
             projectName,
             scheduledAt: data.scheduledDate,
-          }
+          },
         });
       }
 
@@ -119,16 +142,30 @@ export class SiteVisitsService {
     const updated = await this.prisma.siteVisit.update({
       where: { id: siteVisitId },
       data: {
-        ...(data.scheduledDate && { scheduledDate: new Date(data.scheduledDate) }),
+        ...(data.scheduledDate && {
+          scheduledDate: new Date(data.scheduledDate),
+        }),
         ...(data.projectId && { projectId: data.projectId }),
-        ...(data.meetingNotes !== undefined && { meetingNotes: data.meetingNotes }),
+        ...(data.meetingNotes !== undefined && {
+          meetingNotes: data.meetingNotes,
+        }),
         ...(data.status && { status: data.status as any }),
         ...(data.interestLevel && { interestLevel: data.interestLevel as any }),
-        ...(data.budgetConfirmed !== undefined && { budgetConfirmed: data.budgetConfirmed }),
-        ...(data.configInterest !== undefined && { configInterest: data.configInterest }),
-        ...(data.customerReaction !== undefined && { customerReaction: data.customerReaction }),
-        ...(data.customerObjections !== undefined && { customerObjections: data.customerObjections }),
-        ...(data.closingProbability !== undefined && { closingProbability: data.closingProbability }),
+        ...(data.budgetConfirmed !== undefined && {
+          budgetConfirmed: data.budgetConfirmed,
+        }),
+        ...(data.configInterest !== undefined && {
+          configInterest: data.configInterest,
+        }),
+        ...(data.customerReaction !== undefined && {
+          customerReaction: data.customerReaction,
+        }),
+        ...(data.customerObjections !== undefined && {
+          customerObjections: data.customerObjections,
+        }),
+        ...(data.closingProbability !== undefined && {
+          closingProbability: data.closingProbability,
+        }),
         ...(data.completedAt && { completedAt: new Date(data.completedAt) }),
         ...(data.nextAction !== undefined && { nextAction: data.nextAction }),
       },
@@ -139,9 +176,14 @@ export class SiteVisitsService {
     });
 
     if (data.status === 'COMPLETED') {
-      this.notificationsService.checkDailyTaskCompletion(updated.salesExecId, 'SITE_VISITS').catch(err => {
-        console.error("Failed to check daily site visits task completion:", err);
-      });
+      this.notificationsService
+        .checkDailyTaskCompletion(updated.salesExecId, 'SITE_VISITS')
+        .catch((err) => {
+          console.error(
+            'Failed to check daily site visits task completion:',
+            err,
+          );
+        });
     }
 
     return updated;
@@ -153,7 +195,10 @@ export class SiteVisitsService {
     });
   }
 
-  async arriveAtSiteVisit(siteVisitId: string, locationData: ArriveSiteVisitDto) {
+  async arriveAtSiteVisit(
+    siteVisitId: string,
+    locationData: ArriveSiteVisitDto,
+  ) {
     return this.prisma.siteVisit.update({
       where: { id: siteVisitId },
       data: {

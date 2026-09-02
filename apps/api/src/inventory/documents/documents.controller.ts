@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Delete, Param, Query, UseGuards, UseInterceptors, UploadedFile, Body, Res, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Query,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  Body,
+  Res,
+  Req,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentsService } from './documents.service.js';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
@@ -10,17 +23,21 @@ export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
   @Get()
-  async getDocuments(@Req() req: any, @Param('projectId') projectId: string, @Query('towerId') towerId?: string) {
+  async getDocuments(
+    @Req() req: any,
+    @Param('projectId') projectId: string,
+    @Query('towerId') towerId?: string,
+  ) {
     let docs = await this.documentsService.getDocuments(projectId, towerId);
-    
+
     // Sales Executives only see public documents
     if (req.user?.roleId === 2) {
-      docs = docs.filter(d => d.isPublic);
+      docs = docs.filter((d) => d.isPublic);
     }
 
-    return docs.map(doc => ({
+    return docs.map((doc) => ({
       ...doc,
-      fileUrl: `/api/proxy/api/inventory/projects/${projectId}/documents/${doc.id}/file`
+      fileUrl: `/api/proxy/api/inventory/projects/${projectId}/documents/${doc.id}/file`,
     }));
   }
 
@@ -29,7 +46,7 @@ export class DocumentsController {
   async uploadDocument(
     @Param('projectId') projectId: string,
     @Body() body: UploadDocumentDto,
-    @UploadedFile() file: any
+    @UploadedFile() file: any,
   ) {
     return this.documentsService.uploadDocument(projectId, file, body);
   }
@@ -43,11 +60,15 @@ export class DocumentsController {
 
     try {
       const blobRes = await fetch(doc.fileUrl, {
-        headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+        headers: {
+          Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+        },
       });
 
       if (!blobRes.ok) {
-        return res.status(blobRes.status).send('Failed to fetch file from blob storage');
+        return res
+          .status(blobRes.status)
+          .send('Failed to fetch file from blob storage');
       }
 
       res.set({

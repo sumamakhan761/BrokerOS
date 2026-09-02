@@ -27,4 +27,4 @@ import { PrismaModule } from '../../lib/database/prisma.module.js';
     PreSalesLeaderboardService,
   ],
 })
-export class PreSalesDashboardModule { }
+export class PreSalesDashboardModule {}

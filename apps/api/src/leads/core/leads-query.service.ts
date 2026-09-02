@@ -12,20 +12,32 @@ const SE_VISIBLE_STATUSES: LeadStatus[] = [
 
 @Injectable()
 export class LeadsQueryService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async findAll(filters?: GetLeadsFilterDto) {
     const where: Prisma.LeadWhereInput = {};
 
     if (filters?.assignedToId) {
-      const assignedUser = await this.prisma.user.findUnique({ where: { id: filters.assignedToId }, include: { role: true } });
+      const assignedUser = await this.prisma.user.findUnique({
+        where: { id: filters.assignedToId },
+        include: { role: true },
+      });
       if (assignedUser?.role?.code === 'POST_SALES') {
-        where.customer = { bookings: { some: { assignedPostSalesId: filters.assignedToId, source: 'DIRECT' } } };
+        where.customer = {
+          bookings: {
+            some: {
+              assignedPostSalesId: filters.assignedToId,
+              source: 'DIRECT',
+            },
+          },
+        };
       } else {
         where.assignedUserId = filters.assignedToId;
       }
     } else if (filters?.roleId && filters?.userId) {
-      const role = await this.prisma.role.findUnique({ where: { id: filters.roleId } });
+      const role = await this.prisma.role.findUnique({
+        where: { id: filters.roleId },
+      });
 
       if (role?.code === 'PRE_SALES') {
         where.assignedUserId = filters.userId;
@@ -74,12 +86,12 @@ export class LeadsQueryService {
       } else if (role?.code === 'CLOSING_MANAGER') {
         where.OR = [
           { createdById: filters.userId },
-          { assignedUserId: filters.userId }
+          { assignedUserId: filters.userId },
         ];
       } else if (role?.code === 'SOURCING_MANAGER') {
         where.OR = [
           { createdById: filters.userId },
-          { broker: { sourcingManagerId: filters.userId } }
+          { broker: { sourcingManagerId: filters.userId } },
         ];
       } else if (role?.code === 'CHANNEL_PARTNER') {
         const subordinates = await this.prisma.user.findMany({
@@ -90,10 +102,14 @@ export class LeadsQueryService {
         where.OR = [
           { createdById: { in: subordinateIds } },
           { assignedUserId: { in: subordinateIds } },
-          { broker: { sourcingManagerId: { in: subordinateIds } } }
+          { broker: { sourcingManagerId: { in: subordinateIds } } },
         ];
       } else if (role?.code === 'POST_SALES') {
-        where.customer = { bookings: { some: { assignedPostSalesId: filters.userId, source: 'DIRECT' } } };
+        where.customer = {
+          bookings: {
+            some: { assignedPostSalesId: filters.userId, source: 'DIRECT' },
+          },
+        };
       } else if (role?.code === 'POST_SALES_MANAGER') {
         where.customer = { bookings: { some: { source: 'DIRECT' } } };
       }
@@ -162,7 +178,13 @@ export class LeadsQueryService {
         siteVisits: {
           orderBy: { scheduledDate: 'desc' },
           take: 1,
-          select: { scheduledDate: true, status: true, completedAt: true, projectId: true, salesExec: { select: { name: true, username: true } } },
+          select: {
+            scheduledDate: true,
+            status: true,
+            completedAt: true,
+            projectId: true,
+            salesExec: { select: { name: true, username: true } },
+          },
         },
         followUps: {
           orderBy: { scheduledDate: 'desc' },
@@ -176,19 +198,20 @@ export class LeadsQueryService {
                 unit: {
                   select: {
                     constructionStatus: true,
-                    possessionTimeline: true
-                  }
-                }
-              }
-            }
-          }
-        }
+                    possessionTimeline: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
     return leads.map((lead) => {
       const latestSV = lead.siteVisits.length > 0 ? lead.siteVisits[0] : null;
-      const latestFollowUp = lead.followUps.length > 0 ? lead.followUps[0] : null;
+      const latestFollowUp =
+        lead.followUps.length > 0 ? lead.followUps[0] : null;
       return {
         id: lead.id,
         firstName: lead.firstName,
@@ -198,7 +221,8 @@ export class LeadsQueryService {
         subStatus: lead.subStatus,
         score: lead.score,
         lastContactDate: lead.lastContactDate,
-        nextFollowUpDate: lead.nextFollowUpDate || latestFollowUp?.scheduledDate || null,
+        nextFollowUpDate:
+          lead.nextFollowUpDate || latestFollowUp?.scheduledDate || null,
         createdAt: lead.createdAt,
         assignedUser: lead.assignedUser,
         interestedProject: (lead as any).interestedProject || null,
@@ -206,8 +230,10 @@ export class LeadsQueryService {
         siteVisitScheduledDate: latestSV?.scheduledDate ?? null,
         siteVisitCompletedDate: latestSV?.completedAt ?? null,
         latestFollowUp: latestFollowUp,
-        processionStatus: lead.customer?.bookings?.[0]?.unit?.constructionStatus || null,
-        processionTimeline: lead.customer?.bookings?.[0]?.unit?.possessionTimeline || null,
+        processionStatus:
+          lead.customer?.bookings?.[0]?.unit?.constructionStatus || null,
+        processionTimeline:
+          lead.customer?.bookings?.[0]?.unit?.possessionTimeline || null,
       };
     });
   }
@@ -230,7 +256,7 @@ export class LeadsQueryService {
         where.OR = [
           { assignedUserId: userId },
           { siteVisits: { some: { salesExecId: userId } } },
-          { customer: { bookings: { some: { salesExecId: userId } } } }
+          { customer: { bookings: { some: { salesExecId: userId } } } },
         ];
       } else if (role?.code === 'SALES_MANAGER') {
         const subordinates = await this.prisma.user.findMany({
@@ -240,17 +266,18 @@ export class LeadsQueryService {
         const subordinateIds = subordinates.map((s) => s.id);
         where.OR = [
           { siteVisits: { some: { salesExecId: { in: subordinateIds } } } },
-          { customer: { bookings: { some: { salesExecId: { in: subordinateIds } } } } }
+          {
+            customer: {
+              bookings: { some: { salesExecId: { in: subordinateIds } } },
+            },
+          },
         ];
       } else if (role?.code === 'CLOSING_MANAGER') {
-        where.OR = [
-          { createdById: userId },
-          { assignedUserId: userId }
-        ];
+        where.OR = [{ createdById: userId }, { assignedUserId: userId }];
       } else if (role?.code === 'SOURCING_MANAGER') {
         where.OR = [
           { createdById: userId },
-          { broker: { sourcingManagerId: userId } }
+          { broker: { sourcingManagerId: userId } },
         ];
       } else if (role?.code === 'CHANNEL_PARTNER') {
         const subordinates = await this.prisma.user.findMany({
@@ -261,10 +288,12 @@ export class LeadsQueryService {
         where.OR = [
           { createdById: { in: subordinateIds } },
           { assignedUserId: { in: subordinateIds } },
-          { broker: { sourcingManagerId: { in: subordinateIds } } }
+          { broker: { sourcingManagerId: { in: subordinateIds } } },
         ];
       } else if (role?.code === 'POST_SALES') {
-        where.customer = { bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } } };
+        where.customer = {
+          bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } },
+        };
       } else if (role?.code === 'POST_SALES_MANAGER') {
         where.customer = { bookings: { some: { source: 'DIRECT' } } };
       }
@@ -282,9 +311,9 @@ export class LeadsQueryService {
         customer: {
           include: {
             bookings: {
-              include: { unit: true }
-            }
-          }
+              include: { unit: true },
+            },
+          },
         },
         siteVisits: {
           orderBy: { scheduledDate: 'desc' },
@@ -295,7 +324,9 @@ export class LeadsQueryService {
         },
         notes: {
           orderBy: { createdAt: 'desc' },
-          include: { user: { select: { username: true, displayUsername: true } } },
+          include: {
+            user: { select: { username: true, displayUsername: true } },
+          },
         },
         callRecords: {
           orderBy: { startedAt: 'desc' },
@@ -317,8 +348,10 @@ export class LeadsQueryService {
     }
 
     const result: any = lead;
-    result.processionStatus = lead.customer?.bookings?.[0]?.unit?.constructionStatus || null;
-    result.processionTimeline = lead.customer?.bookings?.[0]?.unit?.possessionTimeline || null;
+    result.processionStatus =
+      lead.customer?.bookings?.[0]?.unit?.constructionStatus || null;
+    result.processionTimeline =
+      lead.customer?.bookings?.[0]?.unit?.possessionTimeline || null;
 
     return result;
   }

@@ -9,4 +9,4 @@ import { NotificationsCron } from './notifications.cron.js';
   providers: [NotificationsService, NotificationsGateway, NotificationsCron],
   exports: [NotificationsService, NotificationsGateway],
 })
-export class NotificationsModule { }
+export class NotificationsModule {}

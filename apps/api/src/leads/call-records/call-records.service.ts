@@ -37,22 +37,31 @@ export class CallRecordsService {
     }
 
     if (!lead && !broker) {
-      console.log(`No lead or broker found for phone number: ${data.phoneNumber}`);
+      console.log(
+        `No lead or broker found for phone number: ${data.phoneNumber}`,
+      );
       return { success: false, message: 'No lead or broker found' };
     }
 
     const targetId = lead ? lead.id : broker!.id;
-    const blob = await put(`calls/${targetId}-${Date.now()}-${file.originalname}`, file.buffer, {
-      access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-    });
+    const blob = await put(
+      `calls/${targetId}-${Date.now()}-${file.originalname}`,
+      file.buffer,
+      {
+        access: 'public',
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      },
+    );
 
-    const assignedUserId = lead 
-      ? (lead.assignedUserId || (await this.prisma.user.findFirst())?.id)
-      : (broker!.sourcingManagerId || (await this.prisma.user.findFirst())?.id);
+    const assignedUserId = lead
+      ? lead.assignedUserId || (await this.prisma.user.findFirst())?.id
+      : broker!.sourcingManagerId || (await this.prisma.user.findFirst())?.id;
 
     if (!assignedUserId) {
-      return { success: false, message: 'No valid user found to assign call record' };
+      return {
+        success: false,
+        message: 'No valid user found to assign call record',
+      };
     }
 
     const callRecord = await this.prisma.callRecord.create({
@@ -74,28 +83,40 @@ export class CallRecordsService {
     // Notification #20: Daily Task Completion
     try {
       // Background check for daily task completion
-      this.notificationsService.checkDailyTaskCompletion(assignedUserId, 'CALLS').catch(err => {
-        console.error("Failed to check daily call task completion:", err);
-      });
+      this.notificationsService
+        .checkDailyTaskCompletion(assignedUserId, 'CALLS')
+        .catch((err) => {
+          console.error('Failed to check daily call task completion:', err);
+        });
 
       const user = await this.prisma.user.findUnique({
         where: { id: assignedUserId },
-        select: { role: { select: { code: true } } }
+        select: { role: { select: { code: true } } },
       });
 
-      if (user && user.role && !['PRE_SALES_MANAGER', 'SALES_MANAGER', 'CHANNEL_PARTNER'].includes(user.role.code)) {
-        const callCount = await this.prisma.callRecord.count({ where: { userId: assignedUserId } });
+      if (
+        user &&
+        user.role &&
+        !['PRE_SALES_MANAGER', 'SALES_MANAGER', 'CHANNEL_PARTNER'].includes(
+          user.role.code,
+        )
+      ) {
+        const callCount = await this.prisma.callRecord.count({
+          where: { userId: assignedUserId },
+        });
         const milestones = [1000, 5000, 10000, 20000, 50000];
-        
+
         if (milestones.includes(callCount)) {
           const existingNotifs = await this.prisma.notification.findMany({
             where: { userId: assignedUserId, type: 'ACHIEVEMENT_MILESTONE' },
             orderBy: { createdAt: 'desc' },
-            take: 50
+            take: 50,
           });
-          const alreadySent = existingNotifs.some(n => {
+          const alreadySent = existingNotifs.some((n) => {
             const meta = n.metadata as any;
-            return meta?.achievementType === 'CALLS' && meta?.milestone === callCount;
+            return (
+              meta?.achievementType === 'CALLS' && meta?.milestone === callCount
+            );
           });
 
           if (!alreadySent) {
@@ -106,26 +127,32 @@ export class CallRecordsService {
               body: `Amazing work! You've reached a new call milestone.`,
               actionUrl: `/dashboard/${user.role.code.toLowerCase().replace('_', '-')}/analytics`,
               metadata: {
-                achievementType: "CALLS",
+                achievementType: 'CALLS',
                 milestone: callCount,
-                currentCount: callCount
-              }
+                currentCount: callCount,
+              },
             });
           }
         }
       }
     } catch (err) {
-      console.error("Failed to process call milestone notification:", err);
+      console.error('Failed to process call milestone notification:', err);
     }
 
     // Fire-and-forget background transcription + AI scoring job
     this.transcriptionQueue.add(async () => {
-      const tempFilePath = path.join(os.tmpdir(), `call-record-${callRecord.id}.mp3`);
+      const tempFilePath = path.join(
+        os.tmpdir(),
+        `call-record-${callRecord.id}.mp3`,
+      );
       try {
-        console.log(`[Queue] Starting transcription for CallRecord ${callRecord.id}`);
+        console.log(
+          `[Queue] Starting transcription for CallRecord ${callRecord.id}`,
+        );
         fs.writeFileSync(tempFilePath, file.buffer);
 
-        const transcript = await this.transcriptionService.transcribeAudio(tempFilePath);
+        const transcript =
+          await this.transcriptionService.transcribeAudio(tempFilePath);
 
         let summary: string | null = null;
         let nextStepSuggestion: string | null = null;
@@ -168,13 +195,23 @@ export class CallRecordsService {
               if (!leadData.budget && summaryResult.extractedBudget) {
                 updateData.budget = summaryResult.extractedBudget;
               }
-              if (!leadData.interestedProjectId && summaryResult.extractedProjectId) {
-                updateData.interestedProjectId = summaryResult.extractedProjectId;
+              if (
+                !leadData.interestedProjectId &&
+                summaryResult.extractedProjectId
+              ) {
+                updateData.interestedProjectId =
+                  summaryResult.extractedProjectId;
               }
-              if (!leadData.preferredLocation && summaryResult.extractedLocation) {
+              if (
+                !leadData.preferredLocation &&
+                summaryResult.extractedLocation
+              ) {
                 updateData.preferredLocation = summaryResult.extractedLocation;
               }
-              if (!leadData.requirements && summaryResult.extractedRequirements) {
+              if (
+                !leadData.requirements &&
+                summaryResult.extractedRequirements
+              ) {
                 updateData.requirements = summaryResult.extractedRequirements;
               }
 
@@ -183,15 +220,24 @@ export class CallRecordsService {
                   where: { id: leadData.id },
                   data: updateData,
                 });
-                console.log(`[Queue] Successfully updated Lead ${leadData.id} with AI extracted info and next step.`);
+                console.log(
+                  `[Queue] Successfully updated Lead ${leadData.id} with AI extracted info and next step.`,
+                );
               }
             }
           }
 
           // AI Lead Scoring Logic
-          if (leadData && (!leadData.score || leadData.score === 0) && leadData._count.callRecords <= 3) {
-            console.log(`[Queue] Triggering AI Lead Scoring for Lead: ${leadData.id} (Call attempt: ${leadData._count.callRecords})`);
-            const aiScoreData = await this.transcriptionService.generateLeadScore(transcript);
+          if (
+            leadData &&
+            (!leadData.score || leadData.score === 0) &&
+            leadData._count.callRecords <= 3
+          ) {
+            console.log(
+              `[Queue] Triggering AI Lead Scoring for Lead: ${leadData.id} (Call attempt: ${leadData._count.callRecords})`,
+            );
+            const aiScoreData =
+              await this.transcriptionService.generateLeadScore(transcript);
 
             if (aiScoreData && aiScoreData.score > 0) {
               let newTemperature = leadData.temperature;
@@ -203,20 +249,32 @@ export class CallRecordsService {
                 where: { id: leadData.id },
                 data: { score: aiScoreData.score, temperature: newTemperature },
               });
-              console.log(`[Queue] Successfully updated Lead score to ${aiScoreData.score} and temperature to ${newTemperature} (Category: ${aiScoreData.category})`);
+              console.log(
+                `[Queue] Successfully updated Lead score to ${aiScoreData.score} and temperature to ${newTemperature} (Category: ${aiScoreData.category})`,
+              );
             } else if (aiScoreData && aiScoreData.score === 0) {
-              console.log(`[Queue] AI scored as 0 (${aiScoreData.category}). Not updating score to allow retry on next call.`);
+              console.log(
+                `[Queue] AI scored as 0 (${aiScoreData.category}). Not updating score to allow retry on next call.`,
+              );
             }
           }
 
           // AI Follow-up Scheduling Logic
-          if ((leadData || callRecord.brokerId) && summaryResult !== null && typeof summaryResult !== 'string' && summaryResult.scheduleFollowUp && summaryResult.followUpIsoDate) {
+          if (
+            (leadData || callRecord.brokerId) &&
+            summaryResult !== null &&
+            typeof summaryResult !== 'string' &&
+            summaryResult.scheduleFollowUp &&
+            summaryResult.followUpIsoDate
+          ) {
             try {
               const targetType = leadData ? 'Lead' : 'Broker';
               const targetId = leadData ? leadData.id : callRecord.brokerId;
-              console.log(`[Queue] Triggering AI Auto-Schedule Follow-up for ${targetType}: ${targetId}`);
+              console.log(
+                `[Queue] Triggering AI Auto-Schedule Follow-up for ${targetType}: ${targetId}`,
+              );
               const parsedDate = new Date(summaryResult.followUpIsoDate);
-              
+
               if (!isNaN(parsedDate.getTime())) {
                 await this.prisma.followUp.create({
                   data: {
@@ -225,13 +283,19 @@ export class CallRecordsService {
                     userId: assignedUserId,
                     scheduledDate: parsedDate,
                     type: summaryResult.followUpTitle || 'Follow-up Call',
-                    remarks: summaryResult.followUpRemarks || 'Automatically scheduled by AI based on call transcript.',
-                    status: 'SCHEDULED'
-                  }
+                    remarks:
+                      summaryResult.followUpRemarks ||
+                      'Automatically scheduled by AI based on call transcript.',
+                    status: 'SCHEDULED',
+                  },
                 });
-                console.log(`[Queue] Successfully scheduled follow-up on ${parsedDate.toISOString()}`);
+                console.log(
+                  `[Queue] Successfully scheduled follow-up on ${parsedDate.toISOString()}`,
+                );
               } else {
-                console.log(`[Queue] AI provided invalid follow-up date: ${summaryResult.followUpIsoDate}`);
+                console.log(
+                  `[Queue] AI provided invalid follow-up date: ${summaryResult.followUpIsoDate}`,
+                );
               }
             } catch (err) {
               console.error(`[Queue] Failed to schedule follow-up:`, err);
@@ -247,9 +311,14 @@ export class CallRecordsService {
           },
         });
 
-        console.log(`[Queue] Successfully processed CallRecord: ${callRecord.id}`);
+        console.log(
+          `[Queue] Successfully processed CallRecord: ${callRecord.id}`,
+        );
       } catch (error) {
-        console.error(`[Queue] Error transcribing CallRecord ${callRecord.id}:`, error);
+        console.error(
+          `[Queue] Error transcribing CallRecord ${callRecord.id}:`,
+          error,
+        );
       } finally {
         if (fs.existsSync(tempFilePath)) {
           fs.unlinkSync(tempFilePath);

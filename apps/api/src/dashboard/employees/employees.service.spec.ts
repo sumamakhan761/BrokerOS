@@ -1,19 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 jest.mock('../../lib/database/prisma-client.js', () => ({
-  prismaClient: {}
+  prismaClient: {},
 }));
 jest.mock('../../lib/database/prisma.service.js', () => ({
-  PrismaService: class {}
+  PrismaService: class {},
 }));
 jest.mock('@brokeros/prisma', () => ({
   NotificationType: {},
-  PrismaClient: class {}
+  PrismaClient: class {},
 }));
 jest.mock('expo-server-sdk', () => ({
   Expo: class {
     sendPushNotificationsAsync = jest.fn();
     chunkPushNotifications = jest.fn();
-  }
+  },
 }));
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { EmployeesService } from './employees.service.js';

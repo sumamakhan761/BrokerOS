@@ -9,20 +9,22 @@ export class NegotiationsService {
   async getNegotiations(leadId: string) {
     const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
     if (!lead) throw new BadRequestException('Lead not found');
-    
+
     return this.prisma.negotiation.findMany({
       where: { leadId },
       orderBy: { id: 'desc' }, // Use ID as proxy for created time
       include: {
-        salesExec: { select: { username: true, email: true, displayUsername: true } },
+        salesExec: {
+          select: { username: true, email: true, displayUsername: true },
+        },
       },
     });
   }
 
   async createNegotiation(
-    leadId: string, 
-    userId: string, 
-    data: CreateNegotiationDto
+    leadId: string,
+    userId: string,
+    data: CreateNegotiationDto,
   ) {
     const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
     if (!lead) throw new BadRequestException('Lead not found');
@@ -39,7 +41,9 @@ export class NegotiationsService {
         nextActionPlan: data.nextStep,
       },
       include: {
-        salesExec: { select: { username: true, email: true, displayUsername: true } },
+        salesExec: {
+          select: { username: true, email: true, displayUsername: true },
+        },
       },
     });
   }
