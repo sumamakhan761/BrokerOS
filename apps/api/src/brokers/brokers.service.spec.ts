@@ -10,15 +10,27 @@ describe('BrokersService', () => {
   let service: BrokersService;
   const mockPrisma = {
     user: { findUnique: jest.fn(), findMany: jest.fn() },
-    broker: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
+    broker: {
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+    },
     projectAssignment: { findMany: jest.fn() },
     towerAssignment: { findMany: jest.fn() },
-    brokerProjectAssignment: { findFirst: jest.fn(), update: jest.fn(), create: jest.fn() },
+    brokerProjectAssignment: {
+      findFirst: jest.fn(),
+      update: jest.fn(),
+      create: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BrokersService, { provide: PrismaService, useValue: mockPrisma }],
+      providers: [
+        BrokersService,
+        { provide: PrismaService, useValue: mockPrisma },
+      ],
     }).compile();
     service = module.get(BrokersService);
   });
@@ -26,22 +38,34 @@ describe('BrokersService', () => {
   afterEach(() => jest.clearAllMocks());
 
   it('should get brokers', async () => {
-    mockPrisma.user.findUnique.mockResolvedValue({ id: 'u-1', role: { code: 'SOURCING_MANAGER' } });
+    mockPrisma.user.findUnique.mockResolvedValue({
+      id: 'u-1',
+      role: { code: 'SOURCING_MANAGER' },
+    });
     mockPrisma.broker.findMany.mockResolvedValue([{ id: 'b-1' }]);
     const res = await service.getBrokers('u-1');
     expect(res.length).toBe(1);
   });
 
   it('should get broker by id', async () => {
-    mockPrisma.user.findUnique.mockResolvedValue({ id: 'u-1', role: { code: 'SOURCING_MANAGER' } });
+    mockPrisma.user.findUnique.mockResolvedValue({
+      id: 'u-1',
+      role: { code: 'SOURCING_MANAGER' },
+    });
     mockPrisma.broker.findUnique.mockResolvedValue({ id: 'b-1' });
     const res = await service.getBrokerById('b-1', 'u-1');
     expect(res.id).toBe('b-1');
   });
 
   it('should update deal card', async () => {
-    mockPrisma.user.findUnique.mockResolvedValue({ id: 'u-1', role: { code: 'SOURCING_MANAGER' } });
-    mockPrisma.broker.findUnique.mockResolvedValue({ id: 'b-1', status: 'DEAL' });
+    mockPrisma.user.findUnique.mockResolvedValue({
+      id: 'u-1',
+      role: { code: 'SOURCING_MANAGER' },
+    });
+    mockPrisma.broker.findUnique.mockResolvedValue({
+      id: 'b-1',
+      status: 'DEAL',
+    });
     mockPrisma.brokerProjectAssignment.findFirst.mockResolvedValue(null);
     mockPrisma.brokerProjectAssignment.create.mockResolvedValue({ id: 'a-1' });
     const dto = { projectId: 'p-1' } as UpdateDealCardDto;

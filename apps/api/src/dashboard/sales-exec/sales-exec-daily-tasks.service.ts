@@ -140,7 +140,7 @@ export class SalesExecDailyTasksService {
           target: todaySiteVisitList.length + todaySiteVisitsDone,
           done: todaySiteVisitsDone,
           backlog: backlogSiteVisitList.length,
-        }
+        },
       },
       todaySiteVisitList,
       backlogSiteVisitList,

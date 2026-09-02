@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { SmsService } from '../sms.service.js';
 import {
   CreateSmsCampaignDto,
@@ -34,7 +43,16 @@ export class SmsCampaignsController {
   }
 
   @Get('campaigns')
-  async findAll(@Query() query: { page?: number; limit?: number; status?: string; search?: string; includeDrafts?: string | boolean }) {
+  async findAll(
+    @Query()
+    query: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      search?: string;
+      includeDrafts?: string | boolean;
+    },
+  ) {
     return this.smsService.findAllCampaigns(query);
   }
 
@@ -56,7 +74,8 @@ export class SmsCampaignsController {
   @Get('campaigns/:id/recipients')
   async getRecipients(
     @Param('id') id: string,
-    @Query() query: { page?: number; limit?: number; status?: string; search?: string },
+    @Query()
+    query: { page?: number; limit?: number; status?: string; search?: string },
   ) {
     return this.smsService.getCampaignRecipients(id, query);
   }

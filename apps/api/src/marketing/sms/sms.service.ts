@@ -34,7 +34,9 @@ export class SmsService {
     return this.integrationsService.getAdapter(providerType);
   }
 
-  async previewAudience(dto: PreviewSmsAudienceDto): Promise<SmsAudienceEstimationResult> {
+  async previewAudience(
+    dto: PreviewSmsAudienceDto,
+  ): Promise<SmsAudienceEstimationResult> {
     return this.audienceService.previewAudience(dto);
   }
 
@@ -42,7 +44,9 @@ export class SmsService {
     return this.audienceService.promoteCsvRecipientToLead(recipientId, userId);
   }
 
-  async getCampaignAnalytics(campaignId: string): Promise<SmsCampaignAnalyticsSummary> {
+  async getCampaignAnalytics(
+    campaignId: string,
+  ): Promise<SmsCampaignAnalyticsSummary> {
     return this.analyticsService.getCampaignAnalytics(campaignId);
   }
 
@@ -69,7 +73,11 @@ export class SmsService {
     return this.integrationsService.deleteIntegration(id);
   }
 
-  async resolveShortLink(code: string, ip?: string, userAgent?: string): Promise<string> {
+  async resolveShortLink(
+    code: string,
+    ip?: string,
+    userAgent?: string,
+  ): Promise<string> {
     return this.trackingService.resolveShortLink(code, ip, userAgent);
   }
 
@@ -132,11 +140,19 @@ export class SmsService {
       if (exists) validUserId = exists.id;
     }
 
-    return { projectId: validProjectId, integrationId: validIntegrationId, userId: validUserId };
+    return {
+      projectId: validProjectId,
+      integrationId: validIntegrationId,
+      userId: validUserId,
+    };
   }
 
   async saveDraftCampaign(dto: SaveDraftSmsCampaignDto, userId?: string) {
-    const { projectId, integrationId, userId: validUserId } = await this.resolveForeignKeys(dto, userId);
+    const {
+      projectId,
+      integrationId,
+      userId: validUserId,
+    } = await this.resolveForeignKeys(dto, userId);
 
     if (dto.campaignId) {
       const existing = await this.prisma.smsCampaign.findUnique({
@@ -152,13 +168,30 @@ export class SmsService {
             providerType: dto.providerType ?? existing.providerType,
             audienceSource: dto.audienceSource ?? existing.audienceSource,
             isCpCampaign: dto.isCpCampaign ?? existing.isCpCampaign,
-            projectId: dto.projectId !== undefined ? projectId : existing.projectId,
-            integrationId: dto.integrationId !== undefined ? integrationId : existing.integrationId,
-            fromSender: dto.fromSender !== undefined ? dto.fromSender : existing.fromSender,
-            messageContent: dto.messageContent !== undefined ? dto.messageContent : existing.messageContent,
-            dltTemplateId: dto.dltTemplateId !== undefined ? dto.dltTemplateId : existing.dltTemplateId,
-            audienceFilters: dto.audienceFilters ? (dto.audienceFilters as any) : existing.audienceFilters,
-            scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : existing.scheduledAt,
+            projectId:
+              dto.projectId !== undefined ? projectId : existing.projectId,
+            integrationId:
+              dto.integrationId !== undefined
+                ? integrationId
+                : existing.integrationId,
+            fromSender:
+              dto.fromSender !== undefined
+                ? dto.fromSender
+                : existing.fromSender,
+            messageContent:
+              dto.messageContent !== undefined
+                ? dto.messageContent
+                : existing.messageContent,
+            dltTemplateId:
+              dto.dltTemplateId !== undefined
+                ? dto.dltTemplateId
+                : existing.dltTemplateId,
+            audienceFilters: dto.audienceFilters
+              ? (dto.audienceFilters as any)
+              : existing.audienceFilters,
+            scheduledAt: dto.scheduledAt
+              ? new Date(dto.scheduledAt)
+              : existing.scheduledAt,
           },
         });
       }
@@ -177,7 +210,9 @@ export class SmsService {
         fromSender: dto.fromSender || 'BrokerOS',
         messageContent: dto.messageContent || '',
         dltTemplateId: dto.dltTemplateId || null,
-        audienceFilters: dto.audienceFilters ? (dto.audienceFilters as any) : undefined,
+        audienceFilters: dto.audienceFilters
+          ? (dto.audienceFilters as any)
+          : undefined,
         totalRecipients: 0,
         scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
         createdById: validUserId,
@@ -186,7 +221,11 @@ export class SmsService {
   }
 
   async createCampaign(dto: CreateSmsCampaignDto, userId?: string) {
-    const { projectId, integrationId, userId: validUserId } = await this.resolveForeignKeys(dto, userId);
+    const {
+      projectId,
+      integrationId,
+      userId: validUserId,
+    } = await this.resolveForeignKeys(dto, userId);
 
     const audienceResult = await this.previewAudience({
       audienceSource: dto.audienceSource || 'CRM_DATABASE',
@@ -214,9 +253,18 @@ export class SmsService {
             isCpCampaign: dto.isCpCampaign || false,
             projectId,
             integrationId,
-            fromSender: dto.fromSender !== undefined ? dto.fromSender : existing.fromSender,
-            messageContent: dto.messageContent !== undefined ? dto.messageContent : existing.messageContent,
-            dltTemplateId: dto.dltTemplateId !== undefined ? (dto.dltTemplateId || null) : existing.dltTemplateId,
+            fromSender:
+              dto.fromSender !== undefined
+                ? dto.fromSender
+                : existing.fromSender,
+            messageContent:
+              dto.messageContent !== undefined
+                ? dto.messageContent
+                : existing.messageContent,
+            dltTemplateId:
+              dto.dltTemplateId !== undefined
+                ? dto.dltTemplateId || null
+                : existing.dltTemplateId,
             audienceFilters: dto.audienceFilters as any,
             totalRecipients: audienceResult.finalAudienceCount,
             scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
@@ -390,10 +438,16 @@ export class SmsService {
     if (query?.status) {
       if (query.status !== 'ALL') {
         where.status = query.status;
-      } else if (query?.includeDrafts !== 'true' && query?.includeDrafts !== true) {
+      } else if (
+        query?.includeDrafts !== 'true' &&
+        query?.includeDrafts !== true
+      ) {
         where.status = { not: 'DRAFT' };
       }
-    } else if (query?.includeDrafts !== 'true' && query?.includeDrafts !== true) {
+    } else if (
+      query?.includeDrafts !== 'true' &&
+      query?.includeDrafts !== true
+    ) {
       where.status = { not: 'DRAFT' };
     }
 
@@ -443,10 +497,14 @@ export class SmsService {
   }
 
   async deleteCampaign(id: string) {
-    const campaign = await this.prisma.smsCampaign.findUnique({ where: { id } });
+    const campaign = await this.prisma.smsCampaign.findUnique({
+      where: { id },
+    });
     if (!campaign) throw new NotFoundException('SMS Campaign not found');
 
-    await this.prisma.smsTrackingEvent.deleteMany({ where: { campaignId: id } });
+    await this.prisma.smsTrackingEvent.deleteMany({
+      where: { campaignId: id },
+    });
     await this.prisma.smsRecipient.deleteMany({ where: { campaignId: id } });
     await this.prisma.smsCampaign.delete({ where: { id } });
 

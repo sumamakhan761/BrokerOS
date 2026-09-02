@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 jest.mock('../../lib/database/prisma-client.js', () => ({
-  prismaClient: {}
+  prismaClient: {},
 }));
 jest.mock('../../lib/database/prisma.service.js', () => ({
-  PrismaService: class {}
+  PrismaService: class {},
 }));
 jest.mock('@brokeros/prisma', () => ({
   NotificationType: {},
-  PrismaClient: class {}
+  PrismaClient: class {},
 }));
 import { PreSalesLeaderboardService } from '../pre-sales/pre-sales-leaderboard.service.js';
 import { SalesExecLeaderboardService } from '../sales-exec/sales-exec-leaderboard.service.js';

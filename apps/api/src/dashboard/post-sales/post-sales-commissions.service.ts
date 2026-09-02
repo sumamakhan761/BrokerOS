@@ -26,27 +26,33 @@ export class PostSalesCommissionsService {
             floor: {
               include: {
                 tower: {
-                  include: { project: true }
-                }
-              }
-            }
-          }
+                  include: { project: true },
+                },
+              },
+            },
+          },
         },
         booking: {
           include: {
             customer: true,
-            salesExec: true
-          }
+            salesExec: true,
+          },
         },
         project: true,
-        receivedBy: true
+        receivedBy: true,
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  async markAsReceived(id: string, userId: string, receiptData?: ReceiveCommissionDto) {
-    const comm = await this.prisma.inboundCommission.findUnique({ where: { id } });
+  async markAsReceived(
+    id: string,
+    userId: string,
+    receiptData?: ReceiveCommissionDto,
+  ) {
+    const comm = await this.prisma.inboundCommission.findUnique({
+      where: { id },
+    });
     if (!comm) throw new NotFoundException('Commission not found');
 
     return this.prisma.inboundCommission.update({
@@ -55,8 +61,8 @@ export class PostSalesCommissionsService {
         status: 'RECEIVED',
         receivedAt: new Date(),
         receivedById: userId,
-        remarks: receiptData?.remarks
-      }
+        remarks: receiptData?.remarks,
+      },
     });
   }
 }

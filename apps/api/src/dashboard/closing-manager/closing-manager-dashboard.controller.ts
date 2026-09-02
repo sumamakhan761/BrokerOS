@@ -6,8 +6,8 @@ import { ClosingManagerAnalyticsService } from './closing-manager-analytics.serv
 export class ClosingManagerDashboardController {
   constructor(
     private readonly closingManagerDashboardService: ClosingManagerDashboardService,
-    private readonly closingManagerAnalyticsService: ClosingManagerAnalyticsService
-  ) { }
+    private readonly closingManagerAnalyticsService: ClosingManagerAnalyticsService,
+  ) {}
 
   @Get()
   async getDashboard(@Req() req: any) {
@@ -17,6 +17,9 @@ export class ClosingManagerDashboardController {
   @Get('/analytics')
   async getAnalytics(@Req() req: any, @Query('range') range: string) {
     const userId = req.user?.id;
-    return await this.closingManagerAnalyticsService.getAnalytics(userId, range || 'all-time');
+    return await this.closingManagerAnalyticsService.getAnalytics(
+      userId,
+      range || 'all-time',
+    );
   }
 }

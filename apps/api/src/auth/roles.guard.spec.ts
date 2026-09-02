@@ -72,7 +72,9 @@ describe('RolesGuard', () => {
   });
 
   it('should return true if user role code is included in required roles', async () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['ADMIN', 'MANAGER']);
+    jest
+      .spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValue(['ADMIN', 'MANAGER']);
     const context = {
       getHandler: jest.fn(),
       getClass: jest.fn(),
@@ -83,7 +85,9 @@ describe('RolesGuard', () => {
       }),
     } as unknown as ExecutionContext;
 
-    (prismaClient.role.findUnique as jest.Mock).mockResolvedValue({ code: 'ADMIN' });
+    (prismaClient.role.findUnique as jest.Mock).mockResolvedValue({
+      code: 'ADMIN',
+    });
 
     const result = await guard.canActivate(context);
     expect(result).toBe(true);
@@ -101,7 +105,9 @@ describe('RolesGuard', () => {
       }),
     } as unknown as ExecutionContext;
 
-    (prismaClient.role.findUnique as jest.Mock).mockResolvedValue({ code: 'USER' });
+    (prismaClient.role.findUnique as jest.Mock).mockResolvedValue({
+      code: 'USER',
+    });
 
     const result = await guard.canActivate(context);
     expect(result).toBe(false);

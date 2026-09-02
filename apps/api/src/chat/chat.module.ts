@@ -10,4 +10,4 @@ import { PrismaModule } from '../lib/database/prisma.module.js';
   providers: [ChatService, ChatGateway],
   exports: [ChatService],
 })
-export class ChatModule { }
+export class ChatModule {}

@@ -7,7 +7,10 @@ export class SampleCsvController {
   @Get('sample-csv')
   downloadSampleCsv(@Res() res: Response) {
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="sample_marketing_leads.csv"');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="sample_marketing_leads.csv"',
+    );
     res.send(SAMPLE_CSV_CONTENT);
   }
 }

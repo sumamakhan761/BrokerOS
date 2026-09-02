@@ -9,19 +9,25 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootEnv = path.resolve(__dirname, '../../../.env');
-try { process.loadEnvFile(rootEnv); } catch { }
-try { process.loadEnvFile(); } catch { }
+try {
+  process.loadEnvFile(rootEnv);
+} catch {}
+try {
+  process.loadEnvFile();
+} catch {}
 
 async function bootstrap() {
   //const app = await NestFactory.create(AppModule);
   const app = await NestFactory.create(AppModule, {
     bodyParser: false, // Required for Better Auth raw body parsing
   });
-  
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    transform: true,
-  }));
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
 
   app.enableCors();
   await app.listen(process.env.PORT ?? 3333, '0.0.0.0');

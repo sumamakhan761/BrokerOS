@@ -4,7 +4,7 @@ import { getMonthRange } from '../core/dashboard.utils.js';
 
 @Injectable()
 export class PreSalesLeaderboardService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /** Monthly leaderboard for the whole pre-sales department */
   async getPreSalesLeaderboard(userId: string) {
@@ -47,7 +47,8 @@ export class PreSalesLeaderboardService {
         ]);
 
         // Weighted score: cold calls 25%, follow-ups 25%, site visits 50%
-        const score = coldCallsDone * 0.25 + followUpsDone * 0.25 + siteVisits * 0.5;
+        const score =
+          coldCallsDone * 0.25 + followUpsDone * 0.25 + siteVisits * 0.5;
 
         return {
           userId: agent.id,
@@ -98,7 +99,11 @@ export class PreSalesLeaderboardService {
             },
           }),
           this.prisma.siteVisit.count({
-            where: { createdById: userId, status: 'COMPLETED', scheduledDate: { gte: monthStart, lte: monthEnd } },
+            where: {
+              createdById: userId,
+              status: 'COMPLETED',
+              scheduledDate: { gte: monthStart, lte: monthEnd },
+            },
           }),
         ]);
         return {
@@ -106,7 +111,9 @@ export class PreSalesLeaderboardService {
           coldCalls,
           followUps,
           siteVisits,
-          name: subs.find((s) => s.id === userId)?.name || subs.find((s) => s.id === userId)?.username,
+          name:
+            subs.find((s) => s.id === userId)?.name ||
+            subs.find((s) => s.id === userId)?.username,
         };
       }),
     );
@@ -114,7 +121,8 @@ export class PreSalesLeaderboardService {
     // Score based on weighted metrics
     return stats
       .map((s) => {
-        const score = s.coldCalls * 0.25 + s.followUps * 0.25 + s.siteVisits * 0.5;
+        const score =
+          s.coldCalls * 0.25 + s.followUps * 0.25 + s.siteVisits * 0.5;
         return {
           userId: s.userId,
           name: s.name,
@@ -128,7 +136,11 @@ export class PreSalesLeaderboardService {
   }
 
   /** Count cold calls for a user in a given month range */
-  private async countColdCallsForMonth(userId: string, monthStart: Date, monthEnd: Date): Promise<number> {
+  private async countColdCallsForMonth(
+    userId: string,
+    monthStart: Date,
+    monthEnd: Date,
+  ): Promise<number> {
     const callRecords = await this.prisma.callRecord.findMany({
       where: {
         userId,

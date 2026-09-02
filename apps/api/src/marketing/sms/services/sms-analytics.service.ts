@@ -6,7 +6,9 @@ import type { SmsCampaignAnalyticsSummary } from '@brokeros/types';
 export class SmsAnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getCampaignAnalytics(campaignId: string): Promise<SmsCampaignAnalyticsSummary> {
+  async getCampaignAnalytics(
+    campaignId: string,
+  ): Promise<SmsCampaignAnalyticsSummary> {
     const campaign = await this.prisma.smsCampaign.findUnique({
       where: { id: campaignId },
     });
@@ -20,23 +22,34 @@ export class SmsAnalyticsService {
       shortLinks,
     ] = await Promise.all([
       this.prisma.smsRecipient.count({ where: { campaignId } }),
-      this.prisma.smsRecipient.count({ where: { campaignId, status: 'DELIVERED' } }),
-      this.prisma.smsRecipient.count({ where: { campaignId, clickCount: { gt: 0 } } }),
-      this.prisma.smsRecipient.count({ where: { campaignId, status: 'FAILED' } }),
+      this.prisma.smsRecipient.count({
+        where: { campaignId, status: 'DELIVERED' },
+      }),
+      this.prisma.smsRecipient.count({
+        where: { campaignId, clickCount: { gt: 0 } },
+      }),
+      this.prisma.smsRecipient.count({
+        where: { campaignId, status: 'FAILED' },
+      }),
       this.prisma.smsShortLink.findMany({
         where: { campaignId },
         select: { destinationUrl: true, clicksCount: true },
       }),
     ]);
 
-    const sentCount = Math.max(campaign.sentCount, deliveredCount + failedCount);
+    const sentCount = Math.max(
+      campaign.sentCount,
+      deliveredCount + failedCount,
+    );
     const deliveryRate = sentCount > 0 ? (deliveredCount / sentCount) * 100 : 0;
-    const clickRate = deliveredCount > 0 ? (clickedCount / deliveredCount) * 100 : 0;
+    const clickRate =
+      deliveredCount > 0 ? (clickedCount / deliveredCount) * 100 : 0;
 
     const linkMap: Record<string, number> = {};
     for (const link of shortLinks) {
       if (link.destinationUrl) {
-        linkMap[link.destinationUrl] = (linkMap[link.destinationUrl] || 0) + (link.clicksCount || 0);
+        linkMap[link.destinationUrl] =
+          (linkMap[link.destinationUrl] || 0) + (link.clicksCount || 0);
       }
     }
 
@@ -48,8 +61,8 @@ export class SmsAnalyticsService {
     return {
       campaignId: campaign.id,
       title: campaign.title,
-      status: campaign.status as any,
-      providerType: campaign.providerType as any,
+      status: campaign.status,
+      providerType: campaign.providerType,
       fromSender: campaign.fromSender,
       totalRecipients: Math.max(campaign.totalRecipients, totalRecipientsCount),
       sentCount,
@@ -89,7 +102,14 @@ export class SmsAnalyticsService {
         orderBy: [{ clickCount: 'desc' }, { createdAt: 'desc' }],
         include: {
           lead: {
-            select: { id: true, firstName: true, lastName: true, phone: true, temperature: true, status: true },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              temperature: true,
+              status: true,
+            },
           },
         },
       }),

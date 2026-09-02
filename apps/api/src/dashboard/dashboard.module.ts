@@ -62,4 +62,4 @@ import {
     EmployeeCardsService,
   ],
 })
-export class DashboardModule { }
+export class DashboardModule {}

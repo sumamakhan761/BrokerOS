@@ -35,12 +35,12 @@ export class BusinessManagerAnalyticsService {
               include: {
                 tower: {
                   include: {
-                    project: true
-                  }
-                }
-              }
-            }
-          }
+                    project: true,
+                  },
+                },
+              },
+            },
+          },
         },
         customer: { include: { lead: true } },
         loanCase: true,
@@ -60,22 +60,27 @@ export class BusinessManagerAnalyticsService {
       include: {
         interestedProject: true,
         source: true,
-      }
+      },
     });
 
     // 1. Revenue over time (layered: brokerage vs cp)
-    const revenueTimeMap = new Map<string, { date: string; brokerage: number; cp: number }>();
+    const revenueTimeMap = new Map<
+      string,
+      { date: string; brokerage: number; cp: number }
+    >();
     for (const b of bookings) {
       const d = new Date(b.bookingDate);
       let key: string;
-      if (period === 'weekly') key = d.toISOString().slice(0, 10); // YYYY-MM-DD
+      if (period === 'weekly')
+        key = d.toISOString().slice(0, 10); // YYYY-MM-DD
       else if (period === 'monthly') key = `Week ${Math.ceil(d.getDate() / 7)}`;
-      else key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      else
+        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
       if (!revenueTimeMap.has(key)) {
         revenueTimeMap.set(key, { date: key, brokerage: 0, cp: 0 });
       }
-      
+
       const r = revenueTimeMap.get(key)!;
       const isCp = b.unit?.floor?.tower?.project?.isCpProject;
       const price = Number(b.agreedPrice) || 0;
@@ -86,48 +91,87 @@ export class BusinessManagerAnalyticsService {
         r.brokerage += price;
       }
     }
-    const revenueTrend = Array.from(revenueTimeMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+    const revenueTrend = Array.from(revenueTimeMap.values()).sort((a, b) =>
+      a.date.localeCompare(b.date),
+    );
 
     // 2. Lead pipeline funnel (brokerage vs cp comparison)
     const leadPipeline = {
-      brokerage: { NEW: 0, CONTACTED: 0, INTERESTED: 0, QUALIFIED: 0, SITE_VISIT_SCHEDULED: 0, NEGOTIATION: 0, BOOKING: 0 },
-      cp: { NEW: 0, CONTACTED: 0, INTERESTED: 0, QUALIFIED: 0, SITE_VISIT_SCHEDULED: 0, NEGOTIATION: 0, BOOKING: 0 }
+      brokerage: {
+        NEW: 0,
+        CONTACTED: 0,
+        INTERESTED: 0,
+        QUALIFIED: 0,
+        SITE_VISIT_SCHEDULED: 0,
+        NEGOTIATION: 0,
+        BOOKING: 0,
+      },
+      cp: {
+        NEW: 0,
+        CONTACTED: 0,
+        INTERESTED: 0,
+        QUALIFIED: 0,
+        SITE_VISIT_SCHEDULED: 0,
+        NEGOTIATION: 0,
+        BOOKING: 0,
+      },
     };
 
     for (const l of leads) {
       // Determine if lead is CP or Brokerage
       // Either by assigned project being CP, or source being CHANNEL_PARTNER
-      const isCp = l.interestedProject?.isCpProject || l.source?.type === 'CHANNEL_PARTNER';
+      const isCp =
+        l.interestedProject?.isCpProject ||
+        l.source?.type === 'CHANNEL_PARTNER';
       const target = isCp ? leadPipeline.cp : leadPipeline.brokerage;
-      
+
       if (target.hasOwnProperty(l.status)) {
         (target as any)[l.status]++;
       }
     }
 
     // 3. Lead-to-booking conversion rate per month (grouped by month string)
-    const conversionTimeMap = new Map<string, { month: string; leads: number; bookings: number }>();
-    
+    const conversionTimeMap = new Map<
+      string,
+      { month: string; leads: number; bookings: number }
+    >();
+
     // Group all leads (not just date filtered) to see overall conversion if needed, but we stick to the period
     for (const l of leads) {
       const d = new Date(l.createdAt);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      if (!conversionTimeMap.has(key)) conversionTimeMap.set(key, { month: key, leads: 0, bookings: 0 });
+      if (!conversionTimeMap.has(key))
+        conversionTimeMap.set(key, { month: key, leads: 0, bookings: 0 });
       conversionTimeMap.get(key)!.leads++;
     }
     for (const b of bookings) {
       const d = new Date(b.bookingDate);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      if (!conversionTimeMap.has(key)) conversionTimeMap.set(key, { month: key, leads: 0, bookings: 0 });
+      if (!conversionTimeMap.has(key))
+        conversionTimeMap.set(key, { month: key, leads: 0, bookings: 0 });
       conversionTimeMap.get(key)!.bookings++;
     }
-    const leadConversionTrend = Array.from(conversionTimeMap.values()).sort((a, b) => a.month.localeCompare(b.month));
+    const leadConversionTrend = Array.from(conversionTimeMap.values()).sort(
+      (a, b) => a.month.localeCompare(b.month),
+    );
 
     // 4. Booking funnel (Brokerage vs CP)
     // Confirmed -> Documentation (No Loan/Agreement/Possession) -> Loan/Agreement -> Possession -> Handover
     const bookingFunnel = {
-      brokerage: { confirmed: 0, documentation: 0, loanAgreement: 0, possession: 0, handover: 0 },
-      cp: { confirmed: 0, documentation: 0, loanAgreement: 0, possession: 0, handover: 0 }
+      brokerage: {
+        confirmed: 0,
+        documentation: 0,
+        loanAgreement: 0,
+        possession: 0,
+        handover: 0,
+      },
+      cp: {
+        confirmed: 0,
+        documentation: 0,
+        loanAgreement: 0,
+        possession: 0,
+        handover: 0,
+      },
     };
 
     for (const b of bookings) {
@@ -137,9 +181,12 @@ export class BusinessManagerAnalyticsService {
       target.confirmed++;
       const hasLoanOrAgreement = !!b.loanCase || !!b.agreement;
       const hasPossession = !!b.possession;
-      const isHandedOver = b.possession?.status === 'HANDED_OVER' || b.status === 'HANDOVER_COMPLETED';
-      
-      if (b.status !== 'CONFIRMED' || hasLoanOrAgreement || hasPossession) target.documentation++;
+      const isHandedOver =
+        b.possession?.status === 'HANDED_OVER' ||
+        b.status === 'HANDOVER_COMPLETED';
+
+      if (b.status !== 'CONFIRMED' || hasLoanOrAgreement || hasPossession)
+        target.documentation++;
       if (hasLoanOrAgreement || hasPossession) target.loanAgreement++;
       if (hasPossession) target.possession++;
       if (isHandedOver) target.handover++;
@@ -151,14 +198,14 @@ export class BusinessManagerAnalyticsService {
       collectionRecordsWhere.createdAt = dateFilter; // approximation for period
     }
     const collectionRecords = await this.prisma.collectionRecord.findMany({
-      where: collectionRecordsWhere
+      where: collectionRecordsWhere,
     });
 
     const paymentEfficiency = {
       totalPayable: 0,
       totalCollected: 0,
       outstanding: 0,
-      overdue: 0
+      overdue: 0,
     };
 
     for (const cr of collectionRecords) {
@@ -170,22 +217,26 @@ export class BusinessManagerAnalyticsService {
 
     // 6. Expense vs Revenue trend
     const expenseWhere: any = {
-      approvalStatus: 'APPROVED'
+      approvalStatus: 'APPROVED',
     };
     if (dateFilter) {
       expenseWhere.expenseDate = dateFilter;
     }
     const expenses = await this.prisma.expense.findMany({
-      where: expenseWhere
+      where: expenseWhere,
     });
 
-    const expenseRevenueTimeMap = new Map<string, { month: string; revenue: number; expense: number }>();
-    
+    const expenseRevenueTimeMap = new Map<
+      string,
+      { month: string; revenue: number; expense: number }
+    >();
+
     // Revenue from bookings
     for (const b of bookings) {
       const d = new Date(b.bookingDate);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      if (!expenseRevenueTimeMap.has(key)) expenseRevenueTimeMap.set(key, { month: key, revenue: 0, expense: 0 });
+      if (!expenseRevenueTimeMap.has(key))
+        expenseRevenueTimeMap.set(key, { month: key, revenue: 0, expense: 0 });
       expenseRevenueTimeMap.get(key)!.revenue += Number(b.agreedPrice) || 0;
     }
 
@@ -193,11 +244,14 @@ export class BusinessManagerAnalyticsService {
     for (const ex of expenses) {
       const d = new Date(ex.expenseDate);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      if (!expenseRevenueTimeMap.has(key)) expenseRevenueTimeMap.set(key, { month: key, revenue: 0, expense: 0 });
+      if (!expenseRevenueTimeMap.has(key))
+        expenseRevenueTimeMap.set(key, { month: key, revenue: 0, expense: 0 });
       expenseRevenueTimeMap.get(key)!.expense += Number(ex.amount) || 0;
     }
 
-    const expenseRevenueTrend = Array.from(expenseRevenueTimeMap.values()).sort((a, b) => a.month.localeCompare(b.month));
+    const expenseRevenueTrend = Array.from(expenseRevenueTimeMap.values()).sort(
+      (a, b) => a.month.localeCompare(b.month),
+    );
 
     return {
       revenueTrend,
@@ -205,7 +259,7 @@ export class BusinessManagerAnalyticsService {
       leadConversionTrend,
       bookingFunnel,
       paymentEfficiency,
-      expenseRevenueTrend
+      expenseRevenueTrend,
     };
   }
 }

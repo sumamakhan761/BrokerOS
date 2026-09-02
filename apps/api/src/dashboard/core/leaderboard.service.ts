@@ -7,7 +7,7 @@ export class LeaderboardService {
   constructor(
     private preSalesLeaderboard: PreSalesLeaderboardService,
     private salesExecLeaderboard: SalesExecLeaderboardService,
-  ) { }
+  ) {}
 
   /** Monthly leaderboard for the whole pre-sales department */
   async getLeaderboard(userId: string) {

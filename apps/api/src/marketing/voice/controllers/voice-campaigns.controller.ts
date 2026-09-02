@@ -17,7 +17,7 @@ import {
 
 @Controller('api/marketing/voice/campaigns')
 export class VoiceCampaignsController {
-  constructor(private readonly voiceService: VoiceService) { }
+  constructor(private readonly voiceService: VoiceService) {}
 
   @Get('projects')
   getProjects() {
@@ -37,9 +37,11 @@ export class VoiceCampaignsController {
     return this.voiceService.getCampaigns({
       status,
       projectId,
-      isCpCampaign: isCpCampaign !== undefined ? isCpCampaign === 'true' : undefined,
+      isCpCampaign:
+        isCpCampaign !== undefined ? isCpCampaign === 'true' : undefined,
       search,
-      includeDrafts: includeDrafts !== undefined ? includeDrafts === 'true' : undefined,
+      includeDrafts:
+        includeDrafts !== undefined ? includeDrafts === 'true' : undefined,
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
     });
@@ -89,7 +91,8 @@ export class VoiceCampaignsController {
   @Get(':id/recipients')
   getRecipients(
     @Param('id') id: string,
-    @Query() query: { page?: number; limit?: number; status?: string; search?: string },
+    @Query()
+    query: { page?: number; limit?: number; status?: string; search?: string },
   ) {
     return this.voiceService.analyticsService.getCampaignRecipients(id, query);
   }
@@ -107,6 +110,9 @@ export class VoiceCampaignsController {
   @Post('recipients/:id/promote')
   promoteRecipient(@Param('id') id: string, @Req() req: any) {
     const userId = req?.user?.id;
-    return this.voiceService.audienceService.promoteCsvRecipientToLead(id, userId);
+    return this.voiceService.audienceService.promoteCsvRecipientToLead(
+      id,
+      userId,
+    );
   }
 }

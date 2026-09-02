@@ -55,11 +55,20 @@ export class EmailIntegrationsService {
     return template
       .replace(/{{lead\.firstName}}/gi, data.firstName || 'Valued Prospect')
       .replace(/{{lead\.lastName}}/gi, data.lastName || '')
-      .replace(/{{lead\.fullName}}/gi, data.fullName || data.firstName || 'Valued Prospect')
+      .replace(
+        /{{lead\.fullName}}/gi,
+        data.fullName || data.firstName || 'Valued Prospect',
+      )
       .replace(/{{lead\.city}}/gi, data.city || 'your city')
       .replace(/{{project\.name}}/gi, data.projectName || 'Luxury Residence')
-      .replace(/{{project\.location}}/gi, data.projectLocation || 'Prime Location')
-      .replace(/{{project\.startingPrice}}/gi, data.projectStartingPrice || '₹1.50 Cr')
+      .replace(
+        /{{project\.location}}/gi,
+        data.projectLocation || 'Prime Location',
+      )
+      .replace(
+        /{{project\.startingPrice}}/gi,
+        data.projectStartingPrice || '₹1.50 Cr',
+      )
       .replace(/{{project\.brochureUrl}}/gi, data.projectBrochureUrl || '#')
       .replace(/{{agent\.name}}/gi, data.agentName || 'Sales Team')
       .replace(/{{agent\.phone}}/gi, data.agentPhone || '+91 98000 00000')
@@ -86,10 +95,11 @@ export class EmailIntegrationsService {
         };
       }
     } else if (providerType !== 'SYSTEM_DEFAULT') {
-      const activeIntegration = await this.prisma.marketingIntegration.findFirst({
-        where: { provider: providerType as any, isActive: true },
-        orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
-      });
+      const activeIntegration =
+        await this.prisma.marketingIntegration.findFirst({
+          where: { provider: providerType as any, isActive: true },
+          orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+        });
       if (activeIntegration) {
         credentials = {
           apiKey: activeIntegration.apiKey || undefined,
@@ -114,15 +124,20 @@ export class EmailIntegrationsService {
     const adapter = this.getAdapter(providerType);
 
     const resolvedFromEmail =
-      dto.fromEmail && dto.fromEmail.includes('@') && dto.fromEmail !== 'marketing@example.com'
+      dto.fromEmail &&
+      dto.fromEmail.includes('@') &&
+      dto.fromEmail !== 'marketing@example.com'
         ? dto.fromEmail
         : credentials?.fromEmail || dto.fromEmail || 'marketing@example.com';
 
-    const resolvedFromName = dto.fromName || credentials?.fromName || 'Sales Team';
+    const resolvedFromName =
+      dto.fromName || credentials?.fromName || 'Sales Team';
 
     const recipientEmail = (dto.recipientEmail || dto.toEmail || '').trim();
     if (!recipientEmail || !recipientEmail.includes('@')) {
-      throw new BadRequestException('A valid recipient email address is required');
+      throw new BadRequestException(
+        'A valid recipient email address is required',
+      );
     }
 
     const testRecipientName = recipientEmail.split('@')[0];
@@ -132,9 +147,11 @@ export class EmailIntegrationsService {
       fullName: 'Rahul Sharma',
       city: project?.city || 'Mumbai',
       projectName: project?.name || 'Luxury Villas',
-      projectLocation: project?.address || project?.city || 'Prime Downtown Corridor',
+      projectLocation:
+        project?.address || project?.city || 'Prime Downtown Corridor',
       projectStartingPrice: '₹1.50 Cr',
-      projectBrochureUrl: project?.brochureUrl || 'https://yourdomain.com/brochure',
+      projectBrochureUrl:
+        project?.brochureUrl || 'https://yourdomain.com/brochure',
       agentName: resolvedFromName,
       agentPhone: '+91 98000 00000',
       unsubscribeUrl: '#unsubscribe',
@@ -188,7 +205,9 @@ export class EmailIntegrationsService {
     });
 
     if (!isValid) {
-      throw new BadRequestException(`Failed to validate credentials with provider ${dto.provider}`);
+      throw new BadRequestException(
+        `Failed to validate credentials with provider ${dto.provider}`,
+      );
     }
 
     if (dto.isDefault) {

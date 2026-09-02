@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Param, Body, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BookingService } from './booking.service.js';
 import {
@@ -10,7 +19,7 @@ import {
   SaveLoanCaseDto,
   SaveAgreementDto,
   SaveHandoverDto,
-  UploadPostSalesFileDto
+  UploadPostSalesFileDto,
 } from './dto/booking.dto.js';
 
 @Controller('api/leads')
@@ -31,10 +40,7 @@ export class BookingController {
   }
 
   @Patch(':id/booking')
-  updateBooking(
-    @Param('id') id: string,
-    @Body() body: UpdateBookingDto,
-  ) {
+  updateBooking(@Param('id') id: string, @Body() body: UpdateBookingDto) {
     return this.bookingService.updateBooking(body.bookingId!, body);
   }
 
@@ -54,7 +60,12 @@ export class BookingController {
     @Body() body: UploadBookingDocumentDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.bookingService.uploadDocument(body.bookingId, body.docType, file, body.description);
+    return this.bookingService.uploadDocument(
+      body.bookingId,
+      body.docType,
+      file,
+      body.description,
+    );
   }
 
   @Post(':id/booking/loan-case')
@@ -78,7 +89,11 @@ export class BookingController {
     @Body() body: UploadPostSalesFileDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.bookingService.uploadPostSalesFile(body.bookingId, body.type, body.fieldName, file);
+    return this.bookingService.uploadPostSalesFile(
+      body.bookingId,
+      body.type,
+      body.fieldName,
+      file,
+    );
   }
 }
-

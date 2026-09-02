@@ -1,14 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 jest.mock('../lib/database/prisma-client.js', () => ({
   prismaClient: {
-    notification: { findMany: jest.fn(), updateMany: jest.fn(), create: jest.fn() },
+    notification: {
+      findMany: jest.fn(),
+      updateMany: jest.fn(),
+      create: jest.fn(),
+    },
     user: { findUnique: jest.fn() },
     followUp: { count: jest.fn() },
     callRecord: { findMany: jest.fn(), findFirst: jest.fn() },
     lead: { findUnique: jest.fn() },
     managerTaskUser: { findFirst: jest.fn() },
     siteVisit: { count: jest.fn() },
-  }
+  },
 }));
 
 jest.mock('expo-server-sdk', () => ({
@@ -16,7 +20,7 @@ jest.mock('expo-server-sdk', () => ({
     chunkPushNotifications = jest.fn().mockReturnValue([[]]);
     sendPushNotificationsAsync = jest.fn();
     static isExpoPushToken = jest.fn().mockReturnValue(true);
-  }
+  },
 }));
 
 import { NotificationsService } from './notifications.service.js';
@@ -26,7 +30,7 @@ import { CreateNotificationDto } from './dto/notifications.dto.js';
 
 describe('NotificationsService', () => {
   let service: NotificationsService;
-  
+
   const mockGateway = {
     sendNotificationToUser: jest.fn(),
   };
@@ -44,22 +48,34 @@ describe('NotificationsService', () => {
   afterEach(() => jest.clearAllMocks());
 
   it('should get user notifications', async () => {
-    (prismaClient.notification.findMany as jest.Mock).mockResolvedValue([{ id: 'n-1' }]);
+    (prismaClient.notification.findMany as jest.Mock).mockResolvedValue([
+      { id: 'n-1' },
+    ]);
     const res = await service.getUserNotifications('u-1');
     expect(res.length).toBe(1);
   });
 
   it('should mark as read', async () => {
-    (prismaClient.notification.updateMany as jest.Mock).mockResolvedValue({ count: 1 });
+    (prismaClient.notification.updateMany as jest.Mock).mockResolvedValue({
+      count: 1,
+    });
     const res = await service.markAsRead('n-1', 'u-1');
     expect(res.count).toBe(1);
   });
 
   it('should create notification', async () => {
-    (prismaClient.notification.create as jest.Mock).mockResolvedValue({ id: 'n-1' });
-    (prismaClient.user.findUnique as jest.Mock).mockResolvedValue({ expoPushToken: 'ExponentPushToken[123]' });
-    
-    const dto = { userId: 'u-1', type: 'TEST', title: 'Title' } as CreateNotificationDto;
+    (prismaClient.notification.create as jest.Mock).mockResolvedValue({
+      id: 'n-1',
+    });
+    (prismaClient.user.findUnique as jest.Mock).mockResolvedValue({
+      expoPushToken: 'ExponentPushToken[123]',
+    });
+
+    const dto = {
+      userId: 'u-1',
+      type: 'TEST',
+      title: 'Title',
+    } as CreateNotificationDto;
     const res = await service.createNotification(dto);
     expect(res.id).toBe('n-1');
     expect(mockGateway.sendNotificationToUser).toHaveBeenCalled();

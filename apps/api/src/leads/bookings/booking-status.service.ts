@@ -7,13 +7,19 @@ import { NotificationType } from '@brokeros/prisma';
 export class BookingStatusService {
   constructor(
     private prisma: PrismaService,
-    private notificationsService: NotificationsService
+    private notificationsService: NotificationsService,
   ) {}
 
   async markBookingDone(bookingId: string) {
-    const booking = await this.prisma.booking.findUnique({ 
+    const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { unit: { include: { floor: { include: { tower: { include: { project: true } } } } } } }
+      include: {
+        unit: {
+          include: {
+            floor: { include: { tower: { include: { project: true } } } },
+          },
+        },
+      },
     });
     if (!booking) throw new NotFoundException('Booking not found');
 
@@ -23,19 +29,21 @@ export class BookingStatusService {
     const isCpProject = booking.unit?.floor?.tower?.project?.isCpProject;
     if (!isCpProject && booking.source === 'DIRECT' && !assignedPostSalesId) {
       // Find the POST_SALES role
-      const postSalesRole = await this.prisma.role.findFirst({ where: { code: 'POST_SALES' } });
+      const postSalesRole = await this.prisma.role.findFirst({
+        where: { code: 'POST_SALES' },
+      });
       if (postSalesRole) {
         // Find all active post sales agents
         const postSalesAgents = await this.prisma.user.findMany({
           where: { roleId: postSalesRole.id, status: 'ACTIVE' },
           include: {
             _count: {
-              select: { assignedPostSalesBookings: true }
-            }
+              select: { assignedPostSalesBookings: true },
+            },
           },
           orderBy: {
-            assignedPostSalesBookings: { _count: 'asc' }
-          }
+            assignedPostSalesBookings: { _count: 'asc' },
+          },
         });
 
         if (postSalesAgents.length > 0) {
@@ -47,32 +55,40 @@ export class BookingStatusService {
 
     const updatedBooking = await this.prisma.booking.update({
       where: { id: bookingId },
-      data: { 
+      data: {
         status: 'CONFIRMED',
-        ...(assignedPostSalesId ? { assignedPostSalesId } : {})
-      }
+        ...(assignedPostSalesId ? { assignedPostSalesId } : {}),
+      },
     });
 
-    if (assignedPostSalesId && (!booking.assignedPostSalesId || booking.assignedPostSalesId !== assignedPostSalesId)) {
+    if (
+      assignedPostSalesId &&
+      (!booking.assignedPostSalesId ||
+        booking.assignedPostSalesId !== assignedPostSalesId)
+    ) {
       await this.notificationsService.createNotification({
         userId: assignedPostSalesId,
         type: NotificationType.LEAD_ASSIGNED, // Or a generic type for assignment
         title: 'New Booking Assigned 📋',
         body: `A new confirmed booking has been assigned to you for post-sales processing.`,
         actionUrl: `/dashboard/post-sales/inventory`,
-        metadata: { bookingId }
+        metadata: { bookingId },
       });
     }
 
     // Also update lead status to BOOKING and subStatus to DONE
-    const customer = await this.prisma.customer.findUnique({ where: { id: booking.customerId } });
-    let lead: { id: string, brokerId: string | null } | null = null;
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: booking.customerId },
+    });
+    let lead: { id: string; brokerId: string | null } | null = null;
     if (customer) {
-      lead = await this.prisma.lead.findUnique({ where: { id: customer.leadId } });
+      lead = await this.prisma.lead.findUnique({
+        where: { id: customer.leadId },
+      });
       if (lead) {
         await this.prisma.lead.update({
           where: { id: lead.id },
-          data: { status: 'BOOKING', subStatus: 'DONE' }
+          data: { status: 'BOOKING', subStatus: 'DONE' },
         });
       }
     }
@@ -85,13 +101,13 @@ export class BookingStatusService {
       if (projectId) {
         // Find the Deal Card for this broker and project
         const dealCard = await this.prisma.brokerProjectAssignment.findUnique({
-          where: { brokerId_projectId: { brokerId, projectId } }
+          where: { brokerId_projectId: { brokerId, projectId } },
         });
 
         if (dealCard) {
           // Check if record already exists
           const existingRecord = await this.prisma.brokerageRecord.findFirst({
-            where: { bookingId, brokerId }
+            where: { bookingId, brokerId },
           });
 
           if (!existingRecord) {
@@ -115,8 +131,8 @@ export class BookingStatusService {
                   brokeragePercent,
                   brokerageAmount,
                   netPayable: brokerageAmount,
-                  status: 'PENDING'
-                }
+                  status: 'PENDING',
+                },
               });
             }
           }
@@ -141,8 +157,8 @@ export class BookingStatusService {
         where: { id: bookingId },
         data: {
           status: 'CANCELLED',
-          cancelReason: reason || 'Manually cancelled'
-        }
+          cancelReason: reason || 'Manually cancelled',
+        },
       });
 
       // 2. Free up the Unit if it exists
@@ -155,8 +171,8 @@ export class BookingStatusService {
             blockedById: null,
             reservedAt: null,
             reservedForId: null,
-            soldAt: null
-          }
+            soldAt: null,
+          },
         });
 
         await tx.unitStatusHistory.create({
@@ -165,8 +181,8 @@ export class BookingStatusService {
             fromStatus: 'RESERVED', // Might be SOLD or BLOCKED too, but going simple
             toStatus: 'AVAILABLE',
             changedById: booking.salesExecId || 'SYSTEM', // assuming same user or admin
-            reason: reason || 'Booking cancelled'
-          }
+            reason: reason || 'Booking cancelled',
+          },
         });
       }
 

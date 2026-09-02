@@ -50,7 +50,9 @@ describe('NegotiationsController', () => {
 
       const result = await controller.getNegotiations('lead-1');
       expect(result).toEqual(mockResult);
-      expect(mockNegotiationsService.getNegotiations).toHaveBeenCalledWith('lead-1');
+      expect(mockNegotiationsService.getNegotiations).toHaveBeenCalledWith(
+        'lead-1',
+      );
     });
   });
 
@@ -71,9 +73,13 @@ describe('NegotiationsController', () => {
       } as CreateNegotiationDto;
 
       const result = await controller.createNegotiation('lead-1', req, body);
-      
+
       expect(result).toEqual(mockResult);
-      expect(mockNegotiationsService.createNegotiation).toHaveBeenCalledWith('lead-1', 'body-user-1', body);
+      expect(mockNegotiationsService.createNegotiation).toHaveBeenCalledWith(
+        'lead-1',
+        'body-user-1',
+        body,
+      );
     });
 
     it('should create a negotiation using req.user.id if userId not in body', async () => {
@@ -86,16 +92,22 @@ describe('NegotiationsController', () => {
       } as CreateNegotiationDto;
 
       const result = await controller.createNegotiation('lead-1', req, body);
-      
+
       expect(result).toEqual(mockResult);
-      expect(mockNegotiationsService.createNegotiation).toHaveBeenCalledWith('lead-1', 'auth-user-1', body);
+      expect(mockNegotiationsService.createNegotiation).toHaveBeenCalledWith(
+        'lead-1',
+        'auth-user-1',
+        body,
+      );
     });
 
     it('should throw error if user ID is missing everywhere', async () => {
       const req = { user: {} };
       const body = {};
 
-      await expect(controller.createNegotiation('lead-1', req, body)).rejects.toThrow('User ID is required');
+      await expect(
+        controller.createNegotiation('lead-1', req, body),
+      ).rejects.toThrow('User ID is required');
     });
   });
 });

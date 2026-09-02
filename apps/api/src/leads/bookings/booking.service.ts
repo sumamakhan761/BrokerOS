@@ -14,7 +14,7 @@ export class BookingService {
     private bookingStatus: BookingStatusService,
     private bookingDocuments: BookingDocumentsService,
     private bookingPostSales: BookingPostSalesService,
-  ) { }
+  ) {}
 
   async getBooking(leadId: string) {
     return this.bookingQuery.getBooking(leadId);
@@ -40,8 +40,18 @@ export class BookingService {
     return this.bookingStatus.cancelBooking(bookingId, reason);
   }
 
-  async uploadDocument(bookingId: string, docType: string, file: Express.Multer.File, description?: string) {
-    return this.bookingDocuments.uploadDocument(bookingId, docType, file, description);
+  async uploadDocument(
+    bookingId: string,
+    docType: string,
+    file: Express.Multer.File,
+    description?: string,
+  ) {
+    return this.bookingDocuments.uploadDocument(
+      bookingId,
+      docType,
+      file,
+      description,
+    );
   }
 
   async getDocumentFile(documentId: string) {
@@ -60,7 +70,17 @@ export class BookingService {
     return this.bookingPostSales.saveHandover(bookingId, data);
   }
 
-  async uploadPostSalesFile(bookingId: string, type: 'loan' | 'agreement' | 'handover', fieldName: string, file: Express.Multer.File) {
-    return this.bookingPostSales.uploadPostSalesFile(bookingId, type, fieldName, file);
+  async uploadPostSalesFile(
+    bookingId: string,
+    type: 'loan' | 'agreement' | 'handover',
+    fieldName: string,
+    file: Express.Multer.File,
+  ) {
+    return this.bookingPostSales.uploadPostSalesFile(
+      bookingId,
+      type,
+      fieldName,
+      file,
+    );
   }
 }

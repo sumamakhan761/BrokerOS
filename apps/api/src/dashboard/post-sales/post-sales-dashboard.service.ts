@@ -4,7 +4,7 @@ import { getTodayRange } from '../core/dashboard.utils.js';
 
 @Injectable()
 export class PostSalesDashboardService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async getPostSalesDashboard(userId: string, roleId?: string) {
     const { start: todayStart, end: todayEnd } = getTodayRange();
@@ -14,7 +14,10 @@ export class PostSalesDashboardService {
       const role = await this.prisma.role.findUnique({ where: { id: roleId } });
       if (role) roleCode = role.code;
     } else {
-      const user = await this.prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: { role: true },
+      });
       if (user?.role) roleCode = user.role.code;
     }
 
@@ -22,7 +25,9 @@ export class PostSalesDashboardService {
     const leadWhere: any = { deletedAt: null };
     // Post-sales agents only view leads corresponding to bookings assigned to them
     if (roleCode === 'POST_SALES') {
-      leadWhere.customer = { bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } } };
+      leadWhere.customer = {
+        bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } },
+      };
     } else if (roleCode === 'POST_SALES_MANAGER') {
       leadWhere.customer = { bookings: { some: { source: 'DIRECT' } } };
     } else if (roleCode === 'SALES_EXECUTIVE') {
@@ -44,7 +49,12 @@ export class PostSalesDashboardService {
     ] = await Promise.all([
       // Total Booked Customers (Statuses: BOOKING, DOCUMENT, LOAN, AGREEMENT, HANDOVER)
       this.prisma.lead.count({
-        where: { ...leadWhere, status: { in: ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'] } },
+        where: {
+          ...leadWhere,
+          status: {
+            in: ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'],
+          },
+        },
       }),
       // Documents Pending
       this.prisma.lead.count({
@@ -70,14 +80,23 @@ export class PostSalesDashboardService {
       this.getLeadList({ ...leadWhere, status: 'DOCUMENT' }),
       this.getLeadList({ ...leadWhere, status: 'LOAN' }),
       this.getLeadList({ ...leadWhere, status: 'AGREEMENT' }),
-      this.getLeadList({ ...leadWhere, status: 'HANDOVER', subStatus: { not: 'DONE' } }),
+      this.getLeadList({
+        ...leadWhere,
+        status: 'HANDOVER',
+        subStatus: { not: 'DONE' },
+      }),
       // Today's Follow-ups
       this.prisma.followUp.findMany({
         where: {
           userId, // follow-ups are specific to the user
           scheduledDate: { gte: todayStart, lte: todayEnd },
           status: { in: ['SCHEDULED', 'RESCHEDULED'] },
-          lead: { deletedAt: null, status: { in: ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'] } },
+          lead: {
+            deletedAt: null,
+            status: {
+              in: ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'],
+            },
+          },
         },
         take: 5,
         orderBy: { scheduledDate: 'asc' },

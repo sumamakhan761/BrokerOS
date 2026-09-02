@@ -23,12 +23,15 @@ export class VoiceTrackingService {
         });
 
         if (!recipient) {
-          this.logger.warn(`No recipient matched for call event ${event.providerCallId} (${event.recipientPhone})`);
+          this.logger.warn(
+            `No recipient matched for call event ${event.providerCallId} (${event.recipientPhone})`,
+          );
           continue;
         }
 
         const isSuccess = event.disposition === 'COMPLETED';
-        const extractedJson = event.extractedData || (recipient.extractedData as any) || undefined;
+        const extractedJson =
+          event.extractedData || (recipient.extractedData as any) || undefined;
 
         await this.prisma.voiceRecipient.update({
           where: { id: recipient.id },
@@ -40,7 +43,7 @@ export class VoiceTrackingService {
             transcript: event.transcript || recipient.transcript,
             summary: event.summary || recipient.summary,
             sentiment: event.sentiment || recipient.sentiment,
-            extractedData: extractedJson ? (extractedJson as any) : undefined,
+            extractedData: extractedJson ? extractedJson : undefined,
             completedAt: new Date(),
           },
         });
@@ -56,7 +59,7 @@ export class VoiceTrackingService {
             transcript: event.transcript,
             summary: event.summary,
             sentiment: event.sentiment,
-            extractedData: extractedJson ? (extractedJson as any) : undefined,
+            extractedData: extractedJson ? extractedJson : undefined,
             timestamp: event.timestamp || new Date(),
           },
         });
@@ -71,7 +74,8 @@ export class VoiceTrackingService {
             },
           });
 
-          const noteUserId = recipient.lead?.assignedUserId || recipient.lead?.createdById;
+          const noteUserId =
+            recipient.lead?.assignedUserId || recipient.lead?.createdById;
           if (noteUserId) {
             await this.prisma.note.create({
               data: {
@@ -83,7 +87,9 @@ export class VoiceTrackingService {
           }
         }
       } catch (err: any) {
-        this.logger.error(`Error processing voice webhook event: ${err?.message}`);
+        this.logger.error(
+          `Error processing voice webhook event: ${err?.message}`,
+        );
       }
     }
   }

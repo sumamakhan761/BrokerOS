@@ -30,6 +30,9 @@ importers:
       '@brokeros/constants':
         specifier: workspace:*
         version: link:../../packages/constants
+      '@brokeros/int-ads-meta':
+        specifier: workspace:*
+        version: link:../../integrations/ads/meta
       '@brokeros/int-mail-brevo':
         specifier: workspace:*
         version: link:../../integrations/mail/brevo
@@ -565,6 +568,15 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  integrations/ads/meta:
+    dependencies:
+      '@brokeros/constants':
+        specifier: workspace:*
+        version: link:../../../packages/constants
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
 
   integrations/mail/aws-ses:
     dependencies:

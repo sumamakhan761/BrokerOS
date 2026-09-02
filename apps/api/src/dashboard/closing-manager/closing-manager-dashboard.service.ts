@@ -4,7 +4,7 @@ import { startOfDay, endOfDay } from 'date-fns';
 
 @Injectable()
 export class ClosingManagerDashboardService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Get the CP project IDs assigned to this user via ProjectAssignment.
@@ -15,11 +15,11 @@ export class ClosingManagerDashboardService {
       where: {
         userId,
         isActive: true,
-        project: { isCpProject: true }
+        project: { isCpProject: true },
       },
-      select: { projectId: true }
+      select: { projectId: true },
     });
-    return assignments.map(a => a.projectId);
+    return assignments.map((a) => a.projectId);
   }
 
   async getDashboard(userId: string) {
@@ -36,15 +36,15 @@ export class ClosingManagerDashboardService {
         OR: [
           { closingManagerId: userId },
           { salesExecId: userId },
-          { customer: { lead: { assignedUserId: userId } } }
+          { customer: { lead: { assignedUserId: userId } } },
         ],
         unit: {
           floor: {
             tower: {
-              projectId: { in: cpProjectIds }
-            }
-          }
-        }
+              projectId: { in: cpProjectIds },
+            },
+          },
+        },
       };
 
       // 1. Widgets - Fetch ALL matching bookings to calculate manually
@@ -52,10 +52,10 @@ export class ClosingManagerDashboardService {
         where: projectScopedBookingFilter,
         include: {
           customer: {
-            include: { lead: true }
+            include: { lead: true },
           },
-          brokerageRecords: true
-        }
+          brokerageRecords: true,
+        },
       });
 
       let totalBookings = 0;
@@ -70,7 +70,7 @@ export class ClosingManagerDashboardService {
 
         // 1 booking = 1 unit for now
         totalUnitsSold += 1;
-        // 
+        //
         // Booking Revenue (Token Amount)
         totalBookingRevenue += Number(booking.tokenAmount) || 0;
 
@@ -97,7 +97,7 @@ export class ClosingManagerDashboardService {
         totalBookingRevenue,
         totalBrokerCommission,
         totalRevenueGenerated,
-        totalBrokers: uniqueBrokers.size
+        totalBrokers: uniqueBrokers.size,
       };
 
       // 2. Lists — All scoped to assigned CP projects
@@ -106,35 +106,41 @@ export class ClosingManagerDashboardService {
         loanPendingList,
         agreementPendingList,
         handoverPendingList,
-        todayFollowupsList
+        todayFollowupsList,
       ] = await Promise.all([
         // Document Pending
         this.prisma.booking.findMany({
-          where: { ...projectScopedBookingFilter, status: 'DOCUMENTATION_PENDING' },
+          where: {
+            ...projectScopedBookingFilter,
+            status: 'DOCUMENTATION_PENDING',
+          },
           include: { customer: true, unit: true },
           take: 5,
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         }),
         // Loan Pending
         this.prisma.booking.findMany({
           where: { ...projectScopedBookingFilter, status: 'LOAN_IN_PROGRESS' },
           include: { customer: true, unit: true },
           take: 5,
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         }),
         // Agreement Pending
         this.prisma.booking.findMany({
           where: { ...projectScopedBookingFilter, status: 'AGREEMENT_PENDING' },
           include: { customer: true, unit: true },
           take: 5,
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         }),
         // Handover Pending (Possession Pending in Schema)
         this.prisma.booking.findMany({
-          where: { ...projectScopedBookingFilter, status: 'POSSESSION_PENDING' },
+          where: {
+            ...projectScopedBookingFilter,
+            status: 'POSSESSION_PENDING',
+          },
           include: { customer: true, unit: true },
           take: 5,
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         }),
         // Today's Follow-ups — scoped to leads in assigned CP projects for this closing manager
         this.prisma.followUp.findMany({
@@ -142,36 +148,42 @@ export class ClosingManagerDashboardService {
             userId: userId,
             lead: { interestedProjectId: { in: cpProjectIds } },
             status: 'SCHEDULED',
-            scheduledDate: { gte: todayStart, lte: todayEnd }
+            scheduledDate: { gte: todayStart, lte: todayEnd },
           },
           include: { lead: true },
           take: 5,
-          orderBy: { scheduledDate: 'asc' }
-        })
+          orderBy: { scheduledDate: 'asc' },
+        }),
       ]);
 
       // Count for lists — All scoped to assigned CP projects
       const listCounts = {
         documentPending: await this.prisma.booking.count({
-          where: { ...projectScopedBookingFilter, status: 'DOCUMENTATION_PENDING' }
+          where: {
+            ...projectScopedBookingFilter,
+            status: 'DOCUMENTATION_PENDING',
+          },
         }),
         loanPending: await this.prisma.booking.count({
-          where: { ...projectScopedBookingFilter, status: 'LOAN_IN_PROGRESS' }
+          where: { ...projectScopedBookingFilter, status: 'LOAN_IN_PROGRESS' },
         }),
         agreementPending: await this.prisma.booking.count({
-          where: { ...projectScopedBookingFilter, status: 'AGREEMENT_PENDING' }
+          where: { ...projectScopedBookingFilter, status: 'AGREEMENT_PENDING' },
         }),
         handoverPending: await this.prisma.booking.count({
-          where: { ...projectScopedBookingFilter, status: 'POSSESSION_PENDING' }
+          where: {
+            ...projectScopedBookingFilter,
+            status: 'POSSESSION_PENDING',
+          },
         }),
         todayFollowups: await this.prisma.followUp.count({
           where: {
             userId: userId,
             lead: { interestedProjectId: { in: cpProjectIds } },
             scheduledDate: { gte: todayStart, lte: todayEnd },
-            status: 'SCHEDULED'
-          }
-        })
+            status: 'SCHEDULED',
+          },
+        }),
       };
 
       return {
@@ -183,9 +195,8 @@ export class ClosingManagerDashboardService {
           handoverPending: handoverPendingList,
           todayFollowups: todayFollowupsList,
         },
-        listCounts
+        listCounts,
       };
-
     } catch (error: any) {
       console.error('Error fetching closing manager dashboard:', error);
       throw new InternalServerErrorException('Failed to load dashboard data');

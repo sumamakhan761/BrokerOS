@@ -1,15 +1,22 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../lib/database/prisma.service.js';
 import { NotificationsService } from '../../notifications/notifications.service.js';
 import { NotificationType } from '@brokeros/prisma';
-import { CreateAnnouncementDto, UpdateAnnouncementDto } from '../core/dto/dashboard.dto.js';
+import {
+  CreateAnnouncementDto,
+  UpdateAnnouncementDto,
+} from '../core/dto/dashboard.dto.js';
 
 @Injectable()
 export class ManagerAnnouncementsService {
   constructor(
     private prisma: PrismaService,
-    private notificationsService: NotificationsService
-  ) { }
+    private notificationsService: NotificationsService,
+  ) {}
 
   async createAnnouncement(managerId: string, data: CreateAnnouncementDto) {
     const ann = await this.prisma.announcement.create({
@@ -24,34 +31,39 @@ export class ManagerAnnouncementsService {
     // Fetch Manager Info
     const manager = await this.prisma.user.findUnique({
       where: { id: managerId },
-      select: { name: true, role: { select: { code: true } } }
+      select: { name: true, role: { select: { code: true } } },
     });
 
     if (manager) {
       // Find all employees directly reporting to this manager
       const employees = await this.prisma.user.findMany({
         where: { managerId, status: 'ACTIVE' },
-        select: { id: true, role: { select: { code: true } } }
+        select: { id: true, role: { select: { code: true } } },
       });
 
-      const preview = data.description.length > 100 ? data.description.substring(0, 100) + '...' : data.description;
+      const preview =
+        data.description.length > 100
+          ? data.description.substring(0, 100) + '...'
+          : data.description;
 
       for (const emp of employees) {
         // Construct the dashboard route specific to the employee's role
-        const roleRoute = (emp as any).role?.code?.toLowerCase().replace(/_/g, '-') || 'pre-sales';
+        const roleRoute =
+          (emp as any).role?.code?.toLowerCase().replace(/_/g, '-') ||
+          'pre-sales';
 
         await this.notificationsService.createNotification({
           userId: emp.id,
           type: NotificationType.ANNOUNCEMENT,
-          title: "New announcement from your manager.",
+          title: 'New announcement from your manager.',
           body: preview,
           actionUrl: `/dashboard/${roleRoute}`,
           metadata: {
             managerId,
             managerName: manager.name,
             announcementId: ann.id,
-            preview
-          }
+            preview,
+          },
         });
       }
     }
@@ -59,25 +71,39 @@ export class ManagerAnnouncementsService {
     return ann;
   }
 
-  async updateAnnouncement(id: string, managerId: string, data: UpdateAnnouncementDto) {
-    const ann = await this.prisma.announcement.findUnique({ where: { id }, select: { managerId: true } });
+  async updateAnnouncement(
+    id: string,
+    managerId: string,
+    data: UpdateAnnouncementDto,
+  ) {
+    const ann = await this.prisma.announcement.findUnique({
+      where: { id },
+      select: { managerId: true },
+    });
     if (!ann) throw new NotFoundException('Announcement not found');
-    if (ann.managerId !== managerId) throw new ForbiddenException('Not your announcement');
+    if (ann.managerId !== managerId)
+      throw new ForbiddenException('Not your announcement');
 
     return this.prisma.announcement.update({
       where: { id },
       data: {
         ...(data.title !== undefined && { title: data.title }),
-        ...(data.description !== undefined && { description: data.description }),
+        ...(data.description !== undefined && {
+          description: data.description,
+        }),
       },
     });
   }
 
   /** Immediately deletes the announcement completely */
   async deleteAnnouncement(id: string, managerId: string) {
-    const ann = await this.prisma.announcement.findUnique({ where: { id }, select: { managerId: true } });
+    const ann = await this.prisma.announcement.findUnique({
+      where: { id },
+      select: { managerId: true },
+    });
     if (!ann) throw new NotFoundException('Announcement not found');
-    if (ann.managerId !== managerId) throw new ForbiddenException('Not your announcement');
+    if (ann.managerId !== managerId)
+      throw new ForbiddenException('Not your announcement');
 
     await this.prisma.announcement.delete({ where: { id } });
     return { success: true };

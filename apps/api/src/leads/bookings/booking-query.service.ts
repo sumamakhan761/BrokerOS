@@ -14,17 +14,19 @@ export class BookingQueryService {
         notes: true,
         loanCase: true,
         agreement: true,
-        possession: true
-      }
+        possession: true,
+      },
     });
 
     if (!booking) return null;
 
-    const documents = booking.documents.map(doc => ({
+    const documents = booking.documents.map((doc) => ({
       ...doc,
-      url: doc.fileUrl.includes('vercel-storage.com') ? `/api/leads/booking-documents/${doc.id}` : doc.fileUrl,
+      url: doc.fileUrl.includes('vercel-storage.com')
+        ? `/api/leads/booking-documents/${doc.id}`
+        : doc.fileUrl,
       name: doc.title,
-      type: doc.type
+      type: doc.type,
     }));
 
     // Find the note containing payment details if it exists
@@ -37,7 +39,7 @@ export class BookingQueryService {
             extraData = parsed;
             break;
           }
-        } catch (e) { }
+        } catch (e) {}
       }
     }
 
@@ -49,13 +51,14 @@ export class BookingQueryService {
       paymentMode: (extraData as Record<string, any>).paymentMode,
       transactionRef: (extraData as Record<string, any>).transactionRef,
       loanRequired: (extraData as Record<string, any>).loanRequired || false,
-      remarks: booking.cancelReason || (extraData as Record<string, any>).remarks,
+      remarks:
+        booking.cancelReason || (extraData as Record<string, any>).remarks,
       documents,
       status: booking.status,
       createdAt: booking.createdAt,
       loanCase: booking.loanCase,
       agreement: booking.agreement,
-      possession: booking.possession
+      possession: booking.possession,
     };
   }
 
@@ -74,13 +77,13 @@ export class BookingQueryService {
       return this.prisma.booking.findMany({
         where: {
           status: 'CONFIRMED',
-          salesExecId: userId
+          salesExecId: userId,
         },
         include: {
           customer: { include: { lead: true } },
-          unit: true
+          unit: true,
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       });
     }
 
@@ -89,14 +92,14 @@ export class BookingQueryService {
       return this.prisma.booking.findMany({
         where: {
           status: 'CONFIRMED',
-          source: 'DIRECT' // only sees brokerage bookings
+          source: 'DIRECT', // only sees brokerage bookings
         },
         include: {
           customer: { include: { lead: true } },
           unit: true,
-          salesExec: true
+          salesExec: true,
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       });
     }
 
@@ -106,14 +109,14 @@ export class BookingQueryService {
         where: {
           status: 'CONFIRMED',
           assignedPostSalesId: userId,
-          source: 'DIRECT' // only internal brokerage bookings
+          source: 'DIRECT', // only internal brokerage bookings
         },
         include: {
           customer: { include: { lead: true } },
           unit: true,
-          salesExec: true
+          salesExec: true,
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       });
     }
 
@@ -122,31 +125,35 @@ export class BookingQueryService {
       return this.prisma.booking.findMany({
         where: {
           status: 'CONFIRMED',
-          source: 'DIRECT' // only internal brokerage bookings
+          source: 'DIRECT', // only internal brokerage bookings
         },
         include: {
           customer: { include: { lead: true } },
           unit: true,
           salesExec: true,
-          assignedPostSales: true
+          assignedPostSales: true,
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       });
     }
 
     // Closing Manager / Sourcing Manager (CP Side)
-    if (roleCode === 'CLOSING_MANAGER' || roleCode === 'SOURCING_MANAGER' || roleCode === 'CHANNEL_PARTNER') {
+    if (
+      roleCode === 'CLOSING_MANAGER' ||
+      roleCode === 'SOURCING_MANAGER' ||
+      roleCode === 'CHANNEL_PARTNER'
+    ) {
       return this.prisma.booking.findMany({
         where: {
           status: 'CONFIRMED',
-          source: 'CHANNEL_PARTNER'
+          source: 'CHANNEL_PARTNER',
         },
         include: {
           customer: { include: { lead: true } },
           unit: true,
-          closingManager: true
+          closingManager: true,
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       });
     }
 
@@ -158,9 +165,9 @@ export class BookingQueryService {
         unit: true,
         salesExec: true,
         closingManager: true,
-        assignedPostSales: true
+        assignedPostSales: true,
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 }

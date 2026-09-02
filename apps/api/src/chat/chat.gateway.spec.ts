@@ -8,7 +8,7 @@ import { SendSocketMessageDto, TypingIndicatorDto } from './dto/chat.dto.js';
 describe('ChatGateway', () => {
   let gateway: ChatGateway;
   let chatService: ChatService;
-  
+
   const mockChatService = {
     sendMessage: jest.fn(),
   };
@@ -23,12 +23,12 @@ describe('ChatGateway', () => {
 
     gateway = module.get<ChatGateway>(ChatGateway);
     chatService = module.get<ChatService>(ChatService);
-    
+
     // Mock the socket server
     gateway.server = {
       to: jest.fn().mockReturnValue({
-        emit: jest.fn()
-      })
+        emit: jest.fn(),
+      }),
     } as any;
   });
 
@@ -45,22 +45,30 @@ describe('ChatGateway', () => {
       handshake: { query: { userId: 'u-1' } },
       emit: jest.fn(),
     } as any;
-    
-    mockChatService.sendMessage.mockResolvedValue({ id: 'msg-1', content: 'test' });
-    
+
+    mockChatService.sendMessage.mockResolvedValue({
+      id: 'msg-1',
+      content: 'test',
+    });
+
     const dto = { roomId: 'r-1', content: 'test' } as SendSocketMessageDto;
     await gateway.handleSendMessage(dto, mockSocket);
-    
-    expect(mockChatService.sendMessage).toHaveBeenCalledWith('u-1', 'r-1', 'test', undefined);
+
+    expect(mockChatService.sendMessage).toHaveBeenCalledWith(
+      'u-1',
+      'r-1',
+      'test',
+      undefined,
+    );
     expect(gateway.server.to).toHaveBeenCalledWith('room_r-1');
   });
-  
+
   it('should handle typing', () => {
     const mockSocket = {
       handshake: { query: { userId: 'u-1' } },
-      to: jest.fn().mockReturnValue({ emit: jest.fn() })
+      to: jest.fn().mockReturnValue({ emit: jest.fn() }),
     } as any;
-    
+
     const dto = { roomId: 'r-1', isTyping: true } as TypingIndicatorDto;
     gateway.handleTyping(dto, mockSocket);
     expect(mockSocket.to).toHaveBeenCalledWith('room_r-1');

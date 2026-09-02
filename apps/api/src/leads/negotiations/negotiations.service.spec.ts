@@ -61,7 +61,9 @@ describe('NegotiationsService', () => {
       const mockNegotiations = [{ id: 'neg-1', askingPrice: 1000 }];
 
       mockPrismaService.lead.findUnique.mockResolvedValue(mockLead);
-      mockPrismaService.negotiation.findMany.mockResolvedValue(mockNegotiations);
+      mockPrismaService.negotiation.findMany.mockResolvedValue(
+        mockNegotiations,
+      );
 
       const result = await service.getNegotiations('lead-1');
       expect(result).toEqual(mockNegotiations);
@@ -69,7 +71,9 @@ describe('NegotiationsService', () => {
         where: { leadId: 'lead-1' },
         orderBy: { id: 'desc' },
         include: {
-          salesExec: { select: { username: true, email: true, displayUsername: true } },
+          salesExec: {
+            select: { username: true, email: true, displayUsername: true },
+          },
         },
       });
     });
@@ -100,7 +104,11 @@ describe('NegotiationsService', () => {
       mockPrismaService.lead.findUnique.mockResolvedValue(mockLead);
       mockPrismaService.negotiation.create.mockResolvedValue(mockNegotiation);
 
-      const result = await service.createNegotiation('lead-1', 'user-1', createData);
+      const result = await service.createNegotiation(
+        'lead-1',
+        'user-1',
+        createData,
+      );
       expect(result).toEqual(mockNegotiation);
       expect(mockPrismaService.negotiation.create).toHaveBeenCalledWith({
         data: {
@@ -114,7 +122,9 @@ describe('NegotiationsService', () => {
           nextActionPlan: 'Call back tomorrow',
         },
         include: {
-          salesExec: { select: { username: true, email: true, displayUsername: true } },
+          salesExec: {
+            select: { username: true, email: true, displayUsername: true },
+          },
         },
       });
     });

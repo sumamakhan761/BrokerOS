@@ -7,7 +7,9 @@ export class VoiceAnalyticsService {
   private readonly logger = new Logger(VoiceAnalyticsService.name);
   private readonly prisma = prismaClient;
 
-  async getCampaignAnalytics(campaignId: string): Promise<VoiceCampaignAnalyticsSummary> {
+  async getCampaignAnalytics(
+    campaignId: string,
+  ): Promise<VoiceCampaignAnalyticsSummary> {
     const campaign = await this.prisma.voiceCampaign.findUnique({
       where: { id: campaignId },
       include: {
@@ -34,14 +36,22 @@ export class VoiceAnalyticsService {
       throw new NotFoundException(`Voice Campaign ${campaignId} not found`);
     }
 
-    const totalRecipients = campaign.totalRecipients || (await this.prisma.voiceRecipient.count({ where: { campaignId } }));
+    const totalRecipients =
+      campaign.totalRecipients ||
+      (await this.prisma.voiceRecipient.count({ where: { campaignId } }));
     const completedCalls = campaign.completedCalls;
     const busyCalls = campaign.busyCalls;
     const noAnswerCalls = campaign.noAnswerCalls;
     const failedCalls = campaign.failedCalls;
 
-    const completionRate = totalRecipients > 0 ? Math.round((completedCalls / totalRecipients) * 100) : 0;
-    const averageDurationSec = completedCalls > 0 ? Math.round(campaign.totalDurationSec / completedCalls) : 0;
+    const completionRate =
+      totalRecipients > 0
+        ? Math.round((completedCalls / totalRecipients) * 100)
+        : 0;
+    const averageDurationSec =
+      completedCalls > 0
+        ? Math.round(campaign.totalDurationSec / completedCalls)
+        : 0;
 
     // Sentiment breakdown
     const positiveCount = await this.prisma.voiceRecipient.count({
@@ -117,7 +127,10 @@ export class VoiceAnalyticsService {
       totalCallsPlaced,
       totalCallsCompleted,
       totalTalkTimeSec,
-      overallCompletionRate: totalCallsPlaced > 0 ? Math.round((totalCallsCompleted / totalCallsPlaced) * 100) : 0,
+      overallCompletionRate:
+        totalCallsPlaced > 0
+          ? Math.round((totalCallsCompleted / totalCallsPlaced) * 100)
+          : 0,
     };
   }
 

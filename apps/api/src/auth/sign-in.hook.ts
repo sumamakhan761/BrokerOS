@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { Hook, BeforeHook, AuthHookContext } from '@thallesp/nestjs-better-auth';
+import {
+  Hook,
+  BeforeHook,
+  AuthHookContext,
+} from '@thallesp/nestjs-better-auth';
 import { prismaClient as prisma } from '../lib/database/prisma-client.js';
 import { APIError } from 'better-auth/api';
 
@@ -10,14 +14,17 @@ export class SignInHook {
   async handle(ctx: AuthHookContext) {
     const body = ctx.body;
 
-    console.log("LOGIN ATTEMPT BODY:", JSON.stringify(body, null, 2));
+    console.log('LOGIN ATTEMPT BODY:', JSON.stringify(body, null, 2));
 
     const email = body?.email;
     const phoneNumber = body?.phoneNumber;
     const roleId = body?.roleId;
 
     if (!email || !phoneNumber || !roleId) {
-      throw new APIError('BAD_REQUEST', { message: 'Email, Phone Number, and Role selection are all required for login.' });
+      throw new APIError('BAD_REQUEST', {
+        message:
+          'Email, Phone Number, and Role selection are all required for login.',
+      });
     }
 
     // Strict Multi-Factor Identity Check
@@ -33,7 +40,10 @@ export class SignInHook {
     if (!user) {
       // If the combination doesn't match perfectly, we explicitly throw an error
       // Better Auth handles throwing errors back to the client as 400 Bad Request
-      throw new APIError('FORBIDDEN', { message: 'Identity mismatch: The provided Email, Phone Number, and Role combination is invalid.' });
+      throw new APIError('FORBIDDEN', {
+        message:
+          'Identity mismatch: The provided Email, Phone Number, and Role combination is invalid.',
+      });
     }
 
     // If it matches perfectly, Better Auth will continue to check the password and log them in!

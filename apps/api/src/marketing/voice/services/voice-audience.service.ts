@@ -1,6 +1,15 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { prismaClient } from '@brokeros/prisma';
-import type { PreviewVoiceAudienceDto, VoiceAudienceFiltersDto, VoiceCsvRecipientDto } from '../dto/voice.dto.js';
+import type {
+  PreviewVoiceAudienceDto,
+  VoiceAudienceFiltersDto,
+  VoiceCsvRecipientDto,
+} from '../dto/voice.dto.js';
 import type { VoiceAudienceEstimationResult } from '@brokeros/types';
 
 @Injectable()
@@ -8,7 +17,10 @@ export class VoiceAudienceService {
   private readonly logger = new Logger(VoiceAudienceService.name);
   private readonly prisma = prismaClient;
 
-  static normalizePhoneNumber(rawPhone: string, defaultCountryCode = '+91'): string {
+  static normalizePhoneNumber(
+    rawPhone: string,
+    defaultCountryCode = '+91',
+  ): string {
     if (!rawPhone) return '';
     let cleaned = rawPhone.replace(/[^\d+]/g, '');
 
@@ -26,7 +38,11 @@ export class VoiceAudienceService {
     return cleaned;
   }
 
-  buildLeadWhereClause(filters: any = {}, isCpCampaign?: boolean, projectId?: string) {
+  buildLeadWhereClause(
+    filters: any = {},
+    isCpCampaign?: boolean,
+    projectId?: string,
+  ) {
     const whereClause: any = {
       deletedAt: null,
       phone: { not: '' },
@@ -35,7 +51,9 @@ export class VoiceAudienceService {
     if (filters.statuses?.length && !filters.statuses.includes('ALL')) {
       whereClause.status = { in: filters.statuses };
     } else {
-      whereClause.status = { in: ['NEW', 'CONTACTED', 'INTERESTED', 'QUALIFIED'] };
+      whereClause.status = {
+        in: ['NEW', 'CONTACTED', 'INTERESTED', 'QUALIFIED'],
+      };
     }
 
     if (filters.temperatures?.length) {
@@ -58,10 +76,16 @@ export class VoiceAudienceService {
     return whereClause;
   }
 
-  async estimateAudience(dto: PreviewVoiceAudienceDto): Promise<VoiceAudienceEstimationResult> {
+  async estimateAudience(
+    dto: PreviewVoiceAudienceDto,
+  ): Promise<VoiceAudienceEstimationResult> {
     // 1. If audience source is CSV_UPLOAD, ONLY process the CSV rows
     if (dto.audienceSource === 'CSV_UPLOAD') {
-      if (!dto.csvRecipients || !Array.isArray(dto.csvRecipients) || dto.csvRecipients.length === 0) {
+      if (
+        !dto.csvRecipients ||
+        !Array.isArray(dto.csvRecipients) ||
+        dto.csvRecipients.length === 0
+      ) {
         return {
           totalCount: 0,
           validPhoneCount: 0,
@@ -76,7 +100,13 @@ export class VoiceAudienceService {
       let duplicateCount = 0;
 
       for (const row of dto.csvRecipients) {
-        const rawPhone = (row.phone || row.phoneNumber || row.mobile || row.contact || '').toString();
+        const rawPhone = (
+          row.phone ||
+          row.phoneNumber ||
+          row.mobile ||
+          row.contact ||
+          ''
+        ).toString();
         const phone = VoiceAudienceService.normalizePhoneNumber(rawPhone);
         if (!phone || phone.length < 8) continue;
 
@@ -129,7 +159,13 @@ export class VoiceAudienceService {
     // 3. If HYBRID, also merge CSV
     if (dto.audienceSource === 'HYBRID' && dto.csvRecipients?.length) {
       for (const row of dto.csvRecipients) {
-        const rawPhone = (row.phone || row.phoneNumber || row.mobile || row.contact || '').toString();
+        const rawPhone = (
+          row.phone ||
+          row.phoneNumber ||
+          row.mobile ||
+          row.contact ||
+          ''
+        ).toString();
         const norm = VoiceAudienceService.normalizePhoneNumber(rawPhone);
         if (!norm || norm.length < 8) continue;
 
@@ -159,15 +195,21 @@ export class VoiceAudienceService {
     };
   }
 
-  async resolveAudienceRecipients(
-    dto: {
-      audienceSource?: 'CRM_DATABASE' | 'CSV_UPLOAD' | 'HYBRID';
-      audienceFilters?: any;
-      csvRecipients?: any[];
-      isCpCampaign?: boolean;
-      projectId?: string;
-    },
-  ): Promise<Array<{ phone: string; name?: string; leadId?: string; source: 'CRM_DATABASE' | 'CSV_UPLOAD'; mergeData?: any }>> {
+  async resolveAudienceRecipients(dto: {
+    audienceSource?: 'CRM_DATABASE' | 'CSV_UPLOAD' | 'HYBRID';
+    audienceFilters?: any;
+    csvRecipients?: any[];
+    isCpCampaign?: boolean;
+    projectId?: string;
+  }): Promise<
+    Array<{
+      phone: string;
+      name?: string;
+      leadId?: string;
+      source: 'CRM_DATABASE' | 'CSV_UPLOAD';
+      mergeData?: any;
+    }>
+  > {
     const seenPhones = new Set<string>();
     const recipients: Array<{
       phone: string;
@@ -181,7 +223,13 @@ export class VoiceAudienceService {
     if (dto.audienceSource === 'CSV_UPLOAD') {
       if (dto.csvRecipients?.length) {
         for (const csv of dto.csvRecipients) {
-          const rawPhone = (csv.phone || csv.phoneNumber || csv.mobile || csv.contact || '').toString();
+          const rawPhone = (
+            csv.phone ||
+            csv.phoneNumber ||
+            csv.mobile ||
+            csv.contact ||
+            ''
+          ).toString();
           const norm = VoiceAudienceService.normalizePhoneNumber(rawPhone);
           if (norm.length >= 8 && !seenPhones.has(norm)) {
             seenPhones.add(norm);
@@ -199,7 +247,13 @@ export class VoiceAudienceService {
 
     if (dto.audienceSource === 'HYBRID' && dto.csvRecipients?.length) {
       for (const csv of dto.csvRecipients) {
-        const rawPhone = (csv.phone || csv.phoneNumber || csv.mobile || csv.contact || '').toString();
+        const rawPhone = (
+          csv.phone ||
+          csv.phoneNumber ||
+          csv.mobile ||
+          csv.contact ||
+          ''
+        ).toString();
         const norm = VoiceAudienceService.normalizePhoneNumber(rawPhone);
         if (norm.length >= 8 && !seenPhones.has(norm)) {
           seenPhones.add(norm);
@@ -239,7 +293,9 @@ export class VoiceAudienceService {
       const norm = VoiceAudienceService.normalizePhoneNumber(lead.phone);
       if (norm.length >= 8 && !seenPhones.has(norm)) {
         seenPhones.add(norm);
-        const fullName = [lead.firstName, lead.lastName].filter(Boolean).join(' ');
+        const fullName = [lead.firstName, lead.lastName]
+          .filter(Boolean)
+          .join(' ');
         recipients.push({
           phone: norm,
           name: fullName || undefined,
@@ -266,8 +322,12 @@ export class VoiceAudienceService {
       include: { campaign: true },
     });
 
-    if (!recipient) throw new NotFoundException('Voice Recipient record not found');
-    if (recipient.leadId) throw new BadRequestException('Recipient is already linked to a CRM Lead');
+    if (!recipient)
+      throw new NotFoundException('Voice Recipient record not found');
+    if (recipient.leadId)
+      throw new BadRequestException(
+        'Recipient is already linked to a CRM Lead',
+      );
 
     const nameParts = (recipient.name || 'Prospect').trim().split(' ');
     const firstName = nameParts[0];
@@ -280,7 +340,7 @@ export class VoiceAudienceService {
         firstName,
         lastName,
         phone: recipient.phone,
-        temperature: (merge.temperature as any) || 'HOT',
+        temperature: merge.temperature || 'HOT',
         status: 'INTERESTED',
         interestedProjectId: recipient.campaign.projectId,
         budget: merge.budget ? Number(merge.budget) : null,

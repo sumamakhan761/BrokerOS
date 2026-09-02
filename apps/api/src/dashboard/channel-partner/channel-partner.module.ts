@@ -7,13 +7,7 @@ import { PrismaModule } from '../../lib/database/prisma.module.js';
 @Module({
   imports: [PrismaModule],
   controllers: [ChannelPartnerDashboardController],
-  providers: [
-    ChannelPartnerDashboardService,
-    ChannelPartnerAnalyticsService,
-  ],
-  exports: [
-    ChannelPartnerDashboardService,
-    ChannelPartnerAnalyticsService,
-  ],
+  providers: [ChannelPartnerDashboardService, ChannelPartnerAnalyticsService],
+  exports: [ChannelPartnerDashboardService, ChannelPartnerAnalyticsService],
 })
 export class ChannelPartnerDashboardModule {}

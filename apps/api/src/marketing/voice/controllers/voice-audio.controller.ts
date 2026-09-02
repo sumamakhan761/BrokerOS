@@ -7,7 +7,7 @@ import { PreviewAudioTtsDto } from '../dto/voice.dto.js';
 @Public()
 @Controller('api/marketing/voice/audio')
 export class VoiceAudioController {
-  constructor(private readonly audioService: VoiceAudioService) { }
+  constructor(private readonly audioService: VoiceAudioService) {}
 
   @Post('preview')
   async previewAudio(@Body() dto: PreviewAudioTtsDto, @Res() res: Response) {

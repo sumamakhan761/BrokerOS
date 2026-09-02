@@ -49,8 +49,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
-    }
+    },
   ],
 })
-export class AppModule { }
-
+export class AppModule {}

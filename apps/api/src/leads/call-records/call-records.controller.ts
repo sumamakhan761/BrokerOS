@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Param, Body, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  UseInterceptors,
+  UploadedFile,
+  Res,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { CallRecordsService } from './call-records.service.js';
@@ -36,11 +45,15 @@ export class CallRecordsController {
 
     try {
       const blobRes = await fetch(record.recordingUrl, {
-        headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+        headers: {
+          Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+        },
       });
 
       if (!blobRes.ok) {
-        return res.status(blobRes.status).send('Failed to fetch audio from blob storage');
+        return res
+          .status(blobRes.status)
+          .send('Failed to fetch audio from blob storage');
       }
 
       res.set({

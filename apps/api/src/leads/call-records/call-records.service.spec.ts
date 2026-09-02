@@ -2,14 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 jest.mock('@brokeros/prisma', () => ({
   NotificationType: { ACHIEVEMENT_MILESTONE: 'ACHIEVEMENT_MILESTONE' },
-  PrismaClient: class {}
+  PrismaClient: class {},
 }));
 jest.mock('expo-server-sdk', () => ({ Expo: class {} }));
 jest.mock('../../notifications/notifications.service.js');
 
 jest.mock('p-queue', () => {
   return jest.fn().mockImplementation(() => ({
-    add: jest.fn().mockImplementation(async (fn) => { await fn(); }),
+    add: jest.fn().mockImplementation(async (fn) => {
+      await fn();
+    }),
   }));
 });
 
@@ -92,8 +94,10 @@ describe('CallRecordsService', () => {
 
     service = module.get<CallRecordsService>(CallRecordsService);
     prismaService = module.get<PrismaService>(PrismaService);
-    transcriptionService = module.get<TranscriptionService>(TranscriptionService);
-    notificationsService = module.get<NotificationsService>(NotificationsService);
+    transcriptionService =
+      module.get<TranscriptionService>(TranscriptionService);
+    notificationsService =
+      module.get<NotificationsService>(NotificationsService);
   });
 
   afterEach(() => {
@@ -116,20 +120,37 @@ describe('CallRecordsService', () => {
     it('should return error if no lead or broker is found', async () => {
       mockPrismaService.lead.findFirst.mockResolvedValue(null);
       mockPrismaService.broker.findFirst.mockResolvedValue(null);
-      const res = await service.uploadCallRecord({ originalname: 'test.mp3', buffer: Buffer.from('') } as Express.Multer.File, {
-        phoneNumber: '1234567890',
-        startedAt: '123',
-        endedAt: '124'
-      } as UploadCallRecordDto);
-      expect(res).toEqual({ success: false, message: 'No lead or broker found' });
+      const res = await service.uploadCallRecord(
+        {
+          originalname: 'test.mp3',
+          buffer: Buffer.from(''),
+        } as Express.Multer.File,
+        {
+          phoneNumber: '1234567890',
+          startedAt: '123',
+          endedAt: '124',
+        },
+      );
+      expect(res).toEqual({
+        success: false,
+        message: 'No lead or broker found',
+      });
     });
 
     it('should process call record, add to queue, and return success', async () => {
-      mockPrismaService.lead.findFirst.mockResolvedValue({ id: 'lead-1', assignedUserId: 'user-1' });
-      mockPrismaService.callRecord.create.mockResolvedValue({ id: 'cr-1', leadId: 'lead-1' });
-      mockPrismaService.user.findUnique.mockResolvedValue({ role: { code: 'PRE_SALES' } });
+      mockPrismaService.lead.findFirst.mockResolvedValue({
+        id: 'lead-1',
+        assignedUserId: 'user-1',
+      });
+      mockPrismaService.callRecord.create.mockResolvedValue({
+        id: 'cr-1',
+        leadId: 'lead-1',
+      });
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        role: { code: 'PRE_SALES' },
+      });
       mockPrismaService.callRecord.count.mockResolvedValue(10); // Not a milestone
-      
+
       // Mocks for the background queue
       mockTranscriptionService.transcribeAudio.mockResolvedValue('hello world');
       mockTranscriptionService.summarizeCall.mockResolvedValue({
@@ -137,32 +158,48 @@ describe('CallRecordsService', () => {
         nextStepSuggestion: 'call again',
         extractedBudget: 50000,
         scheduleFollowUp: true,
-        followUpIsoDate: new Date().toISOString()
+        followUpIsoDate: new Date().toISOString(),
       });
-      mockPrismaService.lead.findUnique.mockResolvedValue({ id: 'lead-1', _count: { callRecords: 1 } });
+      mockPrismaService.lead.findUnique.mockResolvedValue({
+        id: 'lead-1',
+        _count: { callRecords: 1 },
+      });
       mockPrismaService.project.findMany.mockResolvedValue([]);
-      mockTranscriptionService.generateLeadScore.mockResolvedValue({ score: 90, category: 'HOT' });
-      
-      const res = await service.uploadCallRecord({ originalname: 'test.mp3', buffer: Buffer.from('audio') } as Express.Multer.File, {
-        phoneNumber: '1234567890',
-        startedAt: '1234567890',
-        endedAt: '1234567891'
-      } as UploadCallRecordDto);
+      mockTranscriptionService.generateLeadScore.mockResolvedValue({
+        score: 90,
+        category: 'HOT',
+      });
+
+      const res = await service.uploadCallRecord(
+        {
+          originalname: 'test.mp3',
+          buffer: Buffer.from('audio'),
+        } as Express.Multer.File,
+        {
+          phoneNumber: '1234567890',
+          startedAt: '1234567890',
+          endedAt: '1234567891',
+        },
+      );
 
       expect(res.success).toBe(true);
       expect(res.callRecord).toEqual({ id: 'cr-1', leadId: 'lead-1' });
-      
+
       // Assert queue execution (since p-queue is mocked to run synchronously)
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       expect(mockTranscriptionService.transcribeAudio).toHaveBeenCalled();
       expect(mockTranscriptionService.summarizeCall).toHaveBeenCalled();
       expect(mockTranscriptionService.generateLeadScore).toHaveBeenCalled();
-      expect(mockPrismaService.lead.update).toHaveBeenCalledWith(expect.objectContaining({
-        where: { id: 'lead-1' },
-      }));
-      expect(mockPrismaService.callRecord.update).toHaveBeenCalledWith(expect.objectContaining({
-        where: { id: 'cr-1' }
-      }));
+      expect(mockPrismaService.lead.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'lead-1' },
+        }),
+      );
+      expect(mockPrismaService.callRecord.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'cr-1' },
+        }),
+      );
     });
   });
 });

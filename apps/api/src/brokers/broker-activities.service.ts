@@ -1,46 +1,64 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../lib/database/prisma.service.js';
-import { AddBrokerNoteDto, AddBrokerFollowUpDto, AddBrokerMeetingDto, CompleteMeetingDto } from './dto/broker.dto.js';
+import {
+  AddBrokerNoteDto,
+  AddBrokerFollowUpDto,
+  AddBrokerMeetingDto,
+  CompleteMeetingDto,
+} from './dto/broker.dto.js';
 
 @Injectable()
 export class BrokerActivitiesService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async addNote(brokerId: string, userId: string, data: AddBrokerNoteDto) {
     return this.prisma.note.create({
       data: {
         content: data.content,
         brokerId,
-        userId
-      }
+        userId,
+      },
     });
   }
 
-  async addFollowUp(brokerId: string, userId: string, data: AddBrokerFollowUpDto) {
+  async addFollowUp(
+    brokerId: string,
+    userId: string,
+    data: AddBrokerFollowUpDto,
+  ) {
     return this.prisma.followUp.create({
       data: {
         type: data.type || 'CALL',
         remarks: `${data.title ? data.title + ' - ' : ''}${data.notes || ''}`,
         scheduledDate: new Date(data.scheduledDate),
         brokerId,
-        userId
-      }
+        userId,
+      },
     });
   }
 
-  async addMeeting(brokerId: string, userId: string, data: AddBrokerMeetingDto) {
+  async addMeeting(
+    brokerId: string,
+    userId: string,
+    data: AddBrokerMeetingDto,
+  ) {
     return this.prisma.brokerMeeting.create({
       data: {
         scheduledDate: new Date(data.scheduledAt),
         meetingNotes: `Title: ${data.title || ''}\nType: ${data.meetingType || 'OFFICE'}\nAgenda: ${data.agenda || ''}`,
         destinationUrl: data.destinationUrl || null,
         brokerId,
-        userId
-      }
+        userId,
+      },
     });
   }
 
-  async arriveAtMeeting(brokerId: string, meetingId: string, userId: string, locationData: { latitude: number; longitude: number }) {
+  async arriveAtMeeting(
+    brokerId: string,
+    meetingId: string,
+    userId: string,
+    locationData: { latitude: number; longitude: number },
+  ) {
     // Check if the meeting belongs to this broker and user (if security check is needed)
     return this.prisma.brokerMeeting.update({
       where: { id: meetingId },
@@ -52,7 +70,12 @@ export class BrokerActivitiesService {
     });
   }
 
-  async completeMeeting(brokerId: string, meetingId: string, userId: string, data: CompleteMeetingDto) {
+  async completeMeeting(
+    brokerId: string,
+    meetingId: string,
+    userId: string,
+    data: CompleteMeetingDto,
+  ) {
     return this.prisma.brokerMeeting.update({
       where: { id: meetingId },
       data: {
@@ -81,7 +104,8 @@ export class BrokerActivitiesService {
     if (!callRecordToday) {
       return {
         success: false,
-        message: 'No call record found for today. You must call the broker before confirming the follow-up.',
+        message:
+          'No call record found for today. You must call the broker before confirming the follow-up.',
       };
     }
 
@@ -89,7 +113,7 @@ export class BrokerActivitiesService {
       where: { id: followUpId },
       data: {
         status: 'COMPLETED',
-        completedAt: new Date()
+        completedAt: new Date(),
       },
     });
 

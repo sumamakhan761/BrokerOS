@@ -26,7 +26,9 @@ import { StreamSessionManager } from './voice-stream-session.js';
   },
 })
 @Injectable()
-export class VoiceMediaStreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class VoiceMediaStreamGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -36,21 +38,36 @@ export class VoiceMediaStreamGateway implements OnGatewayConnection, OnGatewayDi
   constructor(private readonly audioService?: VoiceAudioService) {}
 
   handleConnection(client: Socket) {
-    this.logger.log(`[MediaGateway] Telephony stream client connected: ${client.id}`);
+    this.logger.log(
+      `[MediaGateway] Telephony stream client connected: ${client.id}`,
+    );
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`[MediaGateway] Telephony stream client disconnected: ${client.id}`);
+    this.logger.log(
+      `[MediaGateway] Telephony stream client disconnected: ${client.id}`,
+    );
     this.sessionManager.endSessionBySocket(client.id);
   }
 
   @SubscribeMessage('start')
-  async handleStreamStart(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
-    const streamSid = data?.streamSid || data?.start?.streamSid || `stream_${Date.now()}`;
-    const callSid = data?.start?.callSid || data?.callSid || `call_${Date.now()}`;
-    const customParams = data?.start?.customParameters || data?.customParameters || {};
+  async handleStreamStart(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: any,
+  ) {
+    const streamSid =
+      data?.streamSid || data?.start?.streamSid || `stream_${Date.now()}`;
+    const callSid =
+      data?.start?.callSid || data?.callSid || `call_${Date.now()}`;
+    const customParams =
+      data?.start?.customParameters || data?.customParameters || {};
 
-    const session = this.sessionManager.startSession(streamSid, callSid, client.id, customParams);
+    const session = this.sessionManager.startSession(
+      streamSid,
+      callSid,
+      client.id,
+      customParams,
+    );
 
     // Speak First Message as soon as the media stream connects
     if (session.firstMessage && this.audioService) {
@@ -62,9 +79,15 @@ export class VoiceMediaStreamGateway implements OnGatewayConnection, OnGatewayDi
         });
 
         if (audio?.audioBuffer) {
-          const ulawBase64 = VoiceAudioTranscoder.pcm16ToBase64Ulaw(audio.audioBuffer);
+          const ulawBase64 = VoiceAudioTranscoder.pcm16ToBase64Ulaw(
+            audio.audioBuffer,
+          );
           const chunkSize = 160; // 20ms of μ-law audio at 8kHz
-          for (let offset = 0; offset < ulawBase64.length; offset += chunkSize) {
+          for (
+            let offset = 0;
+            offset < ulawBase64.length;
+            offset += chunkSize
+          ) {
             const chunk = ulawBase64.substring(offset, offset + chunkSize);
             client.emit('media', {
               event: 'media',
@@ -75,7 +98,9 @@ export class VoiceMediaStreamGateway implements OnGatewayConnection, OnGatewayDi
           }
         }
       } catch (err: any) {
-        this.logger.warn(`Failed to synthesize first message for stream ${streamSid}: ${err?.message}`);
+        this.logger.warn(
+          `Failed to synthesize first message for stream ${streamSid}: ${err?.message}`,
+        );
       }
     }
 
@@ -83,7 +108,10 @@ export class VoiceMediaStreamGateway implements OnGatewayConnection, OnGatewayDi
   }
 
   @SubscribeMessage('media')
-  handleMediaChunk(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
+  handleMediaChunk(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: any,
+  ) {
     const streamSid = data?.streamSid;
     if (streamSid) {
       this.sessionManager.recordPacketReceived(streamSid);
@@ -91,7 +119,10 @@ export class VoiceMediaStreamGateway implements OnGatewayConnection, OnGatewayDi
   }
 
   @SubscribeMessage('stop')
-  handleStreamStop(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
+  handleStreamStop(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: any,
+  ) {
     const streamSid = data?.streamSid || data?.stop?.streamSid;
     if (streamSid) {
       this.sessionManager.endSession(streamSid);

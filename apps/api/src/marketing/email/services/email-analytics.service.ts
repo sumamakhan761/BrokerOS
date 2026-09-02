@@ -6,7 +6,9 @@ import type { CampaignAnalyticsSummary } from '@brokeros/types';
 export class EmailAnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getCampaignAnalytics(campaignId: string): Promise<CampaignAnalyticsSummary> {
+  async getCampaignAnalytics(
+    campaignId: string,
+  ): Promise<CampaignAnalyticsSummary> {
     const campaign = await this.prisma.marketingCampaign.findUnique({
       where: { id: campaignId },
     });
@@ -21,7 +23,10 @@ export class EmailAnalyticsService {
     ] = await Promise.all([
       this.prisma.campaignRecipient.count({ where: { campaignId } }),
       this.prisma.campaignRecipient.count({
-        where: { campaignId, status: { in: ['DELIVERED', 'OPENED', 'CLICKED', 'SENT'] } },
+        where: {
+          campaignId,
+          status: { in: ['DELIVERED', 'OPENED', 'CLICKED', 'SENT'] },
+        },
       }),
       this.prisma.campaignRecipient.count({
         where: {
@@ -35,10 +40,7 @@ export class EmailAnalyticsService {
       this.prisma.campaignRecipient.count({
         where: {
           campaignId,
-          OR: [
-            { status: 'CLICKED' },
-            { clickCount: { gt: 0 } },
-          ],
+          OR: [{ status: 'CLICKED' }, { clickCount: { gt: 0 } }],
         },
       }),
       this.prisma.campaignRecipient.count({
@@ -46,16 +48,25 @@ export class EmailAnalyticsService {
       }),
     ]);
 
-    const sentCount = Math.max(campaign.sentCount, deliveredRecipients + bouncedRecipients);
-    const deliveredCount = Math.max(campaign.deliveredCount, deliveredRecipients);
+    const sentCount = Math.max(
+      campaign.sentCount,
+      deliveredRecipients + bouncedRecipients,
+    );
+    const deliveredCount = Math.max(
+      campaign.deliveredCount,
+      deliveredRecipients,
+    );
     const openedCount = Math.max(campaign.openedCount, openedRecipients);
     const clickedCount = Math.max(campaign.clickedCount, clickedRecipients);
     const bouncedCount = Math.max(campaign.bouncedCount, bouncedRecipients);
 
     const deliveryRate = sentCount > 0 ? (deliveredCount / sentCount) * 100 : 0;
-    const openRate = deliveredCount > 0 ? (openedCount / deliveredCount) * 100 : 0;
-    const clickRate = deliveredCount > 0 ? (clickedCount / deliveredCount) * 100 : 0;
-    const clickToOpenRate = openedCount > 0 ? (clickedCount / openedCount) * 100 : 0;
+    const openRate =
+      deliveredCount > 0 ? (openedCount / deliveredCount) * 100 : 0;
+    const clickRate =
+      deliveredCount > 0 ? (clickedCount / deliveredCount) * 100 : 0;
+    const clickToOpenRate =
+      openedCount > 0 ? (clickedCount / openedCount) * 100 : 0;
     const bounceRate = sentCount > 0 ? (bouncedCount / sentCount) * 100 : 0;
 
     const clicks = await this.prisma.emailTrackingEvent.findMany({
@@ -78,8 +89,8 @@ export class EmailAnalyticsService {
     return {
       campaignId: campaign.id,
       title: campaign.title,
-      status: campaign.status as any,
-      providerType: campaign.providerType as any,
+      status: campaign.status,
+      providerType: campaign.providerType,
       totalRecipients: Math.max(campaign.totalRecipients, totalRecipientsCount),
       sentCount,
       deliveredCount,
@@ -121,10 +132,21 @@ export class EmailAnalyticsService {
         where,
         skip,
         take: limit,
-        orderBy: [{ openCount: 'desc' }, { clickCount: 'desc' }, { createdAt: 'desc' }],
+        orderBy: [
+          { openCount: 'desc' },
+          { clickCount: 'desc' },
+          { createdAt: 'desc' },
+        ],
         include: {
           lead: {
-            select: { id: true, firstName: true, lastName: true, phone: true, temperature: true, status: true },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              temperature: true,
+              status: true,
+            },
           },
         },
       }),

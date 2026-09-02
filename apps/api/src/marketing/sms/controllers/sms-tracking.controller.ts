@@ -9,10 +9,19 @@ export class SmsTrackingController {
 
   @Public()
   @Get('s/:code')
-  async resolveShortLink(@Param('code') code: string, @Req() req: Request, @Res() res: Response) {
-    const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
+  async resolveShortLink(
+    @Param('code') code: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const ip =
+      (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
-    const destinationUrl = await this.smsService.resolveShortLink(code, ip, userAgent);
+    const destinationUrl = await this.smsService.resolveShortLink(
+      code,
+      ip,
+      userAgent,
+    );
     res.redirect(302, destinationUrl);
   }
 
@@ -26,7 +35,8 @@ export class SmsTrackingController {
   ) {
     const destination = targetUrl || 'https://brokeros.io';
     if (code) {
-      const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
+      const ip =
+        (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
       const userAgent = req.headers['user-agent'];
       await this.smsService.resolveShortLink(code, ip, userAgent);
     }

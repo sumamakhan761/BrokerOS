@@ -1,12 +1,25 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { InventoryService } from '../core/inventory.service.js';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import { ProjectQueryDto, CreateProjectDto, AssignProjectDto } from './dto/project.dto.js';
+import {
+  ProjectQueryDto,
+  CreateProjectDto,
+  AssignProjectDto,
+} from './dto/project.dto.js';
 
 @Controller('api/inventory/projects')
 @UseGuards(AuthGuard)
 export class ProjectsController {
-  constructor(private readonly inventoryService: InventoryService) { }
+  constructor(private readonly inventoryService: InventoryService) {}
 
   @Get()
   async getProjects(@Query() query: ProjectQueryDto, @Req() req: any) {
@@ -21,12 +34,18 @@ export class ProjectsController {
   }
 
   @Get(':projectId/towers')
-  async getProjectTowers(@Param('projectId') projectId: string, @Req() req: any) {
+  async getProjectTowers(
+    @Param('projectId') projectId: string,
+    @Req() req: any,
+  ) {
     try {
       const userId = req.user?.id;
       return await this.inventoryService.getProjectTowers(projectId, userId);
     } catch (e) {
-      require('fs').writeFileSync('debug-error.log', e.stack || e.message || String(e));
+      require('fs').writeFileSync(
+        'debug-error.log',
+        e.stack || e.message || String(e),
+      );
       throw e;
     }
   }
@@ -37,8 +56,16 @@ export class ProjectsController {
   }
 
   @Post('towers/:towerId/assign')
-  async assignTower(@Param('towerId') towerId: string, @Body() data: AssignProjectDto) {
-    return this.inventoryService.assignTower(towerId, data.sourcingManagerIds || [], data.closingManagerIds || [], data.salesExecIds || []);
+  async assignTower(
+    @Param('towerId') towerId: string,
+    @Body() data: AssignProjectDto,
+  ) {
+    return this.inventoryService.assignTower(
+      towerId,
+      data.sourcingManagerIds || [],
+      data.closingManagerIds || [],
+      data.salesExecIds || [],
+    );
   }
 
   @Get(':projectId/assignments')
@@ -47,7 +74,15 @@ export class ProjectsController {
   }
 
   @Post(':projectId/assign')
-  async assignProject(@Param('projectId') projectId: string, @Body() data: AssignProjectDto) {
-    return this.inventoryService.assignProject(projectId, data.sourcingManagerIds || [], data.closingManagerIds || [], data.salesExecIds || []);
+  async assignProject(
+    @Param('projectId') projectId: string,
+    @Body() data: AssignProjectDto,
+  ) {
+    return this.inventoryService.assignProject(
+      projectId,
+      data.sourcingManagerIds || [],
+      data.closingManagerIds || [],
+      data.salesExecIds || [],
+    );
   }
 }

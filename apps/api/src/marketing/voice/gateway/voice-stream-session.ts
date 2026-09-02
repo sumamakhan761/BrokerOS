@@ -62,7 +62,10 @@ export class StreamSessionManager {
     const session = this.sessions.get(streamSid);
     if (session) {
       this.sessions.delete(streamSid);
-      const durationSec = ((Date.now() - session.startedAt.getTime()) / 1000).toFixed(1);
+      const durationSec = (
+        (Date.now() - session.startedAt.getTime()) /
+        1000
+      ).toFixed(1);
       this.logger.log(
         `[StreamSessionManager] Ended stream session: ${streamSid} (Duration: ${durationSec}s, Packets In: ${session.audioPacketsReceived}, Packets Out: ${session.audioPacketsSent})`,
       );
@@ -74,7 +77,10 @@ export class StreamSessionManager {
     for (const [streamSid, session] of this.sessions.entries()) {
       if (session.socketId === socketId) {
         this.sessions.delete(streamSid);
-        const durationSec = ((Date.now() - session.startedAt.getTime()) / 1000).toFixed(1);
+        const durationSec = (
+          (Date.now() - session.startedAt.getTime()) /
+          1000
+        ).toFixed(1);
         this.logger.log(
           `[StreamSessionManager] Socket disconnected, cleaned stream session: ${streamSid} (Duration: ${durationSec}s)`,
         );

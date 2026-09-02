@@ -10,8 +10,14 @@ export class TranscriptionService implements OnModuleInit {
   async onModuleInit() {
     this.logger.log('Transcription service initialized.');
     const groqApiKey = process.env.GROQ_API_KEY;
-    if (!groqApiKey || groqApiKey === 'your-groq-api-key-here' || groqApiKey === 'your_api_key_here') {
-      this.logger.warn('Groq API Key is not configured. Transcription and summarization will fail.');
+    if (
+      !groqApiKey ||
+      groqApiKey === 'your-groq-api-key-here' ||
+      groqApiKey === 'your_api_key_here'
+    ) {
+      this.logger.warn(
+        'Groq API Key is not configured. Transcription and summarization will fail.',
+      );
     } else {
       this.logger.log('Groq API Key configured successfully.');
     }
@@ -21,8 +27,13 @@ export class TranscriptionService implements OnModuleInit {
     this.logger.log(`Starting transcription for file: ${filePath}`);
 
     const groqApiKey = process.env.GROQ_API_KEY;
-    if (!groqApiKey || groqApiKey === 'your-groq-api-key-here' || groqApiKey === 'your_api_key_here') {
-      const errorMsg = 'Groq API Key is missing or invalid. Cannot transcribe audio.';
+    if (
+      !groqApiKey ||
+      groqApiKey === 'your-groq-api-key-here' ||
+      groqApiKey === 'your_api_key_here'
+    ) {
+      const errorMsg =
+        'Groq API Key is missing or invalid. Cannot transcribe audio.';
       this.logger.error(errorMsg);
       throw new Error(errorMsg);
     }
@@ -48,25 +59,30 @@ export class TranscriptionService implements OnModuleInit {
   async summarizeCall(
     transcript: string,
     leadStatus?: string,
-    availableProjects: AvailableProjectDto[] = []
-  ): Promise<{
-    summary: string,
-    nextStepSuggestion: string,
-    extractedBudget?: number | null,
-    extractedProjectId?: string | null,
-    extractedLocation?: string | null,
-    extractedRequirements?: string | null,
-    scheduleFollowUp?: boolean,
-    followUpIsoDate?: string | null,
-    followUpTitle?: string | null,
-    followUpRemarks?: string | null
-  } | string> {
+    availableProjects: AvailableProjectDto[] = [],
+  ): Promise<
+    | {
+        summary: string;
+        nextStepSuggestion: string;
+        extractedBudget?: number | null;
+        extractedProjectId?: string | null;
+        extractedLocation?: string | null;
+        extractedRequirements?: string | null;
+        scheduleFollowUp?: boolean;
+        followUpIsoDate?: string | null;
+        followUpTitle?: string | null;
+        followUpRemarks?: string | null;
+      }
+    | string
+  > {
     try {
       this.logger.log(`Starting summarization for transcript...`);
 
       const groqApiKey = process.env.GROQ_API_KEY;
       if (!groqApiKey || groqApiKey === 'your_api_key_here') {
-        this.logger.warn('Groq API Key is missing or invalid. Skipping summarization.');
+        this.logger.warn(
+          'Groq API Key is missing or invalid. Skipping summarization.',
+        );
         return 'Groq API Key not configured. Please add it to .env to enable AI summaries.';
       }
 
@@ -79,7 +95,7 @@ Current Date & Time for reference: ${new Date().toISOString()}
 1. "summary": A short, concise summary (2-3 sentences) focusing on the main intent, lead's interest, and action items.
 2. "nextStepSuggestion": A single, highly actionable sentence suggesting what the broker should do next with this lead. Be specific.
 3. "extractedBudget": The maximum budget mentioned by the lead as a raw number (e.g. if they say 50L or 50 lakhs, return 5000000. If 1.5 CR, return 15000000). Return null if not mentioned.
-4. "extractedProjectId": We offer the following projects: ${availableProjects.map(p => `"${p.name}" (ID: ${p.id})`).join(', ')}. If the lead explicitly expresses interest in one of these projects, return its EXACT ID string. Otherwise, return null.
+4. "extractedProjectId": We offer the following projects: ${availableProjects.map((p) => `"${p.name}" (ID: ${p.id})`).join(', ')}. If the lead explicitly expresses interest in one of these projects, return its EXACT ID string. Otherwise, return null.
 5. "extractedLocation": The preferred location or area the lead is looking to buy in (e.g., "Kharghar", "Andheri"). Return null if not mentioned.
 6. "extractedRequirements": A brief string of their requirements (e.g., "2BHK with parking", "Looking for ready to move"). Return null if not mentioned.
 7. "scheduleFollowUp": boolean. Set to true UNLESS the lead explicitly says they are not interested, asks not to be called again, or if it's a wrong number. In those negative cases, set to false.
@@ -108,34 +124,62 @@ Output your response ONLY as a JSON object with this exact format:
       `.trim();
 
       const completion = await groq.chat.completions.create({
-        messages: [{ role: "user", content: prompt }],
-        model: "openai/gpt-oss-120b",
-        response_format: { type: "json_object" },
+        messages: [{ role: 'user', content: prompt }],
+        model: 'openai/gpt-oss-120b',
+        response_format: { type: 'json_object' },
       });
 
-      const responseText = completion.choices[0]?.message?.content?.trim() || '{}';
+      const responseText =
+        completion.choices[0]?.message?.content?.trim() || '{}';
       const parsed = JSON.parse(responseText);
 
       this.logger.log(`Summarization completed successfully.`);
       return {
         summary: parsed.summary || 'Summary unavailable.',
-        nextStepSuggestion: parsed.nextStepSuggestion || 'No suggestion available.',
-        extractedBudget: typeof parsed.extractedBudget === 'number' ? parsed.extractedBudget : null,
-        extractedProjectId: typeof parsed.extractedProjectId === 'string' ? parsed.extractedProjectId : null,
-        extractedLocation: typeof parsed.extractedLocation === 'string' ? parsed.extractedLocation : null,
-        extractedRequirements: typeof parsed.extractedRequirements === 'string' ? parsed.extractedRequirements : null,
+        nextStepSuggestion:
+          parsed.nextStepSuggestion || 'No suggestion available.',
+        extractedBudget:
+          typeof parsed.extractedBudget === 'number'
+            ? parsed.extractedBudget
+            : null,
+        extractedProjectId:
+          typeof parsed.extractedProjectId === 'string'
+            ? parsed.extractedProjectId
+            : null,
+        extractedLocation:
+          typeof parsed.extractedLocation === 'string'
+            ? parsed.extractedLocation
+            : null,
+        extractedRequirements:
+          typeof parsed.extractedRequirements === 'string'
+            ? parsed.extractedRequirements
+            : null,
         scheduleFollowUp: !!parsed.scheduleFollowUp,
-        followUpIsoDate: typeof parsed.followUpIsoDate === 'string' ? parsed.followUpIsoDate : null,
-        followUpTitle: typeof parsed.followUpTitle === 'string' ? parsed.followUpTitle : null,
-        followUpRemarks: typeof parsed.followUpRemarks === 'string' ? parsed.followUpRemarks : null
+        followUpIsoDate:
+          typeof parsed.followUpIsoDate === 'string'
+            ? parsed.followUpIsoDate
+            : null,
+        followUpTitle:
+          typeof parsed.followUpTitle === 'string'
+            ? parsed.followUpTitle
+            : null,
+        followUpRemarks:
+          typeof parsed.followUpRemarks === 'string'
+            ? parsed.followUpRemarks
+            : null,
       };
     } catch (error: any) {
-      this.logger.error(`Failed to summarize transcript: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to summarize transcript: ${error.message}`,
+        error.stack,
+      );
       return 'Failed to generate summary. Please check API logs.';
     }
   }
 
-  async generateLeadScore(transcript: string): Promise<{ score: number, category: string } | null> {
+  async generateLeadScore(
+    transcript: string,
+  ): Promise<{ score: number; category: string } | null> {
     try {
       this.logger.log(`Starting AI Scoring for transcript...`);
 
@@ -162,18 +206,19 @@ Reply ONLY with the valid JSON object.
       `.trim();
 
       const completion = await groq.chat.completions.create({
-        messages: [{ role: "user", content: prompt }],
-        model: "openai/gpt-oss-120b",
-        response_format: { type: "json_object" },
+        messages: [{ role: 'user', content: prompt }],
+        model: 'openai/gpt-oss-120b',
+        response_format: { type: 'json_object' },
       });
 
-      const responseText = completion.choices[0]?.message?.content?.trim() || '{}';
+      const responseText =
+        completion.choices[0]?.message?.content?.trim() || '{}';
       const parsed = JSON.parse(responseText);
 
       this.logger.log(`AI Scoring completed: ${JSON.stringify(parsed)}`);
       return {
         score: typeof parsed.score === 'number' ? parsed.score : 0,
-        category: parsed.category || 'UNKNOWN'
+        category: parsed.category || 'UNKNOWN',
       };
     } catch (error: any) {
       this.logger.error(`Failed to score lead: ${error.message}`, error.stack);
@@ -184,14 +229,18 @@ Reply ONLY with the valid JSON object.
   async generateAutoStatusAndNote(
     currentStatus: string,
     callSummaries: string[],
-    entityType: 'LEAD' | 'BROKER' = 'LEAD'
+    entityType: 'LEAD' | 'BROKER' = 'LEAD',
   ): Promise<{ suggestedStatus: string; transitionNote: string } | null> {
     try {
-      this.logger.log(`Starting AI Auto Status transition for ${entityType}...`);
+      this.logger.log(
+        `Starting AI Auto Status transition for ${entityType}...`,
+      );
 
       const groqApiKey = process.env.GROQ_API_KEY;
       if (!groqApiKey || groqApiKey === 'your_api_key_here') {
-        this.logger.warn(`Groq API Key is missing. Skipping AI Auto Status for ${entityType}.`);
+        this.logger.warn(
+          `Groq API Key is missing. Skipping AI Auto Status for ${entityType}.`,
+        );
         return null;
       }
 
@@ -242,21 +291,26 @@ Output your response ONLY as a JSON object with this exact format:
       }
 
       const completion = await groq.chat.completions.create({
-        messages: [{ role: "user", content: prompt }],
-        model: "openai/gpt-oss-120b",
-        response_format: { type: "json_object" },
+        messages: [{ role: 'user', content: prompt }],
+        model: 'openai/gpt-oss-120b',
+        response_format: { type: 'json_object' },
       });
 
-      const responseText = completion.choices[0]?.message?.content?.trim() || '{}';
+      const responseText =
+        completion.choices[0]?.message?.content?.trim() || '{}';
       const parsed = JSON.parse(responseText);
 
       this.logger.log(`AI Auto Status completed: ${JSON.stringify(parsed)}`);
       return {
         suggestedStatus: parsed.suggestedStatus || currentStatus,
-        transitionNote: parsed.transitionNote || 'Status transitioned based on recent calls.'
+        transitionNote:
+          parsed.transitionNote || 'Status transitioned based on recent calls.',
       };
     } catch (error: any) {
-      this.logger.error(`Failed to generate auto status and note: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to generate auto status and note: ${error.message}`,
+        error.stack,
+      );
       return null;
     }
   }

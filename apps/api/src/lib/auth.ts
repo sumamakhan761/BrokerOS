@@ -1,22 +1,22 @@
-import { betterAuth, BetterAuthOptions } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { prismaClient } from "./database/prisma-client.js";
-import { username, bearer } from "better-auth/plugins";
-import { createAuthMiddleware } from "better-auth/api";
+import { betterAuth, BetterAuthOptions } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { prismaClient } from './database/prisma-client.js';
+import { username, bearer } from 'better-auth/plugins';
+import { createAuthMiddleware } from 'better-auth/api';
 
 const authConfig = {
   trustedOrigins: [
-    process.env.FRONTEND_URL || "http://localhost:3000",
-    process.env.MOBILE_URL || "exp://192.168.0.105:8081",
-    "crm://"
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    process.env.MOBILE_URL || 'exp://192.168.0.105:8081',
+    'crm://',
   ],
   database: prismaAdapter(prismaClient, {
-    provider: "postgresql",
+    provider: 'postgresql',
   }),
   advanced: {
     disableCSRFCheck: true,
     defaultCookieAttributes: {
-      sameSite: "none",
+      sameSite: 'none',
       secure: true,
     },
   },
@@ -26,27 +26,24 @@ const authConfig = {
   user: {
     additionalFields: {
       username: {
-        type: "string",
+        type: 'string',
         required: true,
       },
       phoneNumber: {
-        type: "string",
+        type: 'string',
         required: true,
       },
       roleId: {
-        type: "string",
+        type: 'string',
         required: false,
       },
     },
   },
-  plugins: [
-    username(),
-    bearer(),
-  ],
+  plugins: [username(), bearer()],
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
       // Intercept the login request
-      if (ctx.path === "/sign-in/email") {
+      if (ctx.path === '/sign-in/email') {
         const { email: identifier } = ctx.body || {};
         if (!identifier) {
           return;

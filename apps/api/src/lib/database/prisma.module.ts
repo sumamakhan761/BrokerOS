@@ -12,9 +12,7 @@ import { prismaClient } from '@brokeros/prisma';
   ],
   exports: [PrismaService],
 })
-
 export class PrismaModule implements OnModuleInit, OnModuleDestroy {
-
   // 1. Fail-fast: Connect to the database when the NestJS app starts
   async onModuleInit() {
     await prismaClient.$connect();
@@ -23,6 +21,4 @@ export class PrismaModule implements OnModuleInit, OnModuleDestroy {
   async onModuleDestroy() {
     await prismaClient.$disconnect();
   }
-
 }
-

@@ -8,4 +8,4 @@ import { PrismaModule } from '../../lib/database/prisma.module.js';
   providers: [InventoryUnitsService],
   exports: [InventoryUnitsService],
 })
-export class UnitsModule { }
+export class UnitsModule {}

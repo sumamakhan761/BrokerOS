@@ -8,8 +8,8 @@ import { CreateLeadDto, UpdateLeadDto } from './dto/lead.dto.js';
 export class LeadsManagementService {
   constructor(
     private prisma: PrismaService,
-    private notificationsService: NotificationsService
-  ) {}
+    private notificationsService: NotificationsService,
+  ) { }
 
   async bulkCreate(leads: CreateLeadDto[], managerId: string) {
     const sources = await this.prisma.leadSource.findMany();
@@ -18,13 +18,17 @@ export class LeadsManagementService {
     const data = leads.map((lead) => {
       let sourceId: string | null = null;
       if (lead.source) {
-        const match = sources.find((s) => s.name.toLowerCase() === String(lead.source).toLowerCase());
+        const match = sources.find(
+          (s) => s.name.toLowerCase() === String(lead.source).toLowerCase(),
+        );
         if (match) sourceId = match.id;
       }
 
       let interestedProjectId: string | null = null;
       if (lead.project) {
-        const match = projects.find((p) => p.name.toLowerCase() === String(lead.project).toLowerCase());
+        const match = projects.find(
+          (p) => p.name.toLowerCase() === String(lead.project).toLowerCase(),
+        );
         if (match) interestedProjectId = match.id;
       }
 
@@ -33,7 +37,7 @@ export class LeadsManagementService {
         lastName: lead.lastName,
         phone: String(lead.phone),
         email: lead.email,
-        status: 'NEW' as LeadStatus,
+        status: LeadStatus.NEW,
         assignedUserId: managerId,
         createdById: managerId,
         sourceId: sourceId,
@@ -62,7 +66,12 @@ export class LeadsManagementService {
     return { success: true, count: result.count };
   }
 
-  async assignLeads(leadIds: string[], managerId: string, targetUserId?: string, roundRobin?: boolean) {
+  async assignLeads(
+    leadIds: string[],
+    managerId: string,
+    targetUserId?: string,
+    roundRobin?: boolean,
+  ) {
     if (roundRobin) {
       const subordinates = await this.prisma.user.findMany({
         where: { managerId, status: 'ACTIVE' },
@@ -135,13 +144,16 @@ export class LeadsManagementService {
 
       if (status === 'HANDOVER' && subStatus === 'DONE') {
         const booking = await tx.booking.findFirst({
-          where: { customer: { leadId: id }, status: { in: ['DOCUMENTATION_PENDING', 'CONFIRMED'] } },
-          orderBy: { createdAt: 'desc' }
+          where: {
+            customer: { leadId: id },
+            status: { in: ['DOCUMENTATION_PENDING', 'CONFIRMED'] },
+          },
+          orderBy: { createdAt: 'desc' },
         });
         if (booking && booking.unitId) {
           await tx.unit.update({
             where: { id: booking.unitId },
-            data: { status: 'SOLD' }
+            data: { status: 'SOLD' },
           });
         }
       }
@@ -154,7 +166,7 @@ export class LeadsManagementService {
     let sourceId = data.sourceId;
     if (!sourceId && data.source) {
       const source = await this.prisma.leadSource.findFirst({
-        where: { name: { equals: data.source, mode: 'insensitive' } }
+        where: { name: { equals: data.source, mode: 'insensitive' } },
       });
       if (source) sourceId = source.id;
     }
@@ -165,7 +177,7 @@ export class LeadsManagementService {
         lastName: data.lastName,
         phone: String(data.phone),
         email: data.email,
-        status: 'NEW' as LeadStatus,
+        status: 'NEW',
         assignedUserId: data.assignedUserId || userId,
         createdById: userId,
         sourceId: sourceId,
@@ -181,14 +193,11 @@ export class LeadsManagementService {
         source: true,
         interestedProject: true,
         broker: true,
-      }
+      },
     });
   }
 
-  async update(
-    id: string,
-    data: UpdateLeadDto,
-  ) {
+  async update(id: string, data: UpdateLeadDto) {
     const lead = await this.prisma.lead.findUnique({ where: { id } });
     if (!lead) throw new NotFoundException(`Lead with ID ${id} not found`);
 
@@ -205,8 +214,12 @@ export class LeadsManagementService {
         subStatus: data.subStatus,
         interestedProjectId: data.interestedProjectId,
         temperature: data.temperature,
-        lastContactDate: data.lastContactDate ? new Date(data.lastContactDate) : undefined,
-        nextFollowUpDate: data.nextFollowUpDate ? new Date(data.nextFollowUpDate) : undefined,
+        lastContactDate: data.lastContactDate
+          ? new Date(data.lastContactDate)
+          : undefined,
+        nextFollowUpDate: data.nextFollowUpDate
+          ? new Date(data.nextFollowUpDate)
+          : undefined,
       },
       include: {
         source: true,

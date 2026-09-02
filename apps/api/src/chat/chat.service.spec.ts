@@ -19,7 +19,10 @@ describe('ChatService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ChatService, { provide: PrismaService, useValue: mockPrisma }],
+      providers: [
+        ChatService,
+        { provide: PrismaService, useValue: mockPrisma },
+      ],
     }).compile();
     service = module.get(ChatService);
   });
@@ -28,15 +31,22 @@ describe('ChatService', () => {
 
   it('should throw NotFoundException if user not found in valid contacts', async () => {
     mockPrisma.user.findUnique.mockResolvedValue(null);
-    await expect(service.getValidContacts('u-1')).rejects.toThrow(NotFoundException);
+    await expect(service.getValidContacts('u-1')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('should return valid contacts for manager', async () => {
-    mockPrisma.user.findUnique.mockResolvedValue({ id: 'u-1', managerId: 'm-1', role: { code: 'PRE_SALES_MANAGER' } });
+    mockPrisma.user.findUnique.mockResolvedValue({
+      id: 'u-1',
+      managerId: 'm-1',
+      role: { code: 'PRE_SALES_MANAGER' },
+    });
     mockPrisma.user.findMany.mockImplementation(async (args) => {
       if (args.where?.managerId === 'u-1') return [{ id: 'sub-1' }];
       if (args.where?.role?.code === 'SALES_MANAGER') return [{ id: 'sm-1' }];
-      if (args.where?.id) return [{ id: 'm-1' }, { id: 'sub-1' }, { id: 'sm-1' }];
+      if (args.where?.id)
+        return [{ id: 'm-1' }, { id: 'sub-1' }, { id: 'sm-1' }];
       return [];
     });
     const res = await service.getValidContacts('u-1');
@@ -44,9 +54,17 @@ describe('ChatService', () => {
   });
 
   it('should get chat rooms', async () => {
-    mockPrisma.chatRoom.findMany.mockResolvedValue([{
-      id: 'r-1', type: 'DIRECT', members: [{ userId: 'u-1', user: { name: 'Me' } }, { userId: 'u-2', user: { name: 'Them' } }], messages: []
-    }]);
+    mockPrisma.chatRoom.findMany.mockResolvedValue([
+      {
+        id: 'r-1',
+        type: 'DIRECT',
+        members: [
+          { userId: 'u-1', user: { name: 'Me' } },
+          { userId: 'u-2', user: { name: 'Them' } },
+        ],
+        messages: [],
+      },
+    ]);
     mockPrisma.chatMessage.count.mockResolvedValue(0);
     const res = await service.getChatRooms('u-1');
     expect(res.length).toBe(1);
@@ -54,7 +72,9 @@ describe('ChatService', () => {
   });
 
   it('should get or create direct room', async () => {
-    jest.spyOn(service, 'getValidContacts').mockResolvedValue([{ id: 'u-2' }] as any);
+    jest
+      .spyOn(service, 'getValidContacts')
+      .mockResolvedValue([{ id: 'u-2' }] as any);
     mockPrisma.chatRoom.findMany.mockResolvedValue([]);
     mockPrisma.chatRoom.create.mockResolvedValue({ id: 'new-room' });
 
@@ -63,14 +83,23 @@ describe('ChatService', () => {
   });
 
   it('should throw forbidden when chatting with self', async () => {
-    await expect(service.getOrCreateDirectRoom('u-1', 'u-1')).rejects.toThrow(ForbiddenException);
+    await expect(service.getOrCreateDirectRoom('u-1', 'u-1')).rejects.toThrow(
+      ForbiddenException,
+    );
   });
-  
+
   it('should send message', async () => {
     mockPrisma.chatRoomMember.findUnique.mockResolvedValue({ id: 'm-1' });
-    mockPrisma.chatMessage.create.mockResolvedValue({ id: 'msg-1', content: 'hello' });
+    mockPrisma.chatMessage.create.mockResolvedValue({
+      id: 'msg-1',
+      content: 'hello',
+    });
     mockPrisma.chatRoomMember.update.mockResolvedValue({ id: 'm-1' });
-    const attachment = { url: 'img.png', type: 'image/png', name: 'img' } as MessageAttachmentDto;
+    const attachment = {
+      url: 'img.png',
+      type: 'image/png',
+      name: 'img',
+    };
     const res = await service.sendMessage('u-1', 'r-1', 'hello', attachment);
     expect(res.content).toBe('hello');
   });

@@ -3,10 +3,11 @@ import { PrismaService } from '../../lib/database/prisma.service.js';
 
 @Injectable()
 export class PostSalesAnalyticsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   private getDateBoundary(timeRange?: string): Date | undefined {
-    if (!timeRange || timeRange === 'all-time' || timeRange === 'all') return undefined;
+    if (!timeRange || timeRange === 'all-time' || timeRange === 'all')
+      return undefined;
     const now = new Date();
     const boundary = new Date();
     boundary.setHours(0, 0, 0, 0);
@@ -20,7 +21,11 @@ export class PostSalesAnalyticsService {
     return boundary;
   }
 
-  async getPostSalesAnalytics(userId?: string, timeRange?: string, roleId?: string) {
+  async getPostSalesAnalytics(
+    userId?: string,
+    timeRange?: string,
+    roleId?: string,
+  ) {
     const startDate = this.getDateBoundary(timeRange);
     const dateFilter = startDate ? { gte: startDate } : undefined;
 
@@ -29,7 +34,10 @@ export class PostSalesAnalyticsService {
       const role = await this.prisma.role.findUnique({ where: { id: roleId } });
       if (role) roleCode = role.code;
     } else if (userId) {
-      const user = await this.prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: { role: true },
+      });
       if (user?.role) roleCode = user.role.code;
     }
 
@@ -37,7 +45,9 @@ export class PostSalesAnalyticsService {
     if (dateFilter) leadWhere.updatedAt = dateFilter;
 
     if (roleCode === 'POST_SALES') {
-      leadWhere.customer = { bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } } };
+      leadWhere.customer = {
+        bookings: { some: { assignedPostSalesId: userId, source: 'DIRECT' } },
+      };
     } else if (roleCode === 'POST_SALES_MANAGER') {
       leadWhere.customer = { bookings: { some: { source: 'DIRECT' } } };
     }
@@ -45,7 +55,12 @@ export class PostSalesAnalyticsService {
     // 1. Funnel Data
     const funnelCounts = await this.prisma.lead.groupBy({
       by: ['status'],
-      where: { ...leadWhere, status: { in: ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'] } },
+      where: {
+        ...leadWhere,
+        status: {
+          in: ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'],
+        },
+      },
       _count: { _all: true },
     });
 
@@ -65,12 +80,20 @@ export class PostSalesAnalyticsService {
     });
 
     // 2. Widgets Data
-    const totalBooked = funnel.booking + funnel.document + funnel.loan + funnel.agreement + funnel.handover;
+    const totalBooked =
+      funnel.booking +
+      funnel.document +
+      funnel.loan +
+      funnel.agreement +
+      funnel.handover;
     const totalHandoverCompleted = await this.prisma.lead.count({
       where: { ...leadWhere, status: 'HANDOVER', subStatus: 'DONE' },
     });
 
-    const bookingWhere: any = { status: 'CONFIRMED', ...(dateFilter && { bookingDate: dateFilter }) };
+    const bookingWhere: any = {
+      status: 'CONFIRMED',
+      ...(dateFilter && { bookingDate: dateFilter }),
+    };
     if (roleCode === 'POST_SALES') {
       bookingWhere.assignedPostSalesId = userId;
       bookingWhere.source = 'DIRECT';
@@ -91,7 +114,10 @@ export class PostSalesAnalyticsService {
       totalCommission += Number(b.commissionAmount || 0);
     });
 
-    const conversionRate = totalBooked > 0 ? ((totalHandoverCompleted / totalBooked) * 100).toFixed(1) : '0.0';
+    const conversionRate =
+      totalBooked > 0
+        ? ((totalHandoverCompleted / totalBooked) * 100).toFixed(1)
+        : '0.0';
 
     const widgets = {
       totalBooked,
@@ -107,7 +133,7 @@ export class PostSalesAnalyticsService {
       where: {
         status: 'HANDED_OVER',
         actualDate: dateFilter ? { not: null, gte: startDate } : { not: null },
-        booking: bookingWhere
+        booking: bookingWhere,
       },
       include: { booking: true },
     });
@@ -116,13 +142,16 @@ export class PostSalesAnalyticsService {
     let velocityCount = 0;
     possessions.forEach((p) => {
       if (p.actualDate && p.booking?.bookingDate) {
-        const diffTime = Math.abs(p.actualDate.getTime() - p.booking.bookingDate.getTime());
+        const diffTime = Math.abs(
+          p.actualDate.getTime() - p.booking.bookingDate.getTime(),
+        );
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         totalDays += diffDays;
         velocityCount++;
       }
     });
-    const averageVelocityDays = velocityCount > 0 ? Math.round(totalDays / velocityCount) : 0;
+    const averageVelocityDays =
+      velocityCount > 0 ? Math.round(totalDays / velocityCount) : 0;
 
     // 4. Loan Approval Success Rate
     // Approved: Leads in AGREEMENT or HANDOVER (successful loan processing implicitly)
@@ -134,7 +163,7 @@ export class PostSalesAnalyticsService {
       where: {
         status: 'REJECTED',
         ...(dateFilter && { updatedAt: dateFilter }),
-        booking: bookingWhere
+        booking: bookingWhere,
       },
     });
 
@@ -149,7 +178,7 @@ export class PostSalesAnalyticsService {
       by: ['status'],
       where: {
         ...(dateFilter && { updatedAt: dateFilter }),
-        booking: bookingWhere
+        booking: bookingWhere,
       },
       _count: { _all: true },
     });
@@ -165,7 +194,8 @@ export class PostSalesAnalyticsService {
       if (p.status === 'NOT_READY') handoverReadiness.notReady = p._count._all;
       if (p.status === 'READY') handoverReadiness.ready = p._count._all;
       if (p.status === 'SCHEDULED') handoverReadiness.scheduled = p._count._all;
-      if (p.status === 'HANDED_OVER') handoverReadiness.handedOver = p._count._all;
+      if (p.status === 'HANDED_OVER')
+        handoverReadiness.handedOver = p._count._all;
     });
 
     // 6. Internal Project Sales Distribution & Inventory Sell-Through
@@ -184,8 +214,15 @@ export class PostSalesAnalyticsService {
       },
     });
 
-    const internalSalesDistribution: { projectName: string; soldUnits: number }[] = [];
-    const inventorySellThrough: { projectName: string; totalUnits: number; soldUnits: number }[] = [];
+    const internalSalesDistribution: {
+      projectName: string;
+      soldUnits: number;
+    }[] = [];
+    const inventorySellThrough: {
+      projectName: string;
+      totalUnits: number;
+      soldUnits: number;
+    }[] = [];
 
     internalProjects.forEach((project: any) => {
       let totalUnits = 0;
@@ -221,10 +258,12 @@ export class PostSalesAnalyticsService {
       by: ['status'],
       where: {
         lead: {
-          status: { in: ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'] },
-          ...leadWhere
+          status: {
+            in: ['BOOKING', 'DOCUMENT', 'LOAN', 'AGREEMENT', 'HANDOVER'],
+          },
+          ...leadWhere,
         },
-        ...(dateFilter && { updatedAt: dateFilter })
+        ...(dateFilter && { updatedAt: dateFilter }),
       },
       _count: { _all: true },
     });
@@ -235,7 +274,8 @@ export class PostSalesAnalyticsService {
     };
 
     followUps.forEach((f) => {
-      if (f.status === 'COMPLETED') followUpEfficiency.completed = f._count._all;
+      if (f.status === 'COMPLETED')
+        followUpEfficiency.completed = f._count._all;
       else followUpEfficiency.pending += f._count._all; // SCHEDULED, MISSED, RESCHEDULED
     });
 

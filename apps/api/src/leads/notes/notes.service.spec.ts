@@ -4,7 +4,7 @@ jest.mock('@brokeros/prisma', () => ({
   LeadStatus: {
     NEW: 'NEW',
     INTERESTED: 'INTERESTED',
-  }
+  },
 }));
 
 import { NotesService } from './notes.service.js';
@@ -54,7 +54,8 @@ describe('NotesService', () => {
 
     service = module.get<NotesService>(NotesService);
     prismaService = module.get<PrismaService>(PrismaService);
-    transcriptionService = module.get<TranscriptionService>(TranscriptionService);
+    transcriptionService =
+      module.get<TranscriptionService>(TranscriptionService);
   });
 
   afterEach(() => {
@@ -68,19 +69,25 @@ describe('NotesService', () => {
   describe('getNotes', () => {
     it('should throw an error if lead not found', async () => {
       mockPrismaService.lead.findUnique.mockResolvedValue(null);
-      await expect(service.getNotes('invalid-lead-id')).rejects.toThrow('Lead not found');
+      await expect(service.getNotes('invalid-lead-id')).rejects.toThrow(
+        'Lead not found',
+      );
     });
 
     it('should return notes for a valid lead', async () => {
       mockPrismaService.lead.findUnique.mockResolvedValue({ id: 'lead-id' });
-      mockPrismaService.note.findMany.mockResolvedValue([{ id: 'note-1', content: 'test' }]);
+      mockPrismaService.note.findMany.mockResolvedValue([
+        { id: 'note-1', content: 'test' },
+      ]);
 
       const result = await service.getNotes('lead-id');
       expect(mockPrismaService.note.findMany).toHaveBeenCalledWith({
         where: { leadId: 'lead-id' },
         orderBy: { createdAt: 'desc' },
         include: {
-          user: { select: { username: true, email: true, displayUsername: true } },
+          user: {
+            select: { username: true, email: true, displayUsername: true },
+          },
         },
       });
       expect(result).toEqual([{ id: 'note-1', content: 'test' }]);
@@ -91,14 +98,20 @@ describe('NotesService', () => {
     it('should throw an error if lead not found', async () => {
       mockPrismaService.lead.findUnique.mockResolvedValue(null);
       const dto: CreateNoteDto = { content: 'test', userId: 'user-id' };
-      await expect(
-        service.createNote('invalid-lead-id', dto)
-      ).rejects.toThrow('Lead not found');
+      await expect(service.createNote('invalid-lead-id', dto)).rejects.toThrow(
+        'Lead not found',
+      );
     });
 
     it('should create a note without updating lead status', async () => {
-      mockPrismaService.lead.findUnique.mockResolvedValue({ id: 'lead-id', status: 'NEW' });
-      mockPrismaService.note.create.mockResolvedValue({ id: 'note-1', content: 'test' });
+      mockPrismaService.lead.findUnique.mockResolvedValue({
+        id: 'lead-id',
+        status: 'NEW',
+      });
+      mockPrismaService.note.create.mockResolvedValue({
+        id: 'note-1',
+        content: 'test',
+      });
 
       const dto: CreateNoteDto = { content: 'test', userId: 'user-id' };
       const result = await service.createNote('lead-id', dto);
@@ -113,15 +126,23 @@ describe('NotesService', () => {
           noteType: undefined,
         },
         include: {
-          user: { select: { username: true, email: true, displayUsername: true } },
+          user: {
+            select: { username: true, email: true, displayUsername: true },
+          },
         },
       });
       expect(result).toEqual({ id: 'note-1', content: 'test' });
     });
 
     it('should update lead status and create note', async () => {
-      mockPrismaService.lead.findUnique.mockResolvedValue({ id: 'lead-id', status: 'NEW' });
-      mockPrismaService.note.create.mockResolvedValue({ id: 'note-1', content: 'test' });
+      mockPrismaService.lead.findUnique.mockResolvedValue({
+        id: 'lead-id',
+        status: 'NEW',
+      });
+      mockPrismaService.note.create.mockResolvedValue({
+        id: 'note-1',
+        content: 'test',
+      });
 
       const dto: CreateNoteDto = {
         content: 'test',
@@ -141,7 +162,7 @@ describe('NotesService', () => {
             statusAtTimeOfNote: LeadStatus.INTERESTED,
             noteType: 'CALL',
           }),
-        })
+        }),
       );
     });
   });
@@ -149,14 +170,23 @@ describe('NotesService', () => {
   describe('generateAiTransition', () => {
     it('should throw an error if lead not found', async () => {
       mockPrismaService.lead.findUnique.mockResolvedValue(null);
-      await expect(service.generateAiTransition('invalid-lead-id', 'user-id')).rejects.toThrow('Lead not found');
+      await expect(
+        service.generateAiTransition('invalid-lead-id', 'user-id'),
+      ).rejects.toThrow('Lead not found');
     });
 
     it('should throw an error if AI could not generate transition', async () => {
-      mockPrismaService.lead.findUnique.mockResolvedValue({ id: 'lead-id', callRecords: [] });
-      mockTranscriptionService.generateAutoStatusAndNote.mockResolvedValue(null);
+      mockPrismaService.lead.findUnique.mockResolvedValue({
+        id: 'lead-id',
+        callRecords: [],
+      });
+      mockTranscriptionService.generateAutoStatusAndNote.mockResolvedValue(
+        null,
+      );
 
-      await expect(service.generateAiTransition('lead-id', 'user-id')).rejects.toThrow('AI could not generate transition');
+      await expect(
+        service.generateAiTransition('lead-id', 'user-id'),
+      ).rejects.toThrow('AI could not generate transition');
     });
 
     it('should update status and create AI transition note', async () => {
@@ -173,7 +203,9 @@ describe('NotesService', () => {
 
       const result = await service.generateAiTransition('lead-id', 'user-id');
 
-      expect(mockTranscriptionService.generateAutoStatusAndNote).toHaveBeenCalledWith('NEW', ['test summary']);
+      expect(
+        mockTranscriptionService.generateAutoStatusAndNote,
+      ).toHaveBeenCalledWith('NEW', ['test summary']);
       expect(mockPrismaService.lead.update).toHaveBeenCalledWith({
         where: { id: 'lead-id' },
         data: { status: LeadStatus.INTERESTED, subStatus: 'PENDING' },
@@ -187,10 +219,15 @@ describe('NotesService', () => {
           noteType: 'AI_TRANSITION',
         },
         include: {
-          user: { select: { username: true, email: true, displayUsername: true } },
+          user: {
+            select: { username: true, email: true, displayUsername: true },
+          },
         },
       });
-      expect(result).toEqual({ suggestedStatus: LeadStatus.INTERESTED, note: { id: 'ai-note' } });
+      expect(result).toEqual({
+        suggestedStatus: LeadStatus.INTERESTED,
+        note: { id: 'ai-note' },
+      });
     });
   });
 });

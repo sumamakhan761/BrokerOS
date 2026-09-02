@@ -22,13 +22,22 @@ export class EmailTrackingController {
     @Res() res: Response,
   ) {
     if (campaignId && recipientId) {
-      const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
+      const ip =
+        (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
       const userAgent = req.headers['user-agent'];
-      await this.emailService.recordOpenEvent(campaignId, recipientId, ip, userAgent);
+      await this.emailService.recordOpenEvent(
+        campaignId,
+        recipientId,
+        ip,
+        userAgent,
+      );
     }
 
     res.setHeader('Content-Type', 'image/gif');
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, private',
+    );
     res.send(TRANSPARENT_GIF_BUFFER);
   }
 
@@ -44,9 +53,16 @@ export class EmailTrackingController {
     const destination = targetUrl || 'https://brokeros.io';
 
     if (campaignId && recipientId && targetUrl) {
-      const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
+      const ip =
+        (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
       const userAgent = req.headers['user-agent'];
-      await this.emailService.recordClickEvent(campaignId, recipientId, targetUrl, ip, userAgent);
+      await this.emailService.recordClickEvent(
+        campaignId,
+        recipientId,
+        targetUrl,
+        ip,
+        userAgent,
+      );
     }
 
     res.redirect(302, destination);

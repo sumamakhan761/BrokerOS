@@ -18,7 +18,7 @@ export class SmsIntegrationsService {
   private readonly sinchAdapter = new SinchSmsAdapter();
   private readonly gupshupAdapter = new GupshupSmsAdapter();
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   getAdapter(providerType: string): ISmsMarketingProvider {
     switch (providerType) {
@@ -66,7 +66,8 @@ export class SmsIntegrationsService {
         credentials = {
           accountSid: activeIntegration.accountSid || undefined,
           authToken: activeIntegration.authToken || undefined,
-          messagingServiceSid: activeIntegration.messagingServiceSid || undefined,
+          messagingServiceSid:
+            activeIntegration.messagingServiceSid || undefined,
           apiKey: activeIntegration.apiKey || undefined,
           servicePlanId: activeIntegration.servicePlanId || undefined,
           awsAccessKeyId: activeIntegration.awsAccessKeyId || undefined,
@@ -80,7 +81,11 @@ export class SmsIntegrationsService {
     }
 
     const adapter = this.getAdapter(providerType);
-    const resolvedFrom = dto.fromSender || credentials?.fromNumber || credentials?.senderId || 'BrokerOS';
+    const resolvedFrom =
+      dto.fromSender ||
+      credentials?.fromNumber ||
+      credentials?.senderId ||
+      'BrokerOS';
 
     const recipientPhone = (dto.recipientPhone || dto.toPhone || '').trim();
     if (!recipientPhone) {
@@ -143,7 +148,9 @@ export class SmsIntegrationsService {
     });
 
     if (!isValid) {
-      throw new BadRequestException(`Failed to validate credentials with SMS provider ${dto.provider}`);
+      throw new BadRequestException(
+        `Failed to validate credentials with SMS provider ${dto.provider}`,
+      );
     }
 
     if (dto.isDefault) {

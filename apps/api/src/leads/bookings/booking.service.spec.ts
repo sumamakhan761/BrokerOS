@@ -22,11 +22,31 @@ describe('BookingService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BookingService,
-        { provide: BookingQueryService, useValue: { getBooking: jest.fn(), getAllBookings: jest.fn() } },
-        { provide: BookingCreationService, useValue: { createBooking: jest.fn(), updateBooking: jest.fn() } },
-        { provide: BookingStatusService, useValue: { markBookingDone: jest.fn(), cancelBooking: jest.fn() } },
-        { provide: BookingDocumentsService, useValue: { uploadDocument: jest.fn(), getDocumentFile: jest.fn() } },
-        { provide: BookingPostSalesService, useValue: { saveLoanCase: jest.fn(), saveAgreement: jest.fn(), saveHandover: jest.fn(), uploadPostSalesFile: jest.fn() } },
+        {
+          provide: BookingQueryService,
+          useValue: { getBooking: jest.fn(), getAllBookings: jest.fn() },
+        },
+        {
+          provide: BookingCreationService,
+          useValue: { createBooking: jest.fn(), updateBooking: jest.fn() },
+        },
+        {
+          provide: BookingStatusService,
+          useValue: { markBookingDone: jest.fn(), cancelBooking: jest.fn() },
+        },
+        {
+          provide: BookingDocumentsService,
+          useValue: { uploadDocument: jest.fn(), getDocumentFile: jest.fn() },
+        },
+        {
+          provide: BookingPostSalesService,
+          useValue: {
+            saveLoanCase: jest.fn(),
+            saveAgreement: jest.fn(),
+            saveHandover: jest.fn(),
+            uploadPostSalesFile: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -40,13 +60,21 @@ describe('BookingService', () => {
   });
 
   it('should call createBooking with CreateBookingDto', async () => {
-    const dto: CreateBookingDto = { userId: 'u-1', unitId: 'u-1', agreedPrice: 1000 };
+    const dto: CreateBookingDto = {
+      userId: 'u-1',
+      unitId: 'u-1',
+      agreedPrice: 1000,
+    };
     await service.createBooking('l-1', dto);
     expect(bookingCreation.createBooking).toHaveBeenCalledWith('l-1', dto);
   });
 
   it('should call updateBooking with UpdateBookingDto', async () => {
-    const dto: UpdateBookingDto = { bookingId: 'b-1', userId: 'u-1', unitId: 'u-2' };
+    const dto: UpdateBookingDto = {
+      bookingId: 'b-1',
+      userId: 'u-1',
+      unitId: 'u-2',
+    };
     await service.updateBooking('b-1', dto);
     expect(bookingCreation.updateBooking).toHaveBeenCalledWith('b-1', dto);
   });

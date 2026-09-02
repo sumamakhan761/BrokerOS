@@ -29,7 +29,10 @@ export class DashboardService {
   }
 
   getPreSalesManagerAnalytics(managerId: string, timeRange?: string) {
-    return this.managerDashboard.getPreSalesManagerAnalytics(managerId, timeRange);
+    return this.managerDashboard.getPreSalesManagerAnalytics(
+      managerId,
+      timeRange,
+    );
   }
 
   getLeaderboard(userId: string) {
@@ -43,7 +46,7 @@ export class DashboardService {
   getSalesExecDashboard(userId: string) {
     return this.salesExecDashboard.getSalesExecDashboard(userId);
   }
-  
+
   getSalesExecLeaderboard(userId: string) {
     return this.leaderboard.getSalesExecLeaderboard(userId);
   }
@@ -51,7 +54,10 @@ export class DashboardService {
   // ─── Confirm Follow-up ────────────────────────────────────────────────────
   // Small enough to stay here — it's a single atomic action with no sub-concerns.
 
-  async confirmFollowUp(followUpId: string, userId: string): Promise<{ success: boolean; message: string }> {
+  async confirmFollowUp(
+    followUpId: string,
+    userId: string,
+  ): Promise<{ success: boolean; message: string }> {
     const { start, end } = getTodayRange();
 
     const followUp = await this.prisma.followUp.findUnique({
@@ -64,7 +70,10 @@ export class DashboardService {
     }
 
     if (followUp.userId !== userId) {
-      return { success: false, message: 'You are not authorized to confirm this follow-up' };
+      return {
+        success: false,
+        message: 'You are not authorized to confirm this follow-up',
+      };
     }
 
     if (followUp.status === 'COMPLETED') {
@@ -88,7 +97,8 @@ export class DashboardService {
     if (!callRecordToday) {
       return {
         success: false,
-        message: 'No call record found for today. You must call the lead before confirming the follow-up.',
+        message:
+          'No call record found for today. You must call the lead before confirming the follow-up.',
       };
     }
 

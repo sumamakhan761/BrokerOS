@@ -26,16 +26,38 @@ describe('EmailService Unit Tests', () => {
       },
       lead: {
         findMany: jest.fn().mockResolvedValue([
-          { id: 'lead-1', email: 'rahul@example.com', firstName: 'Rahul', lastName: 'Sharma' },
-          { id: 'lead-2', email: 'rahul@example.com', firstName: 'Rahul', lastName: 'Duplicate' },
-          { id: 'lead-3', email: 'unsub@example.com', firstName: 'Unsub', lastName: 'User' },
-          { id: 'lead-4', email: 'priya@example.com', firstName: 'Priya', lastName: 'Patel' },
+          {
+            id: 'lead-1',
+            email: 'rahul@example.com',
+            firstName: 'Rahul',
+            lastName: 'Sharma',
+          },
+          {
+            id: 'lead-2',
+            email: 'rahul@example.com',
+            firstName: 'Rahul',
+            lastName: 'Duplicate',
+          },
+          {
+            id: 'lead-3',
+            email: 'unsub@example.com',
+            firstName: 'Unsub',
+            lastName: 'User',
+          },
+          {
+            id: 'lead-4',
+            email: 'priya@example.com',
+            firstName: 'Priya',
+            lastName: 'Patel',
+          },
         ]),
         create: jest.fn().mockResolvedValue({ id: 'new-lead-1' }),
         createMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       marketingCampaign: {
-        create: jest.fn().mockResolvedValue({ id: 'camp-123', title: 'Diwali Launch' }),
+        create: jest
+          .fn()
+          .mockResolvedValue({ id: 'camp-123', title: 'Diwali Launch' }),
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn().mockResolvedValue(null),
         count: jest.fn().mockResolvedValue(0),
@@ -59,7 +81,9 @@ describe('EmailService Unit Tests', () => {
         findMany: jest.fn().mockResolvedValue([]),
         create: jest.fn().mockResolvedValue({ id: 'ev-1' }),
       },
-      $transaction: jest.fn().mockImplementation((promises: any) => Promise.all(promises)),
+      $transaction: jest
+        .fn()
+        .mockImplementation((promises: any) => Promise.all(promises)),
     };
 
     audienceService = new EmailAudienceService(mockPrisma);
@@ -112,13 +136,15 @@ describe('EmailService Unit Tests', () => {
 
   describe('Test Email Dispatch', () => {
     it('should dispatch test email using System Default adapter', async () => {
-      jest.spyOn((integrationsService as any).sesAdapter, 'sendBatch').mockResolvedValue({
-        success: true,
-        provider: 'AWS_SES',
-        sentCount: 1,
-        failedCount: 0,
-        recipientErrors: [],
-      });
+      jest
+        .spyOn((integrationsService as any).sesAdapter, 'sendBatch')
+        .mockResolvedValue({
+          success: true,
+          provider: 'AWS_SES',
+          sentCount: 1,
+          failedCount: 0,
+          recipientErrors: [],
+        });
 
       const result = await service.sendTestEmail({
         recipientEmail: 'test@example.com',

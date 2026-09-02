@@ -4,12 +4,12 @@ import { put } from '@vercel/blob';
 
 @Injectable()
 export class BrokerCommissionsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   private async getUserRoleCode(userId: string): Promise<string> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { role: true }
+      include: { role: true },
     });
     return user?.role?.code || '';
   }
@@ -26,24 +26,43 @@ export class BrokerCommissionsService {
       where: whereClause,
       include: {
         broker: { select: { id: true, name: true, phone: true } },
-        booking: { include: { customer: true, unit: { include: { floor: { include: { tower: { include: { project: true } } } } } } } }
+        booking: {
+          include: {
+            customer: true,
+            unit: {
+              include: {
+                floor: { include: { tower: { include: { project: true } } } },
+              },
+            },
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  async completeCommission(recordId: string, userId: string, file?: Express.Multer.File) {
+  async completeCommission(
+    recordId: string,
+    userId: string,
+    file?: Express.Multer.File,
+  ) {
     let paymentReference: string | null = null;
 
     if (file) {
-      const blob = await put(`commissions/${recordId}/${file.originalname}`, file.buffer, {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      });
+      const blob = await put(
+        `commissions/${recordId}/${file.originalname}`,
+        file.buffer,
+        {
+          access: 'public',
+          token: process.env.BLOB_READ_WRITE_TOKEN,
+        },
+      );
       paymentReference = blob.url;
     }
 
-    const record = await this.prisma.brokerageRecord.findUnique({ where: { id: recordId } });
+    const record = await this.prisma.brokerageRecord.findUnique({
+      where: { id: recordId },
+    });
     if (!record) throw new NotFoundException('Commission record not found');
 
     return this.prisma.brokerageRecord.update({
@@ -54,12 +73,12 @@ export class BrokerCommissionsService {
         paidAmount: record.netPayable,
         paymentReference: paymentReference || record.paymentReference,
         approvedById: userId,
-        approvedAt: new Date()
+        approvedAt: new Date(),
       },
       include: {
         broker: true,
-        booking: true
-      }
+        booking: true,
+      },
     });
   }
 }

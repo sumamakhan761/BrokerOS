@@ -4,7 +4,7 @@ import { CallStatusDto } from './dto/call-record.dto.js';
 
 @Controller('api/call-status')
 export class CallStatusController {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Called by the mobile app (AutoDialer hook) when:

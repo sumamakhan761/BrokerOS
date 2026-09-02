@@ -2,7 +2,10 @@
 export { MarketingModule } from './marketing.module.js';
 
 // Email Domain
-export { EmailService, EmailService as MarketingService } from './email/email.service.js';
+export {
+  EmailService,
+  EmailService as MarketingService,
+} from './email/email.service.js';
 export { EmailAudienceService } from './email/services/email-audience.service.js';
 export { EmailAnalyticsService } from './email/services/email-analytics.service.js';
 export { EmailIntegrationsService } from './email/services/email-integrations.service.js';

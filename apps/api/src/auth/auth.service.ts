@@ -9,7 +9,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) { }
+  ) {}
 
   async validateUser(phoneNumber: string, pass: string): Promise<any> {
     const user = await this.prisma.user.findUnique({ where: { phoneNumber } });

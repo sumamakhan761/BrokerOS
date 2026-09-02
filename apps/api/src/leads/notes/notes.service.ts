@@ -14,29 +14,35 @@ export class NotesService {
   async getNotes(leadId: string) {
     const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
     if (!lead) throw new Error('Lead not found');
-    
+
     return this.prisma.note.findMany({
       where: { leadId },
       orderBy: { createdAt: 'desc' },
       include: {
-        user: { select: { username: true, email: true, displayUsername: true } },
+        user: {
+          select: { username: true, email: true, displayUsername: true },
+        },
       },
     });
   }
 
   async createNote(leadId: string, data: CreateNoteDto) {
     if (data.noteType === 'NEGOTIATION') {
-      throw new Error('Negotiations must be created via the dedicated negotiations API, not as notes.');
+      throw new Error(
+        'Negotiations must be created via the dedicated negotiations API, not as notes.',
+      );
     }
-    
+
     const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
     if (!lead) throw new Error('Lead not found');
 
     if (data.statusAtTimeOfNote) {
       // Fetch current lead to compare status
-      const currentLead = await this.prisma.lead.findUnique({ where: { id: leadId } });
+      const currentLead = await this.prisma.lead.findUnique({
+        where: { id: leadId },
+      });
       const updateData: any = { status: data.statusAtTimeOfNote };
-      
+
       // Reset subStatus to PENDING if status is changing
       if (currentLead && currentLead.status !== data.statusAtTimeOfNote) {
         updateData.subStatus = 'PENDING';
@@ -58,7 +64,9 @@ export class NotesService {
         noteType: data.noteType,
       },
       include: {
-        user: { select: { username: true, email: true, displayUsername: true } },
+        user: {
+          select: { username: true, email: true, displayUsername: true },
+        },
       },
     });
   }
@@ -77,13 +85,16 @@ export class NotesService {
     if (!lead) throw new Error('Lead not found');
 
     const summaries = lead.callRecords
-      .map(c => c.aiSummary)
+      .map((c) => c.aiSummary)
       .filter(Boolean) as string[];
 
-    const result = await this.transcriptionService.generateAutoStatusAndNote(lead.status, summaries);
+    const result = await this.transcriptionService.generateAutoStatusAndNote(
+      lead.status,
+      summaries,
+    );
     if (!result) throw new Error('AI could not generate transition');
 
-    let updateData: any = {};
+    const updateData: any = {};
     if (result.suggestedStatus !== lead.status) {
       updateData.status = result.suggestedStatus as LeadStatus;
       updateData.subStatus = 'PENDING';
@@ -105,7 +116,9 @@ export class NotesService {
         noteType: 'AI_TRANSITION',
       },
       include: {
-        user: { select: { username: true, email: true, displayUsername: true } },
+        user: {
+          select: { username: true, email: true, displayUsername: true },
+        },
       },
     });
 

@@ -6,15 +6,21 @@ import { GenerateTowerPromptDto, SaveTowerDto } from './dto/tower.dto.js';
 @Controller('api/inventory/projects')
 @UseGuards(AuthGuard)
 export class TowerGenController {
-  constructor(private readonly inventoryService: InventoryService) { }
+  constructor(private readonly inventoryService: InventoryService) {}
 
   @Post(':projectId/towers/ai-generate')
-  async generateTowerPrompt(@Param('projectId') projectId: string, @Body() data: GenerateTowerPromptDto) {
+  async generateTowerPrompt(
+    @Param('projectId') projectId: string,
+    @Body() data: GenerateTowerPromptDto,
+  ) {
     return this.inventoryService.generateTowerPrompt(projectId, data.prompt);
   }
 
   @Post(':projectId/towers')
-  async saveGeneratedTower(@Param('projectId') projectId: string, @Body() towerData: SaveTowerDto) {
+  async saveGeneratedTower(
+    @Param('projectId') projectId: string,
+    @Body() towerData: SaveTowerDto,
+  ) {
     return this.inventoryService.saveGeneratedTower(projectId, towerData);
   }
 }

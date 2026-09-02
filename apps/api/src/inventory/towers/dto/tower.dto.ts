@@ -1,4 +1,11 @@
-import { IsString, IsArray, IsNumber, IsOptional, ValidateNested, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  IsNumber,
+  IsOptional,
+  ValidateNested,
+  IsEnum,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export enum UnitTypeEnum {
@@ -10,7 +17,7 @@ export enum UnitTypeEnum {
   PENTHOUSE = 'PENTHOUSE',
   VILLA = 'VILLA',
   SHOP = 'SHOP',
-  OFFICE = 'OFFICE'
+  OFFICE = 'OFFICE',
 }
 
 export class GenerateTowerPromptDto {

@@ -8,4 +8,4 @@ import { PaymentsCron } from './payments.cron.js';
   providers: [PaymentsService, PaymentsCron],
   exports: [PaymentsService],
 })
-export class PaymentsModule { }
+export class PaymentsModule {}

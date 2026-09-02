@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { EmailService } from '../email.service.js';
 import {
   CreateCampaignDto,
@@ -9,7 +18,7 @@ import {
 
 @Controller('api/marketing')
 export class EmailCampaignsController {
-  constructor(private readonly emailService: EmailService) { }
+  constructor(private readonly emailService: EmailService) {}
 
   @Get('projects')
   async getProjects() {
@@ -22,7 +31,16 @@ export class EmailCampaignsController {
   }
 
   @Get('campaigns')
-  async findAll(@Query() query: { page?: number; limit?: number; status?: string; search?: string; includeDrafts?: string | boolean }) {
+  async findAll(
+    @Query()
+    query: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      search?: string;
+      includeDrafts?: string | boolean;
+    },
+  ) {
     return this.emailService.findAllCampaigns(query);
   }
 
@@ -54,7 +72,8 @@ export class EmailCampaignsController {
   @Get('campaigns/:id/recipients')
   async getRecipients(
     @Param('id') id: string,
-    @Query() query: { page?: number; limit?: number; status?: string; search?: string },
+    @Query()
+    query: { page?: number; limit?: number; status?: string; search?: string },
   ) {
     return this.emailService.getCampaignRecipients(id, query);
   }
@@ -70,7 +89,13 @@ export class EmailCampaignsController {
   }
 
   @Post('recipients/:recipientId/promote')
-  async promoteRecipient(@Req() req: any, @Param('recipientId') recipientId: string) {
-    return this.emailService.promoteCsvRecipientToLead(recipientId, req.user?.id);
+  async promoteRecipient(
+    @Req() req: any,
+    @Param('recipientId') recipientId: string,
+  ) {
+    return this.emailService.promoteCsvRecipientToLead(
+      recipientId,
+      req.user?.id,
+    );
   }
 }

@@ -9,11 +9,11 @@ import { TranscriptionService } from '../leads/call-records/transcription.servic
 @Module({
   controllers: [BrokersController],
   providers: [
-    BrokersService, 
+    BrokersService,
     BrokerActivitiesService,
     BrokerCommissionsService,
     BrokerAiService,
-    TranscriptionService
+    TranscriptionService,
   ],
   exports: [BrokersService],
 })

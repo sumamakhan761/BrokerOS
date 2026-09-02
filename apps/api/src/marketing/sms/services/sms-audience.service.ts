@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../lib/database/prisma.service.js';
 import type { SmsAudienceEstimationResult } from '@brokeros/types';
 import { PreviewSmsAudienceDto } from '../dto/sms.dto.js';
@@ -7,7 +11,11 @@ import { PreviewSmsAudienceDto } from '../dto/sms.dto.js';
 export class SmsAudienceService {
   constructor(private readonly prisma: PrismaService) {}
 
-  buildLeadWhereClause(filters: any = {}, isCpCampaign?: boolean, projectId?: string) {
+  buildLeadWhereClause(
+    filters: any = {},
+    isCpCampaign?: boolean,
+    projectId?: string,
+  ) {
     const whereClause: any = {
       deletedAt: null,
       phone: { not: '' },
@@ -16,7 +24,9 @@ export class SmsAudienceService {
     if (filters.statuses?.length && !filters.statuses.includes('ALL')) {
       whereClause.status = { in: filters.statuses };
     } else {
-      whereClause.status = { in: ['NEW', 'CONTACTED', 'INTERESTED', 'QUALIFIED'] };
+      whereClause.status = {
+        in: ['NEW', 'CONTACTED', 'INTERESTED', 'QUALIFIED'],
+      };
     }
 
     if (filters.temperatures?.length) {
@@ -39,7 +49,9 @@ export class SmsAudienceService {
     return whereClause;
   }
 
-  async previewAudience(dto: PreviewSmsAudienceDto): Promise<SmsAudienceEstimationResult> {
+  async previewAudience(
+    dto: PreviewSmsAudienceDto,
+  ): Promise<SmsAudienceEstimationResult> {
     if (dto.audienceSource === 'CSV_UPLOAD' && dto.csvRecipients?.length) {
       const seenPhones = new Set<string>();
       let validPhoneCount = 0;
@@ -65,7 +77,11 @@ export class SmsAudienceService {
       };
     }
 
-    const whereClause = this.buildLeadWhereClause(dto.audienceFilters, dto.isCpCampaign, dto.projectId);
+    const whereClause = this.buildLeadWhereClause(
+      dto.audienceFilters,
+      dto.isCpCampaign,
+      dto.projectId,
+    );
     const leads = await this.prisma.lead.findMany({
       where: whereClause,
       select: { phone: true },
@@ -102,8 +118,12 @@ export class SmsAudienceService {
       include: { campaign: true },
     });
 
-    if (!recipient) throw new NotFoundException('SMS Recipient record not found');
-    if (recipient.leadId) throw new BadRequestException('Recipient is already linked to a CRM Lead');
+    if (!recipient)
+      throw new NotFoundException('SMS Recipient record not found');
+    if (recipient.leadId)
+      throw new BadRequestException(
+        'Recipient is already linked to a CRM Lead',
+      );
 
     const nameParts = (recipient.name || 'Prospect').trim().split(' ');
     const firstName = nameParts[0];
@@ -116,7 +136,7 @@ export class SmsAudienceService {
         firstName,
         lastName,
         phone: recipient.phone,
-        temperature: (merge.temperature as any) || 'HOT',
+        temperature: merge.temperature || 'HOT',
         status: 'INTERESTED',
         interestedProjectId: recipient.campaign.projectId,
         budget: merge.budget ? Number(merge.budget) : null,

@@ -1,17 +1,24 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../lib/database/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { BookingStatusService } from '../leads/bookings/booking-status.service.js';
 import { NotificationType, ApprovalType } from '@brokeros/prisma';
-import { CreateApprovalRequestDto, AddApprovalMessageDto } from './dto/approvals.dto.js';
+import {
+  CreateApprovalRequestDto,
+  AddApprovalMessageDto,
+} from './dto/approvals.dto.js';
 
 @Injectable()
 export class ApprovalsService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
-    private bookingStatusService: BookingStatusService
-  ) { }
+    private bookingStatusService: BookingStatusService,
+  ) {}
 
   async createRequest(salesExecId: string, dto: CreateApprovalRequestDto) {
     // Get the SE's manager
@@ -21,7 +28,9 @@ export class ApprovalsService {
     });
 
     if (!se || !se.managerId) {
-      throw new BadRequestException('Sales Executive does not have an assigned manager.');
+      throw new BadRequestException(
+        'Sales Executive does not have an assigned manager.',
+      );
     }
 
     let finalDescription = dto.description;
@@ -37,15 +46,15 @@ export class ApprovalsService {
               floor: {
                 include: {
                   tower: {
-                    include: { project: true }
-                  }
-                }
-              }
-            }
+                    include: { project: true },
+                  },
+                },
+              },
+            },
           },
           documents: true,
           loanCase: true,
-        }
+        },
       });
 
       if (booking) {
@@ -60,10 +69,10 @@ Remarks: System generated booking request.`;
 
         if (booking.documents && booking.documents.length > 0) {
           finalMetadata = {
-            documents: booking.documents.map(doc => ({
+            documents: booking.documents.map((doc) => ({
               name: doc.title || doc.type || 'Document',
-              url: doc.fileUrl
-            }))
+              url: doc.fileUrl,
+            })),
           };
         }
       }
@@ -90,10 +99,13 @@ Remarks: System generated booking request.`;
       include: {
         messages: true,
         salesExec: { select: { name: true } },
-      }
+      },
     });
 
-    const preview = dto.description.length > 100 ? dto.description.substring(0, 100) + '...' : dto.description;
+    const preview =
+      dto.description.length > 100
+        ? dto.description.substring(0, 100) + '...'
+        : dto.description;
     await this.notificationsService.createNotification({
       userId: se.managerId,
       type: NotificationType.BOOKING_REQUEST,
@@ -105,14 +117,17 @@ Remarks: System generated booking request.`;
         type: dto.type || 'DISCOUNT',
         bookingId: dto.bookingId,
         fromEmployeeName: request.salesExec?.name,
-      }
+      },
     });
 
     return request;
   }
 
   async getRequests(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    });
     const roleCode = user?.role?.code;
 
     if (roleCode === 'SALES_MANAGER') {
@@ -123,9 +138,9 @@ Remarks: System generated booking request.`;
           salesExec: { select: { id: true, name: true, username: true } },
           messages: {
             take: 1, // Get the latest message for preview
-            orderBy: { createdAt: 'desc' }
-          }
-        }
+            orderBy: { createdAt: 'desc' },
+          },
+        },
       });
     } else if (roleCode === 'SALES_EXECUTIVE') {
       return this.prisma.approvalRequest.findMany({
@@ -135,9 +150,9 @@ Remarks: System generated booking request.`;
           manager: { select: { id: true, name: true, username: true } },
           messages: {
             take: 1,
-            orderBy: { createdAt: 'desc' }
-          }
-        }
+            orderBy: { createdAt: 'desc' },
+          },
+        },
       });
     }
 
@@ -153,10 +168,17 @@ Remarks: System generated booking request.`;
         messages: {
           orderBy: { createdAt: 'asc' },
           include: {
-            sender: { select: { id: true, name: true, username: true, role: { select: { code: true } } } },
-          }
-        }
-      }
+            sender: {
+              select: {
+                id: true,
+                name: true,
+                username: true,
+                role: { select: { code: true } },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!request) {
@@ -169,12 +191,17 @@ Remarks: System generated booking request.`;
   async addMessage(
     requestId: string,
     userId: string,
-    data: AddApprovalMessageDto
+    data: AddApprovalMessageDto,
   ) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, include: { role: true } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true },
+    });
     const roleCode = user?.role?.code;
 
-    const request = await this.prisma.approvalRequest.findUnique({ where: { id: requestId } });
+    const request = await this.prisma.approvalRequest.findUnique({
+      where: { id: requestId },
+    });
     if (!request) {
       throw new NotFoundException('Approval request not found');
     }
@@ -204,22 +231,33 @@ Remarks: System generated booking request.`;
             title: data.title,
             description: data.description,
             fileUrl: data.fileUrl,
-          }
-        }
+          },
+        },
       },
       include: {
         messages: {
           orderBy: { createdAt: 'asc' },
           include: {
-            sender: { select: { id: true, name: true, username: true, role: { select: { code: true } } } },
-          }
+            sender: {
+              select: {
+                id: true,
+                name: true,
+                username: true,
+                role: { select: { code: true } },
+              },
+            },
+          },
         },
         manager: { select: { name: true } },
         salesExec: { select: { name: true } },
-      }
+      },
     });
 
-    if (newStatus === 'APPROVED' && request.type === 'BOOKING' && request.bookingId) {
+    if (
+      newStatus === 'APPROVED' &&
+      request.type === 'BOOKING' &&
+      request.bookingId
+    ) {
       await this.bookingStatusService.markBookingDone(request.bookingId);
       // Trigger Congratulatory Notification
       await this.notificationsService.createNotification({
@@ -228,7 +266,7 @@ Remarks: System generated booking request.`;
         title: 'Congratulations! 🎉',
         body: `Your booking request has been approved and confirmed by ${updated.manager?.name}.`,
         actionUrl: `/dashboard/sales-executive/booking/${request.bookingId}`,
-        metadata: { bookingId: request.bookingId }
+        metadata: { bookingId: request.bookingId },
       });
 
       // ──────────────────────────────────────────────
@@ -239,13 +277,18 @@ Remarks: System generated booking request.`;
           where: { id: request.bookingId },
           include: {
             customer: { include: { lead: true } },
-            unit: { include: { floor: { include: { tower: { include: { project: true } } } } } },
-            salesExec: true
-          }
+            unit: {
+              include: {
+                floor: { include: { tower: { include: { project: true } } } },
+              },
+            },
+            salesExec: true,
+          },
         });
 
         if (fullBooking) {
-          const projectName = fullBooking.unit?.floor?.tower?.project?.name || 'Project';
+          const projectName =
+            fullBooking.unit?.floor?.tower?.project?.name || 'Project';
           const unitNumber = fullBooking.unit?.unitNumber || 'Unit';
           const lead = fullBooking.customer.lead;
 
@@ -253,35 +296,37 @@ Remarks: System generated booking request.`;
           await this.notificationsService.createNotification({
             userId: request.salesExecId,
             type: NotificationType.RECOGNITION,
-            title: "🎉 Congratulations! You closed a booking.",
+            title: '🎉 Congratulations! You closed a booking.',
             body: `${fullBooking.customer.firstName} ${fullBooking.customer.lastName || ''} — ${projectName} Unit ${unitNumber}`,
             actionUrl: `/dashboard/sales-executive/booking`,
             metadata: {
-              achievementType: "BOOKING",
+              achievementType: 'BOOKING',
               bookingId: fullBooking.id,
               customerName: `${fullBooking.customer.firstName} ${fullBooking.customer.lastName || ''}`,
               projectName,
-              unit: unitNumber
-            }
+              unit: unitNumber,
+            },
           });
 
           // Notification #13: Recognition (Sourcing Manager)
           if (lead?.brokerId) {
-            const broker = await this.prisma.broker.findUnique({ where: { id: lead.brokerId } });
+            const broker = await this.prisma.broker.findUnique({
+              where: { id: lead.brokerId },
+            });
             if (broker && broker.sourcingManagerId) {
               await this.notificationsService.createNotification({
                 userId: broker.sourcingManagerId,
                 type: NotificationType.RECOGNITION,
-                title: "🎉 Congratulations! You completed a deal.",
+                title: '🎉 Congratulations! You completed a deal.',
                 body: `Broker ${broker.name} brought a booking for ${projectName}.`,
                 actionUrl: `/dashboard/sourcing-manager`,
                 metadata: {
-                  achievementType: "BOOKING",
+                  achievementType: 'BOOKING',
                   bookingId: fullBooking.id,
                   customerName: `${fullBooking.customer.firstName} ${fullBooking.customer.lastName || ''}`,
                   projectName,
-                  unit: unitNumber
-                }
+                  unit: unitNumber,
+                },
               });
             }
           }
@@ -289,16 +334,21 @@ Remarks: System generated booking request.`;
           // Notification #19: Booking Count Milestone Achievement
           const bookingMilestones = [10, 25, 50, 100, 150, 200, 250];
 
-          const checkBookingMilestone = async (userId: string, roleCode: string) => {
+          const checkBookingMilestone = async (
+            userId: string,
+            roleCode: string,
+          ) => {
             let count = 0;
             if (roleCode === 'SALES_EXECUTIVE') {
-              count = await this.prisma.booking.count({ where: { salesExecId: userId, status: 'CONFIRMED' } });
+              count = await this.prisma.booking.count({
+                where: { salesExecId: userId, status: 'CONFIRMED' },
+              });
             } else if (roleCode === 'SOURCING_MANAGER') {
               count = await this.prisma.booking.count({
                 where: {
                   status: 'CONFIRMED',
-                  customer: { lead: { broker: { sourcingManagerId: userId } } }
-                }
+                  customer: { lead: { broker: { sourcingManagerId: userId } } },
+                },
               });
             }
 
@@ -306,11 +356,14 @@ Remarks: System generated booking request.`;
               const existingNotifs = await this.prisma.notification.findMany({
                 where: { userId, type: 'ACHIEVEMENT_MILESTONE' },
                 orderBy: { createdAt: 'desc' },
-                take: 50
+                take: 50,
               });
-              const alreadySent = existingNotifs.some(n => {
+              const alreadySent = existingNotifs.some((n) => {
                 const meta = n.metadata as any;
-                return meta?.achievementType === 'BOOKINGS' && meta?.milestone === count;
+                return (
+                  meta?.achievementType === 'BOOKINGS' &&
+                  meta?.milestone === count
+                );
               });
 
               if (!alreadySent) {
@@ -320,7 +373,11 @@ Remarks: System generated booking request.`;
                   title: `🎉 Congratulations! You completed ${count} bookings.`,
                   body: `You just hit the ${count} bookings milestone. Keep it up!`,
                   actionUrl: `/dashboard/${roleCode.toLowerCase().replace('_', '-')}/analytics`,
-                  metadata: { achievementType: "BOOKINGS", milestone: count, currentCount: count }
+                  metadata: {
+                    achievementType: 'BOOKINGS',
+                    milestone: count,
+                    currentCount: count,
+                  },
                 });
               }
             }
@@ -329,37 +386,48 @@ Remarks: System generated booking request.`;
           await checkBookingMilestone(request.salesExecId, 'SALES_EXECUTIVE');
 
           if (lead?.brokerId) {
-            const brokerForMilestone = await this.prisma.broker.findUnique({ where: { id: lead.brokerId } });
+            const brokerForMilestone = await this.prisma.broker.findUnique({
+              where: { id: lead.brokerId },
+            });
             if (brokerForMilestone && brokerForMilestone.sourcingManagerId) {
-              await checkBookingMilestone(brokerForMilestone.sourcingManagerId, 'SOURCING_MANAGER');
+              await checkBookingMilestone(
+                brokerForMilestone.sourcingManagerId,
+                'SOURCING_MANAGER',
+              );
             }
           }
 
           // Notification #14: Inventory Milestone
           const projectId = fullBooking.unit?.floor?.tower?.projectId;
           if (projectId) {
-            const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+            const project = await this.prisma.project.findUnique({
+              where: { id: projectId },
+            });
             if (project) {
               const soldUnitsCount = await this.prisma.unit.count({
                 where: {
                   floor: { tower: { projectId } },
-                  status: { in: ['SOLD'] } // Since it's confirmed, unit should be SOLD (we need to update unit to SOLD too?)
-                }
+                  status: { in: ['SOLD'] }, // Since it's confirmed, unit should be SOLD (we need to update unit to SOLD too?)
+                },
               });
               const totalUnitsCount = await this.prisma.unit.count({
-                where: { floor: { tower: { projectId } } }
+                where: { floor: { tower: { projectId } } },
               });
-              const isSoldOut = soldUnitsCount === totalUnitsCount && totalUnitsCount > 0;
+              const isSoldOut =
+                soldUnitsCount === totalUnitsCount && totalUnitsCount > 0;
 
               if ([10, 20, 30, 50, 100].includes(soldUnitsCount) || isSoldOut) {
                 const recentNotifs = await this.prisma.notification.findMany({
                   where: { type: 'INVENTORY_MILESTONE' },
                   orderBy: { createdAt: 'desc' },
-                  take: 200
+                  take: 200,
                 });
-                const alreadySent = recentNotifs.some(n => {
+                const alreadySent = recentNotifs.some((n) => {
                   const meta = n.metadata as any;
-                  return meta?.projectId === projectId && meta?.milestone === soldUnitsCount;
+                  return (
+                    meta?.projectId === projectId &&
+                    meta?.milestone === soldUnitsCount
+                  );
                 });
 
                 if (!alreadySent) {
@@ -371,16 +439,29 @@ Remarks: System generated booking request.`;
                   }
 
                   const userIdsToNotify = new Set<string>();
-                  const assignments = await this.prisma.projectAssignment.findMany({
-                    where: { projectId, isActive: true },
-                    include: { user: { select: { role: { select: { code: true } } } } }
-                  });
+                  const assignments =
+                    await this.prisma.projectAssignment.findMany({
+                      where: { projectId, isActive: true },
+                      include: {
+                        user: { select: { role: { select: { code: true } } } },
+                      },
+                    });
 
                   for (const a of assignments) {
                     const roleCode = a.user.role?.code || '';
-                    if (project.isCpProject && ['SOURCING_MANAGER', 'CLOSING_MANAGER', 'CHANNEL_PARTNER'].includes(roleCode)) {
+                    if (
+                      project.isCpProject &&
+                      [
+                        'SOURCING_MANAGER',
+                        'CLOSING_MANAGER',
+                        'CHANNEL_PARTNER',
+                      ].includes(roleCode)
+                    ) {
                       userIdsToNotify.add(a.userId);
-                    } else if (!project.isCpProject && ['SALES_EXECUTIVE', 'POST_SALES'].includes(roleCode)) {
+                    } else if (
+                      !project.isCpProject &&
+                      ['SALES_EXECUTIVE', 'POST_SALES'].includes(roleCode)
+                    ) {
                       userIdsToNotify.add(a.userId);
                     }
                   }
@@ -391,8 +472,16 @@ Remarks: System generated booking request.`;
                       type: NotificationType.INVENTORY_MILESTONE,
                       title,
                       body,
-                      actionUrl: project.isCpProject ? `/dashboard/closing-manager/inventory/index` : `/dashboard/sales-executive/inventory/index`,
-                      metadata: { projectId, projectName: project.name, milestone: soldUnitsCount, totalUnits: totalUnitsCount, isSoldOut }
+                      actionUrl: project.isCpProject
+                        ? `/dashboard/closing-manager/inventory/index`
+                        : `/dashboard/sales-executive/inventory/index`,
+                      metadata: {
+                        projectId,
+                        projectName: project.name,
+                        milestone: soldUnitsCount,
+                        totalUnits: totalUnitsCount,
+                        isSoldOut,
+                      },
                     });
                   }
                 }
@@ -401,20 +490,20 @@ Remarks: System generated booking request.`;
           }
         }
       } catch (err) {
-        console.error("Failed to send booking milestone notifications", err);
+        console.error('Failed to send booking milestone notifications', err);
       }
     }
 
     if (roleCode === 'SALES_MANAGER') {
       let type: NotificationType = NotificationType.CHAT_MESSAGE;
-      let title = "New message on your request.";
+      let title = 'New message on your request.';
 
       if (data.action === 'APPROVE') {
         type = NotificationType.REQUEST_APPROVED;
-        title = "Your approval request was approved! ✅";
+        title = 'Your approval request was approved! ✅';
       } else if (data.action === 'REJECT') {
         type = NotificationType.REQUEST_REJECTED;
-        title = "Your approval request was rejected.";
+        title = 'Your approval request was rejected.';
       }
 
       await this.notificationsService.createNotification({
@@ -427,20 +516,20 @@ Remarks: System generated booking request.`;
           approvalId: request.id,
           status: newStatus,
           managerName: updated.manager?.name,
-        }
+        },
       });
     } else if (roleCode === 'SALES_EXECUTIVE') {
       await this.notificationsService.createNotification({
         userId: request.managerId,
         type: NotificationType.CHAT_MESSAGE,
-        title: "New response on approval request",
+        title: 'New response on approval request',
         body: `${updated.salesExec?.name || 'An employee'} replied to their approval request.`,
         actionUrl: `/dashboard/sales-manager/approval`,
         metadata: {
           approvalId: request.id,
           status: newStatus,
           employeeName: updated.salesExec?.name,
-        }
+        },
       });
     }
 
@@ -450,23 +539,31 @@ Remarks: System generated booking request.`;
   async closeRequest(requestId: string) {
     return this.prisma.approvalRequest.update({
       where: { id: requestId },
-      data: { status: 'CLOSED' }
+      data: { status: 'CLOSED' },
     });
   }
 
   async redoRequestDecision(requestId: string, managerId: string) {
-    const request = await this.prisma.approvalRequest.findUnique({ where: { id: requestId } });
+    const request = await this.prisma.approvalRequest.findUnique({
+      where: { id: requestId },
+    });
     if (!request) {
       throw new NotFoundException('Approval request not found');
     }
     if (request.managerId !== managerId) {
-      throw new BadRequestException('Only the assigned manager can redo this request');
+      throw new BadRequestException(
+        'Only the assigned manager can redo this request',
+      );
     }
     if (request.redoCount >= 2) {
-      throw new BadRequestException('Redo limit reached for this request (Max 2)');
+      throw new BadRequestException(
+        'Redo limit reached for this request (Max 2)',
+      );
     }
     if (request.status !== 'APPROVED' && request.status !== 'REJECTED') {
-      throw new BadRequestException('Request is not in a completed state to redo');
+      throw new BadRequestException(
+        'Request is not in a completed state to redo',
+      );
     }
 
     const updated = await this.prisma.approvalRequest.update({
@@ -474,14 +571,18 @@ Remarks: System generated booking request.`;
       data: {
         status: 'REQUESTED',
         redoCount: { increment: 1 },
-      }
+      },
     });
 
     // If it was a BOOKING that was approved, we should un-confirm it
-    if (request.type === 'BOOKING' && request.bookingId && request.status === 'APPROVED') {
+    if (
+      request.type === 'BOOKING' &&
+      request.bookingId &&
+      request.status === 'APPROVED'
+    ) {
       await this.prisma.booking.update({
         where: { id: request.bookingId },
-        data: { status: 'DOCUMENTATION_PENDING' } // Revert to previous logical state
+        data: { status: 'DOCUMENTATION_PENDING' }, // Revert to previous logical state
       });
     }
 
@@ -492,10 +593,9 @@ Remarks: System generated booking request.`;
       title: 'Approval Decision Undone',
       body: 'Your manager has undone their decision on your request. It is now pending again.',
       actionUrl: `/dashboard/sales-executive/approval`,
-      metadata: { approvalId: request.id }
+      metadata: { approvalId: request.id },
     });
 
     return updated;
   }
 }
-

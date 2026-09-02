@@ -1,22 +1,41 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, Req, UseInterceptors, UploadedFile, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+  UseInterceptors,
+  UploadedFile,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { put } from '@vercel/blob';
 import { ApprovalsService } from './approvals.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
-import { CreateApprovalRequestDto, AddApprovalMessageDto } from './dto/approvals.dto.js';
+import {
+  CreateApprovalRequestDto,
+  AddApprovalMessageDto,
+} from './dto/approvals.dto.js';
 
 @Controller('api/approvals')
 export class ApprovalsController {
-  constructor(private readonly approvalsService: ApprovalsService) { }
+  constructor(private readonly approvalsService: ApprovalsService) {}
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) return { url: null };
-    const blob = await put(`approvals/${Date.now()}-${file.originalname}`, file.buffer, {
-      access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-    });
+    const blob = await put(
+      `approvals/${Date.now()}-${file.originalname}`,
+      file.buffer,
+      {
+        access: 'public',
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      },
+    );
     return { url: blob.url };
   }
 
@@ -43,7 +62,7 @@ export class ApprovalsController {
   async addMessage(
     @Param('id') id: string,
     @Req() req,
-    @Body() body: AddApprovalMessageDto
+    @Body() body: AddApprovalMessageDto,
   ) {
     const userId = req.user?.id || req.user?.userId;
     if (!userId) throw new UnauthorizedException('User not authenticated');

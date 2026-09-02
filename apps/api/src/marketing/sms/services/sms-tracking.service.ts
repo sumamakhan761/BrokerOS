@@ -8,7 +8,11 @@ export class SmsTrackingService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async resolveShortLink(code: string, ip?: string, userAgent?: string): Promise<string> {
+  async resolveShortLink(
+    code: string,
+    ip?: string,
+    userAgent?: string,
+  ): Promise<string> {
     try {
       const link = await this.prisma.smsShortLink.findUnique({
         where: { code },
@@ -55,30 +59,44 @@ export class SmsTrackingService {
     for (const ev of events) {
       if (ev.eventType === 'DELIVERED') {
         if (ev.campaignId) {
-          await this.prisma.smsCampaign.update({
-            where: { id: ev.campaignId },
-            data: { deliveredCount: { increment: 1 } },
-          }).catch(() => null);
+          await this.prisma.smsCampaign
+            .update({
+              where: { id: ev.campaignId },
+              data: { deliveredCount: { increment: 1 } },
+            })
+            .catch(() => null);
         }
-        await this.prisma.smsRecipient.updateMany({
-          where: { phone: ev.recipientPhone, ...(ev.campaignId ? { campaignId: ev.campaignId } : {}) },
-          data: { status: 'DELIVERED', deliveredAt: new Date() },
-        }).catch(() => null);
+        await this.prisma.smsRecipient
+          .updateMany({
+            where: {
+              phone: ev.recipientPhone,
+              ...(ev.campaignId ? { campaignId: ev.campaignId } : {}),
+            },
+            data: { status: 'DELIVERED', deliveredAt: new Date() },
+          })
+          .catch(() => null);
       } else if (ev.eventType === 'FAILED') {
         if (ev.campaignId) {
-          await this.prisma.smsCampaign.update({
-            where: { id: ev.campaignId },
-            data: { failedCount: { increment: 1 } },
-          }).catch(() => null);
+          await this.prisma.smsCampaign
+            .update({
+              where: { id: ev.campaignId },
+              data: { failedCount: { increment: 1 } },
+            })
+            .catch(() => null);
         }
-        await this.prisma.smsRecipient.updateMany({
-          where: { phone: ev.recipientPhone, ...(ev.campaignId ? { campaignId: ev.campaignId } : {}) },
-          data: {
-            status: 'FAILED',
-            failReason: ev.metadata?.reason || 'Carrier delivery failure',
-            failedAt: new Date(),
-          },
-        }).catch(() => null);
+        await this.prisma.smsRecipient
+          .updateMany({
+            where: {
+              phone: ev.recipientPhone,
+              ...(ev.campaignId ? { campaignId: ev.campaignId } : {}),
+            },
+            data: {
+              status: 'FAILED',
+              failReason: ev.metadata?.reason || 'Carrier delivery failure',
+              failedAt: new Date(),
+            },
+          })
+          .catch(() => null);
       }
     }
   }

@@ -1,22 +1,35 @@
-import { Controller, Get, Patch, Post, Param, Body, Query, UseInterceptors, UploadedFile, Res, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Param,
+  Body,
+  Query,
+  UseInterceptors,
+  UploadedFile,
+  Res,
+  Req,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { LeadsService } from './leads.service.js';
 import { LeadStatus } from '@brokeros/prisma';
 import { Public } from '@thallesp/nestjs-better-auth';
-import { CreateLeadDto, BulkCreateLeadsDto, AssignLeadsDto, UpdateLeadStatusDto, UpdateLeadDto, GetLeadsFilterDto } from './dto/lead.dto.js';
+import {
+  CreateLeadDto,
+  BulkCreateLeadsDto,
+  AssignLeadsDto,
+  UpdateLeadStatusDto,
+  UpdateLeadDto,
+  GetLeadsFilterDto,
+} from './dto/lead.dto.js';
 
 @Controller('api/leads')
-
 export class LeadsController {
-  constructor(
-    private readonly leadsService: LeadsService,
-  ) { }
+  constructor(private readonly leadsService: LeadsService) {}
 
   @Get()
-  async findAll(
-    @Req() req: any,
-    @Query() query: GetLeadsFilterDto,
-  ) {
+  async findAll(@Req() req: any, @Query() query: GetLeadsFilterDto) {
     return this.leadsService.findAll({
       ...query,
       userId: req.user?.id,
@@ -35,15 +48,20 @@ export class LeadsController {
   }
 
   @Post('assign')
-  assignLeads(
-    @Req() req: any,
-    @Body() data: AssignLeadsDto,
-  ) {
-    return this.leadsService.assignLeads(data.leadIds, req.user?.id, data.targetUserId, data.roundRobin);
+  assignLeads(@Req() req: any, @Body() data: AssignLeadsDto) {
+    return this.leadsService.assignLeads(
+      data.leadIds,
+      req.user?.id,
+      data.targetUserId,
+      data.roundRobin,
+    );
   }
 
   @Get('employee/:employeeId')
-  async getEmployeeLeads(@Req() req: any, @Param('employeeId') employeeId: string) {
+  async getEmployeeLeads(
+    @Req() req: any,
+    @Param('employeeId') employeeId: string,
+  ) {
     return this.leadsService.findAll({
       assignedToId: employeeId,
     });
@@ -55,24 +73,21 @@ export class LeadsController {
   }
 
   @Patch(':id/status')
-  updateStatus(
-    @Param('id') id: string,
-    @Body() body: UpdateLeadStatusDto,
-  ) {
+  updateStatus(@Param('id') id: string, @Body() body: UpdateLeadStatusDto) {
     return this.leadsService.updateStatus(id, body.status, body.subStatus);
   }
 
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateData: UpdateLeadDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateData: UpdateLeadDto) {
     return this.leadsService.update(id, updateData);
   }
 
   @Post(':id/avatar')
   @UseInterceptors(FileInterceptor('file'))
-  uploadAvatar(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+  uploadAvatar(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     return this.leadsService.uploadAvatar(id, file);
   }
 
@@ -86,7 +101,9 @@ export class LeadsController {
 
     try {
       const blobRes = await fetch(lead.avatar, {
-        headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+        headers: {
+          Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+        },
       });
 
       if (!blobRes.ok) {

@@ -10,7 +10,10 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { VoiceAudienceFiltersDto, VoiceCsvRecipientDto } from './audience.dto.js';
+import {
+  VoiceAudienceFiltersDto,
+  VoiceCsvRecipientDto,
+} from './audience.dto.js';
 
 export class CreateVoiceCampaignDto {
   @IsOptional()

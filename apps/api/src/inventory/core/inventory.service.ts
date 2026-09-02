@@ -2,16 +2,22 @@ import { Injectable } from '@nestjs/common';
 import { InventoryProjectsService } from '../projects/inventory-projects.service.js';
 import { InventoryTowerGenService } from '../towers/inventory-tower-gen.service.js';
 import { InventoryUnitsService } from '../units/inventory-units.service.js';
-import { ProjectQueryDto, CreateProjectDto } from '../projects/dto/project.dto.js';
+import {
+  ProjectQueryDto,
+  CreateProjectDto,
+} from '../projects/dto/project.dto.js';
 import { SaveTowerDto } from '../towers/dto/tower.dto.js';
-import { UpdateUnitStatusDto, UpdatePossessionDto } from '../units/dto/unit.dto.js';
+import {
+  UpdateUnitStatusDto,
+  UpdatePossessionDto,
+} from '../units/dto/unit.dto.js';
 
 @Injectable()
 export class InventoryService {
   constructor(
     private inventoryProjects: InventoryProjectsService,
     private inventoryTowerGen: InventoryTowerGenService,
-    private inventoryUnits: InventoryUnitsService
+    private inventoryUnits: InventoryUnitsService,
   ) {}
 
   async getProjects(query: ProjectQueryDto, userId: string) {
@@ -30,16 +36,36 @@ export class InventoryService {
     return this.inventoryProjects.getTowerAssignments(towerId);
   }
 
-  async assignTower(towerId: string, sourcingManagerIds: string[], closingManagerIds: string[], salesExecIds: string[] = []) {
-    return this.inventoryProjects.assignTower(towerId, sourcingManagerIds, closingManagerIds, salesExecIds);
+  async assignTower(
+    towerId: string,
+    sourcingManagerIds: string[],
+    closingManagerIds: string[],
+    salesExecIds: string[] = [],
+  ) {
+    return this.inventoryProjects.assignTower(
+      towerId,
+      sourcingManagerIds,
+      closingManagerIds,
+      salesExecIds,
+    );
   }
 
   async getProjectAssignments(projectId: string) {
     return this.inventoryProjects.getProjectAssignments(projectId);
   }
 
-  async assignProject(projectId: string, sourcingManagerIds: string[], closingManagerIds: string[], salesExecIds: string[] = []) {
-    return this.inventoryProjects.assignProject(projectId, sourcingManagerIds, closingManagerIds, salesExecIds);
+  async assignProject(
+    projectId: string,
+    sourcingManagerIds: string[],
+    closingManagerIds: string[],
+    salesExecIds: string[] = [],
+  ) {
+    return this.inventoryProjects.assignProject(
+      projectId,
+      sourcingManagerIds,
+      closingManagerIds,
+      salesExecIds,
+    );
   }
 
   async generateTowerPrompt(projectId: string, prompt: string) {
@@ -50,7 +76,11 @@ export class InventoryService {
     return this.inventoryTowerGen.saveGeneratedTower(projectId, towerData);
   }
 
-  async updateUnitStatus(unitId: string, data: UpdateUnitStatusDto, userId: string) {
+  async updateUnitStatus(
+    unitId: string,
+    data: UpdateUnitStatusDto,
+    userId: string,
+  ) {
     return this.inventoryUnits.updateUnitStatus(unitId, data, userId);
   }
 

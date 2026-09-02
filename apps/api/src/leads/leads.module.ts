@@ -25,9 +25,7 @@ import { NegotiationsModule } from './negotiations/negotiations.module.js';
     SiteVisitsModule,
     NegotiationsModule,
   ],
-  controllers: [
-    LeadsController,
-  ],
+  controllers: [LeadsController],
   providers: [
     LeadsService,
     LeadsQueryService,
@@ -35,4 +33,4 @@ import { NegotiationsModule } from './negotiations/negotiations.module.js';
     LeadsMediaService,
   ],
 })
-export class LeadsModule { }
+export class LeadsModule {}
