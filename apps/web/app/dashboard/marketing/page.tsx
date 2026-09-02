@@ -28,6 +28,7 @@ export default function MarketingHubPage() {
   const [emailCampaigns, setEmailCampaigns] = useState<CampaignItem[]>([]);
   const [smsCampaigns, setSmsCampaigns] = useState<SmsCampaignItem[]>([]);
   const [voiceCampaigns, setVoiceCampaigns] = useState<VoiceCampaignItem[]>([]);
+  const [metaCampaigns, setMetaCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeChannelTab, setActiveChannelTab] = useState<"ALL" | "EMAIL" | "SMS" | "VOICE">("ALL");
@@ -39,10 +40,11 @@ export default function MarketingHubPage() {
       try {
         setLoading(true);
         setError(null);
-        const [emailRes, smsRes, voiceRes] = await Promise.all([
+        const [emailRes, smsRes, voiceRes, metaRes] = await Promise.all([
           fetch(`${baseUrl}/api/marketing/campaigns`),
           fetch(`${baseUrl}/api/marketing/sms/campaigns`),
           fetch(`${baseUrl}/api/marketing/voice/campaigns`),
+          fetch(`${baseUrl}/api/marketing/ads/meta/campaigns`),
         ]);
 
         if (emailRes.ok) {
@@ -65,11 +67,19 @@ export default function MarketingHubPage() {
         } else {
           setVoiceCampaigns([]);
         }
+
+        if (metaRes.ok) {
+          const metaData = await metaRes.json();
+          setMetaCampaigns(metaData?.items || []);
+        } else {
+          setMetaCampaigns([]);
+        }
       } catch (err: any) {
         setError(err?.message || "Failed to load marketing dashboard");
         setEmailCampaigns([]);
         setSmsCampaigns([]);
         setVoiceCampaigns([]);
+        setMetaCampaigns([]);
       } finally {
         setLoading(false);
       }
@@ -186,6 +196,12 @@ export default function MarketingHubPage() {
       subtitle="Omnichannel marketing hub across AI Voice Calls, SMS Broadcasts, Email, and Meta Ads."
       headerRight={
         <div className="flex flex-wrap items-center gap-2">
+          <Link href="/dashboard/marketing/ads/meta">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-bold text-blue-700 border-blue-200 hover:bg-blue-50">
+              <span className="font-extrabold text-xs">f</span>
+              <span>Meta Ads</span>
+            </Button>
+          </Link>
           <Link href="/dashboard/marketing/voice">
             <Button variant="outline" size="sm" className="gap-1.5 text-xs font-bold text-indigo-700">
               <Phone className="w-3.5 h-3.5" />
@@ -221,6 +237,7 @@ export default function MarketingHubPage() {
         emailCampaigns={emailCampaigns}
         smsCampaigns={smsCampaigns}
         voiceCampaigns={voiceCampaigns}
+        metaCampaignsCount={metaCampaigns.length}
       />
 
       {/* ── Broadcasts Section with Channel Tabs ── */}
