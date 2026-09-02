@@ -1,3 +1,7 @@
+// ============================================================================
+// BrokerOS — Voice Telephony Media Streaming Gateway (WebSocket)
+// ============================================================================
+
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -9,25 +13,12 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, Injectable } from '@nestjs/common';
-import { prismaClient } from '@brokeros/prisma';
+import { Public } from '@thallesp/nestjs-better-auth';
 import { VoiceAudioService } from '../services/voice-audio.service.js';
 import { VoiceAudioTranscoder } from './voice-audio-transcoder.js';
+import { StreamSessionManager } from './voice-stream-session.js';
 
-export interface TelephonyStreamSession {
-  streamSid: string;
-  callSid: string;
-  campaignId?: string;
-  agentPlatform?: string;
-  voiceId: string;
-  voiceProvider: string;
-  firstMessage: string;
-  scriptPrompt: string;
-  socketId: string;
-  startedAt: Date;
-  audioPacketsReceived: number;
-  audioPacketsSent: number;
-}
-
+@Public()
 @WebSocketGateway({
   path: '/voice/stream',
   cors: {
@@ -40,10 +31,9 @@ export class VoiceMediaStreamGateway implements OnGatewayConnection, OnGatewayDi
   server!: Server;
 
   private readonly logger = new Logger(VoiceMediaStreamGateway.name);
-  private readonly prisma = prismaClient;
-  private readonly activeSessions = new Map<string, TelephonyStreamSession>();
+  private readonly sessionManager = new StreamSessionManager();
 
-  constructor(private readonly audioService?: VoiceAudioService) { }
+  constructor(private readonly audioService?: VoiceAudioService) {}
 
   handleConnection(client: Socket) {
     this.logger.log(`[MediaGateway] Telephony stream client connected: ${client.id}`);
@@ -51,13 +41,7 @@ export class VoiceMediaStreamGateway implements OnGatewayConnection, OnGatewayDi
 
   handleDisconnect(client: Socket) {
     this.logger.log(`[MediaGateway] Telephony stream client disconnected: ${client.id}`);
-    for (const [streamSid, session] of this.activeSessions.entries()) {
-      if (session.socketId === client.id) {
-        this.activeSessions.delete(streamSid);
-        this.logger.log(`[MediaGateway] Cleared stream session: ${streamSid} (Packets: ${session.audioPacketsReceived} in / ${session.audioPacketsSent} out)`);
-        break;
-      }
-    }
+    this.sessionManager.endSessionBySocket(client.id);
   }
 
   @SubscribeMessage('start')
@@ -66,25 +50,7 @@ export class VoiceMediaStreamGateway implements OnGatewayConnection, OnGatewayDi
     const callSid = data?.start?.callSid || data?.callSid || `call_${Date.now()}`;
     const customParams = data?.start?.customParameters || data?.customParameters || {};
 
-    const session: TelephonyStreamSession = {
-      streamSid,
-      callSid,
-      campaignId: customParams.campaignId,
-      agentPlatform: customParams.agentPlatform || 'SARVAM',
-      voiceId: customParams.voiceId || 'rahul',
-      voiceProvider: customParams.voiceProvider || 'sarvam',
-      firstMessage: customParams.firstMessage || 'Hello! Thank you for connecting with Skyline Realty. How may I assist your property search today?',
-      scriptPrompt: customParams.scriptPrompt || '',
-      socketId: client.id,
-      startedAt: new Date(),
-      audioPacketsReceived: 0,
-      audioPacketsSent: 0,
-    };
-
-    this.activeSessions.set(streamSid, session);
-    this.logger.log(
-      `[MediaGateway] Started media stream: ${streamSid} for Call: ${callSid} (Agent: ${session.agentPlatform})`,
-    );
+    const session = this.sessionManager.startSession(streamSid, callSid, client.id, customParams);
 
     // Speak First Message as soon as the media stream connects
     if (session.firstMessage && this.audioService) {
@@ -97,7 +63,7 @@ export class VoiceMediaStreamGateway implements OnGatewayConnection, OnGatewayDi
 
         if (audio?.audioBuffer) {
           const ulawBase64 = VoiceAudioTranscoder.pcm16ToBase64Ulaw(audio.audioBuffer);
-          const chunkSize = 160; // 20ms of μ-law audio
+          const chunkSize = 160; // 20ms of μ-law audio at 8kHz
           for (let offset = 0; offset < ulawBase64.length; offset += chunkSize) {
             const chunk = ulawBase64.substring(offset, offset + chunkSize);
             client.emit('media', {
@@ -105,7 +71,7 @@ export class VoiceMediaStreamGateway implements OnGatewayConnection, OnGatewayDi
               streamSid,
               media: { payload: chunk },
             });
-            session.audioPacketsSent += 1;
+            this.sessionManager.recordPacketSent(streamSid);
           }
         }
       } catch (err: any) {
@@ -119,28 +85,21 @@ export class VoiceMediaStreamGateway implements OnGatewayConnection, OnGatewayDi
   @SubscribeMessage('media')
   handleMediaChunk(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
     const streamSid = data?.streamSid;
-    const session = this.activeSessions.get(streamSid);
-
-    if (session) {
-      session.audioPacketsReceived += 1;
+    if (streamSid) {
+      this.sessionManager.recordPacketReceived(streamSid);
     }
   }
 
   @SubscribeMessage('stop')
   handleStreamStop(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
     const streamSid = data?.streamSid || data?.stop?.streamSid;
-    if (streamSid && this.activeSessions.has(streamSid)) {
-      const session = this.activeSessions.get(streamSid)!;
-      this.activeSessions.delete(streamSid);
-      this.logger.log(
-        `[MediaGateway] Stopped media stream: ${streamSid} (Duration: ${(Date.now() - session.startedAt.getTime()) / 1000}s)`,
-      );
+    if (streamSid) {
+      this.sessionManager.endSession(streamSid);
     }
     return { event: 'stopped', streamSid };
   }
 
   getActiveSessionsCount(): number {
-    return this.activeSessions.size;
+    return this.sessionManager.getActiveCount();
   }
 }
-

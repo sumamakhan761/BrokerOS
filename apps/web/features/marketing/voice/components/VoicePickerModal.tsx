@@ -277,10 +277,11 @@ export function VoicePickerModal({
   const availableProviders = ["ALL", ...Array.from(new Set(catalog.map((v) => v.provider.toLowerCase())))];
 
   const filteredVoices = catalog.filter((v) => {
+    const tags: readonly string[] = (v as any).tags || (v as any).recommendedFor || [];
     const matchesSearch =
       v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       v.accent.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (v.tags && v.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())));
+      tags.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesGender = selectedGender === "ALL" || v.gender.toLowerCase() === selectedGender.toLowerCase();
     const matchesProvider = selectedProvider === "ALL" || v.provider.toLowerCase() === selectedProvider.toLowerCase();
@@ -422,13 +423,13 @@ export function VoicePickerModal({
                   </div>
 
                   <p className="text-[11px] text-slate-500 line-clamp-2 italic mb-3">
-                    &quot;{voice.previewText}&quot;
+                    &quot;{(voice as any).previewText || (voice as any).description || ""}&quot;
                   </p>
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                   <div className="flex flex-wrap gap-1">
-                    {voice.tags?.slice(0, 2).map((t) => (
+                    {(((voice as any).tags || (voice as any).recommendedFor || []) as readonly string[]).slice(0, 2).map((t: string) => (
                       <span
                         key={t}
                         className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500"
@@ -443,7 +444,7 @@ export function VoicePickerModal({
                     onClick={(e) => {
                       e.stopPropagation();
                       if (onPlayPreview) {
-                        onPlayPreview(voice.id, voice.provider, voice.previewText || "");
+                        onPlayPreview(voice.id, voice.provider, (voice as any).previewText || (voice as any).description || "");
                       }
                       playVoiceSample(voice);
                     }}
