@@ -18,11 +18,94 @@ apps/web/
       layout.tsx       ← THE MAIN SHELL: role-based sidebar, NotificationBell, ChatWidget
                          Reads role from session, renders role-specific nav items
       [role-slug]/     ← One sub-dir per role (e.g., sales-executive/, pre-sales/, etc.)
+      marketing/
+        email/
+          campaigns/[id]/   ← Email campaign detail + analytics
+          campaigns/new/    ← 4-step email campaign wizard
+          settings/         ← Email provider integrations settings
+        sms/
+          campaigns/[id]/   ← SMS campaign detail + analytics
+          campaigns/new/    ← 4-step SMS campaign wizard
+          settings/         ← SMS gateway integrations settings
+        voice/
+          campaigns/[id]/   ← Voice campaign detail + analytics
+          campaigns/new/    ← 5-step voice campaign wizard
+          settings/         ← AI voice platform integrations settings
+
   features/
     leads/             ← Lead list, detail, follow-ups, call history UI
     inventory/         ← Project/unit browser UI
     brokers/           ← Broker management UI
     approvals/         ← Approval request UI
+    marketing/
+      shared/
+        AudienceSelector.tsx      ← Shared CSV / lead audience picker (all channels)
+        CampaignWizardStepper.tsx ← Shared step progress bar component
+      components/
+        MarketingChannelGrid.tsx  ← Channel picker grid (Email / SMS / Voice)
+        CampaignListTable.tsx     ← Unified broadcast table (all channels)
+        UnifiedBroadcastsTable.tsx
+        ProviderConfigCard.tsx    ← Generic provider connection card
+        MergeTagSelector.tsx      ← Merge tag chip inserter (shared)
+        CampaignFunnelAnalytics.tsx
+        RecipientActivityTable.tsx
+        AudienceSelector.tsx
+        EmailTemplatePicker.tsx
+        SmsCampaignListTable.tsx, SmsFunnelAnalytics.tsx
+        SmsMessageEditor.tsx, SmsPhoneMockup.tsx
+        SmsProviderConfigCard.tsx, SmsRecipientActivityTable.tsx
+      email/
+        components/
+          EmailCampaignListTable.tsx
+          EmailFunnelAnalytics.tsx
+          EmailMergeTagSelector.tsx
+          EmailProviderConfigCard.tsx
+          EmailRecipientTable.tsx
+          EmailTemplatePicker.tsx
+        wizard/
+          EmailStep1ProjectSender.tsx   ← Select project + sender identity + provider
+          EmailStep2Audience.tsx        ← CSV upload or lead segment picker
+          EmailStep3TemplateEditor.tsx  ← Rich HTML email template editor
+          EmailStep4ReviewLaunch.tsx    ← Preview, schedule, launch
+      sms/
+        components/
+          SmsCampaignListTable.tsx
+          SmsFunnelAnalytics.tsx
+          SmsMessageEditor.tsx
+          SmsPhoneMockup.tsx
+          SmsProviderConfigCard.tsx
+          SmsRecipientTable.tsx
+        wizard/
+          SmsStep1ProjectGateway.tsx    ← Select project + SMS gateway
+          SmsStep2Audience.tsx          ← CSV / lead audience picker
+          SmsStep3MessageMockup.tsx     ← Message composer + phone mockup preview
+          SmsStep4ReviewLaunch.tsx      ← Review, schedule, launch
+      voice/
+        components/
+          InBrowserAudioPlayer.tsx      ← Web Speech API + backend TTS preview player
+          VoiceCallLogsTable.tsx        ← Per-call outcome logs
+          VoiceCampaignFunnel.tsx       ← Dialed/answered/converted funnel chart
+          VoiceCampaignListTable.tsx    ← Campaign list with status badges
+          VoiceModelSelector.tsx        ← LLM model picker cards
+          VoicePickerModal.tsx          ← Voice persona browser modal (TTS catalog)
+          VoiceProviderConfigCard.tsx   ← AI platform connection card
+          composer/                     ← Studio subcomponents (see below)
+            AgentPlatformSelector.tsx   ← Active AI voice platform grid picker + workspace agents
+            StudioVapiSettings.tsx      ← Vapi STT, silence, speed, ambience, voicemail
+            StudioRetellSettings.tsx    ← Retell emotion, ambient, backchannel, reminder
+            StudioSarvamSettings.tsx    ← Sarvam Indic language, pace, duration
+            LivePromptVariablePreview.tsx ← Real-time interpolation preview badge
+            VoiceScriptEditor.tsx       ← Script templates, first message, prompt, tag chips
+            index.ts                    ← Barrel export
+        wizard/
+          VoiceStep1ProjectSchedule.tsx  ← Select project + campaign schedule
+          VoiceStep2Audience.tsx         ← CSV / lead audience picker
+          VoiceStep3TelephonyCarrier.tsx ← PSTN carrier selection (Vobiz/Exotel/Twilio/Telnyx)
+          VoiceStep4AgentComposer.tsx    ← AI agent composer COORDINATOR (~250 lines, delegates to composer/)
+          VoiceStep5ReviewLaunch.tsx     ← Final review, test call, launch
+    types.ts           ← All shared marketing TypeScript types (VoiceAgentIntegrationRecord, CsvLeadRow, etc.)
+    index.ts           ← Feature barrel export
+
   components/
     analytics/         ← Recharts-based chart components
     chat/              ← ChatWidget (Socket.IO driven)
@@ -31,12 +114,25 @@ apps/web/
     leads/             ← Lead-specific shared components
     notifications/     ← NotificationBell component
     payments/          ← Payment display components
-    ui/                ← Primitive UI elements
+    ui/                ← Primitive UI elements (Button, Badge, etc.)
+
   lib/
     auth-client.ts     ← Better Auth client (createAuthClient)
     utils.ts           ← Shared utility functions
+
   middleware.ts        ← Route protection (cookie check only)
 ```
+
+---
+
+## Marketing Feature Conventions
+
+- Each channel (email, sms, voice) follows the same structure: `components/` + `wizard/` (N-step wizard).
+- Wizard steps are thin page-level components. Business logic lives in subcomponents in `components/`.
+- `VoiceStep4AgentComposer.tsx` is a coordinator only — it must stay < 300 lines. All studio UI is in `components/composer/`.
+- Shared audience picking and campaign stepping live in `features/marketing/shared/`.
+- All shared TypeScript types for marketing live in `features/marketing/types.ts` — do not scatter them across wizard files.
+- Merge tags, script templates, and provider catalogs are imported from `@brokeros/constants`. Never hardcode them in UI.
 
 ---
 
@@ -71,7 +167,8 @@ Run from repository root:
 
 ```bash
 pnpm dev:web                     # Next.js dev server (port 3000) (or pnpm --filter @brokeros/web dev)
-pnpm --filter @brokeros/web build  # production build
+pnpm --filter @brokeros/web build  # production build (next build)
+pnpm --filter @brokeros/web exec next build  # full verified production build
 pnpm --filter @brokeros/web start  # serve production build
 pnpm --filter @brokeros/web lint   # ESLint
 ```

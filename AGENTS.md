@@ -13,7 +13,7 @@ BrokerOS is an Enterprise Real Estate CRM for a brokerage business. Two complete
 
 Same database. Same inventory. Separated by exactly one flag: `Project.isCpProject`. Never mix data across this boundary.
 
-Stack: NestJS 11 backend · PostgreSQL + Prisma 7 · Next.js 16 frontend (App Router) · Expo 54 mobile (Expo Router 6). All TypeScript. Auth: Better Auth everywhere.
+Stack: NestJS 11 backend · PostgreSQL + Prisma 7 · Next.js 16 frontend (App Router) · Expo 54 mobile (Expo Router 6) · BullMQ async workers. All TypeScript. Auth: Better Auth everywhere.
 
 ---
 
@@ -23,6 +23,7 @@ Stack: NestJS 11 backend · PostgreSQL + Prisma 7 · Next.js 16 frontend (App Ro
 - Structure: `apps/` (deployable), `packages/` (shared), `integrations/` (external adapters).
 - Apps: `apps/api/` (NestJS API), `apps/web/` (Next.js), `apps/mobile/` (Expo RN), `apps/workers/` (BullMQ async).
 - Packages: `packages/types/` (@brokeros/types), `packages/validators/` (@brokeros/validators), `packages/prisma/` (@brokeros/prisma), `packages/storage/` (@brokeros/storage), `packages/constants/` (@brokeros/constants).
+- Integrations: `integrations/voice/` (@brokeros/int-voice), `integrations/mail/`, `integrations/sms/` — one folder per external provider.
 
 - **CRITICAL**: Before you write any code or start any task, you **MUST** read the scoped `AGENTS.md` in the corresponding subtree:
   - For ANY request related to the API, use `view_file` to read `apps/api/AGENTS.md`
@@ -31,7 +32,7 @@ Stack: NestJS 11 backend · PostgreSQL + Prisma 7 · Next.js 16 frontend (App Ro
 - Before proposing any custom system, check if an existing service/module/hook already handles it.
 
 - **Environment Law:** Never hardcode secrets. We use a split architecture:
-  - **Root `/.env`** is for heavy infrastructure: Database URLs, Better Auth secrets, Groq AI keys, Vercel Blob tokens.
+  - **Root `/.env`** is for heavy infrastructure: Database URLs, Better Auth secrets, Groq AI keys, Vercel Blob tokens and telephony, AI voice API keys when using marketing deparment.
   - **App-level `.env`s** (`apps/web`, `apps/mobile`, `apps/api`) are ONLY for local routing URLs and specific client keys (like Google Maps).
 - Use repo-root-relative paths in all references: `apps/api/src/leads/leads.service.ts`, not absolute paths.
 
@@ -41,8 +42,8 @@ Stack: NestJS 11 backend · PostgreSQL + Prisma 7 · Next.js 16 frontend (App Ro
 
 We are migrating shared business logic out of the apps and into the `packages/` directory using Turborepo workspaces.
 
-- **`@brokeros/constants`**: Pure TS constants, enums, UI colors, and pure utility functions (e.g., Lead Statuses, Role definitions).
-- **`@brokeros/types`**: Shared TypeScript interfaces and DTO definitions.
+- **`@brokeros/constants`**: Pure TS constants, enums, UI colors, and pure utility functions. Includes domain modules: `campaign.ts`, `email.ts`, `sms.ts`, `voice/` (telephony, agents, voices, scripts, pricing, normalizer). Decomposed into sub-modules — never add a monolithic flat file.
+- **`@brokeros/types`**: Shared TypeScript interfaces and DTO definitions. Includes domain modules: `common.ts`, `email.ts`, `sms.ts`, `voice/` (telephony, agent, options, webhook, analytics, streaming).
 - **`@brokeros/validators`**: Shared Zod schemas for form validation and API payloads.
 - **`@brokeros/prisma`**: The central Prisma ORM client, schema, and migrations.
 - **`@brokeros/storage`**: Centralized Vercel Blob storage wrappers.
@@ -52,6 +53,21 @@ We are migrating shared business logic out of the apps and into the `packages/` 
 2. **New Code:** When creating *new* shared constants, types, or Zod validators that are used across the API and frontend/mobile, put them in the respective `packages/` folder.
 3. **Importing:** Import them into apps using the package name (e.g., `import { LEAD_STATUS } from '@brokeros/constants'`).
 4. **No Side Effects:** Packages must be pure TypeScript. Do not include React, Next.js, or NestJS specific dependencies in `packages/`.
+
+---
+
+## Integrations
+
+External service adapters live in `integrations/` — one directory per channel. Each integration is a self-contained TypeScript package.
+
+- **`integrations/voice/`** (`@brokeros/int-voice`): 8 AI voice agent adapters (`vapi`, `retell`, `sarvam`, `bolna`, `elevenlabs`, `livekit`, `openai-realtime`, `pipecat`) + 4 PSTN carrier adapters (`vobiz`, `exotel`, `twilio`, `telnyx`) via `bridge/carrier-bridge-dispatcher.ts`.
+- **`integrations/mail/`**: Email provider adapters (`sendgrid`, `brevo`, `mailchimp`, `aws-ses`).
+- **`integrations/sms/`**: SMS gateway adapters (`twilio`, `gupshup`, `sinch`, `aws-sns`).
+
+**CRITICAL RULES FOR AGENTS:**
+- Never call external APIs directly from `apps/api/`. Route all external calls through the corresponding `integrations/` adapter.
+- Never inline provider credentials or API keys inside integration code. Use the root `.env` exclusively.
+- When adding a new provider, create a new sub-directory inside the appropriate `integrations/` channel folder.
 
 ---
 
@@ -77,6 +93,8 @@ We are migrating shared business logic out of the apps and into the `packages/` 
 - Never delete or edit applied migration files.
 - Soft-delete pattern: `deletedAt DateTime?`. Filter `deletedAt: null` in all list queries.
 
+---
+
 ## Domain Glossary
 
 | Term | Definition |
@@ -85,7 +103,7 @@ We are migrating shared business logic out of the apps and into the `packages/` 
 | **CP / Channel Partner** | External broker network operation. All projects: `isCpProject = true` |
 | **Broker** | External real-estate agent. NOT a system user. Managed as `Broker` DB record by a Sourcing Manager |
 | **Lead** | A potential buyer. Fields: `status`, `temperature` (HOT/WARM/COLD), `score` (AI int), `brokerId` (CP world), `assignedUserId` |
-| **Site Visit** | Physical visit to a project. GPS-verified via `SiteVisitVerification` ( selfie + coordinates) |
+| **Site Visit** | Physical visit to a project. GPS-verified via `SiteVisitVerification` (selfie + coordinates) |
 | **Negotiation** | Discount discussion record. Required before creating a discounted booking |
 | **Booking** | Confirmed sale. Linked to a `Unit` (now SOLD), `Customer`, optionally a `Broker` |
 | **Customer** | Created from Lead when booking is created. Holds post-sales identity |
@@ -95,6 +113,19 @@ We are migrating shared business logic out of the apps and into the `packages/` 
 | **ManagerTask** | Daily cold call target set by PRE_SALES_MANAGER or SALES_MANAGER per exec |
 | **DailyPerformanceLog** | Daily snapshot per exec: calls done, target, follow-ups done, missed follow-up IDs |
 | **isCpProject** | The single boolean that separates the two entire business worlds |
+| **MarketingCampaign** | A broadcast campaign — Email, SMS, or AI Voice — targeting a set of leads from a project |
+| **VoiceAgentIntegration** | A connected AI voice platform (Vapi, Retell, Sarvam, Bolna, etc.) configured by admin |
+| **CsvLeadRow** | A single row from an uploaded CSV file used as audience for a campaign |
+| **CarrierBridge** | The PSTN telephony layer that physically dials numbers (Vobiz, Exotel, Twilio, Telnyx) |
+
+---
+
+## Workers Law
+
+- **BullMQ only.** All async jobs are enqueued via BullMQ and processed by `apps/workers/`.
+- Workers: `marketing-email.processor.ts`, `marketing-sms.processor.ts`, `marketing-voice.processor.ts`.
+- Marketing voice processor: integrates `normalizeVoiceLeadVariables` from `@brokeros/constants` and `tryCarrierBridgeDispatch` from `@brokeros/int-voice`.
+- Never do heavy I/O (external API calls, file processing, CSV parsing) inside the NestJS request cycle. Enqueue a BullMQ job instead.
 
 ---
 
@@ -110,12 +141,20 @@ As BrokerOS grows to include background workers, 3rd-party integrations, and new
 
 ## Map
 
-- API modules (`apps/api/src/`): `auth`, `leads`, `inventory`, `brokers`, `approvals`, `chat`, `notifications`, `dashboard`.
-- Web routes (`apps/web/app/`): `login` (public), `dashboard` (role-protected shell + sub-routes per role).
+- API modules (`apps/api/src/`): `auth`, `leads`, `inventory`, `brokers`, `approvals`, `chat`, `notifications`, `dashboard`, `marketing` (email/sms/voice sub-modules).
+- Marketing API sub-modules (`apps/api/src/marketing/`):
+  - `email/` — 4 controllers (campaigns, integrations, tracking, webhooks) + 4 services (analytics, audience, integrations, tracking).
+  - `sms/` — 4 controllers + 4 services (same pattern as email).
+  - `voice/` — 5 controllers (campaigns, integrations, audio, test, webhooks) + 6 services (campaign, dispatcher, analytics, audience, audio, tracking, integrations) + WebSocket gateway (voice-media-stream).
+- Web routes (`apps/web/app/`): `login` (public), `dashboard` (role-protected shell + sub-routes per role), `dashboard/marketing/` (email/sms/voice campaign management + settings).
+- Web marketing features (`apps/web/features/marketing/`):
+  - `email/` — 4-step wizard (Project/Sender → Audience → Template Editor → Review/Launch) + analytics components.
+  - `sms/` — 4-step wizard (Project/Gateway → Audience → Message/Mockup → Review/Launch) + analytics components.
+  - `voice/` — 5-step wizard (Project/Schedule → Audience → Telephony Carrier → AI Agent Composer [6 subcomponents] → Review/Launch) + analytics + voice picker modal.
 - Mobile route groups (`apps/mobile/app/`): `(auth)` (login/signup), `(dashboard)` (14 role-specific screen dirs).
-- Workers (`apps/workers/src/`): BullMQ processors for async jobs (SMS, portal sync, AI callbacks).
-- Shared packages: `packages/prisma/` (Schema & DB Client), `packages/storage/` (Blob wrappers), `packages/types/` (TS interfaces), `packages/validators/` (Zod schemas), `packages/constants/` (Pure constants).
-- Integrations: `integrations/` — one folder per external provider (telephony, messaging, portals, ads, payments, AI).
+- Workers (`apps/workers/src/`): BullMQ processors for async jobs — `marketing-email.processor.ts`, `marketing-sms.processor.ts`, `marketing-voice.processor.ts`.
+- Shared packages: `packages/prisma/` (Schema & DB Client), `packages/storage/` (Blob wrappers), `packages/types/` (TS interfaces with domain sub-modules), `packages/validators/` (Zod schemas), `packages/constants/` (Pure constants with domain sub-modules).
+- Integrations: `integrations/voice/` (8 AI agents + 4 PSTN carriers), `integrations/mail/` (4 email providers), `integrations/sms/` (4 SMS gateways).
 - Skills: `.agents/skills/` (root), `apps/api/.agents/skills/`, `apps/web/.agents/skills/`, `apps/mobile/.agents/skills/`.
 
 ---

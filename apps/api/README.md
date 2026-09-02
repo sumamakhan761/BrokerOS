@@ -2,7 +2,7 @@
 
 # Backend — BrokerOS
 
-**NestJS 11 REST API + Socket.IO real-time server**
+**NestJS 11 REST API + Socket.IO real-time server + BullMQ workers**
 
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma)](https://www.prisma.io/)
@@ -15,7 +15,7 @@
 
 ## Overview
 
-The backend is a modular NestJS 11 application written in TypeScript ESM. It serves the REST API consumed by the Next.js frontend and the Expo mobile app, and runs Socket.IO gateways for real-time chat and notifications.
+The backend is a modular NestJS 11 application written in TypeScript ESM. It serves the REST API consumed by the Next.js frontend and the Expo mobile app, runs Socket.IO gateways for real-time chat and notifications, and enqueues async jobs to the BullMQ worker cluster.
 
 ---
 
@@ -30,47 +30,65 @@ apps/api/src/
 │
 ├── leads/             Lead lifecycle management
 │   ├── core/                  Lead CRUD, assignment, scoring
-│   ├── bookings/              Booking creation, customer conversion
-│   ├── call-records/          Call logging + AI transcription
+│   ├── bookings/              Booking creation, customer conversion, post-sales, payments
+│   ├── call-records/          Call logging + Groq AI transcription
 │   ├── follow-ups/            Scheduled follow-up management
 │   ├── notes/                 Lead notes
 │   └── site-visits/           GPS-verified site visits + selfie upload
 │
 ├── inventory/         Property inventory
-│   ├── core/                  Project, tower, floor, unit CRUD
 │   ├── projects/              Builder → Project management
-│   ├── towers/                Tower configuration
+│   ├── towers/                Tower config + AI generation (Groq)
 │   ├── units/                 Unit status (Available → Blocked → Sold)
 │   └── documents/             Price sheets, floor plans, offers, construction updates
 │
-├── brokers/           Channel Partner broker management
-│   └── *                      Broker CRUD, meetings, referrals, settlements, KYC docs
-│
-├── approvals/         Multi-step approval workflows
-│   └── *                      ApprovalRequest + FinancialApproval
-│
-├── chat/              Real-time messaging
-│   └── *                      Socket.IO gateway, chat rooms, messages
-│
-├── notifications/     Push & in-app notifications
-│   └── *                      Socket.IO gateway + Expo Push SDK
+├── brokers/           Channel Partner broker management (CRUD, meetings, referrals, KYC)
+├── approvals/         Multi-step approval workflows (ApprovalRequest + FinancialApproval)
+├── chat/              Socket.IO gateway — chat rooms + messages
+├── notifications/     Socket.IO gateway + Expo Push SDK
 │
 ├── dashboard/         Role-specific analytics (largest module)
-│   ├── core/                  Shared dashboard utilities, caching
-│   ├── pre-sales/             Pre-sales exec daily performance
-│   ├── sales-exec/            Sales pipeline & conversion metrics
-│   ├── sales-manager/         Team oversight & approvals
-│   ├── post-sales/            Loan, agreement, possession tracking
-│   ├── sourcing-manager/      Broker recruitment metrics
-│   ├── closing-manager/       On-site booking analytics
-│   ├── channel-partner/       CP-wide performance
-│   ├── business-manager/      Cross-business overview
-│   ├── manager/               Shared manager utilities
-│   └── employees/             Employee performance tracking
+│   ├── pre-sales/     Pre-sales exec daily performance
+│   ├── sales-exec/    Sales pipeline & conversion metrics
+│   ├── sales-manager/ Team oversight & approvals
+│   ├── post-sales/    Loan, agreement, possession tracking
+│   ├── sourcing-manager/ Broker recruitment metrics
+│   ├── closing-manager/  On-site booking analytics
+│   ├── channel-partner/  CP-wide performance
+│   ├── business-manager/ Cross-business overview
+│   ├── manager/       Shared manager utilities
+│   └── employees/     Employee performance tracking
 │
-├── lib/               Shared infrastructure
-│   ├── database/              PrismaModule wrapper around @brokeros/prisma
-│   └── storage/               Vercel Blob upload/download helpers
+├── marketing/         Omnichannel marketing campaigns
+│   ├── marketing.module.ts    Root module
+│   ├── shared/                CSV template download controller
+│   │
+│   ├── email/                 Email Campaign Module
+│   │   ├── controllers/       campaigns, integrations, tracking, webhooks
+│   │   ├── services/          analytics, audience, integrations, tracking
+│   │   └── email.service.ts   Facade coordinator
+│   │
+│   ├── sms/                   SMS Campaign Module (parallel to email)
+│   │   ├── controllers/       campaigns, integrations, tracking, webhooks
+│   │   ├── services/          analytics, audience, integrations, tracking
+│   │   └── sms.service.ts     Facade coordinator
+│   │
+│   └── voice/                 AI Voice Campaign Module
+│       ├── controllers/       campaigns, integrations, audio, test, webhooks
+│       ├── gateway/           WebSocket media stream gateway + stream session manager
+│       ├── services/
+│       │   ├── voice-campaign.service.ts    Campaign CRUD + lifecycle
+│       │   ├── voice-dispatcher.service.ts  AI call dispatch + carrier bridge
+│       │   ├── voice-analytics.service.ts
+│       │   ├── voice-audience.service.ts
+│       │   ├── voice-audio.service.ts       TTS preview generation
+│       │   ├── voice-integrations.service.ts
+│       │   └── voice-tracking.service.ts
+│       └── voice.service.ts   Facade coordinator
+│
+└── lib/               Shared infrastructure
+    ├── database/      PrismaModule wrapper around @brokeros/prisma
+    └── storage/       Vercel Blob upload/download helpers
 ```
 
 ## Development
@@ -96,7 +114,6 @@ This monorepo uses a **Split Environment Architecture**.
 
 #### A. Root Infrastructure (`/.env`)
 The heavy infrastructure secrets must be placed in the **root** `.env` file (at `../../.env`).
-```
 
 Populate these in the **root `.env`**:
 - **`DATABASE_URL`**: Use `postgresql://crm:crm@localhost:5432/crm` for local Docker, or a cloud Neon URL.
