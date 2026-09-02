@@ -26,6 +26,7 @@ import {
   Phone,
   PhoneCall,
   ArrowLeft,
+  Globe,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -298,6 +299,7 @@ export default function DashboardLayout({
     const isEmailSub = pathname.startsWith("/dashboard/marketing/email");
     const isSmsSub = pathname.startsWith("/dashboard/marketing/sms");
     const isVoiceSub = pathname.startsWith("/dashboard/marketing/voice");
+    const isAdsSub = pathname.startsWith("/dashboard/marketing/ads");
     if (isEmailSub) {
       navLinks = [
         { name: "Email Overview", href: "/dashboard/marketing/email", icon: LayoutDashboard, roles: ["MARKETING"] },
@@ -316,9 +318,15 @@ export default function DashboardLayout({
         { name: "New Voice Call", href: "/dashboard/marketing/voice/campaigns/new", icon: PhoneCall, roles: ["MARKETING"] },
         { name: "Carrier & AI Gateways", href: "/dashboard/marketing/voice/settings", icon: Settings, roles: ["MARKETING"] },
       ];
+    } else if (isAdsSub) {
+      navLinks = [
+        { name: "Meta Ads Overview", href: "/dashboard/marketing/ads/meta", icon: LayoutDashboard, roles: ["MARKETING"] },
+        { name: "Ad Settings & Webhooks", href: "/dashboard/marketing/ads/settings", icon: Settings, roles: ["MARKETING"] },
+      ];
     } else {
       navLinks = [
         { name: "Overview", href: "/dashboard/marketing", icon: LayoutDashboard, roles: ["MARKETING"] },
+        { name: "Meta Ads (FB/IG)", href: "/dashboard/marketing/ads/meta", icon: Globe, roles: ["MARKETING"] },
         { name: "AI Voice Calling", href: "/dashboard/marketing/voice", icon: Phone, roles: ["MARKETING"] },
         { name: "SMS Campaigns", href: "/dashboard/marketing/sms", icon: MessageSquare, roles: ["MARKETING"] },
         { name: "Email Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["MARKETING"] },
