@@ -95,7 +95,7 @@ import { Users, Plus } from 'lucide-react-native';
 
 export function EmptyLeadState({ onAddLead }: { onAddLead: () => void }) {
   return (
-    <View className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200/80 dark:border-slate-800 items-center justify-center text-center space-y-3">
+    <View className="bg-white rounded-3xl p-8 border border-slate-200/80 dark:border-slate-800 items-center justify-center text-center space-y-3">
       <View className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/50 items-center justify-center border border-blue-200/60 dark:border-blue-800">
         <Users size={24} color="#2563eb" />
       </View>

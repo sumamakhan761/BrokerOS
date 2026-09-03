@@ -23,5 +23,4 @@
 | **Text Primary** | `#0f172a` | `text-slate-900` | Headings, amounts, bold values |
 | **Text Muted** | `#64748b` | `text-slate-500` | Timestamps, subtitles, secondary captions |
 | **Canvas Dark** | `#020617` | `dark:bg-slate-950` | Screen canvas in dark mode |
-| **Surface Card Dark** | `#0f172a` | `dark:bg-slate-900` | Elevated surfaces in dark mode |
-| **Border Dark** | `#1e293b` | `dark:border-slate-800` | Card outlines in dark mode |
+Elevated surfaces in dark mode |

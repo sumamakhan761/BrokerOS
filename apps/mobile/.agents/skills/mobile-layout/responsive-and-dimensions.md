@@ -34,7 +34,7 @@ Most users navigate mobile CRM screens single-handedly using their right or left
 // Floating Easy-Reach Bottom Action Bar
 <View 
   style={{ paddingBottom: insets.bottom + 12 }} 
-  className="absolute bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-slate-900/95 border-t border-slate-200/80 dark:border-slate-800 flex-row gap-3"
+  className="absolute bottom-0 left-0 right-0 p-4 bg-white/95 border-t border-slate-200/80 dark:border-slate-800 flex-row gap-3"
 >
   <Pressable className="flex-1 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 items-center justify-center">
     <Text className="font-bold text-slate-800 dark:text-slate-200">Log Remark</Text>
