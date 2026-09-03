@@ -965,6 +965,7 @@ model Lead {
   smsRecipients         SmsRecipient[]
   voiceRecipients       VoiceRecipient[]
   metaLeadLogs          MetaLeadWebhookLog[]    @relation("MetaLeadLog")
+  googleLeadLogs        GoogleLeadWebhookLog[]  @relation("GoogleLeadLog")
 
   @@index([status])
   @@index([temperature])
@@ -3165,4 +3166,88 @@ model MetaLeadWebhookLog {
   @@index([pageId])
   @@map("meta_lead_webhook_log")
 }
+
+// ─────────────────────────────────────────────
+// 18. DOMAIN 14: GOOGLE ADS & GOOGLE ADS API
+// ─────────────────────────────────────────────
+
+model GoogleAdIntegration {
+  id                  String    @id @default(uuid())
+  name                String
+  customerId          String    // e.g. "123-456-7890" or "1234567890"
+  managerCustomerId   String?   // Optional MCC CID
+  refreshToken        String    @db.Text
+  currency            String    @default("INR")
+  timezone            String?
+  descriptiveName     String?
+  accountStatus       String    @default("ENABLED") // "ENABLED", "SUSPENDED", "CLOSED"
+  isActive            Boolean   @default(true)
+  isDefault           Boolean   @default(false)
+  lastSyncedAt        DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  campaigns           GoogleCampaignCache[]
+  webhookLogs         GoogleLeadWebhookLog[]
+
+  @@index([customerId])
+  @@index([isActive])
+  @@map("google_ad_integration")
+}
+
+model GoogleCampaignCache {
+  id                     String              @id // Google Campaign Resource ID or numeric ID
+  integrationId          String
+  integration            GoogleAdIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  name                   String
+  advertisingChannelType String              // "SEARCH", "PERFORMANCE_MAX", "DISPLAY", "VIDEO"
+  status                 String              // "ENABLED", "PAUSED", "REMOVED"
+  dailyBudget            Float?
+  spend                  Float               @default(0) // Converted from cost_micros
+  impressions            Int                 @default(0)
+  clicks                 Int                 @default(0)
+  ctr                    Float               @default(0)
+  cpc                    Float               @default(0)
+  conversions            Float               @default(0)
+  costPerConversion      Float               @default(0)
+  adGroupsData           Json?               // Cached ad groups and targeting
+  searchKeywordsData     Json?               // Cached keywords with match types & Quality Scores (1-10)
+  startTime              DateTime?
+  stopTime               DateTime?
+  lastSyncedAt           DateTime            @default(now())
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  webhookLogs            GoogleLeadWebhookLog[]
+
+  @@index([integrationId])
+  @@index([status])
+  @@index([advertisingChannelType])
+  @@map("google_campaign_cache")
+}
+
+model GoogleLeadWebhookLog {
+  id              String               @id @default(uuid())
+  integrationId   String?
+  integration     GoogleAdIntegration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+  campaignCacheId String?
+  campaignCache   GoogleCampaignCache? @relation(fields: [campaignCacheId], references: [id], onDelete: SetNull)
+  googleLeadId    String               // Google lead form submission ID
+  formId          String?
+  campaignId      String?
+  gclid           String?              // Google Click ID
+  leadId          String?
+  lead            Lead?                @relation("GoogleLeadLog", fields: [leadId], references: [id], onDelete: SetNull)
+  fieldData       Json?
+  rawPayload      Json?
+  status          String               @default("PROCESSED") // "PROCESSED", "FAILED"
+  errorMessage    String?
+  createdAt       DateTime             @default(now())
+
+  @@index([googleLeadId])
+  @@index([campaignId])
+  @@index([formId])
+  @@map("google_lead_webhook_log")
+}
+
 
