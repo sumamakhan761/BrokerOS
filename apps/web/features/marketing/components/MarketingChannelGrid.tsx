@@ -42,20 +42,20 @@ export function MarketingChannelGrid({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Meta Ads (Facebook & Instagram) Card */}
+        {/* Ads Marketing (Meta, Facebook & Instagram) Card */}
         <Link
-          href="/dashboard/marketing/ads/meta"
+          href="/dashboard/marketing/ads"
           className="group relative bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs hover:border-blue-400 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between"
         >
           <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500" />
           <div>
             <div className="flex items-center justify-between mb-3.5">
               <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 font-extrabold text-base">
-                f
+                <Globe className="w-5 h-5" strokeWidth={2.2} />
               </div>
               <div className="flex items-center gap-1.5">
                 <Badge variant="success" className="text-[10px] font-bold">
-                  Meta Graph
+                  Active Engine
                 </Badge>
                 <span className="text-[11px] font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
                   {metaCampaignsCount} Synced
@@ -63,14 +63,14 @@ export function MarketingChannelGrid({
               </div>
             </div>
             <h3 className="text-sm font-extrabold text-[var(--text-primary)] group-hover:text-blue-600 transition-colors">
-              Meta Ads (FB & IG)
+              Ads Marketing
             </h3>
             <p className="text-xs text-[var(--text-tertiary)] mt-1 line-clamp-2">
-              Track advertising spend, CPL, ad creatives & auto-ingest Instant Lead Forms into CRM.
+              Track campaigns, spend, CPL & ad creatives across Meta (FB/IG) with instant CRM lead capture.
             </p>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600">
-            <span>Open Ads Command</span>
+            <span>Open Ads Engine</span>
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </div>
         </Link>
