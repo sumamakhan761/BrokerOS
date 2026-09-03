@@ -1,0 +1,24 @@
+{
+  "name": "@brokeros/int-ads-google",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Google Ads API (Search, PMax, Display & Lead Forms) Adapter for BrokerOS",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@brokeros/constants": "workspace:*",
+    "@brokeros/types": "workspace:*"
+  }
+}
