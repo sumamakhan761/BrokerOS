@@ -27,7 +27,10 @@ import {
   PhoneCall,
   ArrowLeft,
   Globe,
+  Search,
+  Video,
 } from "lucide-react";
+import { InstagramIcon } from "@/components/ui/InstagramIcon";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -320,13 +323,16 @@ export default function DashboardLayout({
       ];
     } else if (isAdsSub) {
       navLinks = [
-        { name: "Meta Ads Overview", href: "/dashboard/marketing/ads/meta", icon: LayoutDashboard, roles: ["MARKETING"] },
-        { name: "Ad Settings & Webhooks", href: "/dashboard/marketing/ads/settings", icon: Settings, roles: ["MARKETING"] },
+        { name: "Ads Hub Overview", href: "/dashboard/marketing/ads", icon: LayoutDashboard, roles: ["MARKETING"] },
+        { name: "Meta (Facebook) Ads", href: "/dashboard/marketing/ads/meta", icon: Globe, roles: ["MARKETING"] },
+        { name: "Instagram Ads", href: "/dashboard/marketing/ads/instagram", icon: InstagramIcon, roles: ["MARKETING"] },
+        { name: "Google Ads", href: "/dashboard/marketing/ads/google", icon: Search, roles: ["MARKETING"] },
+        { name: "YouTube Video Ads", href: "/dashboard/marketing/ads/youtube", icon: Video, roles: ["MARKETING"] },
       ];
     } else {
       navLinks = [
         { name: "Overview", href: "/dashboard/marketing", icon: LayoutDashboard, roles: ["MARKETING"] },
-        { name: "Meta Ads (FB/IG)", href: "/dashboard/marketing/ads/meta", icon: Globe, roles: ["MARKETING"] },
+        { name: "Ads Marketing", href: "/dashboard/marketing/ads", icon: Globe, roles: ["MARKETING"] },
         { name: "AI Voice Calling", href: "/dashboard/marketing/voice", icon: Phone, roles: ["MARKETING"] },
         { name: "SMS Campaigns", href: "/dashboard/marketing/sms", icon: MessageSquare, roles: ["MARKETING"] },
         { name: "Email Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["MARKETING"] },
