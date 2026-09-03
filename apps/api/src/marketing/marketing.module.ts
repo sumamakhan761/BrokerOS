@@ -39,12 +39,23 @@ import { VoiceAudioController } from './voice/controllers/voice-audio.controller
 import { VoiceTestController } from './voice/controllers/voice-test.controller.js';
 import { VoiceWebhooksController } from './voice/controllers/voice-webhooks.controller.js';
 
-// Meta Ads Domain
+// Meta & Instagram Ads Domain
 import { MetaAdsController } from './ads/meta/controllers/meta-ads.controller.js';
 import { MetaWebhooksController } from './ads/meta/controllers/meta-webhooks.controller.js';
 import { MetaAdsService } from './ads/meta/services/meta-ads.service.js';
 import { MetaSyncService } from './ads/meta/services/meta-sync.service.js';
 import { MetaLeadsService } from './ads/meta/services/meta-leads.service.js';
+import { InstagramAdsController } from './ads/instagram/controllers/instagram-ads.controller.js';
+import { InstagramAdsService } from './ads/instagram/services/instagram-ads.service.js';
+
+// Google & YouTube Ads
+import { GoogleAdsController } from './ads/google/controllers/google-ads.controller.js';
+import { GoogleWebhooksController } from './ads/google/controllers/google-webhooks.controller.js';
+import { GoogleAdsService } from './ads/google/services/google-ads.service.js';
+import { GoogleSyncService } from './ads/google/services/google-sync.service.js';
+import { GoogleLeadsService } from './ads/google/services/google-leads.service.js';
+import { YouTubeAdsController } from './ads/youtube/controllers/youtube-ads.controller.js';
+import { YouTubeAdsService } from './ads/youtube/services/youtube-ads.service.js';
 
 // Shared
 import { SampleCsvController } from './shared/sample-csv.controller.js';
@@ -71,9 +82,15 @@ import { SampleCsvController } from './shared/sample-csv.controller.js';
     VoiceTestController,
     VoiceWebhooksController,
 
-    // Meta Ads Controllers
+    // Meta & Instagram Ads Controllers
     MetaAdsController,
     MetaWebhooksController,
+    InstagramAdsController,
+
+    // Google & YouTube Ads Controllers
+    GoogleAdsController,
+    GoogleWebhooksController,
+    YouTubeAdsController,
 
     // Shared Controllers
     SampleCsvController,
@@ -104,10 +121,17 @@ import { SampleCsvController } from './shared/sample-csv.controller.js';
     VoiceMediaStreamGateway,
     VoiceService,
 
-    // Meta Ads Services
+    // Meta & Instagram Ads Services
     MetaAdsService,
     MetaSyncService,
     MetaLeadsService,
+    InstagramAdsService,
+
+    // Google & YouTube Ads Services
+    GoogleAdsService,
+    GoogleSyncService,
+    GoogleLeadsService,
+    YouTubeAdsService,
   ],
   exports: [
     EmailService,
@@ -135,6 +159,12 @@ import { SampleCsvController } from './shared/sample-csv.controller.js';
     MetaAdsService,
     MetaSyncService,
     MetaLeadsService,
+    InstagramAdsService,
+
+    GoogleAdsService,
+    GoogleSyncService,
+    GoogleLeadsService,
+    YouTubeAdsService,
   ],
 })
 export class MarketingModule {}
