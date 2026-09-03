@@ -30,6 +30,9 @@ importers:
       '@brokeros/constants':
         specifier: workspace:*
         version: link:../../packages/constants
+      '@brokeros/int-ads-google':
+        specifier: workspace:*
+        version: link:../../integrations/ads/google
       '@brokeros/int-ads-meta':
         specifier: workspace:*
         version: link:../../integrations/ads/meta
@@ -458,6 +461,9 @@ importers:
       react-dom:
         specifier: 19.1.0
         version: 19.1.0(react@19.1.0)
+      react-icons:
+        specifier: ^4.10.1
+        version: 4.12.0(react@19.1.0)
       react-map-gl:
         specifier: ^8.1.1
         version: 8.1.2(mapbox-gl@3.29.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -568,6 +574,15 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  integrations/ads/google:
+    dependencies:
+      '@brokeros/constants':
+        specifier: workspace:*
+        version: link:../../../packages/constants
+      '@brokeros/types':
+        specifier: workspace:*
+        version: link:../../../packages/types
 
   integrations/ads/meta:
     dependencies:
@@ -7828,6 +7843,11 @@ packages:
   react-hook-form@7.86.0:
     resolution: {integrity: sha512-4kbWJrh5jPZt1+YqVcXcGKffGcXV/XVbozknLh0Yjh0KhpoAkus21TAQhzRYqNwFkkObmnSvRlZZ3GT+ehoIrA==}
     engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: 19.1.0
+
+  react-icons@4.12.0:
+    resolution: {integrity: sha512-IBaDuHiShdZqmfc/TwHu6+d6k2ltNCf3AszxNmjJc1KUfXdEeRJOKyNvLmAHaarhzGmTSVygNdyu8/opXv2gaw==}
     peerDependencies:
       react: 19.1.0
 
@@ -17628,6 +17648,10 @@ snapshots:
       react: 19.1.0
 
   react-hook-form@7.86.0(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+
+  react-icons@4.12.0(react@19.1.0):
     dependencies:
       react: 19.1.0
 
