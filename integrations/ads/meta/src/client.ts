@@ -166,7 +166,17 @@ export class MetaGraphApiClient implements IMetaAdsProvider {
       `insights.date_preset(${datePreset}){spend,impressions,reach,clicks,unique_clicks,cpc,cpm,ctr,actions,cost_per_action_type}`,
     ].join(',');
 
-    const url = `${META_GRAPH_BASE_URL}/${actId}/campaigns?fields=${fields}&limit=100&access_token=${encodeURIComponent(credentials.accessToken)}`;
+    const effectiveStatuses = JSON.stringify([
+      'ACTIVE',
+      'PAUSED',
+      'ARCHIVED',
+      'IN_PROCESS',
+      'WITH_ISSUES',
+      'PENDING_REVIEW',
+      'PENDING_BILLING_INFO',
+    ]);
+
+    const url = `${META_GRAPH_BASE_URL}/${actId}/campaigns?fields=${fields}&effective_status=${encodeURIComponent(effectiveStatuses)}&limit=100&access_token=${encodeURIComponent(credentials.accessToken)}`;
 
     const res = await fetch(url, { method: 'GET' });
     const data = (await res.json().catch(() => ({}))) as any;
