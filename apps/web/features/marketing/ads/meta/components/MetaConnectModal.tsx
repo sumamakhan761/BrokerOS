@@ -134,35 +134,35 @@ export function MetaConnectModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-xl rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-white">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xs shadow-blue-500/20">
               <Key className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50">
-                Connect Meta Ads
+              <h3 className="text-base font-extrabold text-[var(--text-primary)]">
+                Connect Ads Account (Meta)
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="text-xs font-medium text-[var(--text-tertiary)]">
                 Sync Facebook & Instagram campaigns, ad sets, creatives & lead forms.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content Body */}
-        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 text-xs">
           {formError && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-start gap-2.5">
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 flex items-start gap-2.5 font-medium">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{formError}</span>
             </div>
@@ -170,10 +170,10 @@ export function MetaConnectModal({
 
           {testResult && (
             <div
-              className={`p-3 rounded-xl border flex items-start gap-2.5 ${
+              className={`p-3.5 rounded-2xl border flex items-start gap-2.5 ${
                 testResult.success
-                  ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
-                  : "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  : "bg-amber-50 border-amber-200 text-amber-800"
               }`}
             >
               {testResult.success ? (
@@ -182,9 +182,9 @@ export function MetaConnectModal({
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
               )}
               <div className="flex-1">
-                <p className="font-semibold">{testResult.message}</p>
+                <p className="font-bold">{testResult.message}</p>
                 {testResult.account && (
-                  <p className="text-[11px] opacity-80 mt-0.5">
+                  <p className="text-[11px] opacity-90 mt-0.5 font-medium">
                     Account ID: {testResult.account.id} · Spend: {testResult.account.amountSpent}{" "}
                     {testResult.account.currency}
                   </p>
@@ -194,7 +194,7 @@ export function MetaConnectModal({
           )}
 
           <div className="space-y-1.5">
-            <label className="font-semibold text-zinc-700 dark:text-zinc-300">
+            <label className="font-bold text-[var(--text-primary)]">
               Integration Name
             </label>
             <input
@@ -202,134 +202,129 @@ export function MetaConnectModal({
               placeholder="e.g. Skyline Realty - Main Ad Account"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200/80 bg-slate-50/50 text-[var(--text-primary)] focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-500)]/20 focus:border-[var(--brand-500)] transition-all font-medium"
             />
           </div>
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="font-bold text-[var(--text-primary)]">
                 Ad Account ID <span className="text-rose-500">*</span>
               </label>
-              <span className="text-[11px] text-zinc-400">
+              <span className="text-[11px] font-medium text-[var(--text-tertiary)]">
                 Found in Meta Ads Manager URL (<code className="font-mono">act_...</code>)
               </span>
             </div>
             <input
               type="text"
               required
-              placeholder="act_123456789012345 or 123456789012345"
+              placeholder="e.g. act_123456789012345"
               value={adAccountId}
               onChange={(e) => setAdAccountId(e.target.value)}
-              className="w-full px-3 py-2 font-mono rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200/80 bg-slate-50/50 text-[var(--text-primary)] font-mono focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-500)]/20 focus:border-[var(--brand-500)] transition-all"
             />
           </div>
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="font-bold text-[var(--text-primary)]">
                 System User Permanent Token <span className="text-rose-500">*</span>
               </label>
-              <a
-                href="https://business.facebook.com/settings/system-users"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5"
-              >
-                Get Token
-                <ExternalLink className="w-2.5 h-2.5" />
-              </a>
+              <span className="text-[11px] font-medium text-blue-600">
+                Generated in Meta Business Settings
+              </span>
             </div>
             <textarea
               required
               rows={3}
-              placeholder="EAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx..."
+              placeholder="EAA..."
               value={accessToken}
               onChange={(e) => setAccessToken(e.target.value)}
-              className="w-full px-3 py-2 font-mono text-[11px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200/80 bg-slate-50/50 text-[var(--text-primary)] font-mono text-[11px] focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-500)]/20 focus:border-[var(--brand-500)] transition-all"
             />
-            <p className="text-[11px] text-zinc-400">
-              Requires: <code className="font-mono text-zinc-600 dark:text-zinc-300">ads_read</code>,{" "}
-              <code className="font-mono text-zinc-600 dark:text-zinc-300">ads_management</code>,{" "}
-              <code className="font-mono text-zinc-600 dark:text-zinc-300">leads_retrieval</code>,{" "}
-              <code className="font-mono text-zinc-600 dark:text-zinc-300">pages_read_engagement</code>.
-            </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="font-semibold text-zinc-700 dark:text-zinc-300">
-                App ID <span className="text-zinc-400 font-normal">(Optional)</span>
+              <label className="font-bold text-[var(--text-primary)]">
+                App ID <span className="text-[11px] font-normal text-[var(--text-tertiary)]">(Optional)</span>
               </label>
               <input
                 type="text"
-                placeholder="Meta App ID"
+                placeholder="e.g. 123456789"
                 value={appId}
                 onChange={(e) => setAppId(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-hidden"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200/80 bg-slate-50/50 text-[var(--text-primary)] font-mono focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-500)]/20"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="font-semibold text-zinc-700 dark:text-zinc-300">
-                App Secret <span className="text-zinc-400 font-normal">(For Webhooks)</span>
+              <label className="font-bold text-[var(--text-primary)]">
+                App Secret <span className="text-[11px] font-normal text-[var(--text-tertiary)]">(Optional)</span>
               </label>
               <input
                 type="password"
                 placeholder="••••••••••••••••"
                 value={appSecret}
                 onChange={(e) => setAppSecret(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-hidden"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200/80 bg-slate-50/50 text-[var(--text-primary)] font-mono focus:outline-hidden focus:ring-2 focus:ring-[var(--brand-500)]/20"
               />
             </div>
           </div>
 
-          <div className="pt-2 flex items-center gap-2">
+          <div className="flex items-center gap-2 pt-1">
             <input
               type="checkbox"
-              id="isDefault"
+              id="isDefaultMetaAccount"
               checked={isDefault}
               onChange={(e) => setIsDefault(e.target.checked)}
-              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
             />
-            <label htmlFor="isDefault" className="text-zinc-700 dark:text-zinc-300 font-medium">
-              Set as Primary Default Ad Account for Lead Webhooks
+            <label htmlFor="isDefaultMetaAccount" className="font-bold text-[var(--text-primary)] cursor-pointer">
+              Set as primary default Ads account
             </label>
           </div>
 
-          {/* Footer Actions */}
-          <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+          {/* Action Buttons */}
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleTestConnection}
-              disabled={testing || submitting || !adAccountId.trim() || !accessToken.trim()}
-              className="gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+              disabled={testing || submitting || !adAccountId || !accessToken}
+              className="text-xs font-bold gap-1.5"
             >
               {testing ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
               ) : (
-                <ShieldCheck className="w-3.5 h-3.5" />
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
               )}
-              <span>Test Connection</span>
+              <span>{testing ? "Testing Token..." : "Test Connection"}</span>
             </Button>
 
             <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={submitting}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="text-xs font-bold"
+              >
                 Cancel
               </Button>
               <Button
                 type="submit"
+                variant="default"
                 size="sm"
-                disabled={submitting || !adAccountId.trim() || !accessToken.trim()}
-                className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+                disabled={submitting || testing}
+                className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-xs"
               >
                 {submitting ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   <Sparkles className="w-3.5 h-3.5" />
                 )}
-                <span>Save & Sync</span>
+                <span>{submitting ? "Saving & Syncing..." : "Save & Sync"}</span>
               </Button>
             </div>
           </div>

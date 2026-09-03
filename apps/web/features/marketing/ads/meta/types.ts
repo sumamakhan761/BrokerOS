@@ -79,6 +79,7 @@ export interface MetaAcquiredLeadItem {
     assignedUser?: {
       id: string;
       name: string;
+      email?: string;
     };
   };
 }

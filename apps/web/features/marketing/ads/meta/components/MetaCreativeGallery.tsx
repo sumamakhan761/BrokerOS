@@ -23,12 +23,12 @@ interface MetaCreativeGalleryProps {
 export function MetaCreativeGallery({ creatives }: MetaCreativeGalleryProps) {
   if (!creatives || creatives.length === 0) {
     return (
-      <div className="p-8 text-center bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800">
-        <div className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto text-zinc-400 mb-2">
-          <ImageIcon className="w-5 h-5" />
+      <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-slate-200/80">
+        <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto text-blue-600 mb-2 shadow-xs">
+          <ImageIcon className="w-6 h-6" />
         </div>
-        <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">No Creative Visuals Cached</p>
-        <p className="text-[11px] text-zinc-400 mt-0.5">
+        <p className="text-xs font-extrabold text-[var(--text-primary)]">No Creative Visuals Cached</p>
+        <p className="text-xs font-medium text-[var(--text-tertiary)] mt-0.5">
           Run a sync to pull recent ad thumbnails, headlines, and copy variations.
         </p>
       </div>
@@ -44,10 +44,10 @@ export function MetaCreativeGallery({ creatives }: MetaCreativeGalleryProps) {
         return (
           <div
             key={cr.id || idx}
-            className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col"
+            className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col"
           >
             {/* Visual Media Header */}
-            <div className="relative aspect-video bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden group">
+            <div className="relative aspect-video bg-slate-100 flex items-center justify-center overflow-hidden group">
               {previewImg ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -56,34 +56,34 @@ export function MetaCreativeGallery({ creatives }: MetaCreativeGalleryProps) {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center text-zinc-400 gap-1">
+                <div className="flex flex-col items-center justify-center text-slate-400 gap-1">
                   <ImageIcon className="w-8 h-8 opacity-40" />
-                  <span className="text-[10px]">No Thumbnail</span>
+                  <span className="text-[11px] font-medium">No Thumbnail</span>
                 </div>
               )}
 
-              <div className="absolute top-2.5 right-2.5">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-black/70 backdrop-blur-xs text-white border border-white/20">
+              <div className="absolute top-3 right-3">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-900/80 backdrop-blur-xs text-white shadow-xs">
                   {ctaLabel}
                 </span>
               </div>
             </div>
 
             {/* Creative Copy & Details */}
-            <div className="p-3.5 flex-1 flex flex-col justify-between">
+            <div className="p-4 flex-1 flex flex-col justify-between">
               <div>
-                <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 line-clamp-1">
+                <h4 className="text-xs font-extrabold text-[var(--text-primary)] line-clamp-1">
                   {cr.title || cr.name || "Real Estate Ad Creative"}
                 </h4>
                 {cr.body && (
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-3 leading-relaxed">
+                  <p className="text-xs font-medium text-[var(--text-secondary)] mt-1.5 line-clamp-3 leading-relaxed">
                     {cr.body}
                   </p>
                 )}
               </div>
 
-              <div className="mt-3 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
-                <span className="text-[10px] text-zinc-400 font-mono">
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[11px] text-[var(--text-tertiary)] font-mono">
                   ID: {cr.id.slice(0, 14)}...
                 </span>
 
@@ -92,10 +92,10 @@ export function MetaCreativeGallery({ creatives }: MetaCreativeGalleryProps) {
                     href={cr.instagramPermalinkUrl || cr.previewUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline"
                   >
-                    Live Post
-                    <ExternalLink className="w-2.5 h-2.5" />
+                    <span>Live Post</span>
+                    <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
               </div>
