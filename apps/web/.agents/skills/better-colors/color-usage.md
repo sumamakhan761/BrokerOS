@@ -92,3 +92,21 @@ Two testing rules:
 
 - **Recheck every foreground/background pair in both appearances.** A pair that passes in light mode can fail in dark mode; the palettes aren't mirror images.
 - **Account for translucency.** A color on a translucent surface (`backdrop-filter` header, overlay) shifts with whatever scrolls behind it. Test it over the lightest and darkest content it can sit on, or make the surface opaque enough that the shift can't break contrast.
+
+---
+
+## 6. BrokerOS Web Application Standard Design Tokens
+
+In the BrokerOS webapp (`apps/web`), **ALWAYS** use the standardized semantic tokens defined in `globals.css` and matched across Meta & Ads pages:
+
+| Element | Class / Token | Purpose |
+|---|---|---|
+| **Primary Text** | `text-[var(--text-primary)]` | Main headings, campaign names, bold metrics |
+| **Secondary Text** | `text-[var(--text-secondary)]` | Sub-labels, body descriptions, secondary metrics |
+| **Tertiary / Muted Text** | `text-[var(--text-tertiary)]` | Timestamps, table column headers, small subtitles |
+| **Card Surface** | `bg-white rounded-2xl border border-slate-200/80 shadow-xs` | Primary card surfaces & table wrappers |
+| **Table Headers** | `border-b border-slate-100 bg-slate-50/75 text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]` | Standard table headers |
+| **Input Fields** | `rounded-xl border border-slate-200/80 bg-slate-50/50 text-[var(--text-primary)]` | Search and form inputs |
+| **Standard Page Wrapper** | `<DashboardPageWrapper title="..." subtitle="..." headerRight={...} loading={...} error={...}>` | Page standard shell |
+| **Standard UI Components** | `Button` (`@/components/ui/Button`), `Badge` (`@/components/ui/Badge`) | Interactive elements |
+

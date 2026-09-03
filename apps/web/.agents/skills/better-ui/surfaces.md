@@ -217,3 +217,31 @@ img {
 Use `outline-black/10` and `outline-white/10` specifically, not `outline-slate-*`, `outline-zinc-*`, `outline-neutral-*`, or any tinted scale.
 
 **Why outline instead of border?** `outline` never affects layout (no added width or height at any offset), and `outline-offset: -1px` draws the ring just inside the image edge so it hugs the corner radius instead of sitting outside it.
+
+---
+
+## 5. BrokerOS Standard Card & Table Surface Pattern
+
+In the BrokerOS web application, surfaces and containers should follow the unified pattern:
+
+```tsx
+// 1. Standard Dashboard Card & Table Container
+<div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden">
+  {/* Content */}
+</div>
+
+// 2. Standard Table Row Hover & Headers
+<table className="w-full text-left border-collapse">
+  <thead>
+    <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+      <th className="py-3 px-4">Column Title</th>
+    </tr>
+  </thead>
+  <tbody className="divide-y divide-slate-100 text-xs">
+    <tr className="hover:bg-slate-50/50 transition-colors">
+      <td className="py-3.5 px-4 font-bold text-[var(--text-primary)]">Cell Content</td>
+    </tr>
+  </tbody>
+</table>
+```
+
