@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Settings,
   Radio,
+  Globe,
 } from "lucide-react";
 import { DashboardPageWrapper } from "@/components/dashboard/DashboardPageWrapper";
 import { StatCards } from "@/components/dashboard/StatCards";
@@ -198,8 +199,8 @@ export default function MarketingHubPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/dashboard/marketing/ads/meta">
             <Button variant="outline" size="sm" className="gap-1.5 text-xs font-bold text-blue-700 border-blue-200 hover:bg-blue-50">
-              <span className="font-extrabold text-xs">f</span>
-              <span>Meta Ads</span>
+              <Globe className="w-3.5 h-3.5 text-blue-600" />
+              <span>Ads Marketing</span>
             </Button>
           </Link>
           <Link href="/dashboard/marketing/voice">
