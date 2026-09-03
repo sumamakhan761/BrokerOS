@@ -16,6 +16,7 @@ import {
   Sparkles,
   ExternalLink,
   ChevronRight,
+  Globe,
 } from "lucide-react";
 import { DashboardPageWrapper } from "@/components/dashboard/DashboardPageWrapper";
 import { Button } from "@/components/ui/Button";
@@ -84,11 +85,11 @@ export default function MetaCampaignDetailPage({ params }: PageProps) {
       loading={loading}
       error={error}
       title={campaign?.name || "Campaign Details"}
-      subtitle={`Meta Campaign ID: ${campaignId} · Account: ${campaign?.integration?.name || "Meta Ad Account"}`}
+      subtitle={`Campaign ID: ${campaignId} · Account: ${campaign?.integration?.name || "Meta Ad Account"}`}
       headerRight={
         <div className="flex items-center gap-2">
           <Link href="/dashboard/marketing/ads/meta">
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-semibold">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-bold">
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Campaigns</span>
             </Button>
@@ -97,31 +98,31 @@ export default function MetaCampaignDetailPage({ params }: PageProps) {
       }
     >
       {/* ── Breadcrumb Bar ── */}
-      <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-        <Link href="/dashboard/marketing" className="hover:text-zinc-600 dark:hover:text-zinc-200">
+      <div className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] font-medium">
+        <Link href="/dashboard/marketing" className="hover:text-[var(--text-primary)]">
           Marketing
         </Link>
-        <ChevronRight className="w-3 h-3" />
-        <Link href="/dashboard/marketing/ads/meta" className="hover:text-zinc-600 dark:hover:text-zinc-200">
-          Meta Ads
+        <ChevronRight className="w-3.5 h-3.5" />
+        <Link href="/dashboard/marketing/ads/meta" className="hover:text-[var(--text-primary)]">
+          Ads Marketing
         </Link>
-        <ChevronRight className="w-3 h-3" />
-        <span className="text-zinc-900 dark:text-zinc-100 font-semibold truncate max-w-xs">
+        <ChevronRight className="w-3.5 h-3.5" />
+        <span className="text-[var(--text-primary)] font-bold truncate max-w-xs">
           {campaign?.name || "Campaign"}
         </span>
       </div>
 
       {/* ── Campaign Header Card ── */}
       {campaign && (
-        <div className="p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-4">
+        <div className="p-6 rounded-2xl border border-slate-200/80 bg-white shadow-xs space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span
-                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold ${
                     campaign.status === "ACTIVE"
-                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60"
-                      : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60"
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200/80"
+                      : "bg-amber-50 text-amber-700 border border-amber-200/80"
                   }`}
                 >
                   <span
@@ -132,173 +133,128 @@ export default function MetaCampaignDetailPage({ params }: PageProps) {
                   {campaign.status}
                 </span>
 
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">
+                <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/80">
                   {campaign.objective}
                 </span>
 
                 {campaign.dailyBudget ? (
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Daily Budget: <strong>{formatCurrency(campaign.dailyBudget, currency)}/day</strong>
-                  </span>
-                ) : campaign.lifetimeBudget ? (
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Lifetime Budget: <strong>{formatCurrency(campaign.lifetimeBudget, currency)}</strong>
+                  <span className="text-xs font-medium text-[var(--text-secondary)]">
+                    Daily Budget: <strong className="text-[var(--text-primary)] font-extrabold">{formatCurrency(campaign.dailyBudget, currency)}</strong>
                   </span>
                 ) : null}
               </div>
 
-              <h1 className="text-lg font-extrabold text-zinc-900 dark:text-zinc-50">
+              <h2 className="text-xl font-black text-[var(--text-primary)] tracking-tight">
                 {campaign.name}
-              </h1>
+              </h2>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono self-start sm:self-auto">
-              <span>Synced: {new Date(campaign.lastSyncedAt).toLocaleString()}</span>
+            <div className="flex items-center gap-3 text-xs text-[var(--text-tertiary)] font-medium">
+              {campaign.startTime && (
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                  <span>
+                    Started: {new Date(campaign.startTime).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* KPI Metrics Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-            <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
-              <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Ad Spend</span>
-              <p className="text-base font-bold text-zinc-900 dark:text-zinc-50 mt-0.5">
-                {formatCurrency(campaign.spend, currency)}
-              </p>
+          {/* KPI Snapshot Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-100">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60">
+              <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider block">
+                Total Ad Spend
+              </span>
+              <span className="text-lg font-black text-[var(--text-primary)] mt-1 block">
+                {formatCurrency(campaign.spend || 0, currency)}
+              </span>
             </div>
 
-            <div className="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30">
-              <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60">
+              <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider block">
                 Leads Captured
               </span>
-              <p className="text-base font-bold text-emerald-800 dark:text-emerald-300 mt-0.5">
-                {campaign.leadsCount}
-              </p>
-            </div>
-
-            <div className="p-3 rounded-xl bg-purple-50/60 dark:bg-purple-950/30">
-              <span className="text-[11px] font-medium text-purple-700 dark:text-purple-400">
-                Cost Per Lead (CPL)
+              <span className="text-lg font-black text-emerald-600 mt-1 block">
+                {(campaign.leadsCount || 0).toLocaleString()}
               </span>
-              <p className="text-base font-bold text-purple-800 dark:text-purple-300 mt-0.5">
-                {campaign.leadsCount > 0
-                  ? formatCurrency(campaign.costPerLead || campaign.spend / campaign.leadsCount, currency)
-                  : "—"}
-              </p>
             </div>
 
-            <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
-              <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Impressions</span>
-              <p className="text-base font-bold text-zinc-900 dark:text-zinc-50 mt-0.5">
-                {campaign.impressions.toLocaleString()}
-              </p>
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60">
+              <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider block">
+                Cost Per Lead
+              </span>
+              <span className="text-lg font-black text-[var(--text-primary)] mt-1 block">
+                {campaign.leadsCount > 0 ? formatCurrency(campaign.costPerLead || 0, currency) : "—"}
+              </span>
             </div>
 
-            <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
-              <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Clicks (CTR)</span>
-              <p className="text-base font-bold text-zinc-900 dark:text-zinc-50 mt-0.5">
-                {campaign.clicks.toLocaleString()}{" "}
-                <span className="text-xs font-normal text-zinc-400">({campaign.ctr}%)</span>
-              </p>
-            </div>
-
-            <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
-              <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Reach</span>
-              <p className="text-base font-bold text-zinc-900 dark:text-zinc-50 mt-0.5">
-                {campaign.reach.toLocaleString()}
-              </p>
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60">
+              <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider block">
+                Impressions & CTR
+              </span>
+              <span className="text-lg font-black text-[var(--text-primary)] mt-1 block">
+                {(campaign.impressions || 0).toLocaleString()} · {campaign.ctr ? `${campaign.ctr.toFixed(1)}%` : "0%"}
+              </span>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Sub-Tab Navigation Bar ── */}
-      <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800 w-fit">
+      {/* ── Sub-Tabs Navigation ── */}
+      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-3">
         <button
           onClick={() => setActiveTab("CREATIVES")}
-          className={`px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
             activeTab === "CREATIVES"
-              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-xs"
-              : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              ? "bg-blue-600 text-white shadow-xs"
+              : "bg-white text-[var(--text-secondary)] hover:bg-slate-100 border border-slate-200/80"
           }`}
         >
-          <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
-          <span>Creatives Gallery</span>
-          <span className="text-[10px] opacity-75 font-mono">
-            ({campaign?.creativesData?.length || 0})
-          </span>
+          <ImageIcon className="w-4 h-4" />
+          <span>Creatives Gallery ({campaign?.creativesData?.length || 0})</span>
         </button>
 
         <button
           onClick={() => setActiveTab("ADSETS")}
-          className={`px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
             activeTab === "ADSETS"
-              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-xs"
-              : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              ? "bg-blue-600 text-white shadow-xs"
+              : "bg-white text-[var(--text-secondary)] hover:bg-slate-100 border border-slate-200/80"
           }`}
         >
-          <Layers className="w-3.5 h-3.5 text-indigo-600" />
-          <span>Ad Sets & Targeting</span>
-          <span className="text-[10px] opacity-75 font-mono">
-            ({campaign?.adSetsData?.length || 0})
-          </span>
+          <Target className="w-4 h-4" />
+          <span>Ad Sets & Targeting ({campaign?.adSetsData?.length || 0})</span>
         </button>
 
         <button
           onClick={() => setActiveTab("LEADS")}
-          className={`px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition-all flex items-center gap-1.5 ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
             activeTab === "LEADS"
-              ? "bg-white dark:bg-zinc-900 text-emerald-700 dark:text-emerald-400 shadow-xs"
-              : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              ? "bg-blue-600 text-white shadow-xs"
+              : "bg-white text-[var(--text-secondary)] hover:bg-slate-100 border border-slate-200/80"
           }`}
         >
-          <Users className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Acquired Leads in CRM</span>
-          <span className="text-[10px] font-mono opacity-85">({acquiredLeads.length})</span>
+          <Users className="w-4 h-4" />
+          <span>Acquired Leads ({acquiredLeads.length})</span>
         </button>
       </div>
 
       {/* ── Tab Content Views ── */}
-      {activeTab === "CREATIVES" && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-              Active Ad Creatives & Copy Variations
-            </h3>
-            <span className="text-xs text-zinc-400">
-              Visual assets displayed across Instagram Reels, Stories & Facebook Feed
-            </span>
-          </div>
-          <MetaCreativeGallery creatives={campaign?.creativesData || []} />
-        </div>
-      )}
+      <div className="space-y-4">
+        {activeTab === "CREATIVES" && (
+          <MetaCreativeGallery creatives={(campaign?.creativesData as any) || []} />
+        )}
 
-      {activeTab === "ADSETS" && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-              Ad Sets & Audience Profiling
-            </h3>
-            <span className="text-xs text-zinc-400">
-              Demographic, geographic, and interest targeting filters configured in Meta Ads Manager
-            </span>
-          </div>
-          <MetaAdSetBreakdown adSets={campaign?.adSetsData || []} currency={currency} />
-        </div>
-      )}
+        {activeTab === "ADSETS" && (
+          <MetaAdSetBreakdown adSets={(campaign?.adSetsData as any) || []} currency={currency} />
+        )}
 
-      {activeTab === "LEADS" && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-              Acquired CRM Leads from this Campaign
-            </h3>
-            <span className="text-xs text-zinc-400">
-              Direct form submissions ingested via Meta Instant Lead Form Webhooks
-            </span>
-          </div>
+        {activeTab === "LEADS" && (
           <MetaAcquiredLeadsTable leads={acquiredLeads} campaignName={campaign?.name} />
-        </div>
-      )}
+        )}
+      </div>
     </DashboardPageWrapper>
   );
 }

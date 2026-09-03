@@ -15,6 +15,7 @@ import {
   Layers,
   AlertCircle,
   HelpCircle,
+  Globe,
 } from "lucide-react";
 import { DashboardPageWrapper } from "@/components/dashboard/DashboardPageWrapper";
 import { Button } from "@/components/ui/Button";
@@ -80,20 +81,20 @@ export default function MetaAdsSettingsPage() {
     <DashboardPageWrapper
       loading={loading}
       error={error}
-      title="Meta Ads Settings"
+      title="Meta (Facebook) Ads Settings"
       subtitle="Manage connected Meta Ad accounts, permanent System User tokens, and configure Instant Lead Form webhooks."
       headerRight={
         <div className="flex items-center gap-2">
           <Link href="/dashboard/marketing/ads/meta">
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-semibold">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-bold">
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Ads</span>
+              <span>Back to Meta Ads</span>
             </Button>
           </Link>
           <Button
             size="sm"
             onClick={() => setIsConnectModalOpen(true)}
-            className="gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+            className="gap-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Connect Ad Account</span>
@@ -105,29 +106,29 @@ export default function MetaAdsSettingsPage() {
         {/* Left Column: Connected Integrations */}
         <div className="lg:col-span-2 space-y-4">
           <div>
-            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
-              Connected Meta Ad Accounts
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
+              Connected Ads Accounts
             </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              All active ad accounts syncing data with BrokerOS CRM.
+            <p className="text-xs font-medium text-[var(--text-tertiary)]">
+              All active advertising accounts syncing campaigns and leads with BrokerOS CRM.
             </p>
           </div>
 
           {integrations.length === 0 ? (
-            <div className="p-8 text-center rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 flex items-center justify-center mx-auto mb-3">
+            <div className="p-8 text-center rounded-2xl border border-dashed border-slate-200/80 bg-white">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3 shadow-xs">
                 <Key className="w-5 h-5" />
               </div>
-              <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                No Meta Ad Accounts Connected
+              <h4 className="text-xs font-extrabold text-[var(--text-primary)]">
+                No Ad Accounts Connected
               </h4>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
+              <p className="text-xs text-[var(--text-tertiary)] mt-1 max-w-sm mx-auto">
                 Connect your Meta Business Ad Account using a permanent System User Token to start syncing campaigns and capturing leads.
               </p>
               <Button
                 size="sm"
                 onClick={() => setIsConnectModalOpen(true)}
-                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5"
+                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold gap-1.5 shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Connect First Ad Account</span>
@@ -138,27 +139,27 @@ export default function MetaAdsSettingsPage() {
               {integrations.map((item) => (
                 <div
                   key={item.id}
-                  className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  className="p-5 rounded-2xl border border-slate-200/80 bg-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-sm shrink-0">
-                      f
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-extrabold text-base shrink-0 shadow-xs">
+                      <Globe className="w-5 h-5" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                        <h4 className="text-xs font-extrabold text-[var(--text-primary)]">
                           {item.name}
                         </h4>
                         {item.isDefault && (
-                          <Badge variant="info" className="text-[10px]">
+                          <Badge variant="info" className="text-[10px] font-bold">
                             Primary Default
                           </Badge>
                         )}
-                        <Badge variant="success" className="text-[10px]">
+                        <Badge variant="success" className="text-[10px] font-bold">
                           Active
                         </Badge>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-400 font-mono mt-1">
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] text-[var(--text-tertiary)] font-mono mt-1">
                         <span>{item.adAccountId}</span>
                         <span>·</span>
                         <span>Currency: {item.currency}</span>
@@ -179,7 +180,7 @@ export default function MetaAdsSettingsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(item.id)}
-                      className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 gap-1 text-xs"
+                      className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 gap-1 text-xs font-bold"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Disconnect</span>
@@ -194,17 +195,17 @@ export default function MetaAdsSettingsPage() {
         {/* Right Column: Webhook Setup Configuration */}
         <div className="space-y-4">
           <div>
-            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
-              Meta Webhook Ingestion
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
+              Lead Form Webhook Ingestion
             </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Receive Facebook & Instagram Instant Lead Form submissions in real-time.
+            <p className="text-xs font-medium text-[var(--text-tertiary)]">
+              Receive Facebook Instant Lead Form submissions in real-time.
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs space-y-4 text-xs">
+          <div className="p-5 rounded-2xl border border-slate-200/80 bg-white shadow-xs space-y-4 text-xs">
             <div className="space-y-1.5">
-              <label className="font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="font-bold text-[var(--text-primary)]">
                 Callback URL
               </label>
               <div className="flex items-center gap-1.5">
@@ -212,14 +213,14 @@ export default function MetaAdsSettingsPage() {
                   type="text"
                   readOnly
                   value={webhookUrl}
-                  className="w-full px-2.5 py-1.5 font-mono text-[11px] rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 focus:outline-hidden"
+                  className="w-full px-3 py-2 font-mono text-[11px] rounded-xl border border-slate-200/80 bg-slate-50/50 text-[var(--text-primary)] focus:outline-hidden"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => copyToClipboard(webhookUrl, "url")}
-                  className="shrink-0 text-xs px-2.5 py-1.5"
+                  className="shrink-0 text-xs px-2.5 py-2 font-bold"
                 >
                   {copiedField === "url" ? (
                     <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -231,7 +232,7 @@ export default function MetaAdsSettingsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="font-semibold text-zinc-700 dark:text-zinc-300">
+              <label className="font-bold text-[var(--text-primary)]">
                 Verify Token
               </label>
               <div className="flex items-center gap-1.5">
@@ -239,14 +240,14 @@ export default function MetaAdsSettingsPage() {
                   type="text"
                   readOnly
                   value={verifyToken}
-                  className="w-full px-2.5 py-1.5 font-mono text-[11px] rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 focus:outline-hidden"
+                  className="w-full px-3 py-2 font-mono text-[11px] rounded-xl border border-slate-200/80 bg-slate-50/50 text-[var(--text-primary)] focus:outline-hidden"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => copyToClipboard(verifyToken, "token")}
-                  className="shrink-0 text-xs px-2.5 py-1.5"
+                  className="shrink-0 text-xs px-2.5 py-2 font-bold"
                 >
                   {copiedField === "token" ? (
                     <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -257,11 +258,11 @@ export default function MetaAdsSettingsPage() {
               </div>
             </div>
 
-            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
-              <h5 className="font-bold text-zinc-800 dark:text-zinc-200 text-[11px] uppercase tracking-wider">
+            <div className="pt-3 border-t border-slate-100 space-y-2">
+              <h5 className="font-extrabold text-[var(--text-primary)] text-[11px] uppercase tracking-wider">
                 Setup Steps in Meta Developer Portal:
               </h5>
-              <ol className="list-decimal list-inside space-y-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+              <ol className="list-decimal list-inside space-y-1.5 text-xs font-medium text-[var(--text-secondary)] leading-relaxed">
                 <li>Go to developers.facebook.com → Your App.</li>
                 <li>Add <strong>Webhooks</strong> product → Select <strong>Page</strong> object.</li>
                 <li>Click <strong>Subscribe to this object</strong> and enter Callback URL & Verify Token.</li>
