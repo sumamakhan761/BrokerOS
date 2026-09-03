@@ -41,7 +41,7 @@ export const FLOATING_SHADOW = Platform.select({
 ```tsx
 <View 
   style={CARD_SHADOW} 
-  className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800"
+  className="bg-white rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800"
 >
   {/* Card Content */}
 </View>
@@ -99,7 +99,7 @@ import { View } from 'react-native';
 
 export function CardSkeleton() {
   return (
-    <View className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 space-y-3 animate-pulse">
+    <View className="bg-white rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 space-y-3 animate-pulse">
       <View className="flex-row items-center gap-3">
         <View className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800" />
         <View className="flex-1 space-y-1.5">

@@ -100,7 +100,7 @@ When items expand, collapse, or reorder, use `layout={LinearTransition.springify
 ```tsx
 <Animated.View 
   layout={LinearTransition.springify().damping(16)}
-  className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80"
+  className="bg-white rounded-3xl p-5 border border-slate-200/80"
 >
   {isExpanded && <DetailedBreakdown />}
 </Animated.View>
