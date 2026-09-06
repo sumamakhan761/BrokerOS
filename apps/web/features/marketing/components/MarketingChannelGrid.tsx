@@ -173,6 +173,39 @@ export function MarketingChannelGrid({
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </div>
         </Link>
+
+        {/* WhatsApp CRM & Broadcasts Card */}
+        <Link
+          href="/dashboard/marketing/whatsapp"
+          className="group relative bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs hover:border-emerald-400 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between"
+        >
+          <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
+          <div>
+            <div className="flex items-center justify-between mb-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <MessageSquare className="w-5 h-5" strokeWidth={2.2} />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Badge variant="success" className="text-[10px] font-bold">
+                  Live Sync
+                </Badge>
+                <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                  Meta Cloud
+                </span>
+              </div>
+            </div>
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)] group-hover:text-emerald-600 transition-colors">
+              WhatsApp CRM & Broadcasts
+            </h3>
+            <p className="text-xs text-[var(--text-tertiary)] mt-1 line-clamp-2">
+              Two-way live WhatsApp inbox, official Meta HSM broadcasts, AI draft copilot, and conditional bot flows.
+            </p>
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-600">
+            <span>Open WhatsApp Hub</span>
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          </div>
+        </Link>
       </div>
     </div>
   );
