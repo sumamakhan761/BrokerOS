@@ -1,41 +1,20 @@
 // ============================================================================
-// BrokerOS — WhatsApp Automation Execution Engine (1:1 wacrm Engine Parity)
+// BrokerOS — WhatsApp Automation Execution Engine (Modular Coordinator)
 // ============================================================================
 
 import { Injectable, Logger } from '@nestjs/common';
 import { prismaClient } from '@brokeros/prisma';
-import {
-  sendTextMessage,
-  sendMediaMessage,
-  sendTemplateMessage,
-  sendInteractiveButtons,
-  sendInteractiveList,
-  phoneVariants,
-  postSafeWebhook,
-  validateInteractivePayload,
-} from '@brokeros/int-whatsapp';
-import { WA_MAX_TAG_CHAIN_DEPTH } from '@brokeros/constants';
 import { WhatsAppConfigService } from '../config/whatsapp-config.service.js';
 import { WhatsAppRealtimeGateway } from '../gateway/whatsapp-realtime.gateway.js';
+import {
+  AutomationRunContext,
+  ExecuteStepsArgs,
+} from './engine/automation-types.js';
+import { matchesAutomationTrigger } from './engine/automation-trigger-matcher.js';
+import { evaluateAutomationCondition } from './engine/automation-condition-evaluator.js';
+import { executeAutomationAction } from './engine/automation-action-handlers.js';
 
-export interface AutomationRunContext {
-  messageText?: string;
-  conversationId?: string;
-  tagId?: string;
-  interactiveReplyId?: string;
-  agentId?: string;
-  vars?: Record<string, any>;
-}
-
-interface ExecuteStepsArgs {
-  automation: any;
-  contactId: string | null;
-  context: AutomationRunContext;
-  parentStepId: string | null;
-  branch: 'yes' | 'no' | null;
-  startPosition: number;
-  logId: string | null;
-}
+export { AutomationRunContext, ExecuteStepsArgs };
 
 @Injectable()
 export class WhatsAppAutomationEngineService {
@@ -84,7 +63,7 @@ export class WhatsAppAutomationEngineService {
       if (automations.length === 0) return;
 
       for (const automation of automations) {
-        if (!this.matchesTrigger(automation, context)) continue;
+        if (!matchesAutomationTrigger(automation, context)) continue;
 
         // Execute asynchronously
         this.executeAutomation(automation, contactId || null, context).catch(
@@ -101,58 +80,6 @@ export class WhatsAppAutomationEngineService {
   }
 
   /**
-   * Evaluate whether trigger filters match the event context.
-   */
-  private matchesTrigger(
-    automation: any,
-    context: AutomationRunContext,
-  ): boolean {
-    const config = (automation.triggerConfig || {}) as Record<string, any>;
-
-    if (automation.triggerType === 'keyword_match') {
-      const keywords: string[] = config.keywords || [];
-      const matchType: string = config.matchType || 'contains';
-      const text = (context.messageText || '').trim().toLowerCase();
-
-      if (!text || keywords.length === 0) return false;
-
-      return keywords.some((kw) => {
-        const cleanKw = kw.trim().toLowerCase();
-        if (!cleanKw) return false;
-        if (matchType === 'exact') return text === cleanKw;
-        if (matchType === 'starts_with') return text.startsWith(cleanKw);
-
-        // Unicode word-boundary matching (wacrm engine standard)
-        try {
-          const escaped = cleanKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const unicodeRegex = new RegExp(
-            `(?<![\\p{L}\\p{N}_])${escaped}(?![\\p{L}\\p{N}_])`,
-            'iu',
-          );
-          if (unicodeRegex.test(text)) return true;
-        } catch {
-          // Fallback if lookarounds not supported
-        }
-        return text.includes(cleanKw);
-      });
-    }
-
-    if (automation.triggerType === 'interactive_reply') {
-      const targetId = config.buttonId || config.rowId || config.id;
-      if (!targetId || !context.interactiveReplyId) return false;
-      return context.interactiveReplyId === targetId;
-    }
-
-    if (automation.triggerType === 'tag_added') {
-      const targetTagId = config.tagId;
-      if (!targetTagId || !context.tagId) return false;
-      return context.tagId === targetTagId;
-    }
-
-    return true;
-  }
-
-  /**
    * Top-level automation executor. Seeds log pessimistically and executes tree.
    */
   async executeAutomation(
@@ -161,7 +88,6 @@ export class WhatsAppAutomationEngineService {
     context: AutomationRunContext = {},
   ): Promise<void> {
     // 1. Seed audit log pessimistically with status = 'failed'
-    // Status only flips to 'success' if execution reaches the very end
     const log = await this.prisma.whatsAppAutomationLog.create({
       data: {
         automationId: automation.id,
@@ -281,7 +207,7 @@ export class WhatsAppAutomationEngineService {
       try {
         // ── Step: CONDITION ───────────────────────────────────
         if (step.stepType === 'condition') {
-          const taken = this.evaluateCondition(config, contact, context);
+          const taken = evaluateAutomationCondition(config, contact, context);
           const chosenBranch = taken ? 'yes' : 'no';
 
           stepResults.push({
@@ -302,7 +228,19 @@ export class WhatsAppAutomationEngineService {
         }
 
         // ── Step: ALL OTHER TYPES ─────────────────────────────
-        const detail = await this.runStep(step, account, contact, context);
+        const detail = await executeAutomationAction(step, {
+          account,
+          contact,
+          context,
+          prisma: this.prisma,
+          realtimeGateway: this.realtimeGateway,
+          logger: this.logger,
+          resolveConversationId: (accId, cId, ctx) =>
+            this.resolveConversationId(accId, cId, ctx),
+          dispatchCascadeTrigger: (accId, tType, cId, ctx) =>
+            this.runAutomationsForTrigger(accId, tType, cId, ctx),
+        });
+
         stepResults.push({
           stepId: step.id,
           stepType: step.stepType,
@@ -327,589 +265,6 @@ export class WhatsAppAutomationEngineService {
       await this.appendResults(logId, stepResults, status, errorMessage);
     } else {
       await this.appendResults(logId, stepResults, null, errorMessage);
-    }
-  }
-
-  /**
-   * Execute an individual automation step and record bot messages in the database.
-   */
-  private async runStep(
-    step: any,
-    account: any,
-    contact: any,
-    context: AutomationRunContext,
-  ): Promise<string> {
-    const config = (step.stepConfig || {}) as Record<string, any>;
-
-    switch (step.stepType) {
-      // 1. Send Text Message
-      case 'send_message': {
-        if (!contact?.phone)
-          throw new Error('send_message requires a contact with phone');
-        const text = this.interpolate(config.text || '', contact, context);
-        if (!text.trim()) throw new Error('send_message has empty text');
-
-        const conversationId = await this.resolveConversationId(
-          account.id,
-          contact.id,
-          context,
-        );
-
-        const res = await this.sendWithVariants(contact.phone, (target) =>
-          sendTextMessage({
-            phoneNumberId: account.phoneNumberId,
-            accessToken: account.accessToken,
-            to: target,
-            text,
-          }),
-        );
-
-        // Record bot message in database & emit live Socket.IO update
-        const msgRow = await this.prisma.whatsAppMessage.create({
-          data: {
-            conversationId,
-            waMessageId: res.messageId,
-            direction: 'OUTBOUND',
-            type: 'TEXT',
-            status: 'SENT',
-            senderType: 'bot',
-            contentType: 'text',
-            senderName: 'Automation',
-            body: text,
-            sentAt: new Date(),
-          },
-        });
-
-        await this.prisma.whatsAppConversation.update({
-          where: { id: conversationId },
-          data: { lastMessageText: text, lastMessageAt: msgRow.sentAt },
-        });
-
-        this.realtimeGateway.emitMessageSent(
-          conversationId,
-          msgRow,
-          account.id,
-        );
-        return `Sent text via Meta (${res.messageId})`;
-      }
-
-      // 2. Send Media Message
-      case 'send_media': {
-        if (!contact?.phone)
-          throw new Error('send_media requires a contact with phone');
-        if (!config.mediaUrl) throw new Error('send_media requires mediaUrl');
-
-        const conversationId = await this.resolveConversationId(
-          account.id,
-          contact.id,
-          context,
-        );
-
-        const res = await this.sendWithVariants(contact.phone, (target) =>
-          sendMediaMessage({
-            phoneNumberId: account.phoneNumberId,
-            accessToken: account.accessToken,
-            to: target,
-            kind: config.mediaKind || 'image',
-            link: config.mediaUrl,
-            caption: config.caption
-              ? this.interpolate(config.caption, contact, context)
-              : undefined,
-          }),
-        );
-
-        const msgRow = await this.prisma.whatsAppMessage.create({
-          data: {
-            conversationId,
-            waMessageId: res.messageId,
-            direction: 'OUTBOUND',
-            type: (config.mediaKind || 'IMAGE').toUpperCase(),
-            status: 'SENT',
-            senderType: 'bot',
-            contentType: config.mediaKind || 'image',
-            senderName: 'Automation',
-            mediaUrl: config.mediaUrl,
-            caption: config.caption,
-            sentAt: new Date(),
-          },
-        });
-
-        await this.prisma.whatsAppConversation.update({
-          where: { id: conversationId },
-          data: {
-            lastMessageText: `[${config.mediaKind || 'Media'}]`,
-            lastMessageAt: msgRow.sentAt,
-          },
-        });
-
-        this.realtimeGateway.emitMessageSent(
-          conversationId,
-          msgRow,
-          account.id,
-        );
-        return `Sent media via Meta (${res.messageId})`;
-      }
-
-      // 3 & 4. Send Interactive Buttons or List
-      case 'send_buttons':
-      case 'send_list': {
-        if (!contact?.phone)
-          throw new Error(`${step.stepType} requires a contact with phone`);
-
-        const isButtons =
-          config.kind === 'buttons' ||
-          (Array.isArray(config.buttons) &&
-            config.buttons.length > 0 &&
-            (!config.sections || config.sections.length === 0));
-
-        const conversationId = await this.resolveConversationId(
-          account.id,
-          contact.id,
-          context,
-        );
-
-        if (isButtons) {
-          const payload = {
-            kind: 'buttons' as const,
-            body: this.interpolate(
-              config.bodyText || config.body || '',
-              contact,
-              context,
-            ),
-            header: config.headerText || config.header,
-            footer: config.footerText || config.footer,
-            buttons: config.buttons || [],
-          };
-
-          const check = validateInteractivePayload(payload);
-          if (!check.ok) throw new Error(check.error);
-
-          const res = await this.sendWithVariants(contact.phone, (target) =>
-            sendInteractiveButtons({
-              phoneNumberId: account.phoneNumberId,
-              accessToken: account.accessToken,
-              to: target,
-              bodyText: payload.body,
-              headerText: payload.header,
-              footerText: payload.footer,
-              buttons: payload.buttons,
-            }),
-          );
-
-          const msgRow = await this.prisma.whatsAppMessage.create({
-            data: {
-              conversationId,
-              waMessageId: res.messageId,
-              direction: 'OUTBOUND',
-              type: 'INTERACTIVE',
-              status: 'SENT',
-              senderType: 'bot',
-              contentType: 'interactive_buttons',
-              senderName: 'Automation',
-              body: payload.body,
-              interactivePayload: payload as any,
-              sentAt: new Date(),
-            },
-          });
-
-          await this.prisma.whatsAppConversation.update({
-            where: { id: conversationId },
-            data: { lastMessageText: payload.body, lastMessageAt: msgRow.sentAt },
-          });
-
-          this.realtimeGateway.emitMessageSent(
-            conversationId,
-            msgRow,
-            account.id,
-          );
-          return `Sent interactive buttons (${res.messageId})`;
-        } else {
-          const payload = {
-            kind: 'list' as const,
-            body: this.interpolate(
-              config.bodyText || config.body || '',
-              contact,
-              context,
-            ),
-            button_label: config.buttonLabel || config.button_label || 'Select',
-            header: config.headerText || config.header,
-            footer: config.footerText || config.footer,
-            sections: config.sections || [],
-          };
-
-          const check = validateInteractivePayload(payload);
-          if (!check.ok) throw new Error(check.error);
-
-          const res = await this.sendWithVariants(contact.phone, (target) =>
-            sendInteractiveList({
-              phoneNumberId: account.phoneNumberId,
-              accessToken: account.accessToken,
-              to: target,
-              bodyText: payload.body,
-              buttonLabel: payload.button_label,
-              headerText: payload.header,
-              footerText: payload.footer,
-              sections: payload.sections,
-            }),
-          );
-
-          const msgRow = await this.prisma.whatsAppMessage.create({
-            data: {
-              conversationId,
-              waMessageId: res.messageId,
-              direction: 'OUTBOUND',
-              type: 'INTERACTIVE',
-              status: 'SENT',
-              senderType: 'bot',
-              contentType: 'interactive_list',
-              senderName: 'Automation',
-              body: payload.body,
-              interactivePayload: payload as any,
-              sentAt: new Date(),
-            },
-          });
-
-          await this.prisma.whatsAppConversation.update({
-            where: { id: conversationId },
-            data: { lastMessageText: payload.body, lastMessageAt: msgRow.sentAt },
-          });
-
-          this.realtimeGateway.emitMessageSent(
-            conversationId,
-            msgRow,
-            account.id,
-          );
-          return `Sent interactive list (${res.messageId})`;
-        }
-      }
-
-      // 5. Send Template (With Numeric Sort Law)
-      case 'send_template': {
-        if (!contact?.phone)
-          throw new Error('send_template requires a contact with phone');
-        const templateName = config.templateName || config.template_name;
-        if (!templateName)
-          throw new Error('send_template requires templateName');
-        const language = config.language || config.templateLanguage || 'en_US';
-
-        // Meta templates use positional {{1}}, {{2}}, ... placeholders.
-        // We MUST sort keys numerically so "10" does not precede "2"!
-        let params: string[] = [];
-        if (config.variables && typeof config.variables === 'object') {
-          params = Object.keys(config.variables)
-            .sort((a, b) => {
-              const na = Number(a);
-              const nb = Number(b);
-              if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
-              return a.localeCompare(b);
-            })
-            .map((k) =>
-              this.interpolate(String(config.variables[k]), contact, context),
-            );
-        } else if (Array.isArray(config.params)) {
-          params = config.params.map((p: any) =>
-            this.interpolate(String(p), contact, context),
-          );
-        }
-
-        const conversationId = await this.resolveConversationId(
-          account.id,
-          contact.id,
-          context,
-        );
-
-        const res = await this.sendWithVariants(contact.phone, (target) =>
-          sendTemplateMessage({
-            phoneNumberId: account.phoneNumberId,
-            accessToken: account.accessToken,
-            to: target,
-            templateName,
-            language,
-            params,
-          }),
-        );
-
-        const msgRow = await this.prisma.whatsAppMessage.create({
-          data: {
-            conversationId,
-            waMessageId: res.messageId,
-            direction: 'OUTBOUND',
-            type: 'TEMPLATE',
-            status: 'SENT',
-            senderType: 'bot',
-            contentType: 'template',
-            senderName: 'Automation',
-            body: `[Template: ${templateName}]`,
-            templateValues: params as any,
-            sentAt: new Date(),
-          },
-        });
-
-        await this.prisma.whatsAppConversation.update({
-          where: { id: conversationId },
-          data: {
-            lastMessageText: `[Template: ${templateName}]`,
-            lastMessageAt: msgRow.sentAt,
-          },
-        });
-
-        this.realtimeGateway.emitMessageSent(
-          conversationId,
-          msgRow,
-          account.id,
-        );
-        return `Sent template (${res.messageId})`;
-      }
-
-      // 6. Add Tag (With Chain Depth Infinite Loop Guard)
-      case 'add_tag': {
-        const tagId = config.tagId || config.tag_id;
-        if (!contact || !tagId)
-          throw new Error('add_tag requires contact and tagId');
-
-        await this.prisma.whatsAppContactTag.upsert({
-          where: {
-            contactId_tagId: { contactId: contact.id, tagId },
-          },
-          create: { contactId: contact.id, tagId },
-          update: {},
-        });
-
-        // Guard against infinite recursive tag triggers
-        const depth = Number(context.vars?._tag_chain_depth) || 0;
-        if (depth >= WA_MAX_TAG_CHAIN_DEPTH) {
-          this.logger.warn(
-            `tag_added recursion limit reached (depth=${depth}). Halting cascade.`,
-          );
-          return `Tag ${tagId} added; cascade halted at depth ${depth}`;
-        }
-
-        await this.runAutomationsForTrigger(
-          account.id,
-          'tag_added',
-          contact.id,
-          {
-            ...context,
-            tagId,
-            vars: {
-              ...(context.vars || {}),
-              _tag_chain_depth: depth + 1,
-            },
-          },
-        );
-
-        return `Tag ${tagId} added and tag_added dispatched`;
-      }
-
-      // 7. Remove Tag
-      case 'remove_tag': {
-        const tagId = config.tagId || config.tag_id;
-        if (!contact || !tagId)
-          throw new Error('remove_tag requires contact and tagId');
-        await this.prisma.whatsAppContactTag.deleteMany({
-          where: { contactId: contact.id, tagId },
-        });
-        return `Tag ${tagId} removed`;
-      }
-
-      // 8. Assign Conversation (Supports Specific Agent & Load-Balanced Round-Robin)
-      case 'assign_conversation': {
-        let agentId = config.agentUserId || config.agent_id || config.user_id;
-        const mode = config.mode || (agentId ? 'specific_agent' : 'round_robin');
-
-        if (mode === 'round_robin' || !agentId) {
-          const activeAgents = await this.prisma.user.findMany({
-            where: { status: 'ACTIVE' },
-            select: {
-              id: true,
-              role: true,
-              _count: {
-                select: {
-                  whatsappConversations: {
-                    where: { status: 'open' },
-                  },
-                },
-              },
-            },
-          });
-
-          if (activeAgents.length > 0) {
-            activeAgents.sort(
-              (a, b) =>
-                a._count.whatsappConversations - b._count.whatsappConversations,
-            );
-            agentId = activeAgents[0].id;
-          }
-        }
-        if (!agentId) return 'No agent resolved';
-
-        const conversationId = await this.resolveConversationId(
-          account.id,
-          contact.id,
-          context,
-        );
-        const updatedConv = await this.prisma.whatsAppConversation.update({
-          where: { id: conversationId },
-          data: { agentUserId: agentId },
-        });
-
-        this.realtimeGateway.emitConversationUpdated(account.id, updatedConv);
-        return `Assigned conversation to ${agentId}`;
-      }
-
-      // 9. Close Conversation
-      case 'close_conversation': {
-        const conversationId = await this.resolveConversationId(
-          account.id,
-          contact.id,
-          context,
-        );
-        const updatedConv = await this.prisma.whatsAppConversation.update({
-          where: { id: conversationId },
-          data: { status: 'closed' },
-        });
-
-        this.realtimeGateway.emitConversationUpdated(account.id, updatedConv);
-        return 'Conversation closed';
-      }
-
-      // 10. Send Outbound Webhook (SSRF Protected & Custom Body Template)
-      case 'send_webhook': {
-        if (!config.url) throw new Error('send_webhook requires url');
-        const rawTemplate = config.bodyTemplate || config.body_template;
-        let body: any;
-        if (rawTemplate) {
-          const interpolated = this.interpolate(rawTemplate, contact, context);
-          try {
-            body = JSON.parse(interpolated);
-          } catch {
-            body = interpolated;
-          }
-        } else {
-          body = {
-            event: 'automation_step',
-            contact: contact
-              ? { id: contact.id, phone: contact.phone, name: contact.name }
-              : null,
-            context,
-          };
-        }
-
-        await postSafeWebhook(config.url, body, config.secret);
-        return `Webhook delivered to ${config.url}`;
-      }
-
-      // 11. Update Contact Field (Standard & Custom Fields)
-      case 'update_contact_field': {
-        if (!contact) throw new Error('update_contact_field requires contact');
-        const fieldName = String(config.field || '');
-        const val = this.interpolate(config.value || '', contact, context);
-
-        if (fieldName.startsWith('custom:')) {
-          const customFieldId = fieldName.replace(/^custom:/, '');
-          await this.prisma.whatsAppContactCustomValue.upsert({
-            where: {
-              contactId_fieldId: {
-                contactId: contact.id,
-                fieldId: customFieldId,
-              },
-            },
-            create: {
-              contactId: contact.id,
-              fieldId: customFieldId,
-              value: val,
-            },
-            update: {
-              value: val,
-            },
-          });
-          return `Updated custom field ${customFieldId} to "${val}"`;
-        }
-
-        const allowed = ['name', 'email', 'company'];
-        if (!allowed.includes(fieldName)) {
-          return `Field ${fieldName} is not writable`;
-        }
-        await this.prisma.whatsAppContact.update({
-          where: { id: contact.id },
-          data: { [fieldName]: val },
-        });
-        return `Updated contact field ${fieldName}`;
-      }
-
-      // 12. Create Pipeline Deal
-      case 'create_deal': {
-        if (!contact) throw new Error('create_deal requires contact');
-        const pipelineId = config.pipelineId || config.pipeline_id;
-        const stageId = config.stageId || config.stage_id;
-        if (!pipelineId || !stageId) {
-          throw new Error('create_deal requires pipeline and stage');
-        }
-
-        const fallbackTitle = `Deal - ${contact.name || contact.phone}`;
-        const title = this.interpolate(
-          config.title || fallbackTitle,
-          contact,
-          context,
-        );
-        const value = Number(config.value || config.deal_value || 0) || 0;
-        const assignedUserId =
-          config.assignedUserId || config.user_id || undefined;
-        const conversationId = await this.resolveConversationId(
-          account.id,
-          contact.id,
-          context,
-        );
-
-        const deal = await this.prisma.whatsAppDeal.create({
-          data: {
-            accountId: account.id,
-            pipelineId,
-            stageId,
-            contactId: contact.id,
-            conversationId,
-            title,
-            value,
-            assignedUserId,
-          },
-        });
-
-        await this.prisma.whatsAppDealActivity.create({
-          data: {
-            dealId: deal.id,
-            type: 'created_by_automation',
-            details: {
-              automationId: step.automationId,
-              stepId: step.id,
-            },
-          },
-        });
-
-        return `Created pipeline deal "${title}" (ID: ${deal.id})`;
-      }
-
-      // 13. Close Conversation
-      case 'close_conversation': {
-        const conversationId = await this.resolveConversationId(
-          account.id,
-          contact?.id,
-          context,
-        );
-        if (conversationId) {
-          await this.prisma.whatsAppConversation.update({
-            where: { id: conversationId },
-            data: { status: 'closed' },
-          });
-          this.realtimeGateway.emitConversationUpdated(conversationId, {
-            status: 'closed',
-          });
-          return `Closed conversation ${conversationId}`;
-        }
-        return 'Conversation marked as closed';
-      }
-
-      default:
-        return `Unknown step: ${step.stepType}`;
     }
   }
 
@@ -974,8 +329,9 @@ export class WhatsAppAutomationEngineService {
     const contact = await this.prisma.whatsAppContact.findUnique({
       where: { id: contactId },
     });
-    if (!contact)
+    if (!contact) {
       throw new Error('Cannot resolve conversation: contact not found');
+    }
 
     const created = await this.prisma.whatsAppConversation.create({
       data: {
@@ -987,63 +343,6 @@ export class WhatsAppAutomationEngineService {
       },
     });
     return created.id;
-  }
-
-  private evaluateCondition(
-    config: Record<string, any>,
-    contact: any,
-    context: AutomationRunContext,
-  ): boolean {
-    const field = config.field;
-    const operator = config.operator || 'equals';
-    const expected = config.value;
-
-    let actual: any = null;
-    if (field === 'tag') {
-      const hasTag = contact?.tags?.some((t: any) => t.tagId === expected);
-      return operator === 'not_has' ? !hasTag : hasTag;
-    } else if (field === 'message_text') {
-      actual = context.messageText || '';
-    } else if (contact && contact[field] !== undefined) {
-      actual = contact[field];
-    }
-
-    if (operator === 'equals') return actual === expected;
-    if (operator === 'not_equals') return actual !== expected;
-    if (operator === 'contains') {
-      return String(actual)
-        .toLowerCase()
-        .includes(String(expected).toLowerCase());
-    }
-    return Boolean(actual);
-  }
-
-  private interpolate(
-    text: string,
-    contact: any,
-    context: AutomationRunContext,
-  ): string {
-    return text
-      .replace(/{{\s*name\s*}}/gi, contact?.name || 'there')
-      .replace(/{{\s*phone\s*}}/gi, contact?.phone || '')
-      .replace(/{{\s*company\s*}}/gi, contact?.company || '')
-      .replace(/{{\s*message\s*}}/gi, context.messageText || '');
-  }
-
-  private async sendWithVariants(
-    phone: string,
-    senderFn: (target: string) => Promise<any>,
-  ) {
-    const variants = phoneVariants(phone);
-    let lastErr: any = null;
-    for (const v of variants) {
-      try {
-        return await senderFn(v);
-      } catch (err: any) {
-        lastErr = err;
-      }
-    }
-    throw lastErr || new Error('Delivery failed across all phone variants');
   }
 
   private async appendResults(

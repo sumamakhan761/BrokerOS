@@ -9,27 +9,13 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Plus,
-  Trash2,
-  PlayCircle,
-  MessageCircle,
-  ListChecks,
-  ListPlus,
-  Paperclip,
-  Inbox,
-  GitFork,
-  Tag,
-  UserPlus,
-  Flag,
   Save,
   Loader2,
   History,
-  Workflow,
   Sparkles,
-  ArrowDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Textarea } from '@/components/ui/Textarea';
 import { Switch } from '@/components/ui/switch';
 import {
   DropdownMenu,
@@ -39,52 +25,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import type { FlowNodeType, FlowNode, FlowData } from './builder/types';
+import { NODE_TYPES_META } from './builder/types';
+import { FlowNodeCard } from './builder/FlowNodeCard';
 
-export type FlowNodeType =
-  | 'start'
-  | 'send_message'
-  | 'send_buttons'
-  | 'send_list'
-  | 'send_media'
-  | 'collect_input'
-  | 'condition'
-  | 'set_tag'
-  | 'handoff'
-  | 'end';
-
-export interface FlowNode {
-  id?: string;
-  nodeKey: string;
-  nodeType: FlowNodeType;
-  config: Record<string, any>;
-  positionX?: number;
-  positionY?: number;
-}
-
-interface FlowData {
-  id: string;
-  name: string;
-  status: 'draft' | 'active' | 'archived';
-  triggerType: string;
-  triggerConfig?: any;
-  nodes: FlowNode[];
-}
-
-const NODE_TYPES_META: Record<
-  FlowNodeType,
-  { label: string; icon: any; color: string; desc: string }
-> = {
-  start: { label: 'Start Entry', icon: PlayCircle, color: 'text-emerald-500 bg-emerald-500/10 border-l-emerald-500', desc: 'Entry point of flow' },
-  send_message: { label: 'Send Text Message', icon: MessageCircle, color: 'text-sky-500 bg-sky-500/10 border-l-sky-500', desc: 'Sends a text message' },
-  send_buttons: { label: 'Send Quick Reply Buttons', icon: ListChecks, color: 'text-brand-600 bg-brand-500/10 border-l-brand-600', desc: 'Up to 3 reply buttons' },
-  send_list: { label: 'Send List Menu', icon: ListPlus, color: 'text-indigo-500 bg-indigo-500/10 border-l-indigo-500', desc: 'Interactive dropdown list' },
-  send_media: { label: 'Send Media (Image / PDF)', icon: Paperclip, color: 'text-cyan-500 bg-cyan-500/10 border-l-cyan-500', desc: 'Brochure or floor plan' },
-  collect_input: { label: 'Ask Question & Save Reply', icon: Inbox, color: 'text-teal-500 bg-teal-500/10 border-l-teal-500', desc: 'Captures user response in CRM' },
-  condition: { label: 'If / Else Branch', icon: GitFork, color: 'text-fuchsia-500 bg-fuchsia-500/10 border-l-fuchsia-500', desc: 'Branches on budget, tag, etc.' },
-  set_tag: { label: 'Add / Remove Tag', icon: Tag, color: 'text-pink-500 bg-pink-500/10 border-l-pink-500', desc: 'Updates contact tags' },
-  handoff: { label: 'Handoff to Human Agent', icon: UserPlus, color: 'text-amber-500 bg-amber-500/10 border-l-amber-500', desc: 'Transfers chat to sales exec' },
-  end: { label: 'End Flow', icon: Flag, color: 'text-zinc-500 bg-zinc-500/10 border-l-zinc-500', desc: 'Terminates the workflow' },
-};
+export type { FlowNodeType, FlowNode };
 
 export function FlowBuilderView({ id }: { id: string }) {
   const router = useRouter();
@@ -112,14 +57,6 @@ export function FlowBuilderView({ id }: { id: string }) {
     }
     load();
   }, [id]);
-
-  function updateNode(nodeKey: string, patch: Partial<FlowNode>) {
-    if (!flow) return;
-    setFlow({
-      ...flow,
-      nodes: flow.nodes.map((n) => (n.nodeKey === nodeKey ? { ...n, ...patch } : n)),
-    });
-  }
 
   function updateNodeConfig(nodeKey: string, cfgPatch: Record<string, any>) {
     if (!flow) return;
@@ -302,194 +239,16 @@ export function FlowBuilderView({ id }: { id: string }) {
 
         {/* Nodes Sequence */}
         <div className="space-y-4">
-          {flow.nodes.map((node, idx) => {
-            const meta = NODE_TYPES_META[node.nodeType] || NODE_TYPES_META.send_message;
-            const Icon = meta.icon;
-
-            return (
-              <div
-                key={node.nodeKey}
-                className={cn(
-                  'rounded-2xl border border-border-default bg-bg-surface p-4 shadow-xs border-l-4 transition-all',
-                  meta.color.split(' ')[2],
-                )}
-              >
-                {/* Node Card Header */}
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className={cn('flex h-7 w-7 items-center justify-center rounded-lg', meta.color.split(' ')[1], meta.color.split(' ')[0])}>
-                      <Icon className="h-3.5 w-3.5" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-text-primary">
-                        {idx + 1}. {meta.label}
-                      </span>
-                      <span className="text-[10px] font-mono text-text-muted ml-2">
-                        ({node.nodeKey})
-                      </span>
-                    </div>
-                  </div>
-
-                  {node.nodeType !== 'start' && (
-                    <button
-                      type="button"
-                      onClick={() => removeNode(node.nodeKey)}
-                      className="text-text-muted hover:text-red-600 p-1 rounded"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Node Config Body */}
-                <div className="space-y-3 pt-2 border-t border-border-default">
-                  {node.nodeType === 'send_message' && (
-                    <div>
-                      <label className="text-xs font-medium text-text-muted block mb-1">Message Body:</label>
-                      <Textarea
-                        value={node.config.text || ''}
-                        onChange={(e) => updateNodeConfig(node.nodeKey, { text: e.target.value })}
-                        placeholder="Type message text..."
-                        className="text-xs bg-bg-subtle min-h-16"
-                      />
-                    </div>
-                  )}
-
-                  {node.nodeType === 'send_buttons' && (
-                    <div className="space-y-2">
-                      <div>
-                        <label className="text-xs font-medium text-text-muted block mb-1">Prompt Body:</label>
-                        <Textarea
-                          value={node.config.body || ''}
-                          onChange={(e) => updateNodeConfig(node.nodeKey, { body: e.target.value })}
-                          placeholder="Select an option:"
-                          className="text-xs bg-bg-subtle min-h-14"
-                        />
-                      </div>
-                      <label className="text-[11px] font-bold text-text-muted block">Buttons:</label>
-                      {(node.config.buttons || []).map((btn: any, bIdx: number) => (
-                        <div key={bIdx} className="flex items-center gap-2">
-                          <Input
-                            value={btn.title || ''}
-                            onChange={(e) => {
-                              const nextBtns = [...(node.config.buttons || [])];
-                              nextBtns[bIdx] = { ...btn, title: e.target.value };
-                              updateNodeConfig(node.nodeKey, { buttons: nextBtns });
-                            }}
-                            placeholder="Button label"
-                            className="text-xs bg-bg-subtle flex-1"
-                          />
-                          <select
-                            value={btn.next_node_key || ''}
-                            onChange={(e) => {
-                              const nextBtns = [...(node.config.buttons || [])];
-                              nextBtns[bIdx] = { ...btn, next_node_key: e.target.value };
-                              updateNodeConfig(node.nodeKey, { buttons: nextBtns });
-                            }}
-                            className="rounded-lg border border-border-default bg-bg-subtle px-2 py-1.5 text-xs text-text-primary"
-                          >
-                            <option value="">-- Then go to node --</option>
-                            {allNodeKeys
-                              .filter((k) => k !== node.nodeKey)
-                              .map((k) => (
-                                <option key={k} value={k}>
-                                  {k}
-                                </option>
-                              ))}
-                          </select>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {node.nodeType === 'collect_input' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-medium text-text-muted block mb-1">Question Prompt:</label>
-                        <Input
-                          value={node.config.prompt || ''}
-                          onChange={(e) => updateNodeConfig(node.nodeKey, { prompt: e.target.value })}
-                          placeholder="e.g. What is your preferred location?"
-                          className="text-xs bg-bg-subtle"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-text-muted block mb-1">Save Answer As Variable:</label>
-                        <Input
-                          value={node.config.var_name || ''}
-                          onChange={(e) => updateNodeConfig(node.nodeKey, { var_name: e.target.value })}
-                          placeholder="e.g. preferred_location"
-                          className="text-xs bg-bg-subtle font-mono"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {node.nodeType === 'condition' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <div>
-                        <label className="text-xs font-medium text-text-muted block mb-1">Variable:</label>
-                        <Input
-                          value={node.config.variable || ''}
-                          onChange={(e) => updateNodeConfig(node.nodeKey, { variable: e.target.value })}
-                          placeholder="budget"
-                          className="text-xs bg-bg-subtle font-mono"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-text-muted block mb-1">If TRUE go to:</label>
-                        <select
-                          value={node.config.if_true_node_key || ''}
-                          onChange={(e) => updateNodeConfig(node.nodeKey, { if_true_node_key: e.target.value })}
-                          className="w-full rounded-lg border border-border-default bg-bg-subtle px-2 py-1.5 text-xs text-text-primary"
-                        >
-                          <option value="">-- Select node --</option>
-                          {allNodeKeys.map((k) => (
-                            <option key={k} value={k}>{k}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-text-muted block mb-1">If FALSE go to:</label>
-                        <select
-                          value={node.config.if_false_node_key || ''}
-                          onChange={(e) => updateNodeConfig(node.nodeKey, { if_false_node_key: e.target.value })}
-                          className="w-full rounded-lg border border-border-default bg-bg-subtle px-2 py-1.5 text-xs text-text-primary"
-                        >
-                          <option value="">-- Select node --</option>
-                          {allNodeKeys.map((k) => (
-                            <option key={k} value={k}>{k}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* General Next Node transition for linear nodes */}
-                  {node.nodeType !== 'send_buttons' && node.nodeType !== 'condition' && node.nodeType !== 'end' && (
-                    <div className="pt-2 flex items-center gap-2">
-                      <ArrowDown className="h-3.5 w-3.5 text-text-muted" />
-                      <span className="text-[11px] font-medium text-text-muted">Then proceed to:</span>
-                      <select
-                        value={node.config.next_node_key || ''}
-                        onChange={(e) => updateNodeConfig(node.nodeKey, { next_node_key: e.target.value })}
-                        className="rounded-lg border border-border-default bg-bg-subtle px-2.5 py-1 text-xs text-text-primary"
-                      >
-                        <option value="">-- Select next step --</option>
-                        {allNodeKeys
-                          .filter((k) => k !== node.nodeKey)
-                          .map((k) => (
-                            <option key={k} value={k}>
-                              {k}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {flow.nodes.map((node, idx) => (
+            <FlowNodeCard
+              key={node.nodeKey}
+              node={node}
+              index={idx}
+              allNodeKeys={allNodeKeys}
+              updateNodeConfig={updateNodeConfig}
+              removeNode={removeNode}
+            />
+          ))}
         </div>
 
         {/* Add Node Dropdown */}
@@ -515,7 +274,13 @@ export function FlowBuilderView({ id }: { id: string }) {
                     onClick={() => addNode(type)}
                     className="flex items-center gap-2.5 px-2.5 py-2 text-xs rounded-lg cursor-pointer hover:bg-bg-subtle"
                   >
-                    <div className={cn('flex h-6 w-6 items-center justify-center rounded', m.color.split(' ')[1], m.color.split(' ')[0])}>
+                    <div
+                      className={cn(
+                        'flex h-6 w-6 items-center justify-center rounded',
+                        m.color.split(' ')[1],
+                        m.color.split(' ')[0],
+                      )}
+                    >
                       <Icon className="h-3.5 w-3.5" />
                     </div>
                     <div>
