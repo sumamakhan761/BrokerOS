@@ -19,7 +19,7 @@ export class GoogleAdsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly syncService: GoogleSyncService,
-  ) { }
+  ) {}
 
   private getDeveloperToken(): string {
     return process.env.GOOGLE_ADS_DEVELOPER_TOKEN || '';
@@ -156,7 +156,7 @@ export class GoogleAdsService {
     });
 
     // Trigger initial background sync
-    this.syncService.syncIntegration(integration.id).catch(() => { });
+    this.syncService.syncIntegration(integration.id).catch(() => {});
 
     return integration;
   }
@@ -284,7 +284,9 @@ export class GoogleAdsService {
     });
 
     if (!campaign) {
-      throw new NotFoundException(`Google Campaign with ID ${id} not found in cache`);
+      throw new NotFoundException(
+        `Google Campaign with ID ${id} not found in cache`,
+      );
     }
 
     // Fetch acquired CRM leads from this campaign

@@ -7,7 +7,7 @@ export class GoogleSyncService {
   private readonly logger = new Logger(GoogleSyncService.name);
   private readonly client = new GoogleAdsApiClient();
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   private getDeveloperToken(): string {
     return process.env.GOOGLE_ADS_DEVELOPER_TOKEN || '';
@@ -54,7 +54,9 @@ export class GoogleSyncService {
       this.logger.error(
         `Could not refresh Google OAuth access token (${err?.message}).`,
       );
-      throw new Error(`Google OAuth access token refresh failed: ${err?.message}`);
+      throw new Error(
+        `Google OAuth access token refresh failed: ${err?.message}`,
+      );
     }
 
     try {

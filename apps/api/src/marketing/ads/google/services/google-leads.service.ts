@@ -76,8 +76,7 @@ export class GoogleLeadsService {
       }
 
       // Determine phone & name
-      const phone =
-        leadData.phoneNumber || `+9198111${googleLeadId.slice(-5)}`;
+      const phone = leadData.phoneNumber || `+9198111${googleLeadId.slice(-5)}`;
       const firstName = leadData.firstName || 'Google';
       const lastName = leadData.lastName || 'Prospect';
       const summaryText = `Generated via Google Lead Form Asset (${formId || 'N/A'}) on Campaign: ${campaignId || 'Search Campaign'}${gclid ? ` [GCLID: ${gclid}]` : ''}`;

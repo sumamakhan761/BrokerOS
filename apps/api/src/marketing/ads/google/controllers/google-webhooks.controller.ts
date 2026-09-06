@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { Public } from '@thallesp/nestjs-better-auth';
 import { GoogleLeadsService } from '../services/google-leads.service.js';
 
