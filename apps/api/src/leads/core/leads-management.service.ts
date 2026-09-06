@@ -9,7 +9,7 @@ export class LeadsManagementService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
-  ) { }
+  ) {}
 
   async bulkCreate(leads: CreateLeadDto[], managerId: string) {
     const sources = await this.prisma.leadSource.findMany();
