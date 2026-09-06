@@ -1,5 +1,5 @@
 // ============================================================================
-// BrokerOS — WhatsApp Contacts, Tags & Quick Replies Service
+// BrokerOS — WhatsApp Contacts Service (Modular Coordinator)
 // ============================================================================
 
 import {
@@ -18,11 +18,18 @@ import type {
   CreateWhatsAppQuickReplyDto,
   UpdateWhatsAppQuickReplyDto,
 } from '../dto/whatsapp.dto.js';
+import { WhatsAppTagsService } from './whatsapp-tags.service.js';
+import { WhatsAppQuickRepliesService } from './whatsapp-quick-replies.service.js';
 
 @Injectable()
 export class WhatsAppContactsService {
   private readonly logger = new Logger(WhatsAppContactsService.name);
   private readonly prisma = prismaClient;
+
+  constructor(
+    private readonly tagsService: WhatsAppTagsService,
+    private readonly quickRepliesService: WhatsAppQuickRepliesService,
+  ) {}
 
   // ─────────────────────────────────────────────
   // 1. Contacts
@@ -132,7 +139,6 @@ export class WhatsAppContactsService {
       throw new BadRequestException('Valid E.164 phone number required');
     }
 
-    // Resolve active account if not explicitly passed
     let accountId = dto.accountId;
     if (!accountId) {
       const defaultAccount =
@@ -148,7 +154,6 @@ export class WhatsAppContactsService {
       accountId = defaultAccount.id;
     }
 
-    // Upsert by (accountId, phone)
     const contact = await this.prisma.whatsAppContact.upsert({
       where: {
         accountId_phone: { accountId, phone: cleanPhone },
@@ -173,7 +178,6 @@ export class WhatsAppContactsService {
       },
     });
 
-    // Auto-ensure open conversation thread exists for this contact
     try {
       const existingConv = await this.prisma.whatsAppConversation.findFirst({
         where: {
@@ -197,7 +201,9 @@ export class WhatsAppContactsService {
         });
       }
     } catch (convErr: any) {
-      this.logger.warn(`Failed to auto-create conversation for contact ${contact.id}: ${convErr?.message}`);
+      this.logger.warn(
+        `Failed to auto-create conversation for contact ${contact.id}: ${convErr?.message}`,
+      );
     }
 
     return contact;
@@ -248,169 +254,47 @@ export class WhatsAppContactsService {
   }
 
   // ─────────────────────────────────────────────
-  // 2. Tags & Contact Tags
+  // 2. Tags (Delegated to WhatsAppTagsService)
   // ─────────────────────────────────────────────
 
   async listTags(accountId?: string) {
-    const where: Record<string, any> = {};
-    if (accountId) where.accountId = accountId;
-
-    return this.prisma.whatsAppTag.findMany({
-      where,
-      orderBy: { name: 'asc' },
-      include: {
-        _count: {
-          select: { contacts: true },
-        },
-      },
-    });
+    return this.tagsService.listTags(accountId);
   }
 
   async createTag(dto: CreateWhatsAppTagDto) {
-    let accountId = dto.accountId;
-    if (!accountId) {
-      const defaultAccount =
-        await this.prisma.whatsAppBusinessAccount.findFirst({
-          where: { isActive: true },
-          select: { id: true },
-        });
-      if (!defaultAccount) {
-        throw new BadRequestException(
-          'No active WhatsApp business account found',
-        );
-      }
-      accountId = defaultAccount.id;
-    }
-
-    return this.prisma.whatsAppTag.upsert({
-      where: {
-        accountId_name: { accountId, name: dto.name.trim() },
-      },
-      create: {
-        accountId,
-        name: dto.name.trim(),
-        color: dto.color || '#3B82F6',
-      },
-      update: {
-        color: dto.color || undefined,
-      },
-    });
+    return this.tagsService.createTag(dto);
   }
 
   async deleteTag(id: string) {
-    await this.prisma.whatsAppTag.delete({
-      where: { id },
-    });
-    return { success: true, message: 'Tag deleted' };
+    return this.tagsService.deleteTag(id);
   }
 
   async addTag(contactId: string, tagId: string) {
-    const contact = await this.prisma.whatsAppContact.findUnique({
-      where: { id: contactId },
-    });
-    if (!contact) throw new NotFoundException(`Contact ${contactId} not found`);
-
-    const tag = await this.prisma.whatsAppTag.findUnique({
-      where: { id: tagId },
-    });
-    if (!tag) throw new NotFoundException(`Tag ${tagId} not found`);
-
-    return this.prisma.whatsAppContactTag.upsert({
-      where: {
-        contactId_tagId: { contactId, tagId },
-      },
-      create: {
-        contactId,
-        tagId,
-      },
-      update: {},
-    });
+    return this.tagsService.addTag(contactId, tagId);
   }
 
   async removeTag(contactId: string, tagId: string) {
-    await this.prisma.whatsAppContactTag.deleteMany({
-      where: { contactId, tagId },
-    });
-    return { success: true, message: 'Tag removed from contact' };
+    return this.tagsService.removeTag(contactId, tagId);
   }
 
   // ─────────────────────────────────────────────
-  // 3. Quick Replies
+  // 3. Quick Replies (Delegated to WhatsAppQuickRepliesService)
   // ─────────────────────────────────────────────
 
   async listQuickReplies(accountId?: string) {
-    const where: Record<string, any> = {};
-    if (accountId) where.accountId = accountId;
-
-    return this.prisma.whatsAppQuickReply.findMany({
-      where,
-      orderBy: { shortcut: 'asc' },
-    });
+    return this.quickRepliesService.listQuickReplies(accountId);
   }
 
   async createQuickReply(dto: CreateWhatsAppQuickReplyDto) {
-    let accountId = dto.accountId;
-    if (!accountId) {
-      const defaultAccount =
-        await this.prisma.whatsAppBusinessAccount.findFirst({
-          where: { isActive: true },
-          select: { id: true },
-        });
-      if (!defaultAccount) {
-        throw new BadRequestException(
-          'No active WhatsApp business account found',
-        );
-      }
-      accountId = defaultAccount.id;
-    }
-
-    const shortcut = dto.shortcut.startsWith('/')
-      ? dto.shortcut
-      : `/${dto.shortcut}`;
-
-    return this.prisma.whatsAppQuickReply.upsert({
-      where: {
-        accountId_shortcut: { accountId, shortcut },
-      },
-      create: {
-        accountId,
-        shortcut,
-        content: dto.content,
-      },
-      update: {
-        content: dto.content,
-      },
-    });
+    return this.quickRepliesService.createQuickReply(dto);
   }
 
   async updateQuickReply(id: string, dto: UpdateWhatsAppQuickReplyDto) {
-    const existing = await this.prisma.whatsAppQuickReply.findUnique({
-      where: { id },
-    });
-    if (!existing) {
-      throw new NotFoundException(`Quick reply ${id} not found`);
-    }
-
-    const shortcut = dto.shortcut
-      ? dto.shortcut.startsWith('/')
-        ? dto.shortcut
-        : `/${dto.shortcut}`
-      : undefined;
-
-    return this.prisma.whatsAppQuickReply.update({
-      where: { id },
-      data: {
-        shortcut,
-        content: dto.content !== undefined ? dto.content : undefined,
-      },
-    });
+    return this.quickRepliesService.updateQuickReply(id, dto);
   }
 
   async deleteQuickReply(id: string) {
-    await this.prisma.whatsAppQuickReply.delete({
-      where: { id },
-    });
-    return { success: true, message: 'Quick reply deleted' };
+    return this.quickRepliesService.deleteQuickReply(id);
   }
 
   // ─────────────────────────────────────────────
@@ -459,10 +343,11 @@ export class WhatsAppContactsService {
   async listCustomFields(accountId?: string) {
     let targetAccountId = accountId;
     if (!targetAccountId) {
-      const defaultAccount = await this.prisma.whatsAppBusinessAccount.findFirst({
-        where: { isActive: true },
-        select: { id: true },
-      });
+      const defaultAccount =
+        await this.prisma.whatsAppBusinessAccount.findFirst({
+          where: { isActive: true },
+          select: { id: true },
+        });
       targetAccountId = defaultAccount?.id;
     }
     if (!targetAccountId) return [];
@@ -481,11 +366,14 @@ export class WhatsAppContactsService {
   }) {
     let accountId = dto.accountId;
     if (!accountId) {
-      const defaultAccount = await this.prisma.whatsAppBusinessAccount.findFirst({
-        where: { isActive: true },
-        select: { id: true },
-      });
-      if (!defaultAccount) throw new BadRequestException('No active account found');
+      const defaultAccount =
+        await this.prisma.whatsAppBusinessAccount.findFirst({
+          where: { isActive: true },
+          select: { id: true },
+        });
+      if (!defaultAccount) {
+        throw new BadRequestException('No active account found');
+      }
       accountId = defaultAccount.id;
     }
 
@@ -506,7 +394,10 @@ export class WhatsAppContactsService {
     });
   }
 
-  async saveContactCustomValues(contactId: string, values: Record<string, string>) {
+  async saveContactCustomValues(
+    contactId: string,
+    values: Record<string, string>,
+  ) {
     const contact = await this.prisma.whatsAppContact.findUnique({
       where: { id: contactId },
     });
@@ -548,18 +439,20 @@ export class WhatsAppContactsService {
   ) {
     let targetAccountId = accountId;
     if (!targetAccountId) {
-      const defaultAccount = await this.prisma.whatsAppBusinessAccount.findFirst({
-        where: { isActive: true },
-        select: { id: true },
-      });
+      const defaultAccount =
+        await this.prisma.whatsAppBusinessAccount.findFirst({
+          where: { isActive: true },
+          select: { id: true },
+        });
       if (!defaultAccount) {
-        throw new BadRequestException('No active WhatsApp business account found');
+        throw new BadRequestException(
+          'No active WhatsApp business account found',
+        );
       }
       targetAccountId = defaultAccount.id;
     }
 
     let createdCount = 0;
-    let updatedCount = 0;
 
     for (const item of contacts) {
       if (!item.phone) continue;
@@ -590,7 +483,10 @@ export class WhatsAppContactsService {
           if (!tagName.trim()) continue;
           const tag = await this.prisma.whatsAppTag.upsert({
             where: {
-              accountId_name: { accountId: targetAccountId, name: tagName.trim() },
+              accountId_name: {
+                accountId: targetAccountId,
+                name: tagName.trim(),
+              },
             },
             create: {
               accountId: targetAccountId,

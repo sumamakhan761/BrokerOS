@@ -1,19 +1,12 @@
 // ============================================================================
-// BrokerOS — WhatsApp Flow Runtime Engine (1:1 wacrm Engine Parity)
+// BrokerOS — WhatsApp Flow Runtime Engine (Modular Coordinator)
 // ============================================================================
 
 import { Injectable, Logger } from '@nestjs/common';
 import { prismaClient } from '@brokeros/prisma';
-import {
-  sendTextMessage,
-  sendMediaMessage,
-  sendInteractiveButtons,
-  sendInteractiveList,
-  phoneVariants,
-  validateInteractivePayload,
-} from '@brokeros/int-whatsapp';
 import { WhatsAppConfigService } from '../config/whatsapp-config.service.js';
 import { WhatsAppRealtimeGateway } from '../gateway/whatsapp-realtime.gateway.js';
+import { executeFlowNode } from './engine/flow-node-executors.js';
 
 export interface FlowInboundMessage {
   kind: 'text' | 'button_reply' | 'list_reply';
@@ -30,7 +23,7 @@ export class WhatsAppFlowEngineService {
   constructor(
     private readonly configService: WhatsAppConfigService,
     private readonly realtimeGateway: WhatsAppRealtimeGateway,
-  ) {}
+  ) { }
 
   /**
    * Dispatch an inbound message to the flows subsystem.
@@ -243,7 +236,7 @@ export class WhatsAppFlowEngineService {
             (message.replyId && row.reply_id === message.replyId) ||
             (message.text &&
               row.title.trim().toLowerCase() ===
-                message.text.trim().toLowerCase())
+              message.text.trim().toLowerCase())
           ) {
             hitKey = row.next_node_key;
             break;
@@ -313,300 +306,18 @@ export class WhatsAppFlowEngineService {
     let currentNode = initialNode;
 
     while (currentNode) {
-      const config = (currentNode.config || {}) as Record<string, any>;
+      const result = await executeFlowNode(currentNode, run, {
+        account,
+        prisma: this.prisma,
+        realtimeGateway: this.realtimeGateway,
+        logger: this.logger,
+      });
 
-      switch (currentNode.nodeType) {
-        case 'start': {
-          const nextKey = config.next_node_key;
-          await this.prisma.whatsAppFlowRun.update({
-            where: { id: run.id },
-            data: { currentNodeKey: nextKey },
-          });
-          currentNode = nextKey ? nodesMap.get(nextKey) : null;
-          break;
-        }
-
-        case 'send_message': {
-          const contact = await this.prisma.whatsAppContact.findUnique({
-            where: { id: run.contactId },
-          });
-          if (contact?.phone) {
-            const text = this.interpolate(config.text || '', contact, run.vars);
-            const res = await this.sendWithVariants(contact.phone, (target) =>
-              sendTextMessage({
-                phoneNumberId: account.phoneNumberId,
-                accessToken: account.accessToken,
-                to: target,
-                text,
-              }),
-            );
-
-            await this.recordBotMessage(
-              run,
-              res.messageId,
-              text,
-              'text',
-              'TEXT',
-            );
-          }
-
-          const nextKey = config.next_node_key;
-          await this.prisma.whatsAppFlowRun.update({
-            where: { id: run.id },
-            data: { currentNodeKey: nextKey },
-          });
-          currentNode = nextKey ? nodesMap.get(nextKey) : null;
-          break;
-        }
-
-        case 'send_media': {
-          const contact = await this.prisma.whatsAppContact.findUnique({
-            where: { id: run.contactId },
-          });
-          if (contact?.phone && config.media_url) {
-            const res = await this.sendWithVariants(contact.phone, (target) =>
-              sendMediaMessage({
-                phoneNumberId: account.phoneNumberId,
-                accessToken: account.accessToken,
-                to: target,
-                kind: config.media_type || 'image',
-                link: config.media_url,
-                caption: config.caption
-                  ? this.interpolate(config.caption, contact, run.vars)
-                  : undefined,
-              }),
-            );
-
-            await this.recordBotMessage(
-              run,
-              res.messageId,
-              `[${config.media_type || 'Media'}]`,
-              config.media_type || 'image',
-              (config.media_type || 'IMAGE').toUpperCase(),
-            );
-          }
-
-          const nextKey = config.next_node_key;
-          await this.prisma.whatsAppFlowRun.update({
-            where: { id: run.id },
-            data: { currentNodeKey: nextKey },
-          });
-          currentNode = nextKey ? nodesMap.get(nextKey) : null;
-          break;
-        }
-
-        case 'set_tag': {
-          if (config.tag_id && run.contactId) {
-            if (config.mode === 'remove') {
-              await this.prisma.whatsAppContactTag.deleteMany({
-                where: { contactId: run.contactId, tagId: config.tag_id },
-              });
-            } else {
-              await this.prisma.whatsAppContactTag.upsert({
-                where: {
-                  contactId_tagId: {
-                    contactId: run.contactId,
-                    tagId: config.tag_id,
-                  },
-                },
-                create: { contactId: run.contactId, tagId: config.tag_id },
-                update: {},
-              });
-            }
-          }
-
-          const nextKey = config.next_node_key;
-          await this.prisma.whatsAppFlowRun.update({
-            where: { id: run.id },
-            data: { currentNodeKey: nextKey },
-          });
-          currentNode = nextKey ? nodesMap.get(nextKey) : null;
-          break;
-        }
-
-        case 'condition': {
-          const matched = await this.evaluateConditionNode(config, run);
-          const nextKey = matched ? config.true_next : config.false_next;
-
-          await this.prisma.whatsAppFlowRun.update({
-            where: { id: run.id },
-            data: { currentNodeKey: nextKey },
-          });
-          currentNode = nextKey ? nodesMap.get(nextKey) : null;
-          break;
-        }
-
-        // ── Suspension Node: SEND_BUTTONS ───────────────────
-        case 'send_buttons': {
-          const contact = await this.prisma.whatsAppContact.findUnique({
-            where: { id: run.contactId },
-          });
-          if (contact?.phone) {
-            const body = this.interpolate(config.text || '', contact, run.vars);
-            const payload = {
-              kind: 'buttons' as const,
-              body,
-              header: config.header_text,
-              footer: config.footer_text,
-              buttons: (config.buttons || []).map((b: any) => ({
-                id: b.reply_id,
-                title: b.title,
-              })),
-            };
-
-            const check = validateInteractivePayload(payload);
-            if (!check.ok) throw new Error(check.error);
-
-            const res = await this.sendWithVariants(contact.phone, (target) =>
-              sendInteractiveButtons({
-                phoneNumberId: account.phoneNumberId,
-                accessToken: account.accessToken,
-                to: target,
-                bodyText: payload.body,
-                headerText: payload.header,
-                footerText: payload.footer,
-                buttons: payload.buttons,
-              }),
-            );
-
-            await this.recordBotMessage(
-              run,
-              res.messageId,
-              payload.body,
-              'interactive_buttons',
-              'INTERACTIVE',
-              payload,
-            );
-          }
-
-          await this.prisma.whatsAppFlowRun.update({
-            where: { id: run.id },
-            data: { currentNodeKey: currentNode.nodeKey },
-          });
-          return; // Suspend
-        }
-
-        // ── Suspension Node: SEND_LIST ──────────────────────
-        case 'send_list': {
-          const contact = await this.prisma.whatsAppContact.findUnique({
-            where: { id: run.contactId },
-          });
-          if (contact?.phone) {
-            const body = this.interpolate(config.text || '', contact, run.vars);
-            const payload = {
-              kind: 'list' as const,
-              body,
-              button_label: config.button_label || 'Select',
-              header: config.header_text,
-              footer: config.footer_text,
-              sections: config.sections || [],
-            };
-
-            const check = validateInteractivePayload(payload);
-            if (!check.ok) throw new Error(check.error);
-
-            const res = await this.sendWithVariants(contact.phone, (target) =>
-              sendInteractiveList({
-                phoneNumberId: account.phoneNumberId,
-                accessToken: account.accessToken,
-                to: target,
-                bodyText: payload.body,
-                buttonLabel: payload.button_label,
-                headerText: payload.header,
-                footerText: payload.footer,
-                sections: payload.sections,
-              }),
-            );
-
-            await this.recordBotMessage(
-              run,
-              res.messageId,
-              payload.body,
-              'interactive_list',
-              'INTERACTIVE',
-              payload,
-            );
-          }
-
-          await this.prisma.whatsAppFlowRun.update({
-            where: { id: run.id },
-            data: { currentNodeKey: currentNode.nodeKey },
-          });
-          return; // Suspend
-        }
-
-        // ── Suspension Node: COLLECT_INPUT ──────────────────
-        case 'collect_input': {
-          const contact = await this.prisma.whatsAppContact.findUnique({
-            where: { id: run.contactId },
-          });
-          if (contact?.phone) {
-            const prompt = this.interpolate(
-              config.prompt_text || '',
-              contact,
-              run.vars,
-            );
-            const res = await this.sendWithVariants(contact.phone, (target) =>
-              sendTextMessage({
-                phoneNumberId: account.phoneNumberId,
-                accessToken: account.accessToken,
-                to: target,
-                text: prompt,
-              }),
-            );
-
-            await this.recordBotMessage(
-              run,
-              res.messageId,
-              prompt,
-              'text',
-              'TEXT',
-            );
-          }
-
-          await this.prisma.whatsAppFlowRun.update({
-            where: { id: run.id },
-            data: { currentNodeKey: currentNode.nodeKey },
-          });
-          return; // Suspend
-        }
-
-        // ── Terminal Node: HANDOFF ──────────────────────────
-        case 'handoff': {
-          if (config.assign_to && run.conversationId) {
-            await this.prisma.whatsAppConversation.update({
-              where: { id: run.conversationId },
-              data: { agentUserId: config.assign_to },
-            });
-          }
-
-          await this.prisma.whatsAppFlowRun.update({
-            where: { id: run.id },
-            data: {
-              status: 'handed_off',
-              endedAt: new Date(),
-              endReason: 'handoff',
-            },
-          });
-          return;
-        }
-
-        // ── Terminal Node: END ──────────────────────────────
-        case 'end': {
-          await this.prisma.whatsAppFlowRun.update({
-            where: { id: run.id },
-            data: {
-              status: 'completed',
-              endedAt: new Date(),
-              endReason: 'completed',
-            },
-          });
-          return;
-        }
-
-        default:
-          this.logger.warn(`Unknown flow node type: ${currentNode.nodeType}`);
-          return;
+      if (result.action === 'advance') {
+        currentNode = result.nextKey ? nodesMap.get(result.nextKey) : null;
+      } else {
+        // suspend, terminal, or unknown: exit execution loop
+        return;
       }
     }
   }
@@ -648,10 +359,9 @@ export class WhatsAppFlowEngineService {
     });
   }
 
-  // ─────────────────────────────────────────────
-  // Helpers
-  // ─────────────────────────────────────────────
-
+  /**
+   * Find a flow matching the trigger criteria.
+   */
   private async findMatchingEntryFlow(
     accountId: string,
     message: FlowInboundMessage,
@@ -691,117 +401,5 @@ export class WhatsAppFlowEngineService {
     }
 
     return null;
-  }
-
-  private async evaluateConditionNode(
-    config: Record<string, any>,
-    run: any,
-  ): Promise<boolean> {
-    const subject = config.subject; // 'var' | 'tag' | 'contact_field'
-    const subjectKey = config.subject_key;
-    const operator = config.operator || 'equals';
-    const configValue = config.value || '';
-
-    let actualValue: string | undefined;
-
-    if (subject === 'var') {
-      const vars = (run.vars || {}) as Record<string, any>;
-      actualValue =
-        vars[subjectKey] !== undefined ? String(vars[subjectKey]) : undefined;
-    } else if (subject === 'tag') {
-      const hasTag = await this.prisma.whatsAppContactTag.findFirst({
-        where: { contactId: run.contactId, tagId: subjectKey },
-      });
-      actualValue = hasTag ? 'present' : undefined;
-    } else if (subject === 'contact_field') {
-      const contact = await this.prisma.whatsAppContact.findUnique({
-        where: { id: run.contactId },
-      });
-      if (contact && (contact as any)[subjectKey] !== undefined) {
-        actualValue = String((contact as any)[subjectKey]);
-      }
-    }
-
-    switch (operator) {
-      case 'present':
-        return actualValue !== undefined && actualValue !== '';
-      case 'absent':
-        return actualValue === undefined || actualValue === '';
-      case 'equals':
-        return actualValue === configValue;
-      case 'contains':
-        return actualValue !== undefined && actualValue.includes(configValue);
-      default:
-        return false;
-    }
-  }
-
-  private interpolate(text: string, contact: any, vars?: any): string {
-    let res = text
-      .replace(/{{\s*name\s*}}/gi, contact?.name || 'there')
-      .replace(/{{\s*phone\s*}}/gi, contact?.phone || '')
-      .replace(/{{\s*company\s*}}/gi, contact?.company || '');
-
-    if (vars && typeof vars === 'object') {
-      for (const [k, v] of Object.entries(vars)) {
-        const regex = new RegExp(`{{\\s*vars\\.${k}\\s*}}`, 'gi');
-        res = res.replace(regex, String(v ?? ''));
-      }
-    }
-    return res;
-  }
-
-  private async recordBotMessage(
-    run: any,
-    waMessageId: string,
-    body: string,
-    contentType: string,
-    type: any,
-    interactivePayload?: any,
-  ) {
-    if (!run.conversationId) return;
-
-    const msgRow = await this.prisma.whatsAppMessage.create({
-      data: {
-        conversationId: run.conversationId,
-        waMessageId,
-        direction: 'OUTBOUND',
-        type,
-        status: 'SENT',
-        senderType: 'bot',
-        contentType,
-        senderName: 'Flow Bot',
-        body,
-        interactivePayload: interactivePayload || undefined,
-        sentAt: new Date(),
-      },
-    });
-
-    await this.prisma.whatsAppConversation.update({
-      where: { id: run.conversationId },
-      data: { lastMessageText: body, lastMessageAt: msgRow.sentAt },
-    });
-
-    this.realtimeGateway.emitMessageSent(
-      run.conversationId,
-      msgRow,
-      run.accountId,
-    );
-  }
-
-  private async sendWithVariants(
-    phone: string,
-    senderFn: (target: string) => Promise<any>,
-  ) {
-    const variants = phoneVariants(phone);
-    let lastErr: any = null;
-    for (const v of variants) {
-      try {
-        return await senderFn(v);
-      } catch (err: any) {
-        lastErr = err;
-      }
-    }
-    throw lastErr || new Error('Delivery failed across all phone variants');
   }
 }

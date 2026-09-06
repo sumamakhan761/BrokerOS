@@ -1,0 +1,320 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import { SMS_PROVIDERS } from "@brokeros/constants";
+import type { SmsProviderType } from "@/features/marketing/types";
+import { Button } from "@/components/ui/Button";
+
+export interface SmsConnectModalProps {
+  selectedProvider: SmsProviderType | null;
+  onClose: () => void;
+  onConnect: (payload: Record<string, unknown>) => Promise<void>;
+}
+
+export function SmsConnectModal({
+  selectedProvider,
+  onClose,
+  onConnect,
+}: SmsConnectModalProps) {
+  const [formData, setFormData] = useState({
+    name: "",
+    fromSender: "SKYLIN",
+    accountSid: "",
+    authToken: "",
+    messagingServiceSid: "",
+    apiKey: "",
+    servicePlanId: "",
+    awsAccessKeyId: "",
+    awsSecretKey: "",
+    awsRegion: "ap-south-1",
+    dltEntityId: "",
+    isDefault: true,
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (selectedProvider) {
+      setFormData({
+        name: `${SMS_PROVIDERS[selectedProvider]?.name || selectedProvider} Gateway`,
+        fromSender: selectedProvider === "TWILIO" ? "+14155550199" : "SKYLIN",
+        accountSid: "",
+        authToken: "",
+        messagingServiceSid: "",
+        apiKey: "",
+        servicePlanId: "",
+        awsAccessKeyId: "",
+        awsSecretKey: "",
+        awsRegion: "ap-south-1",
+        dltEntityId: "",
+        isDefault: true,
+      });
+    }
+  }, [selectedProvider]);
+
+  if (!selectedProvider) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await onConnect({
+        provider: selectedProvider,
+        name: formData.name.trim() || `${SMS_PROVIDERS[selectedProvider].name} Gateway`,
+        fromSender: formData.fromSender.trim(),
+        accountSid: formData.accountSid || undefined,
+        authToken: formData.authToken || undefined,
+        messagingServiceSid: formData.messagingServiceSid || undefined,
+        apiKey: formData.apiKey || undefined,
+        servicePlanId: formData.servicePlanId || undefined,
+        awsAccessKeyId: formData.awsAccessKeyId || undefined,
+        awsSecretKey: formData.awsSecretKey || undefined,
+        awsRegion: formData.awsRegion || undefined,
+        dltEntityId: formData.dltEntityId || undefined,
+        isDefault: formData.isDefault,
+      });
+      onClose();
+    } catch (err: unknown) {
+      alert((err as Error)?.message || "Failed to verify and connect SMS provider");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl border border-slate-200/90 max-w-md w-full p-6 shadow-xl space-y-4 animate-enter max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
+              Connect {SMS_PROVIDERS[selectedProvider]?.name || selectedProvider}
+            </h3>
+            <p className="text-[11px] font-medium text-[var(--text-tertiary)]">
+              Configure verified API credentials and default sender header.
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="h-7 w-7 text-slate-400 hover:text-slate-700"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+              Account Nickname
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder={`e.g. Production ${SMS_PROVIDERS[selectedProvider]?.name}`}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+              Default From Sender / Header <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.fromSender}
+              onChange={(e) => setFormData({ ...formData, fromSender: e.target.value })}
+              placeholder="e.g. +14155550199 or SKYLIN"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+            />
+            <p className="text-[10px] text-[var(--text-muted)] mt-1">
+              Use E.164 phone number for US/CA or 6-char registered Sender Header for India/UK (e.g. SKYLIN).
+            </p>
+          </div>
+
+          {selectedProvider === "TWILIO" && (
+            <>
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+                  Twilio Account SID <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  value={formData.accountSid}
+                  onChange={(e) => setFormData({ ...formData, accountSid: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+                  Twilio Auth Token <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Auth token from Twilio console"
+                  value={formData.authToken}
+                  onChange={(e) => setFormData({ ...formData, authToken: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+                  Messaging Service SID (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="MGxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  value={formData.messagingServiceSid}
+                  onChange={(e) => setFormData({ ...formData, messagingServiceSid: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+              </div>
+            </>
+          )}
+
+          {selectedProvider === "AWS_SNS" && (
+            <>
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+                  AWS Access Key ID <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="AKIAIOSFODNN7EXAMPLE"
+                  value={formData.awsAccessKeyId}
+                  onChange={(e) => setFormData({ ...formData, awsAccessKeyId: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+                  AWS Secret Access Key <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                  value={formData.awsSecretKey}
+                  onChange={(e) => setFormData({ ...formData, awsSecretKey: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+                  AWS Region
+                </label>
+                <input
+                  type="text"
+                  placeholder="ap-south-1"
+                  value={formData.awsRegion}
+                  onChange={(e) => setFormData({ ...formData, awsRegion: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+              </div>
+            </>
+          )}
+
+          {selectedProvider === "SINCH" && (
+            <>
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+                  Service Plan ID <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Sinch Service Plan ID"
+                  value={formData.servicePlanId}
+                  onChange={(e) => setFormData({ ...formData, servicePlanId: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+                  API Token <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Sinch API Token"
+                  value={formData.apiKey}
+                  onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+              </div>
+            </>
+          )}
+
+          {selectedProvider === "GUPSHUP" && (
+            <>
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+                  Gupshup API Key <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Gupshup Enterprise API Key"
+                  value={formData.apiKey}
+                  onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
+                  DLT Principal Entity ID (PE ID)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 1701159123456789"
+                  value={formData.dltEntityId}
+                  onChange={(e) => setFormData({ ...formData, dltEntityId: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+              </div>
+            </>
+          )}
+
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="isDefaultSms"
+              checked={formData.isDefault}
+              onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
+              className="w-4 h-4 accent-[var(--brand-600)] rounded-sm"
+            />
+            <label htmlFor="isDefaultSms" className="text-xs font-bold text-[var(--text-secondary)]">
+              Set as default gateway for SMS broadcasts
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="default"
+              size="sm"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Verifying Credentials..." : "Test & Save Gateway"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

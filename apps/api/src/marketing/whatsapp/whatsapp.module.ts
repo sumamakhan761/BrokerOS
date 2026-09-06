@@ -18,6 +18,8 @@ import { WhatsAppMessagesService } from './messages/whatsapp-messages.service.js
 import { WhatsAppMessagesController } from './messages/whatsapp-messages.controller.js';
 
 import { WhatsAppContactsService } from './contacts/whatsapp-contacts.service.js';
+import { WhatsAppTagsService } from './contacts/whatsapp-tags.service.js';
+import { WhatsAppQuickRepliesService } from './contacts/whatsapp-quick-replies.service.js';
 import { WhatsAppContactsController } from './contacts/whatsapp-contacts.controller.js';
 
 import { WhatsAppBroadcastsService } from './broadcasts/whatsapp-broadcasts.service.js';
@@ -76,6 +78,8 @@ import { WhatsAppService } from './whatsapp.service.js';
     WhatsAppConversationsService,
     WhatsAppMessagesService,
     WhatsAppContactsService,
+    WhatsAppTagsService,
+    WhatsAppQuickRepliesService,
     WhatsAppBroadcastsService,
     WhatsAppAutomationsService,
     WhatsAppAutomationEngineService,
@@ -96,6 +100,8 @@ import { WhatsAppService } from './whatsapp.service.js';
     WhatsAppConversationsService,
     WhatsAppMessagesService,
     WhatsAppContactsService,
+    WhatsAppTagsService,
+    WhatsAppQuickRepliesService,
     WhatsAppBroadcastsService,
     WhatsAppAutomationsService,
     WhatsAppAutomationEngineService,

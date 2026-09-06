@@ -18,6 +18,7 @@ import {
 import { WhatsAppConfigService } from '../config/whatsapp-config.service.js';
 import { WhatsAppRealtimeGateway } from '../gateway/whatsapp-realtime.gateway.js';
 import type { SaveWhatsAppAiConfigDto } from '../dto/whatsapp.dto.js';
+import { callLlmChatCompletion } from './engine/llm-provider.helper.js';
 
 @Injectable()
 export class WhatsAppAiService {
@@ -255,49 +256,16 @@ Keep your response concise, helpful, and formatted for WhatsApp (use emojis spar
     const systemPrompt = config?.systemPrompt || defaultSystemPrompt;
 
     // 4. Dispatch to LLM provider
-    let endpoint = 'https://api.groq.com/openai/v1/chat/completions';
-    if (provider === 'openai') {
-      endpoint = 'https://api.openai.com/v1/chat/completions';
-    }
+    const draft = await callLlmChatCompletion({
+      provider,
+      model,
+      apiKey,
+      systemPrompt,
+      messages: formattedMessages,
+      logger: this.logger,
+    });
 
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...formattedMessages,
-          ],
-          max_tokens: 500,
-          temperature: 0.7,
-        }),
-        signal: AbortSignal.timeout(15000),
-      });
-
-      if (!response.ok) {
-        const errBody = await response.text();
-        this.logger.error(
-          `AI draft completion failed: ${response.status} - ${errBody}`,
-        );
-        throw new BadRequestException(
-          `AI completion error: ${response.status}`,
-        );
-      }
-
-      const data = await response.json();
-      const draft = data?.choices?.[0]?.message?.content?.trim() || '';
-      return { draft };
-    } catch (err: any) {
-      this.logger.error(`AI generation error: ${err?.message}`);
-      throw new BadRequestException(
-        `AI draft generation failed: ${err?.message}`,
-      );
-    }
+    return { draft };
   }
 
   /**
