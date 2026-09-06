@@ -15,7 +15,7 @@ export class YouTubeAdsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly syncService: GoogleSyncService,
-  ) { }
+  ) {}
 
   /**
    * Derives YouTube ad format from campaign name or channel type.
@@ -76,9 +76,14 @@ export class YouTubeAdsService {
 
     const items: YouTubeCampaignItem[] = videoCampaigns.map((c) => {
       const format = this.deriveAdFormat(c.advertisingChannelType, c.name);
-      const views = c.clicks > 0 ? c.clicks * 3 : Math.round((c.impressions || 0) * 0.32);
-      const viewRate = c.impressions > 0 ? parseFloat(((views / c.impressions) * 100).toFixed(2)) : 0;
-      const cpv = views > 0 ? parseFloat(((c.spend || 0) / views).toFixed(2)) : 0;
+      const views =
+        c.clicks > 0 ? c.clicks * 3 : Math.round((c.impressions || 0) * 0.32);
+      const viewRate =
+        c.impressions > 0
+          ? parseFloat(((views / c.impressions) * 100).toFixed(2))
+          : 0;
+      const cpv =
+        views > 0 ? parseFloat(((c.spend || 0) / views).toFixed(2)) : 0;
 
       // Extract retention or calculate benchmark curves
       const quartile25 = 68.5;
@@ -115,10 +120,14 @@ export class YouTubeAdsService {
     const totalViews = items.reduce((acc, c) => acc + c.views, 0);
     const totalImpressions = items.reduce((acc, c) => acc + c.impressions, 0);
     const totalLeads = items.reduce((acc, c) => acc + c.leads, 0);
-    const avgCpv = totalViews > 0 ? parseFloat((totalSpend / totalViews).toFixed(2)) : 0;
+    const avgCpv =
+      totalViews > 0 ? parseFloat((totalSpend / totalViews).toFixed(2)) : 0;
     const avgViewRate =
-      totalImpressions > 0 ? parseFloat(((totalViews / totalImpressions) * 100).toFixed(2)) : 0;
-    const avgCostPerLead = totalLeads > 0 ? Math.round(totalSpend / totalLeads) : 0;
+      totalImpressions > 0
+        ? parseFloat(((totalViews / totalImpressions) * 100).toFixed(2))
+        : 0;
+    const avgCostPerLead =
+      totalLeads > 0 ? Math.round(totalSpend / totalLeads) : 0;
 
     const kpis: YouTubeKpiSummary = {
       totalSpend: Math.round(totalSpend),
@@ -159,13 +168,25 @@ export class YouTubeAdsService {
     });
 
     if (!campaign) {
-      throw new NotFoundException(`YouTube Video Campaign with ID ${id} not found`);
+      throw new NotFoundException(
+        `YouTube Video Campaign with ID ${id} not found`,
+      );
     }
 
-    const format = this.deriveAdFormat(campaign.advertisingChannelType, campaign.name);
-    const views = campaign.clicks > 0 ? campaign.clicks * 3 : Math.round((campaign.impressions || 0) * 0.32);
-    const viewRate = campaign.impressions > 0 ? parseFloat(((views / campaign.impressions) * 100).toFixed(2)) : 0;
-    const cpv = views > 0 ? parseFloat(((campaign.spend || 0) / views).toFixed(2)) : 0;
+    const format = this.deriveAdFormat(
+      campaign.advertisingChannelType,
+      campaign.name,
+    );
+    const views =
+      campaign.clicks > 0
+        ? campaign.clicks * 3
+        : Math.round((campaign.impressions || 0) * 0.32);
+    const viewRate =
+      campaign.impressions > 0
+        ? parseFloat(((views / campaign.impressions) * 100).toFixed(2))
+        : 0;
+    const cpv =
+      views > 0 ? parseFloat(((campaign.spend || 0) / views).toFixed(2)) : 0;
 
     // Fetch acquired CRM leads from this campaign
     const webhookLogs = await this.prisma.googleLeadWebhookLog.findMany({
