@@ -30,6 +30,7 @@ export default function MarketingHubPage() {
   const [smsCampaigns, setSmsCampaigns] = useState<SmsCampaignItem[]>([]);
   const [voiceCampaigns, setVoiceCampaigns] = useState<VoiceCampaignItem[]>([]);
   const [metaCampaigns, setMetaCampaigns] = useState<any[]>([]);
+  const [whatsAppCount, setWhatsAppCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeChannelTab, setActiveChannelTab] = useState<"ALL" | "EMAIL" | "SMS" | "VOICE">("ALL");
@@ -41,11 +42,12 @@ export default function MarketingHubPage() {
       try {
         setLoading(true);
         setError(null);
-        const [emailRes, smsRes, voiceRes, metaRes] = await Promise.all([
+        const [emailRes, smsRes, voiceRes, metaRes, waRes] = await Promise.all([
           fetch(`${baseUrl}/api/marketing/campaigns`),
           fetch(`${baseUrl}/api/marketing/sms/campaigns`),
           fetch(`${baseUrl}/api/marketing/voice/campaigns`),
           fetch(`${baseUrl}/api/marketing/ads/meta/campaigns`),
+          fetch(`${baseUrl}/api/marketing/whatsapp/conversations?limit=1`),
         ]);
 
         if (emailRes.ok) {
@@ -75,12 +77,20 @@ export default function MarketingHubPage() {
         } else {
           setMetaCampaigns([]);
         }
+
+        if (waRes.ok) {
+          const waData = await waRes.json();
+          setWhatsAppCount(waData?.pagination?.total || waData?.items?.length || 0);
+        } else {
+          setWhatsAppCount(0);
+        }
       } catch (err: any) {
         setError(err?.message || "Failed to load marketing dashboard");
         setEmailCampaigns([]);
         setSmsCampaigns([]);
         setVoiceCampaigns([]);
         setMetaCampaigns([]);
+        setWhatsAppCount(0);
       } finally {
         setLoading(false);
       }
