@@ -38,6 +38,7 @@
     "@brokeros/int-sms-sinch": "workspace:*",
     "@brokeros/int-sms-twilio": "workspace:*",
     "@brokeros/int-voice": "workspace:*",
+    "@brokeros/int-whatsapp": "workspace:*",
     "@brokeros/prisma": "workspace:*",
     "@brokeros/storage": "workspace:*",
     "@brokeros/types": "workspace:*",

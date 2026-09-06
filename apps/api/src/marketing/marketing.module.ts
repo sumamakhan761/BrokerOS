@@ -60,8 +60,11 @@ import { YouTubeAdsService } from './ads/youtube/services/youtube-ads.service.js
 // Shared
 import { SampleCsvController } from './shared/sample-csv.controller.js';
 
+// WhatsApp Marketing & CRM
+import { WhatsAppModule } from './whatsapp/whatsapp.module.js';
+
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, WhatsAppModule],
   controllers: [
     // Email Controllers
     EmailCampaignsController,
