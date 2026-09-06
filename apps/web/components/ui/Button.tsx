@@ -8,6 +8,7 @@ export interface ButtonProps
     | "outline"
     | "ghost"
     | "danger"
+    | "destructive"
     | "luxury";
   size?: "default" | "sm" | "lg" | "icon";
   static?: boolean;
@@ -42,7 +43,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     } else if (variant === "ghost") {
       variantStyles =
         "text-[var(--text-secondary)] hover:bg-slate-100 hover:text-[var(--text-primary)] ";
-    } else if (variant === "danger") {
+    } else if (variant === "danger" || variant === "destructive") {
       variantStyles =
         "bg-rose-600 text-white shadow-sm hover:bg-rose-700 shadow-rose-600/20 ";
     } else if (variant === "luxury") {
