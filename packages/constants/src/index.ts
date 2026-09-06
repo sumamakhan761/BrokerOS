@@ -17,3 +17,6 @@ export * from './voice/index.js';
 // Ads Marketing Constants (Meta & Google)
 export * from './ads/index.js';
 
+// WhatsApp Marketing Constants
+export * from './whatsapp/index.js';
+
