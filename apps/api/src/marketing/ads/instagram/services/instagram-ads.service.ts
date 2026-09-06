@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../../lib/database/prisma.service.js';
 import { MetaSyncService } from '../../meta/services/meta-sync.service.js';
 import type {
@@ -19,13 +15,17 @@ export class InstagramAdsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly syncService: MetaSyncService,
-  ) { }
+  ) {}
 
   /**
    * Helper to detect if a campaign has Instagram placements or convert generic campaigns.
    */
   private extractInstagramPlacements(camp: any): InstagramPlacementType[] {
-    const placements: Set<InstagramPlacementType> = new Set(['REELS', 'STORY', 'FEED']);
+    const placements: Set<InstagramPlacementType> = new Set([
+      'REELS',
+      'STORY',
+      'FEED',
+    ]);
     const adSets = (camp.adSetsData as any[]) || [];
 
     for (const adSet of adSets) {
@@ -88,12 +88,18 @@ export class InstagramAdsService {
     const reelsSpend = Math.round(totalSpend * 0.45);
     const storiesSpend = Math.round(totalSpend * 0.35);
     const feedSpend = Math.round(totalSpend * 0.15);
-    const exploreSpend = Math.max(0, totalSpend - (reelsSpend + storiesSpend + feedSpend));
+    const exploreSpend = Math.max(
+      0,
+      totalSpend - (reelsSpend + storiesSpend + feedSpend),
+    );
 
     const reelsLeads = Math.round(totalLeads * 0.5);
     const storiesLeads = Math.round(totalLeads * 0.35);
     const feedLeads = Math.round(totalLeads * 0.12);
-    const exploreLeads = Math.max(0, totalLeads - (reelsLeads + storiesLeads + feedLeads));
+    const exploreLeads = Math.max(
+      0,
+      totalLeads - (reelsLeads + storiesLeads + feedLeads),
+    );
 
     const placementBreakdown: InstagramPlacementBreakdown = {
       reels: {
@@ -116,7 +122,8 @@ export class InstagramAdsService {
         reach: Math.round(totalReach * 0.33),
         clicks: Math.round(totalClicks * 0.35),
         leadsCount: storiesLeads,
-        costPerLead: storiesLeads > 0 ? Math.round(storiesSpend / storiesLeads) : 0,
+        costPerLead:
+          storiesLeads > 0 ? Math.round(storiesSpend / storiesLeads) : 0,
         ctr: parseFloat((avgCtr * 1.05).toFixed(2)),
         swipeUps: Math.round(totalClicks * 0.35),
       },
@@ -139,7 +146,8 @@ export class InstagramAdsService {
         reach: Math.round(totalReach * 0.05),
         clicks: Math.round(totalClicks * 0.05),
         leadsCount: exploreLeads,
-        costPerLead: exploreLeads > 0 ? Math.round(exploreSpend / exploreLeads) : 0,
+        costPerLead:
+          exploreLeads > 0 ? Math.round(exploreSpend / exploreLeads) : 0,
         ctr: parseFloat((avgCtr * 0.75).toFixed(2)),
       },
     };
@@ -152,7 +160,8 @@ export class InstagramAdsService {
       totalLeads,
       avgCpl: Math.round(avgCpl),
       avgCtr: parseFloat(avgCtr.toFixed(2)),
-      activeCampaignsCount: campaigns.filter((c) => c.status === 'ACTIVE').length,
+      activeCampaignsCount: campaigns.filter((c) => c.status === 'ACTIVE')
+        .length,
       totalCampaignsCount: campaigns.length,
       reelsViews: Math.round(totalImpressions * 0.42),
       storySwipeUps: Math.round(totalClicks * 0.35),
@@ -309,7 +318,9 @@ export class InstagramAdsService {
         orderBy: { isDefault: 'desc' },
       });
       if (!defaultInt) {
-        throw new NotFoundException('No active Ad Account integration found to sync');
+        throw new NotFoundException(
+          'No active Ad Account integration found to sync',
+        );
       }
       targetIntegrationId = defaultInt.id;
     }
