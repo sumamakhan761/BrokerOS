@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
         source: "/api/proxy/:path*",
         destination: `${process.env.BACKEND_URL || "http://127.0.0.1:3333"}/:path*`, // Proxy to Backend
       },
+      {
+        source: "/api/marketing/:path*",
+        destination: `${process.env.BACKEND_URL || "http://127.0.0.1:3333"}/api/marketing/:path*`, // Direct Marketing API Proxy
+      },
     ];
   },
 };
