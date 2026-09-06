@@ -251,7 +251,8 @@ export class MetaAdsService {
       .map((log) => {
         const lead = log.lead!;
         const fullName =
-          `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'Meta Lead';
+          `${lead.firstName || ''} ${lead.lastName || ''}`.trim() ||
+          'Meta Lead';
         return {
           logId: log.id,
           leadgenId: log.leadgenId,
