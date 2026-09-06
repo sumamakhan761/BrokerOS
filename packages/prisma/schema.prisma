@@ -617,14 +617,19 @@ model User {
   taskAssignments          ManagerTaskUser[]       @relation("ManagerTaskAssignee")
   createdAnnouncements     Announcement[]          @relation("AnnouncementCreator")
 
-  approvalRequestsMade       ApprovalRequest[]   @relation("ApprovalRequestExec")
-  approvalRequestsManaged    ApprovalRequest[]   @relation("ApprovalRequestManager")
-  approvalMessagesSent       ApprovalMessage[]   @relation("ApprovalMessageSender")
-  receivedInboundCommissions InboundCommission[] @relation("ReceivedInboundCommissions")
-  assignedPostSalesBookings  Booking[]           @relation("BookingPostSales")
-  createdCampaigns           MarketingCampaign[] @relation("CampaignCreatedBy")
-  createdSmsCampaigns        SmsCampaign[]       @relation("SmsCampaignCreatedBy")
-  createdVoiceCampaigns      VoiceCampaign[]     @relation("VoiceCampaignCreatedBy")
+  approvalRequestsMade       ApprovalRequest[]      @relation("ApprovalRequestExec")
+  approvalRequestsManaged    ApprovalRequest[]      @relation("ApprovalRequestManager")
+  approvalMessagesSent       ApprovalMessage[]      @relation("ApprovalMessageSender")
+  receivedInboundCommissions InboundCommission[]    @relation("ReceivedInboundCommissions")
+  assignedPostSalesBookings  Booking[]              @relation("BookingPostSales")
+  createdCampaigns           MarketingCampaign[]    @relation("CampaignCreatedBy")
+  createdSmsCampaigns        SmsCampaign[]          @relation("SmsCampaignCreatedBy")
+  createdVoiceCampaigns      VoiceCampaign[]        @relation("VoiceCampaignCreatedBy")
+  createdWhatsAppBroadcasts  WhatsAppBroadcast[]    @relation("WhatsAppBroadcastCreatedBy")
+  createdWhatsAppAutomations WhatsAppAutomation[]   @relation("WhatsAppAutomationCreatedBy")
+  assignedWhatsAppDeals      WhatsAppDeal[]         @relation("WhatsAppDealAssignedUser")
+  createdWhatsAppNotes       WhatsAppContactNote[]  @relation("WhatsAppNoteAuthor")
+  dealActivities             WhatsAppDealActivity[] @relation("WhatsAppDealActivityAuthor")
 
   @@index([departmentId])
   @@index([roleId])
@@ -964,6 +969,7 @@ model Lead {
   campaignRecipients    CampaignRecipient[]
   smsRecipients         SmsRecipient[]
   voiceRecipients       VoiceRecipient[]
+  whatsappContacts      WhatsAppContact[]
   metaLeadLogs          MetaLeadWebhookLog[]    @relation("MetaLeadLog")
   googleLeadLogs        GoogleLeadWebhookLog[]  @relation("GoogleLeadLog")
 
@@ -1055,21 +1061,69 @@ model CallRecord {
 }
 
 model WhatsAppBusinessAccount {
-  id            String   @id @default(uuid())
-  businessName  String
-  phoneNumberId String   @unique
-  displayPhone  String
-  wabaId        String   @unique
-  accessToken   String
-  webhookSecret String?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String    @id @default(uuid())
+  businessName      String
+  phoneNumberId     String    @unique
+  displayPhone      String
+  wabaId            String    @unique
+  accessToken       String
+  webhookSecret     String?
+  webhookVerifiedAt DateTime?
+  appSecret         String?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  templates     WhatsAppTemplate[]
-  conversations WhatsAppConversation[]
+  templates                   WhatsAppTemplate[]
+  conversations               WhatsAppConversation[]
+  contacts                    WhatsAppContact[]
+  broadcasts                  WhatsAppBroadcast[]
+  automations                 WhatsAppAutomation[]
+  automationLogs              WhatsAppAutomationLog[]
+  automationPendingExecutions WhatsAppAutomationPendingExecution[]
+  tags                        WhatsAppTag[]
+  quickReplies                WhatsAppQuickReply[]
+  flows                       WhatsAppFlow[]
+  flowRuns                    WhatsAppFlowRun[]
+  aiConfig                    WhatsAppAiConfig?
+  webhookEndpoints            WhatsAppWebhookEndpoint[]
+  pipelines                   WhatsAppPipeline[]
+  deals                       WhatsAppDeal[]
+  customFields                WhatsAppCustomField[]
 
   @@map("whatsapp_business_account")
+}
+
+model WhatsAppContact {
+  id        String                  @id @default(uuid())
+  accountId String
+  account   WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  leadId    String?
+  lead      Lead?                   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  phone     String
+  name      String?
+  email     String?
+  company   String?
+  avatarUrl String?
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+  deletedAt DateTime?
+
+  conversations               WhatsAppConversation[]
+  tags                        WhatsAppContactTag[]
+  broadcastRecipients         WhatsAppBroadcastRecipient[]
+  flowRuns                    WhatsAppFlowRun[]
+  automationLogs              WhatsAppAutomationLog[]
+  automationPendingExecutions WhatsAppAutomationPendingExecution[]
+  notes                       WhatsAppContactNote[]
+  deals                       WhatsAppDeal[]
+  customValues                WhatsAppContactCustomValue[]
+
+  @@unique([accountId, phone])
+  @@index([accountId])
+  @@index([phone])
+  @@index([leadId])
+  @@map("whatsapp_contact")
 }
 
 model WhatsAppTemplate {
@@ -1078,7 +1132,7 @@ model WhatsAppTemplate {
   account       WhatsAppBusinessAccount @relation(fields: [accountId], references: [id])
   name          String
   language      String                  @default("en")
-  // category      WhatsAppTemplateCategory
+  category      String                  @default("MARKETING")
   status        String                  @default("PENDING")
   headerText    String?
   bodyText      String
@@ -1098,7 +1152,9 @@ model WhatsAppTemplate {
 model WhatsAppConversation {
   id           String                  @id @default(uuid())
   accountId    String
-  account      WhatsAppBusinessAccount @relation(fields: [accountId], references: [id])
+  account      WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  contactId    String?
+  contact      WhatsAppContact?        @relation(fields: [contactId], references: [id], onDelete: SetNull)
   contactPhone String
   contactName  String?
 
@@ -1112,14 +1168,23 @@ model WhatsAppConversation {
   agentUserId String?
   agent       User?   @relation("ConversationAgent", fields: [agentUserId], references: [id])
 
-  lastMessageAt DateTime?
-  unreadCount   Int       @default(0)
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  status              String    @default("open")
+  lastMessageText     String?   @db.Text
+  lastMessageAt       DateTime?
+  unreadCount         Int       @default(0)
+  aiAutoReplyDisabled Boolean   @default(false)
+  aiReplyCount        Int       @default(0)
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   messages WhatsAppMessage[]
+  flowRuns WhatsAppFlowRun[]
+  deals    WhatsAppDeal[]
 
+  @@index([accountId])
+  @@index([contactId])
+  @@index([status])
   @@index([leadId])
   @@index([customerId])
   @@index([brokerId])
@@ -1137,18 +1202,27 @@ model WhatsAppMessage {
   direction   WhatsAppMessageDirection
   type        WhatsAppMessageType
   status      WhatsAppMessageStatus
+  senderType  String                   @default("agent")
+  contentType String                   @default("text")
+  senderName  String?
 
-  body    String? @db.Text
-  caption String?
-
-  templateId     String?
-  template       WhatsAppTemplate? @relation(fields: [templateId], references: [id])
-  templateValues Json?
+  body               String?           @db.Text
+  caption            String?
+  templateId         String?
+  template           WhatsAppTemplate? @relation(fields: [templateId], references: [id])
+  templateValues     Json?
+  interactivePayload Json?
 
   mediaUrl  String?
   mediaType String?
   mediaSize Int?
   fileName  String?
+
+  replyToMessageId String?
+  replyTo          WhatsAppMessage?  @relation("MessageReplies", fields: [replyToMessageId], references: [id], onDelete: SetNull)
+  replies          WhatsAppMessage[] @relation("MessageReplies")
+
+  isAiGenerated Boolean @default(false)
 
   sentAt        DateTime?
   deliveredAt   DateTime?
@@ -1162,8 +1236,408 @@ model WhatsAppMessage {
   @@index([waMessageId])
   @@index([direction])
   @@index([status])
+  @@index([senderType])
+  @@index([contentType])
   @@index([createdAt])
   @@map("whatsapp_message")
+}
+
+model WhatsAppBroadcast {
+  id               String                  @id @default(uuid())
+  accountId        String
+  account          WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdById      String?
+  createdBy        User?                   @relation("WhatsAppBroadcastCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  name             String
+  templateName     String
+  templateLanguage String                  @default("en")
+  status           String                  @default("DRAFT")
+  totalRecipients  Int                     @default(0)
+  sentCount        Int                     @default(0)
+  deliveredCount   Int                     @default(0)
+  readCount        Int                     @default(0)
+  repliedCount     Int                     @default(0)
+  failedCount      Int                     @default(0)
+  scheduledAt      DateTime?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  recipients WhatsAppBroadcastRecipient[]
+
+  @@index([accountId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("whatsapp_broadcast")
+}
+
+model WhatsAppBroadcastRecipient {
+  id             String            @id @default(uuid())
+  broadcastId    String
+  broadcast      WhatsAppBroadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  contactId      String?
+  contact        WhatsAppContact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  phone          String
+  templateParams Json?
+  status         String            @default("PENDING")
+  waMessageId    String?           @unique
+  sentAt         DateTime?
+  errorMessage   String?
+  createdAt      DateTime          @default(now())
+
+  @@index([broadcastId])
+  @@index([contactId])
+  @@index([status])
+  @@index([waMessageId])
+  @@map("whatsapp_broadcast_recipient")
+}
+
+model WhatsAppAutomation {
+  id            String                  @id @default(uuid())
+  accountId     String
+  account       WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdById   String?
+  createdBy     User?                   @relation("WhatsAppAutomationCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  name          String
+  isActive      Boolean                 @default(false)
+  triggerType   String
+  triggerConfig Json?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  steps             WhatsAppAutomationStep[]
+  logs              WhatsAppAutomationLog[]
+  pendingExecutions WhatsAppAutomationPendingExecution[]
+
+  @@index([accountId])
+  @@index([isActive])
+  @@index([triggerType])
+  @@map("whatsapp_automation")
+}
+
+model WhatsAppAutomationStep {
+  id           String             @id @default(uuid())
+  automationId String
+  automation   WhatsAppAutomation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  position     Int
+  parentStepId String?
+  branch       String?
+  stepType     String
+  stepConfig   Json
+  createdAt    DateTime           @default(now())
+
+  @@index([automationId])
+  @@index([position])
+  @@map("whatsapp_automation_step")
+}
+
+model WhatsAppAutomationLog {
+  id            String                  @id @default(uuid())
+  automationId  String
+  automation    WhatsAppAutomation      @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  accountId     String
+  account       WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  contactId     String?
+  contact       WhatsAppContact?        @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  triggerEvent  String
+  status        String
+  stepsExecuted Json?
+  errorMessage  String?
+  createdAt     DateTime                @default(now())
+
+  @@index([automationId])
+  @@index([accountId])
+  @@index([contactId])
+  @@index([createdAt])
+  @@map("whatsapp_automation_log")
+}
+
+model WhatsAppAutomationPendingExecution {
+  id               String                  @id @default(uuid())
+  automationId     String
+  automation       WhatsAppAutomation      @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  accountId        String
+  account          WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  contactId        String?
+  contact          WhatsAppContact?        @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  logId            String?
+  parentStepId     String?
+  branch           String?
+  nextStepPosition Int
+  context          Json?
+  runAt            DateTime
+  status           String                  @default("pending")
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  @@index([accountId])
+  @@index([automationId])
+  @@index([contactId])
+  @@index([runAt, status])
+  @@map("whatsapp_automation_pending_execution")
+}
+
+model WhatsAppTag {
+  id        String                  @id @default(uuid())
+  accountId String
+  account   WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  name      String
+  color     String?
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+
+  contacts WhatsAppContactTag[]
+
+  @@unique([accountId, name])
+  @@index([accountId])
+  @@map("whatsapp_tag")
+}
+
+model WhatsAppContactTag {
+  id         String          @id @default(uuid())
+  contactId  String
+  contact    WhatsAppContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tagId      String
+  tag        WhatsAppTag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  assignedAt DateTime        @default(now())
+
+  @@unique([contactId, tagId])
+  @@index([contactId])
+  @@index([tagId])
+  @@map("whatsapp_contact_tag")
+}
+
+model WhatsAppQuickReply {
+  id        String                  @id @default(uuid())
+  accountId String
+  account   WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  shortcut  String
+  content   String                  @db.Text
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+
+  @@unique([accountId, shortcut])
+  @@index([accountId])
+  @@map("whatsapp_quick_reply")
+}
+
+model WhatsAppFlow {
+  id            String                  @id @default(uuid())
+  accountId     String
+  account       WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  name          String
+  status        String                  @default("draft")
+  triggerType   String
+  triggerConfig Json?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  nodes WhatsAppFlowNode[]
+  runs  WhatsAppFlowRun[]
+
+  @@index([accountId])
+  @@index([status])
+  @@map("whatsapp_flow")
+}
+
+model WhatsAppFlowNode {
+  id        String       @id @default(uuid())
+  flowId    String
+  flow      WhatsAppFlow @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  nodeKey   String
+  nodeType  String
+  config    Json
+  createdAt DateTime     @default(now())
+
+  @@unique([flowId, nodeKey])
+  @@index([flowId])
+  @@map("whatsapp_flow_node")
+}
+
+model WhatsAppFlowRun {
+  id             String                  @id @default(uuid())
+  flowId         String
+  flow           WhatsAppFlow            @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  accountId      String
+  account        WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  contactId      String
+  contact        WhatsAppContact         @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  conversationId String?
+  conversation   WhatsAppConversation?   @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  status         String                  @default("active")
+  currentNodeKey String?
+  vars           Json?
+  startedAt      DateTime                @default(now())
+  endedAt        DateTime?
+  endReason      String?
+
+  @@index([accountId])
+  @@index([flowId])
+  @@index([contactId])
+  @@index([conversationId])
+  @@index([status])
+  @@map("whatsapp_flow_run")
+}
+
+model WhatsAppAiConfig {
+  id                          String                  @id @default(uuid())
+  accountId                   String                  @unique
+  account                     WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  provider                    String
+  model                       String
+  apiKey                      String
+  systemPrompt                String?                 @db.Text
+  isActive                    Boolean                 @default(false)
+  autoReplyEnabled            Boolean                 @default(false)
+  autoReplyMaxPerConversation Int                     @default(3)
+  handoffAgentId              String?
+  createdAt                   DateTime                @default(now())
+  updatedAt                   DateTime                @updatedAt
+
+  @@map("whatsapp_ai_config")
+}
+
+model WhatsAppWebhookEndpoint {
+  id           String                  @id @default(uuid())
+  accountId    String
+  account      WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  url          String
+  secret       String
+  events       String[]
+  isActive     Boolean                 @default(true)
+  failureCount Int                     @default(0)
+  disabledAt   DateTime?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  @@index([accountId])
+  @@index([isActive])
+  @@map("whatsapp_webhook_endpoint")
+}
+
+model WhatsAppContactNote {
+  id        String          @id @default(uuid())
+  contactId String
+  contact   WhatsAppContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?           @relation("WhatsAppNoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  content   String          @db.Text
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([contactId])
+  @@map("whatsapp_contact_note")
+}
+
+model WhatsAppCustomField {
+  id        String                  @id @default(uuid())
+  accountId String
+  account   WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  name      String
+  type      String                  @default("text")
+  options   Json?
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+
+  values WhatsAppContactCustomValue[]
+
+  @@unique([accountId, name])
+  @@index([accountId])
+  @@map("whatsapp_custom_field")
+}
+
+model WhatsAppContactCustomValue {
+  id        String              @id @default(uuid())
+  contactId String
+  contact   WhatsAppContact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  fieldId   String
+  field     WhatsAppCustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  value     String              @db.Text
+  updatedAt DateTime            @updatedAt
+
+  @@unique([contactId, fieldId])
+  @@index([contactId])
+  @@index([fieldId])
+  @@map("whatsapp_contact_custom_value")
+}
+
+model WhatsAppPipeline {
+  id        String                  @id @default(uuid())
+  accountId String
+  account   WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  name      String
+  isDefault Boolean                 @default(false)
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+
+  stages WhatsAppPipelineStage[]
+  deals  WhatsAppDeal[]
+
+  @@index([accountId])
+  @@map("whatsapp_pipeline")
+}
+
+model WhatsAppPipelineStage {
+  id         String           @id @default(uuid())
+  pipelineId String
+  pipeline   WhatsAppPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name       String
+  position   Int
+  color      String           @default("#3b82f6")
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  deals WhatsAppDeal[]
+
+  @@index([pipelineId])
+  @@index([position])
+  @@map("whatsapp_pipeline_stage")
+}
+
+model WhatsAppDeal {
+  id                String                  @id @default(uuid())
+  accountId         String
+  account           WhatsAppBusinessAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  pipelineId        String
+  pipeline          WhatsAppPipeline        @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  stageId           String
+  stage             WhatsAppPipelineStage   @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  contactId         String
+  contact           WhatsAppContact         @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  conversationId    String?
+  conversation      WhatsAppConversation?   @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  title             String
+  value             Decimal                 @default(0) @db.Decimal(14, 2)
+  currency          String                  @default("USD")
+  notes             String?                 @db.Text
+  expectedCloseDate DateTime?
+  status            String                  @default("active")
+  assignedUserId    String?
+  assignedUser      User?                   @relation("WhatsAppDealAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  activities WhatsAppDealActivity[]
+
+  @@index([accountId])
+  @@index([pipelineId])
+  @@index([stageId])
+  @@index([contactId])
+  @@index([status])
+  @@map("whatsapp_deal")
+}
+
+model WhatsAppDealActivity {
+  id        String       @id @default(uuid())
+  dealId    String
+  deal      WhatsAppDeal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?        @relation("WhatsAppDealActivityAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  type      String
+  details   Json?
+  createdAt DateTime     @default(now())
+
+  @@index([dealId])
+  @@map("whatsapp_deal_activity")
 }
 
 model FollowUp {
@@ -2908,25 +3382,25 @@ enum VoiceAgentPlatform {
 }
 
 model VoiceTelephonyIntegration {
-  id          String             @id @default(uuid())
-  provider    VoiceTelephonyType
-  name        String
-  isActive    Boolean            @default(true)
-  isDefault   Boolean            @default(false)
+  id        String             @id @default(uuid())
+  provider  VoiceTelephonyType
+  name      String
+  isActive  Boolean            @default(true)
+  isDefault Boolean            @default(false)
 
   // Encrypted Credentials & SIP Details
   accountSid  String?
   authToken   String?
   apiKey      String?
   apiToken    String?
-  subdomain   String?            // e.g. api.in.exotel.com for Exotel
-  sipDomain   String?            // e.g. brokeros.pstn.twilio.com
-  fromNumbers String[]           // Array of available caller ID numbers / DIDs
+  subdomain   String? // e.g. api.in.exotel.com for Exotel
+  sipDomain   String? // e.g. brokeros.pstn.twilio.com
+  fromNumbers String[] // Array of available caller ID numbers / DIDs
 
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  campaigns   VoiceCampaign[]
+  campaigns VoiceCampaign[]
 
   @@index([provider])
   @@index([isActive])
@@ -2934,21 +3408,21 @@ model VoiceTelephonyIntegration {
 }
 
 model VoiceAgentIntegration {
-  id          String             @id @default(uuid())
-  platform    VoiceAgentPlatform
-  name        String
-  isActive    Boolean            @default(true)
-  isDefault   Boolean            @default(false)
+  id        String             @id @default(uuid())
+  platform  VoiceAgentPlatform
+  name      String
+  isActive  Boolean            @default(true)
+  isDefault Boolean            @default(false)
 
   // Encrypted Credentials & Endpoints
-  apiKey      String
-  orgId       String?
-  serverUrl   String?            // For custom LiveKit / Pipecat / Bolna servers
+  apiKey    String
+  orgId     String?
+  serverUrl String? // For custom LiveKit / Pipecat / Bolna servers
 
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  campaigns   VoiceCampaign[]
+  campaigns VoiceCampaign[]
 
   @@index([platform])
   @@index([isActive])
@@ -2956,60 +3430,60 @@ model VoiceAgentIntegration {
 }
 
 model VoiceCampaign {
-  id                 String                    @id @default(uuid())
-  title              String
-  channel            MarketingChannel          @default(VOICE_CALL)
-  status             CampaignStatus            @default(DRAFT)
-  audienceSource     AudienceSourceType        @default(CRM_DATABASE)
+  id             String             @id @default(uuid())
+  title          String
+  channel        MarketingChannel   @default(VOICE_CALL)
+  status         CampaignStatus     @default(DRAFT)
+  audienceSource AudienceSourceType @default(CRM_DATABASE)
 
   // Scope: Brokerage vs Channel Partner
-  isCpCampaign       Boolean                   @default(false)
-  projectId          String?
-  project            Project?                  @relation(fields: [projectId], references: [id])
+  isCpCampaign Boolean  @default(false)
+  projectId    String?
+  project      Project? @relation(fields: [projectId], references: [id])
 
-  telephonyId        String?
-  telephony          VoiceTelephonyIntegration? @relation(fields: [telephonyId], references: [id])
-  callerIdNumber     String?
+  telephonyId    String?
+  telephony      VoiceTelephonyIntegration? @relation(fields: [telephonyId], references: [id])
+  callerIdNumber String?
 
-  agentPlatformId    String?
-  agentIntegration   VoiceAgentIntegration?    @relation(fields: [agentPlatformId], references: [id])
+  agentPlatformId  String?
+  agentIntegration VoiceAgentIntegration? @relation(fields: [agentPlatformId], references: [id])
 
   // AI & Voice Persona Configuration
-  llmModel           String                    @default("gpt-4o-mini")
-  voiceProvider      String                    @default("11labs")
-  voiceId            String                    @default("21m00Tcm4TlvDq8ikWAM")
-  voiceName          String                    @default("Rachel")
-  scriptPrompt       String                    @db.Text
-  firstMessage       String?                   @db.Text
+  llmModel      String  @default("gpt-4o-mini")
+  voiceProvider String  @default("11labs")
+  voiceId       String  @default("21m00Tcm4TlvDq8ikWAM")
+  voiceName     String  @default("Rachel")
+  scriptPrompt  String  @db.Text
+  firstMessage  String? @db.Text
 
   // Execution & Calling Window Rules
-  maxConcurrentCalls Int                       @default(5)
-  retryLimit         Int                       @default(1)
-  callingWindowStart String?                   // "10:00"
-  callingWindowEnd   String?                   // "19:00"
+  maxConcurrentCalls Int     @default(5)
+  retryLimit         Int     @default(1)
+  callingWindowStart String? // "10:00"
+  callingWindowEnd   String? // "19:00"
 
-  audienceFilters    Json?
+  audienceFilters Json?
 
   // Aggregate Performance Metrics
-  totalRecipients    Int                       @default(0)
-  completedCalls     Int                       @default(0)
-  busyCalls          Int                       @default(0)
-  noAnswerCalls      Int                       @default(0)
-  failedCalls        Int                       @default(0)
-  totalDurationSec   Int                       @default(0)
+  totalRecipients  Int @default(0)
+  completedCalls   Int @default(0)
+  busyCalls        Int @default(0)
+  noAnswerCalls    Int @default(0)
+  failedCalls      Int @default(0)
+  totalDurationSec Int @default(0)
 
-  scheduledAt        DateTime?
-  startedAt          DateTime?
-  completedAt        DateTime?
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
 
-  createdById        String?
-  createdBy          User?                     @relation("VoiceCampaignCreatedBy", fields: [createdById], references: [id])
+  createdById String?
+  createdBy   User?   @relation("VoiceCampaignCreatedBy", fields: [createdById], references: [id])
 
-  createdAt          DateTime                  @default(now())
-  updatedAt          DateTime                  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  recipients         VoiceRecipient[]
-  callLogs           VoiceCallLog[]
+  recipients VoiceRecipient[]
+  callLogs   VoiceCallLog[]
 
   @@index([status])
   @@index([channel])
@@ -3021,35 +3495,35 @@ model VoiceCampaign {
 }
 
 model VoiceRecipient {
-  id              String                  @id @default(uuid())
-  campaignId      String
-  campaign        VoiceCampaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  id         String        @id @default(uuid())
+  campaignId String
+  campaign   VoiceCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
-  leadId          String?
-  lead            Lead?                   @relation(fields: [leadId], references: [id])
+  leadId String?
+  lead   Lead?   @relation(fields: [leadId], references: [id])
 
-  phone           String
-  name            String?
-  status          RecipientDeliveryStatus @default(QUEUED)
-  source          AudienceSourceType      @default(CRM_DATABASE)
-  providerCallId  String?
+  phone          String
+  name           String?
+  status         RecipientDeliveryStatus @default(QUEUED)
+  source         AudienceSourceType      @default(CRM_DATABASE)
+  providerCallId String?
 
-  callDurationSec Int                     @default(0)
-  disposition     String?                 // "COMPLETED", "BUSY", "NO_ANSWER", "VOICEMAIL", "FAILED"
+  callDurationSec Int     @default(0)
+  disposition     String? // "COMPLETED", "BUSY", "NO_ANSWER", "VOICEMAIL", "FAILED"
   recordingUrl    String?
-  transcript      String?                 @db.Text
-  summary         String?                 @db.Text
-  sentiment       String?                 // "POSITIVE", "NEUTRAL", "NEGATIVE"
+  transcript      String? @db.Text
+  summary         String? @db.Text
+  sentiment       String? // "POSITIVE", "NEUTRAL", "NEGATIVE"
   extractedData   Json?
 
-  sentAt          DateTime?
-  completedAt     DateTime?
-  failedAt        DateTime?
-  failReason      String?
-  mergeData       Json?
+  sentAt      DateTime?
+  completedAt DateTime?
+  failedAt    DateTime?
+  failReason  String?
+  mergeData   Json?
 
-  createdAt       DateTime                @default(now())
-  updatedAt       DateTime                @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([campaignId, status])
   @@index([phone])
@@ -3058,20 +3532,20 @@ model VoiceRecipient {
 }
 
 model VoiceCallLog {
-  id            String        @id @default(uuid())
-  campaignId    String
-  campaign      VoiceCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  recipientId   String
+  id          String        @id @default(uuid())
+  campaignId  String
+  campaign    VoiceCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  recipientId String
 
   disposition   String
-  durationSec   Int           @default(0)
+  durationSec   Int     @default(0)
   recordingUrl  String?
-  transcript    String?       @db.Text
-  summary       String?       @db.Text
+  transcript    String? @db.Text
+  summary       String? @db.Text
   sentiment     String?
   extractedData Json?
 
-  timestamp     DateTime      @default(now())
+  timestamp DateTime @default(now())
 
   @@index([campaignId])
   @@index([recipientId])
@@ -3085,7 +3559,7 @@ model VoiceCallLog {
 model MetaAdIntegration {
   id            String    @id @default(uuid())
   name          String
-  adAccountId   String    // e.g. "act_1234567890"
+  adAccountId   String // e.g. "act_1234567890"
   accessToken   String    @db.Text
   appId         String?
   appSecret     String?
@@ -3099,8 +3573,8 @@ model MetaAdIntegration {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  campaigns     MetaCampaignCache[]
-  webhookLogs   MetaLeadWebhookLog[]
+  campaigns   MetaCampaignCache[]
+  webhookLogs MetaLeadWebhookLog[]
 
   @@index([adAccountId])
   @@index([isActive])
@@ -3108,33 +3582,33 @@ model MetaAdIntegration {
 }
 
 model MetaCampaignCache {
-  id              String             @id // Meta Campaign ID
+  id              String            @id // Meta Campaign ID
   integrationId   String
-  integration     MetaAdIntegration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  integration     MetaAdIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
   name            String
   objective       String
-  status          String             // "ACTIVE", "PAUSED", "ARCHIVED"
+  status          String // "ACTIVE", "PAUSED", "ARCHIVED"
   effectiveStatus String?
   dailyBudget     Float?
   lifetimeBudget  Float?
-  spend           Float              @default(0)
-  impressions     Int                @default(0)
-  reach           Int                @default(0)
-  clicks          Int                @default(0)
-  ctr             Float              @default(0)
-  cpc             Float              @default(0)
-  cpm             Float              @default(0)
-  leadsCount      Int                @default(0)
-  costPerLead     Float              @default(0)
+  spend           Float             @default(0)
+  impressions     Int               @default(0)
+  reach           Int               @default(0)
+  clicks          Int               @default(0)
+  ctr             Float             @default(0)
+  cpc             Float             @default(0)
+  cpm             Float             @default(0)
+  leadsCount      Int               @default(0)
+  costPerLead     Float             @default(0)
   startTime       DateTime?
   stopTime        DateTime?
-  adSetsData      Json?              // Cached ad sets with targeting
-  creativesData   Json?              // Cached creatives with preview details
-  lastSyncedAt    DateTime           @default(now())
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  adSetsData      Json? // Cached ad sets with targeting
+  creativesData   Json? // Cached creatives with preview details
+  lastSyncedAt    DateTime          @default(now())
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
-  webhookLogs     MetaLeadWebhookLog[]
+  webhookLogs MetaLeadWebhookLog[]
 
   @@index([integrationId])
   @@index([status])
@@ -3148,7 +3622,7 @@ model MetaLeadWebhookLog {
   integration     MetaAdIntegration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
   campaignCacheId String?
   campaignCache   MetaCampaignCache? @relation(fields: [campaignCacheId], references: [id], onDelete: SetNull)
-  leadgenId       String             // Meta leadgen_id
+  leadgenId       String // Meta leadgen_id
   pageId          String
   formId          String?
   adId            String?
@@ -3172,23 +3646,23 @@ model MetaLeadWebhookLog {
 // ─────────────────────────────────────────────
 
 model GoogleAdIntegration {
-  id                  String    @id @default(uuid())
-  name                String
-  customerId          String    // e.g. "123-456-7890" or "1234567890"
-  managerCustomerId   String?   // Optional MCC CID
-  refreshToken        String    @db.Text
-  currency            String    @default("INR")
-  timezone            String?
-  descriptiveName     String?
-  accountStatus       String    @default("ENABLED") // "ENABLED", "SUSPENDED", "CLOSED"
-  isActive            Boolean   @default(true)
-  isDefault           Boolean   @default(false)
-  lastSyncedAt        DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  id                String    @id @default(uuid())
+  name              String
+  customerId        String // e.g. "123-456-7890" or "1234567890"
+  managerCustomerId String? // Optional MCC CID
+  refreshToken      String    @db.Text
+  currency          String    @default("INR")
+  timezone          String?
+  descriptiveName   String?
+  accountStatus     String    @default("ENABLED") // "ENABLED", "SUSPENDED", "CLOSED"
+  isActive          Boolean   @default(true)
+  isDefault         Boolean   @default(false)
+  lastSyncedAt      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  campaigns           GoogleCampaignCache[]
-  webhookLogs         GoogleLeadWebhookLog[]
+  campaigns   GoogleCampaignCache[]
+  webhookLogs GoogleLeadWebhookLog[]
 
   @@index([customerId])
   @@index([isActive])
@@ -3200,8 +3674,8 @@ model GoogleCampaignCache {
   integrationId          String
   integration            GoogleAdIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
   name                   String
-  advertisingChannelType String              // "SEARCH", "PERFORMANCE_MAX", "DISPLAY", "VIDEO"
-  status                 String              // "ENABLED", "PAUSED", "REMOVED"
+  advertisingChannelType String // "SEARCH", "PERFORMANCE_MAX", "DISPLAY", "VIDEO"
+  status                 String // "ENABLED", "PAUSED", "REMOVED"
   dailyBudget            Float?
   spend                  Float               @default(0) // Converted from cost_micros
   impressions            Int                 @default(0)
@@ -3210,15 +3684,15 @@ model GoogleCampaignCache {
   cpc                    Float               @default(0)
   conversions            Float               @default(0)
   costPerConversion      Float               @default(0)
-  adGroupsData           Json?               // Cached ad groups and targeting
-  searchKeywordsData     Json?               // Cached keywords with match types & Quality Scores (1-10)
+  adGroupsData           Json? // Cached ad groups and targeting
+  searchKeywordsData     Json? // Cached keywords with match types & Quality Scores (1-10)
   startTime              DateTime?
   stopTime               DateTime?
   lastSyncedAt           DateTime            @default(now())
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
 
-  webhookLogs            GoogleLeadWebhookLog[]
+  webhookLogs GoogleLeadWebhookLog[]
 
   @@index([integrationId])
   @@index([status])
@@ -3232,10 +3706,10 @@ model GoogleLeadWebhookLog {
   integration     GoogleAdIntegration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
   campaignCacheId String?
   campaignCache   GoogleCampaignCache? @relation(fields: [campaignCacheId], references: [id], onDelete: SetNull)
-  googleLeadId    String               // Google lead form submission ID
+  googleLeadId    String // Google lead form submission ID
   formId          String?
   campaignId      String?
-  gclid           String?              // Google Click ID
+  gclid           String? // Google Click ID
   leadId          String?
   lead            Lead?                @relation("GoogleLeadLog", fields: [leadId], references: [id], onDelete: SetNull)
   fieldData       Json?
@@ -3249,5 +3723,3 @@ model GoogleLeadWebhookLog {
   @@index([formId])
   @@map("google_lead_webhook_log")
 }
-
-
