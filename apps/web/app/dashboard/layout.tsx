@@ -29,6 +29,10 @@ import {
   Globe,
   Search,
   Video,
+  Send,
+  Zap,
+  FileText,
+  GitBranch,
 } from "lucide-react";
 import { InstagramIcon } from "@/components/ui/InstagramIcon";
 import Link from "next/link";
@@ -303,6 +307,7 @@ export default function DashboardLayout({
     const isSmsSub = pathname.startsWith("/dashboard/marketing/sms");
     const isVoiceSub = pathname.startsWith("/dashboard/marketing/voice");
     const isAdsSub = pathname.startsWith("/dashboard/marketing/ads");
+    const isWhatsAppSub = pathname.startsWith("/dashboard/marketing/whatsapp");
     if (isEmailSub) {
       navLinks = [
         { name: "Email Overview", href: "/dashboard/marketing/email", icon: LayoutDashboard, roles: ["MARKETING"] },
@@ -329,14 +334,26 @@ export default function DashboardLayout({
         { name: "Google Ads", href: "/dashboard/marketing/ads/google", icon: Search, roles: ["MARKETING"] },
         { name: "YouTube Video Ads", href: "/dashboard/marketing/ads/youtube", icon: Video, roles: ["MARKETING"] },
       ];
+    } else if (isWhatsAppSub) {
+      navLinks = [
+        { name: "WhatsApp Overview", href: "/dashboard/marketing/whatsapp", icon: LayoutDashboard, roles: ["MARKETING"] },
+        { name: "Live Inbox", href: "/dashboard/marketing/whatsapp/inbox", icon: MessageSquare, roles: ["MARKETING"] },
+        { name: "Pipelines & Deals", href: "/dashboard/marketing/whatsapp/pipelines", icon: GitBranch, roles: ["MARKETING"] },
+        { name: "Broadcasts", href: "/dashboard/marketing/whatsapp/broadcasts", icon: Send, roles: ["MARKETING"] },
+        { name: "Contacts", href: "/dashboard/marketing/whatsapp/contacts", icon: Users, roles: ["MARKETING"] },
+        { name: "Automations", href: "/dashboard/marketing/whatsapp/automations", icon: Zap, roles: ["MARKETING"] },
+        { name: "Interactive Flows", href: "/dashboard/marketing/whatsapp/flows", icon: Briefcase, roles: ["MARKETING"] },
+        { name: "Templates", href: "/dashboard/marketing/whatsapp/templates", icon: FileText, roles: ["MARKETING"] },
+        { name: "Settings", href: "/dashboard/marketing/whatsapp/settings", icon: Settings, roles: ["MARKETING"] },
+      ];
     } else {
       navLinks = [
         { name: "Overview", href: "/dashboard/marketing", icon: LayoutDashboard, roles: ["MARKETING"] },
+        { name: "WhatsApp CRM", href: "/dashboard/marketing/whatsapp", icon: Radio, roles: ["MARKETING"] },
         { name: "Ads Marketing", href: "/dashboard/marketing/ads", icon: Globe, roles: ["MARKETING"] },
         { name: "AI Voice Calling", href: "/dashboard/marketing/voice", icon: Phone, roles: ["MARKETING"] },
         { name: "SMS Campaigns", href: "/dashboard/marketing/sms", icon: MessageSquare, roles: ["MARKETING"] },
         { name: "Email Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["MARKETING"] },
-        { name: "WhatsApp Campaigns", href: "/dashboard/marketing/whatsapp", icon: Radio, roles: ["MARKETING"] },
         { name: "Analytics", href: "/dashboard/marketing/analytics", icon: BarChart2, roles: ["MARKETING"] },
         { name: "Settings & BYO", href: "/dashboard/marketing/settings", icon: Settings, roles: ["MARKETING"] },
       ];
@@ -385,15 +402,19 @@ export default function DashboardLayout({
 
         {/* Nav Links List */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-hide">
-          {(pathname.startsWith("/dashboard/marketing/email") || pathname.startsWith("/dashboard/marketing/sms") || pathname.startsWith("/dashboard/marketing/voice")) && (
-            <Link
-              href="/dashboard/marketing"
-              className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-xl mb-3 transition-colors group"
-            >
-              <ArrowLeft className="w-4 h-4 text-[var(--brand-600)] transition-transform group-hover:-translate-x-0.5" />
-              <span>Back to Marketing Hub</span>
-            </Link>
-          )}
+          {(pathname.startsWith("/dashboard/marketing/email") ||
+            pathname.startsWith("/dashboard/marketing/sms") ||
+            pathname.startsWith("/dashboard/marketing/voice") ||
+            pathname.startsWith("/dashboard/marketing/whatsapp") ||
+            pathname.startsWith("/dashboard/marketing/ads")) && (
+              <Link
+                href="/dashboard/marketing"
+                className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-xl mb-3 transition-colors group"
+              >
+                <ArrowLeft className="w-4 h-4 text-[var(--brand-600)] transition-transform group-hover:-translate-x-0.5" />
+                <span>Back to Marketing Hub</span>
+              </Link>
+            )}
 
           {navLinks.map((link) => {
             const Icon = link.icon;
