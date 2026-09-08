@@ -1,4 +1,5 @@
 # AGENTS.md — apps/api/
+
 ---
 
 ## Tech
@@ -52,60 +53,19 @@ apps/api/src/
 │   ├── manager/       Shared manager utilities
 │   └── employees/     Employee performance tracking
 │
-├── marketing/         Omnichannel marketing campaigns (Email · SMS · AI Voice)
-│   ├── marketing.module.ts   Root module, registers all sub-modules + services
-│   ├── shared/        shared/sample-csv.controller.ts — CSV template downloads
+│   ├── marketing/         Omnichannel marketing campaigns (Email · SMS · AI Voice · WhatsApp · Ads)
+│   │   ├── marketing.module.ts   Root module, registers all sub-modules + services
+│   │   ├── shared/        shared/sample-csv.controller.ts — CSV template downloads
+│   │   │
+│   │   ├── email/         Email Campaign Module (controllers, services, facade)
+│   │   ├── sms/           SMS Campaign Module (controllers, services, facade)
+│   │   ├── voice/         AI Voice Campaign Module (controllers, gateway, services, facade)
+│   │   ├── whatsapp/      WhatsApp Cloud API Module (broadcasts, automations, templates, webhooks)
+│   │   └── ads/           Ad platform lead ingestion (google, meta, instagram, youtube webhooks)
 │   │
-│   ├── email/         Email Campaign Module
-│   │   ├── controllers/
-│   │   │   ├── email-campaigns.controller.ts   Campaign CRUD + launch
-│   │   │   ├── email-integrations.controller.ts Provider connect/disconnect
-│   │   │   ├── email-tracking.controller.ts    Open/click event tracking
-│   │   │   └── email-webhooks.controller.ts    Inbound webhook events
-│   │   ├── services/
-│   │   │   ├── email-analytics.service.ts      Funnel + deliverability metrics
-│   │   │   ├── email-audience.service.ts       Audience resolution from CSV/leads
-│   │   │   ├── email-integrations.service.ts   Provider key management
-│   │   │   └── email-tracking.service.ts       Event processing
-│   │   └── email.service.ts                    Facade coordinator
-│   │
-│   ├── sms/           SMS Campaign Module (parallel structure to email)
-│   │   ├── controllers/
-│   │   │   ├── sms-campaigns.controller.ts
-│   │   │   ├── sms-integrations.controller.ts
-│   │   │   ├── sms-tracking.controller.ts
-│   │   │   └── sms-webhooks.controller.ts
-│   │   ├── services/
-│   │   │   ├── sms-analytics.service.ts
-│   │   │   ├── sms-audience.service.ts
-│   │   │   ├── sms-integrations.service.ts
-│   │   │   └── sms-tracking.service.ts
-│   │   └── sms.service.ts
-│   │
-│   └── voice/         AI Voice Campaign Module
-│       ├── controllers/
-│       │   ├── voice-campaigns.controller.ts   Campaign CRUD + launch
-│       │   ├── voice-integrations.controller.ts AI platform key management
-│       │   ├── voice-audio.controller.ts       TTS preview endpoint
-│       │   ├── voice-test.controller.ts        Test call dispatch
-│       │   └── voice-webhooks.controller.ts    AI platform inbound webhooks
-│       ├── gateway/
-│       │   ├── voice-media-stream.gateway.ts   WebSocket gateway (real-time call audio)
-│       │   ├── voice-stream-session.ts         StreamSessionManager class
-│       │   └── voice-audio-transcoder.ts       Audio transcoding helpers
-│       ├── services/
-│       │   ├── voice-campaign.service.ts       Campaign CRUD + lifecycle
-│       │   ├── voice-dispatcher.service.ts     AI call dispatch + carrier bridge
-│       │   ├── voice-analytics.service.ts      Call funnel + delivery metrics
-│       │   ├── voice-audience.service.ts       Audience resolution
-│       │   ├── voice-audio.service.ts          TTS preview generation
-│       │   ├── voice-integrations.service.ts   Platform key management
-│       │   └── voice-tracking.service.ts       Event processing
-│       └── voice.service.ts                    Facade coordinator (delegates to sub-services)
-│
-└── lib/               Shared infrastructure
-    ├── database/      PrismaModule wrapper around @brokeros/prisma
-    └── storage/       Vercel Blob upload/download helpers
+│   └── lib/               Shared infrastructure
+│       ├── database/      PrismaModule wrapper around @brokeros/prisma
+│       └── storage/       Vercel Blob upload/download helpers
 ```
 
 ---
@@ -127,11 +87,15 @@ You **MUST** consult the appropriate skill before making changes, based on the t
 
 ## Marketing Module Conventions
 
-- Each channel (email, sms, voice) follows the same folder pattern: controllers → services → dto.
-- Facades (`email.service.ts`, `sms.service.ts`, `voice.service.ts`) are coordinator-only — they delegate to sub-services and must stay < 200 lines.
-- All sub-services are single-responsibility. `voice-campaign.service.ts` = lifecycle only. `voice-dispatcher.service.ts` = call dispatch only.
-- All external provider calls go through `integrations/` adapters. Never call Vapi/Retell/SendGrid SDK directly from a NestJS service.
-- DTO decomposition: Voice DTOs split into `dto/campaign.dto.ts`, `dto/audience.dto.ts`, `dto/test.dto.ts`, `dto/audio.dto.ts`, `dto/integration.dto.ts` — all re-exported via `dto/voice.dto.ts`.
+- Channels (email, sms, voice, whatsapp, ads) follow the established pattern: controllers → services → dto.
+- Facades (`email.service.ts`, `sms.service.ts`, `voice.service.ts`, `whatsapp.service.ts`) are coordinator-only — they delegate to sub-services and must stay < 200 lines.
+- All sub-services are single-responsibility:
+  - Voice: `voice-campaign.service.ts` (lifecycle), `voice-dispatcher.service.ts` (dispatch via carrier bridge), `voice-analytics.service.ts`, `voice-audience.service.ts`.
+  - WhatsApp: `broadcasts/`, `automations/`, `templates/`, `messages/`, `webhooks/`.
+  - Ads: Ingestion webhooks for Google, Meta, Instagram, and YouTube.
+- All external provider calls go through `integrations/` adapters. Never call external SDKs (Vapi/Retell/SendGrid/WhatsApp Cloud API) directly from a NestJS service.
+- Heavy broadcast dispatch jobs MUST be enqueued to BullMQ (`apps/workers`) rather than run inside the request thread.
+- DTO decomposition: split into focused DTOs and re-export cleanly.
 
 ---
 
