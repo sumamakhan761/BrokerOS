@@ -26,7 +26,7 @@ COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy the full pruned source code
 COPY --from=builder /app/out/full/ .
@@ -50,5 +50,5 @@ COPY --from=installer /app/package.json ./package.json
 
 EXPOSE 3333
 
-# Run production migrations then start the server
-CMD ["sh", "-c", "cd packages/prisma && npx prisma migrate deploy && cd ../../apps/api && node dist/main"]
+# Run production migrations and seed if empty, then start the server
+CMD ["sh", "-c", "cd packages/prisma && npx prisma migrate deploy && npx tsx seed.ts --if-empty && cd ../../apps/api && node dist/main"]

@@ -26,7 +26,7 @@ COPY .gitignore .gitignore
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy the full pruned source code
 COPY --from=builder /app/out/full/ .
@@ -46,8 +46,6 @@ ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 ENV BACKEND_URL=$BACKEND_URL
 
-# Generate Prisma client first so types are available to frontend/packages
-RUN pnpm --filter @brokeros/prisma db:generate
 RUN pnpm turbo run build --filter=@brokeros/web...
 
 # ── Stage 3: Production Image ──────────────────────────────────
@@ -61,7 +59,7 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy the standalone Next.js output
-COPY --from=installer /app/apps/web/public ./apps/web/public
+COPY --from=installer --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 COPY --from=installer --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=installer --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
