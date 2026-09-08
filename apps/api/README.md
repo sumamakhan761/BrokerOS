@@ -59,32 +59,15 @@ apps/api/src/
 │   ├── manager/       Shared manager utilities
 │   └── employees/     Employee performance tracking
 │
-├── marketing/         Omnichannel marketing campaigns
+├── marketing/         Omnichannel marketing campaigns (Email · SMS · Voice · WhatsApp · Ads)
 │   ├── marketing.module.ts    Root module
 │   ├── shared/                CSV template download controller
 │   │
-│   ├── email/                 Email Campaign Module
-│   │   ├── controllers/       campaigns, integrations, tracking, webhooks
-│   │   ├── services/          analytics, audience, integrations, tracking
-│   │   └── email.service.ts   Facade coordinator
-│   │
-│   ├── sms/                   SMS Campaign Module (parallel to email)
-│   │   ├── controllers/       campaigns, integrations, tracking, webhooks
-│   │   ├── services/          analytics, audience, integrations, tracking
-│   │   └── sms.service.ts     Facade coordinator
-│   │
-│   └── voice/                 AI Voice Campaign Module
-│       ├── controllers/       campaigns, integrations, audio, test, webhooks
-│       ├── gateway/           WebSocket media stream gateway + stream session manager
-│       ├── services/
-│       │   ├── voice-campaign.service.ts    Campaign CRUD + lifecycle
-│       │   ├── voice-dispatcher.service.ts  AI call dispatch + carrier bridge
-│       │   ├── voice-analytics.service.ts
-│       │   ├── voice-audience.service.ts
-│       │   ├── voice-audio.service.ts       TTS preview generation
-│       │   ├── voice-integrations.service.ts
-│       │   └── voice-tracking.service.ts
-│       └── voice.service.ts   Facade coordinator
+│   ├── email/                 Email Campaign Module (controllers, services, facade)
+│   ├── sms/                   SMS Campaign Module (controllers, services, facade)
+│   ├── voice/                 AI Voice Campaign Module (controllers, gateway, services, facade)
+│   ├── whatsapp/              WhatsApp Cloud API Module (broadcasts, automations, templates, webhooks)
+│   └── ads/                   Ad Platform Lead Ingest (Google, Meta, Instagram, YouTube webhooks)
 │
 └── lib/               Shared infrastructure
     ├── database/      PrismaModule wrapper around @brokeros/prisma
@@ -113,24 +96,29 @@ pnpm install
 This monorepo uses a **Split Environment Architecture**.
 
 #### A. Root Infrastructure (`/.env`)
+
 The heavy infrastructure secrets must be placed in the **root** `.env` file (at `../../.env`).
 
 Populate these in the **root `.env`**:
+
 - **`DATABASE_URL`**: Use `postgresql://crm:crm@localhost:5432/crm` for local Docker, or a cloud Neon URL.
 - **`BETTER_AUTH_SECRET`**: Generate one with `openssl rand -hex 32`.
 - **`BLOB_READ_WRITE_TOKEN`**: From Vercel Storage.
 - **`GROQ_API_KEY`**: From Groq Console.
 
 #### B. API Local Overrides (`apps/api/.env`)
+
 The API-specific environment file is strictly for local routing.
 Create it:
+
 ```bash
 cp .env.example .env
 ```
 
 Populate these in `apps/api/.env`:
+
 - `FRONTEND_URL="http://localhost:3000"`
-- `MOBILE_URL="exp://192.168.x.x:8081"` *(CRITICAL: Replace with your actual LAN IP. Mobile physical devices cannot connect to `localhost`).*
+- `MOBILE_URL="exp://192.168.x.x:8081"` _(CRITICAL: Replace with your actual LAN IP. Mobile physical devices cannot connect to `localhost`)._
 
 ### 3. Database Initialization
 
@@ -168,8 +156,8 @@ pnpm --filter @brokeros/api test:e2e          # Run end-to-end tests
 The backend uses a highly optimized multi-stage Dockerfile powered by Turborepo:
 
 1. **Stage 1 (Prune):** Runs `turbo prune @brokeros/api` to isolate only the backend code and its internal dependencies (like `@brokeros/prisma`).
-2. **Stage 2 (Installer):** Installs dependencies and runs the build.
-3. **Stage 3 (Runner):** A lightweight Alpine image that runs the compiled API.
+2. **Stage 2 (Installer):** Installs dependencies with frozen lockfile and builds the NestJS distribution.
+3. **Stage 3 (Runner):** A lightweight Node image that automatically runs pending migrations (`prisma migrate deploy`), seeds demo data if the DB is unseeded (`tsx seed.ts --if-empty`), and launches the API.
 
 **Crucial Note:** Because it relies on Turborepo, the Dockerfile **must be built from the root context**, not from inside `apps/api/`.
 
@@ -182,6 +170,6 @@ The backend runs on port **3333** by default.
 
 <div align="center">
 
-**[← Back to main README](../README.md)**
+**[← Back to main README](../../README.md)**
 
 </div>
