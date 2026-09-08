@@ -48,7 +48,7 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 - PostgreSQL 16+ (or Docker)
 - Android Studio (for mobile work only)
 
-### 🤖 AI Agent Setup 
+### 🤖 AI Agent Setup
 
 If you are using the **AI IDE / CLI**, you can skip running commands manually. Use the built-in agent skills:
 
@@ -67,10 +67,15 @@ cp apps/web/.env.example apps/web/.env
 # Edit it with your Database URL, Better Auth secret, etc.
 # apps/web/.env and apps/api/.env are mostly pre-filled with local URLs.
 
-# Start everything
+# If you have previous containers or volumes running, perform a clean reset:
+docker compose down -v --remove-orphans
+
+# Build and start everything
 docker compose up --build
 
-# Once running, open a new terminal to seed the database with demo users:
+# Note: The backend container automatically deploys migrations and seeds
+# demo accounts on initial boot if the database is empty (--if-empty flag).
+# To manually re-seed at any time:
 docker exec -it crm-backend pnpm db:seed
 # 🔑 View all demo users & passwords created: docs/role-password.md
 ```
@@ -80,6 +85,7 @@ docker exec -it crm-backend pnpm db:seed
 If you're working locally without Docker, follow these steps. With Turborepo and pnpm workspaces, you can install everything from the root!
 
 **1. Install all dependencies & set up environment variables (Run at root):**
+
 ```bash
 pnpm install
 
@@ -89,13 +95,14 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 cp apps/mobile/.env.example apps/mobile/.env
 
-# IMPORTANT: 
+# IMPORTANT:
 # 1. Edit the root /.env file with your Database URL, Auth secret, Groq API key, etc.
 # 2. Edit apps/mobile/.env and set EXPO_PUBLIC_API_URL to your machine's LAN IP address.
 # 3. For apps/web and apps/api, the defaults are usually fine for local development.
 ```
 
 **2. Backend (API) & Database Setup:**
+
 ```bash
 # Generate and seed the database using Prisma (run from root)
 pnpm db:generate
@@ -107,12 +114,14 @@ pnpm dev:api                 # → http://localhost:3333
 ```
 
 **3. Frontend (Web):**
+
 ```bash
 # Start the Next.js web dashboard (run from root)
 pnpm dev:web                 # → http://localhost:3000
 ```
 
 **4. Mobile (Android Only):**
+
 ```bash
 # Start Metro bundler (run from root)
 pnpm dev:mobile
@@ -120,26 +129,28 @@ pnpm dev:mobile
 cd apps/mobile && npx expo run:android
 ```
 
-> 💡 **Where do I get the API keys?** 
-> 
+> 💡 **Where do I get the API keys?**
+>
 > **Authentication (`BETTER_AUTH_SECRET`)**
 > Better Auth requires a strong, randomly generated 32-character secret to sign sessions.
 > Run this command in your terminal to generate one:
 > `openssl rand -hex 32`
 > Set in `.env`: `BETTER_AUTH_SECRET="your-generated-hash-here"`
-> 
+>
 > **Vercel Blob (File Uploads)**
 > Go to [Vercel Storage](https://vercel.com/storage/blob) to get your token.
 > Set in `.env`: `BLOB_READ_WRITE_TOKEN="your_vercel_blob_token"`
-> 
+>
 > **Groq (AI Call Processing)**
 > Go to [Groq Console](https://console.groq.com/keys) to get a free API key.
 > Set in `.env`: `GROQ_API_KEY="gsk_your_key_here"`
-> 
+>
 > **Want to run tests or build a specific app?** Check their dedicated readmes:
+>
 > - 🟢 **[Backend API Guide](apps/api/README.md)**
 > - 🔵 **[Frontend Web Guide](apps/web/README.md)**
 > - 📱 **[Mobile App Guide](apps/mobile/README.md)**
+> - ⚡ **[Background Workers Guide](apps/workers/README.md)**
 > - 🔗 **[Integrations Guide](integrations/README.md)**
 
 ---
@@ -151,13 +162,13 @@ BrokerOS/
 ├── apps/
 │   ├── api/       NestJS 11 API + Socket.IO (TypeScript ESM)
 │   │              Modules: auth, leads, inventory, brokers, approvals,
-│   │              chat, notifications, dashboard, marketing (email/sms/voice)
+│   │              chat, notifications, dashboard, marketing (email/sms/voice/whatsapp)
 │   ├── web/       Next.js 16 App Router web dashboard
 │   │              Features: leads, inventory, brokers, approvals,
-│   │              marketing (email/sms/voice campaign wizards)
+│   │              marketing (email/sms/voice/whatsapp campaign wizards)
 │   ├── mobile/    Expo 54 React Native Android app
 │   └── workers/   BullMQ async background processors
-│                  (marketing-email, marketing-sms, marketing-voice processors)
+│                  (marketing-email, marketing-sms, marketing-voice, marketing-whatsapp)
 ├── packages/
 │   ├── prisma/      Prisma ORM schema, migrations, and client (@brokeros/prisma)
 │   ├── storage/     Vercel Blob storage wrappers (@brokeros/storage)
@@ -167,7 +178,9 @@ BrokerOS/
 ├── integrations/
 │   ├── voice/       @brokeros/int-voice — 8 AI voice agents + 4 PSTN carriers
 │   ├── mail/        Email provider adapters (SendGrid, Brevo, Mailchimp, AWS SES)
-│   └── sms/         SMS gateway adapters (Twilio, Gupshup, Sinch, AWS SNS)
+│   ├── sms/         SMS gateway adapters (Twilio, Gupshup, Sinch, AWS SNS)
+│   ├── whatsapp/    @brokeros/int-whatsapp — Meta WhatsApp Cloud API adapter
+│   └── ads/         Lead webhook adapters (@brokeros/int-ads-google, @brokeros/int-ads-meta)
 └── docs/          Project documentation
 ```
 
@@ -183,6 +196,8 @@ This is a **pnpm monorepo** managed by Turborepo. You can run commands globally 
    - `apps/api/AGENTS.md` — for backend changes
    - `apps/web/AGENTS.md` — for frontend changes
    - `apps/mobile/AGENTS.md` — for mobile changes
+   - `apps/workers/AGENTS.md` — for background job processors
+   - `integrations/AGENTS.md` — for third-party service adapters
 
 2. **Shared constants/types** go in `packages/constants/` or `packages/types/`, not in app-level files. See `AGENTS.md` root for the migration policy.
 
@@ -239,19 +254,19 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ### Types
 
-| Type | Description |
-|---|---|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `docs` | Documentation only |
-| `style` | Formatting, missing semicolons (no code change) |
-| `refactor` | Code restructuring (no feature or fix) |
-| `test` | Adding or fixing tests |
-| `chore` | Build process, dependency updates |
+| Type       | Description                                     |
+| ---------- | ----------------------------------------------- |
+| `feat`     | New feature                                     |
+| `fix`      | Bug fix                                         |
+| `docs`     | Documentation only                              |
+| `style`    | Formatting, missing semicolons (no code change) |
+| `refactor` | Code restructuring (no feature or fix)          |
+| `test`     | Adding or fixing tests                          |
+| `chore`    | Build process, dependency updates               |
 
 ### Scopes
 
-Use the app/package or module name: `api`, `web`, `mobile`, `workers`, `types`, `validators`, `constants`, `integrations`, `leads`, `inventory`, `brokers`, `auth`, `dashboard`, `marketing`, `email`, `sms`, `voice`, `docs`
+Use the app/package or module name: `api`, `web`, `mobile`, `workers`, `types`, `validators`, `constants`, `integrations`, `leads`, `inventory`, `brokers`, `auth`, `dashboard`, `marketing`, `email`, `sms`, `voice`, `whatsapp`, `ads`, `docs`
 
 ### Examples
 
