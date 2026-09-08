@@ -1,6 +1,7 @@
 # AGENTS.md — apps/web/
 
 ---
+
 **Tailwind v4 note:** This project uses Tailwind CSS v4, NOT v3. The config format, plugin API, and some utility names differ. Check `postcss.config.mjs` and `app/globals.css` before writing any Tailwind classes.
 
 ---
@@ -31,6 +32,12 @@ apps/web/
           campaigns/[id]/   ← Voice campaign detail + analytics
           campaigns/new/    ← 5-step voice campaign wizard
           settings/         ← AI voice platform integrations settings
+        whatsapp/
+          campaigns/[id]/   ← WhatsApp campaign detail + broadcast analytics
+          campaigns/new/    ← WhatsApp broadcast wizard
+          templates/        ← Meta template syncer and viewer
+          settings/         ← Cloud API credentials and webhook verification
+        ads/                ← Ad platform integrations and lead form mapping
 
   features/
     leads/             ← Lead list, detail, follow-ups, call history UI
@@ -38,9 +45,13 @@ apps/web/
     brokers/           ← Broker management UI
     approvals/         ← Approval request UI
     marketing/
-      shared/
-        AudienceSelector.tsx      ← Shared CSV / lead audience picker (all channels)
-        CampaignWizardStepper.tsx ← Shared step progress bar component
+      shared/          ← Shared CSV/lead audience picker, stepper, preview modals
+      components/      ← Shared marketing components (funnel charts, tables, cards)
+      email/           ← Email components and 4-step wizard
+      sms/             ← SMS components and 4-step wizard
+      voice/           ← Voice components (composer studio) and 5-step wizard
+      whatsapp/        ← WhatsApp components, template cards, and broadcast wizard
+      ads/             ← Ad account connectors and lead form sync UI
       components/
         MarketingChannelGrid.tsx  ← Channel picker grid (Email / SMS / Voice)
         CampaignListTable.tsx     ← Unified broadcast table (all channels)
@@ -127,7 +138,7 @@ apps/web/
 
 ## Marketing Feature Conventions
 
-- Each channel (email, sms, voice) follows the same structure: `components/` + `wizard/` (N-step wizard).
+- Each channel (email, sms, voice, whatsapp) follows the same structure: `components/` + `wizard/` (N-step wizard).
 - Wizard steps are thin page-level components. Business logic lives in subcomponents in `components/`.
 - `VoiceStep4AgentComposer.tsx` is a coordinator only — it must stay < 300 lines. All studio UI is in `components/composer/`.
 - Shared audience picking and campaign stepping live in `features/marketing/shared/`.
