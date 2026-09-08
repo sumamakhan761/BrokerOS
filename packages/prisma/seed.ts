@@ -1,7 +1,8 @@
 import { prismaClient as prisma } from './src/index.js';
 import { auth } from '../../apps/api/src/lib/auth.js';
 
-// ==========================================================// SYSTEMATIC DEMO SEED — BrokerOS
+// ============================================================
+// SYSTEMATIC DEMO SEED — BrokerOS
 // ============================================================
 //
 // Creates a clean, realistic, end-to-end demo environment:
@@ -1717,30 +1718,6 @@ async function main() {
   console.log('  • closingmanager2@demo.com  — Closes BRK-002 leads (1 Loan: Nilesh Patil)');
   console.log('  • closingmanager3@demo.com  — Closes BRK-003 leads (Sachin Wagle)');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-  console.log('  director@demo.com          — Director');
-  console.log('  admin@demo.com             — Admin');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('  CP WORLD  (Grand Horizon — CP Exclusive project)');
-  console.log('  cp1@demo.com               — Channel Partner');
-  console.log('  sourcingmanager1@demo.com  — Sourcing Manager 1 (recruited BRK-001 Pawan Realty)');
-  console.log('  sourcingmanager2@demo.com  — Sourcing Manager 2 (recruited BRK-002 Skyline Brokers)');
-  console.log('  sourcingmanager3@demo.com  — Sourcing Manager 3 (recruited BRK-003 Prime Associates)');
-  console.log('  closingmanager1@demo.com   — Closing Manager 1  (closes BRK-001 leads: Rajan, Smita)');
-  console.log('  closingmanager2@demo.com   — Closing Manager 2  (closes BRK-002 leads: Nilesh BOOKING, Madhuri LOAN — 2 bookings)');
-  console.log('  closingmanager3@demo.com   — Closing Manager 3  (closes BRK-003 leads: Sachin)');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-  console.log('  director@demo.com          — Director');
-  console.log('  admin@demo.com             — Admin');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('  CP WORLD  (Grand Horizon — CP Exclusive project)');
-  console.log('  cp1@demo.com               — Channel Partner');
-  console.log('  sourcingmanager1@demo.com  — Sourcing Manager 1 (recruited BRK-001 Pawan Realty)');
-  console.log('  sourcingmanager2@demo.com  — Sourcing Manager 2 (recruited BRK-002 Skyline Brokers)');
-  console.log('  sourcingmanager3@demo.com  — Sourcing Manager 3 (recruited BRK-003 Prime Associates)');
-  console.log('  closingmanager1@demo.com   — Closing Manager 1  (closes BRK-001 leads: Rajan, Smita)');
-  console.log('  closingmanager2@demo.com   — Closing Manager 2  (closes BRK-002 leads: Nilesh BOOKING, Madhuri LOAN — 2 bookings)');
-  console.log('  closingmanager3@demo.com   — Closing Manager 3  (closes BRK-003 leads: Sachin)');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 }
 
 main()

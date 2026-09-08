@@ -549,6 +549,9 @@ importers:
       '@brokeros/int-voice':
         specifier: workspace:*
         version: link:../../integrations/voice
+      '@brokeros/int-whatsapp':
+        specifier: workspace:*
+        version: link:../../integrations/whatsapp
       '@brokeros/prisma':
         specifier: workspace:*
         version: link:../../packages/prisma
