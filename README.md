@@ -4,7 +4,7 @@
 
 **The open-source, AI-powered CRM built for real estate brokerages.**
 
-Manage your entire brokerage and channel partner operation — agentic AI voice calling, email & SMS broadcasts, leads, inventory, bookings, commissions, post-sales, finance — from one platform with web and mobile apps.
+Manage your entire brokerage and channel partner operation — agentic AI voice calling, email, SMS & WhatsApp broadcasts, ads lead capture, leads, inventory, bookings, commissions, post-sales, finance — from one platform with web and mobile apps.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![NestJS](https://img.shields.io/badge/Backend-NestJS%2011-E0234E?logo=nestjs)](apps/api/)
@@ -31,26 +31,31 @@ Same database. Same inventory. Separated by one flag: `isCpProject`. No data lea
 
 ## ✨ Features
 
-### Omnichannel Marketing Suite (Email · SMS · AI Voice)
+### Omnichannel Marketing Suite (Email · SMS · AI Voice · WhatsApp · Ads)
+
 - **AI Voice Campaigns**: Dispatch thousands of outbound AI calls using your choice of 8 AI voice agent platforms (Vapi, Retell, Sarvam Bulbul v3, Bolna, ElevenLabs, LiveKit, OpenAI Realtime, Pipecat) bridged to 4 PSTN telephony carriers (Vobiz, Exotel, Twilio, Telnyx).
 - **5-Step Voice Campaign Wizard**: Configure project, schedule, audience (CSV or CRM leads), PSTN carrier, and the AI Agent Composer Studio — which exposes platform-specific settings (Vapi transcriber, Retell emotion/backchannel, Sarvam Indic language) and a live script prompt editor with merge tag auto-insertion.
+- **WhatsApp Campaigns**: Meta WhatsApp Cloud API integration for template broadcasting, template syncing, and automated drip sequences via `@brokeros/int-whatsapp`.
 - **SMS Campaigns**: 4-step wizard — project gateway selection, CSV/lead audience, message + phone mockup preview, schedule & launch — via Twilio, Gupshup, Sinch, or AWS SNS.
 - **Email Campaigns**: 4-step wizard — project/sender identity, audience, HTML template editor, schedule & launch — via SendGrid, Brevo, Mailchimp, or AWS SES.
+- **Lead Ads Capture**: Direct webhook ingest adapters for Google Ads and Meta Lead Ads automatically creating CRM leads with campaign attribution.
 - **Live Prompt Variable Preview**: The AI voice composer shows real-time interpolation of `{{lead.firstName}}`, `{{project.name}}`, and other merge tags using actual CSV data.
 - **In-Browser Audio Preview**: Test any TTS voice persona with backend neural synthesis or browser speech synthesis fallback.
 - **Campaign Analytics**: Funnel charts (Dialed → Answered → Converted), per-call outcome logs, deliverability metrics.
-- **BullMQ Async Workers**: All campaign dispatches (email, SMS, voice) run as background jobs via `apps/workers/` processors, never blocking the API request cycle.
+- **BullMQ Async Workers**: All campaign dispatches (email, SMS, voice, WhatsApp) run as background jobs via `apps/workers/` processors, never blocking the API request cycle.
 
 ### Lead Management & AI
+
 - **AI-Powered Call Processing**: Integrates with AI via a background `p-queue` to automatically transcribe calls, summarize intent, and extract budget/location requirements.
 - **Smart Lead Scoring**: AI categorizes leads as HOT, WARM, NOT_INTERESTED, or BUSY based on call transcripts, assigning a 0-100 score.
 - **AI Auto-Scheduling**: If the AI detects a need for a follow-up, it automatically creates a `FollowUp` record in the database with the exact date, title, and reason.
-- **Non-Destructive Field Extraction**: The AI extracts data (like budget or preferred location) and intelligently updates the Lead profile *only* if those fields are currently empty, preserving manual data.
+- **Non-Destructive Field Extraction**: The AI extracts data (like budget or preferred location) and intelligently updates the Lead profile _only_ if those fields are currently empty, preserving manual data.
 - **Omnichannel Communication**: Trigger phone calls natively, send WhatsApp template messages, schedule site visits, and log meetings directly from the Lead Profile dashboard.
 - **360° Activity Timeline**: A complete, immutable audit trail of every interaction, note created, status change, and document upload associated with a lead.
 - **Lead Distribution**: Built-in rules engine supporting Round Robin, Manual, and Project-wise assignment with capacity caps.
 
 ### Manager Operations, HR & Analytics
+
 - **Dynamic Task Engine**: Managers can set dynamic daily cold-call targets (`ManagerTask`) which automatically cascade to the executives' dashboards, with manual overrides for specific users.
 - **Resource Assignment**: Managers can assign leads directly to executives, assign specific projects to teams, and adjust workloads on the fly.
 - **Automated Backlog Tracking**: The system strictly tracks uncompleted calls (`coldCallBacklogIn`) and missed follow-ups (`missedFollowUpIds`). Managers can change tasks and backlogs to ensure zero lead leakage.
@@ -59,12 +64,14 @@ Same database. Same inventory. Separated by one flag: `isCpProject`. No data lea
 - **Performance Analytics**: 12 role-specific cached dashboards providing real-time visibility into team conversion ratios, daily performance logs, and monthly leaderboards.
 
 ### Android Native Auto-Dialer & Gamification
+
 - **Custom Native Module**: Built directly into the Expo app (`AutoDialerModule.kt`) using Android's `TelephonyManager` and `PhoneStateListener`.
 - **Sequential Cold Calling**: Pre-sales executives can blast through daily call targets without manual dialing.
 - **Background Sync**: Uses `CallUploadWorker` to sync call durations and logs back to the NestJS backend automatically.
 - **Gamified Call Milestones**: The system tracks executive performance and triggers real-time celebration notifications (`ACHIEVEMENT_MILSTONE`) when hitting milestones like 1,000 or 10,000 connected calls.
 
 ### Inventory & Projects
+
 - **Deep Hierarchy**: Builders → Projects → Towers → Floors → Units. Supports Residential, Commercial, and Mixed project types.
 - **Project Management**: Managers can assign specific employees to handle inventory and set up possession milestones (construction progress tracking).
 - **AI Tower Generation**: Use natural language prompts to automatically generate entire physical real estate structures (towers, floors, units, prices, and commission percentages) via Groq, safely committed in a single database transaction.
@@ -72,16 +79,19 @@ Same database. Same inventory. Separated by one flag: `isCpProject`. No data lea
 - **Dynamic Pricing**: Versioned `PriceSheet` models, `PaymentPlanTemplate` milestones, and time-bound `Offer` management.
 
 ### GPS-Verified Site Visits
+
 - **Location Tracking**: Built-in `LiveTrackingMap` using `react-native-maps` and `expo-location`.
 - **Fraud Prevention**: Site visits require `SiteVisitVerification` capturing the executive's GPS coordinates and accuracy.
 
 ### Bookings & Post-Sales
+
 - **State-Driven Pipeline**: Booking progress (CONFIRMED → HANDOVER) is intelligently derived from the existence of sub-entities (`LoanCase`, `Agreement`, `PossessionHandover`) rather than manual status toggles.
 - **Payment & Collection Tracking**: Post-Sales teams track customer payment milestones, partial payments, and auto-generated payment schedules (`PaymentTransaction`, `CollectionRecord`).
 - **Loan & Agreement Tracking**: Track bank disbursements, stamp duty, and registration fees.
-- **Inbound Commissions**: Post-Sales tracks commissions owed *to* the brokerage *from* external builders upon successful property sales (`InboundCommission`).
+- **Inbound Commissions**: Post-Sales tracks commissions owed _to_ the brokerage _from_ external builders upon successful property sales (`InboundCommission`).
 
 ### Channel Partner (CP) Operations
+
 - **3-Tier Hierarchy**: Channel Partner (Boss) → Sourcing Manager (Manages brokers & payouts) → Closing Manager (Handles CP bookings & lead payments).
 - **Sourcing Manager Duties**: Responsible for recruiting external brokers, logging GPS-verified field meetings (selfie + coordinates required), managing the broker pipeline, and executing **Broker Commissions** (processing `BrokerageRecord` and uploading payment receipts).
 - **Closing Manager Duties**: Stationed at the project site. Responsible for handling walk-in CP leads, creating on-site **Bookings** to **Handover**, and managing the customer's **Payment Schedules and Transactions**.
@@ -90,33 +100,35 @@ Same database. Same inventory. Separated by one flag: `isCpProject`. No data lea
 - **Brokerage Settlements**: Sourcing Managers and Finance use a 2-step approval workflow to verify and pay external agents securely.
 
 ### Approvals & Finance
+
 - **Ticket-Based Approvals**: Employees can create approval requests (e.g., for discounts or refunds) and send them to their managers or the finance team.
 - **Collaboration**: Features chat-style threads inside `ApprovalRequest` so employees can talk directly with managers and finance to coordinate and resolve the request quickly.
 - **Formal Financial Approvals**: 2-level hierarchical approvals (`FinancialApproval`) for strict expense tracking and final sign-offs.
 
 ### Platform Core & Communications
+
 - **Real-Time Role-Based Chat**: Integrated Socket.IO chat allows employees to talk directly to their managers and coordinate with team members, with strict hierarchical access control.
 - **Dual-Layer Notifications**: Instant WebSocket updates for the web dashboard bell icon, paired with Expo Server SDK for native mobile push notifications.
 - **Secure File Storage**: Deep integration with Vercel Blob for managing RERA documents, KYC files, and chat attachments.
 
 ### 12 Role-Based Dashboards
+
 Every role gets a dedicated dashboard with relevant KPIs, charts, and action items:
 
-| Role | Business Line | What They See |
-|---|---|---|
-| Admin | Both | Full system overview, user management |
-| Director | Brokerage | Top-level brokerage metrics |
-| Business Manager | Both | Cross-business oversight |
-| Pre-Sales Manager | Brokerage | Team targets, daily performance, call stats |
-| Pre-Sales | Brokerage | Personal call targets, follow-up queue, auto-dialer |
-| Sales Executive | Brokerage | Lead pipeline, site visits, negotiations, bookings |
-| Sales Manager | Brokerage | Team performance, discount approvals |
-| Post-Sales | Brokerage | Loan tracker, agreements, possession pipeline |
-| Channel Partner | CP | All CP projects, broker performance |
-| Sourcing Manager | CP | Broker recruitment, onboarding pipeline |
-| Closing Manager | CP | On-site bookings for broker leads |
-| Finance | Both | Commissions, expenses, invoices, settlements |
-
+| Role              | Business Line | What They See                                       |
+| ----------------- | ------------- | --------------------------------------------------- |
+| Admin             | Both          | Full system overview, user management               |
+| Director          | Brokerage     | Top-level brokerage metrics                         |
+| Business Manager  | Both          | Cross-business oversight                            |
+| Pre-Sales Manager | Brokerage     | Team targets, daily performance, call stats         |
+| Pre-Sales         | Brokerage     | Personal call targets, follow-up queue, auto-dialer |
+| Sales Executive   | Brokerage     | Lead pipeline, site visits, negotiations, bookings  |
+| Sales Manager     | Brokerage     | Team performance, discount approvals                |
+| Post-Sales        | Brokerage     | Loan tracker, agreements, possession pipeline       |
+| Channel Partner   | CP            | All CP projects, broker performance                 |
+| Sourcing Manager  | CP            | Broker recruitment, onboarding pipeline             |
+| Closing Manager   | CP            | On-site bookings for broker leads                   |
+| Finance           | Both          | Commissions, expenses, invoices, settlements        |
 
 ## 🏗️ Architecture
 
@@ -133,19 +145,20 @@ BrokerOS/
 │   │       ├── chat/           Real-time chat (Socket.IO)
 │   │       ├── notifications/  Push + in-app notifications
 │   │       ├── dashboard/      12 role-specific analytics services
-│   │       ├── marketing/      Email + SMS + AI Voice campaigns
+│   │       ├── marketing/      Email + SMS + AI Voice + WhatsApp campaigns
 │   │       │   ├── email/      4 controllers, 4 services, facade
 │   │       │   ├── sms/        4 controllers, 4 services, facade
-│   │       │   └── voice/      5 controllers, 7 services, WebSocket gateway, facade
+│   │       │   ├── voice/      5 controllers, 7 services, WebSocket gateway, facade
+│   │       │   └── whatsapp/   Campaigns, templates, broadcast dispatcher, webhooks
 │   │       └── lib/            Prisma, auth config, storage helpers
 │   │
 │   ├── web/          Next.js 16 (App Router) web dashboard
 │   │   ├── app/
 │   │   │   ├── login/          Public login page
 │   │   │   └── dashboard/      Role-based shell + 12 role sub-routes
-│   │   │       └── marketing/  Email / SMS / Voice campaign management
+│   │   │       └── marketing/  Email / SMS / Voice / WhatsApp campaign management
 │   │   ├── features/           Domain feature UI
-│   │   │   └── marketing/      Email, SMS, Voice — wizard steps + analytics
+│   │   │   └── marketing/      Email, SMS, Voice, WhatsApp — wizard steps + analytics
 │   │   │       └── voice/components/composer/ 6 studio subcomponents
 │   │   ├── components/         Shared UI, charts, chat widget, notifications
 │   │   └── lib/                Auth client, utilities
@@ -162,24 +175,22 @@ BrokerOS/
 │       └── src/processors/
 │           ├── marketing-email.processor.ts
 │           ├── marketing-sms.processor.ts
-│           └── marketing-voice.processor.ts   (+ carrier bridge dispatch)
+│           ├── marketing-voice.processor.ts   (+ carrier bridge dispatch)
+│           └── marketing-whatsapp.processor.ts (+ broadcast & automation runners)
 │
 ├── packages/
 │   ├── prisma/       Prisma ORM schema, migrations, and client (@brokeros/prisma)
 │   ├── storage/      Vercel Blob storage wrappers (@brokeros/storage)
 │   ├── types/        Shared TS interfaces with domain sub-modules (@brokeros/types)
-│   │                 (common, email, sms, voice/telephony, voice/agent, voice/options...)
 │   ├── validators/   Shared Zod schemas (@brokeros/validators)
 │   └── constants/    Shared constants with domain sub-modules (@brokeros/constants)
-│                     (campaign, email, sms, voice/agents, voice/voices, voice/scripts...)
 │
 ├── integrations/
 │   ├── voice/        @brokeros/int-voice — 8 AI agents + 4 PSTN carriers
-│   │   ├── agents/   vapi, retell, sarvam, bolna, elevenlabs, livekit, openai-realtime, pipecat
-│   │   ├── bridge/   carrier-bridge-dispatcher.ts
-│   │   └── telephony/ vobiz, exotel, twilio, telnyx
 │   ├── mail/         sendgrid, brevo, mailchimp, aws-ses
-│   └── sms/          twilio, gupshup, sinch, aws-sns
+│   ├── sms/          twilio, gupshup, sinch, aws-sns
+│   ├── whatsapp/     @brokeros/int-whatsapp — Meta WhatsApp Cloud API
+│   └── ads/          @brokeros/int-ads-google, @brokeros/int-ads-meta — Lead ingest webhooks
 │
 └── docker-compose.yml      PostgreSQL + API + Web (one command)
 ```
@@ -188,23 +199,25 @@ BrokerOS/
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **Backend** | NestJS 11 · TypeScript · Prisma 7 · PostgreSQL |
-| **Frontend** | Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · Recharts · Framer Motion |
-| **Mobile** | Expo 54 · Expo Router 6 · React Native · NativeWind |
-| **Auth** | Better Auth (all platforms) |
-| **Real-time** | Socket.IO 4 |
-| **Async Jobs** | BullMQ (marketing campaign processors) |
-| **File Storage** | Vercel Blob |
-| **Push Notifications** | Expo Push SDK |
-| **AI (Calls)** | Groq (call transcription + AI tower generation) |
-| **AI Voice Agents** | Vapi · Retell · Sarvam · Bolna · ElevenLabs · LiveKit · OpenAI Realtime · Pipecat |
-| **PSTN Carriers** | Vobiz · Exotel · Twilio · Telnyx |
-| **Email Providers** | SendGrid · Brevo · Mailchimp · AWS SES |
-| **SMS Gateways** | Twilio · Gupshup · Sinch · AWS SNS |
-| **Maps** | Google Maps (web + mobile) |
-| **Containerization** | Docker + Docker Compose |
+| Layer                  | Technology                                                                        |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| **Backend**            | NestJS 11 · TypeScript · Prisma 7 · PostgreSQL                                    |
+| **Frontend**           | Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · Recharts · Framer Motion   |
+| **Mobile**             | Expo 54 · Expo Router 6 · React Native · NativeWind                               |
+| **Auth**               | Better Auth (all platforms)                                                       |
+| **Real-time**          | Socket.IO 4                                                                       |
+| **Async Jobs**         | BullMQ (marketing campaign processors)                                            |
+| **File Storage**       | Vercel Blob                                                                       |
+| **Push Notifications** | Expo Push SDK                                                                     |
+| **AI (Calls)**         | Groq (call transcription + AI tower generation)                                   |
+| **AI Voice Agents**    | Vapi · Retell · Sarvam · Bolna · ElevenLabs · LiveKit · OpenAI Realtime · Pipecat |
+| **PSTN Carriers**      | Vobiz · Exotel · Twilio · Telnyx                                                  |
+| **Email Providers**    | SendGrid · Brevo · Mailchimp · AWS SES                                            |
+| **SMS Gateways**       | Twilio · Gupshup · Sinch · AWS SNS                                                |
+| **WhatsApp**           | Meta WhatsApp Cloud API (`@brokeros/int-whatsapp`)                                |
+| **Ads Ingest**         | Google Ads & Meta Lead Ads webhooks (`@brokeros/int-ads-*`)                       |
+| **Maps**               | Google Maps (web + mobile)                                                        |
+| **Containerization**   | Docker + Docker Compose                                                           |
 
 ---
 
@@ -238,32 +251,39 @@ cp apps/mobile/.env.example apps/mobile/.env
 
 **Split Environment Architecture**
 We separate `.env` files to prevent backend secrets from leaking to the frontend.
+
 - **Root `/.env`**: Core infrastructure keys (DB, Auth, AI, Storage, telephony/voice keys). You **must** configure this.
 - **App `.env`s**: Local routing URLs and client-specific keys (like Google Maps).
 
 **How to get these values?**
 
 #### A. Authentication (`BETTER_AUTH_SECRET`)
+
 Better Auth requires a strong, randomly generated 32-character secret to sign sessions.
 Run this command in your terminal to generate one:
+
 ```bash
 openssl rand -hex 32
 ```
+
 Set in `.env`:
 `BETTER_AUTH_SECRET="your-generated-hash-here"`
-`BETTER_AUTH_URL="http://localhost:3333"` *(Keep this default for local dev)*
+`BETTER_AUTH_URL="http://localhost:3333"` _(Keep this default for local dev)_
 
 #### B. External Cloud Services
-*   **Vercel Blob (File Uploads)**: Go to [Vercel Storage](https://vercel.com/storage/blob) to get your token.
-    `BLOB_READ_WRITE_TOKEN="your_vercel_blob_token"`
-*   **Groq (AI Call Processing)**: Go to [Groq Console](https://console.groq.com/keys) to get a free API key.
-    `GROQ_API_KEY="gsk_your_key_here"`
 
- For deep-dive instructions on how to run, test, and build each individual piece of the stack, check their dedicated readmes:
- - 🟢 **[Backend API Guide](apps/api/README.md)**
- - 🔵 **[Frontend Web Guide](apps/web/README.md)**
- - 📱 **[Mobile App Guide](apps/mobile/README.md)**
- - 🔗 **[Integrations Guide](integrations/README.md)**
+- **Vercel Blob (File Uploads)**: Go to [Vercel Storage](https://vercel.com/storage/blob) to get your token.
+  `BLOB_READ_WRITE_TOKEN="your_vercel_blob_token"`
+- **Groq (AI Call Processing)**: Go to [Groq Console](https://console.groq.com/keys) to get a free API key.
+  `GROQ_API_KEY="gsk_your_key_here"`
+
+For deep-dive instructions on how to run, test, and build each individual piece of the stack, check their dedicated readmes:
+
+- 🟢 **[Backend API Guide](apps/api/README.md)**
+- 🔵 **[Frontend Web Guide](apps/web/README.md)**
+- 📱 **[Mobile App Guide](apps/mobile/README.md)**
+- ⚡ **[Background Workers Guide](apps/workers/README.md)**
+- 🔗 **[Integrations Guide](integrations/README.md)**
 
 ---
 
@@ -278,13 +298,18 @@ If you are using the **AI IDE / CLI**, you don't need to manually run the setup 
 
 ### Option A: Docker Setup
 
-The fastest way to get the web platform running manually. This starts PostgreSQL, the NestJS API, and the Next.js Web App.
+The fastest way to get the web platform running. This starts PostgreSQL, the NestJS API, and the Next.js Web App.
 
 ```bash
-# Start the web platform and database
+# Optional: Clean reset if previous containers/volumes exist
+docker compose down -v --remove-orphans
+
+# Build and start the web platform and database
 docker compose up --build
 
-# Once running, open a new terminal to seed the database with demo users:
+# Note: The backend container automatically deploys migrations and populates
+# demo users & projects on first run (--if-empty flag).
+# To manually re-seed at any time:
 docker exec -it crm-backend pnpm db:seed
 # 🔑 View all demo users & passwords created: docs/role-password.md
 
@@ -293,7 +318,7 @@ docker exec -it crm-backend pnpm db:seed
 # Backend:   http://localhost:3333
 ```
 
-> **Mobile App:** Docker does not run the mobile app. To run the mobile app alongside Docker, follow the manual Mobile steps in Option C below.
+> **Mobile App:** Docker does not run the mobile app. To run the mobile app alongside Docker, follow the manual Mobile steps in Option B below.
 
 ---
 
@@ -302,6 +327,7 @@ docker exec -it crm-backend pnpm db:seed
 All development commands should be executed from the **monorepo root**:
 
 #### 1. Backend (API) & Database Setup
+
 ```bash
 # Generate, migrate, and seed the database
 pnpm db:generate             # Generate Prisma client
@@ -313,12 +339,14 @@ pnpm dev:api                 # Start dev server → http://localhost:3333
 ```
 
 #### 2. Frontend (Web)
+
 ```bash
 # Start the Next.js web dashboard (from root)
 pnpm dev:web                 # Start dev server → http://localhost:3000
 ```
 
 #### 3. Mobile (Android Only)
+
 ```bash
 # Set EXPO_PUBLIC_API_URL in apps/mobile/.env to your machine's LAN IP before starting!
 pnpm dev:mobile              # Start Metro bundler (press 'a' to run on Android)
@@ -326,22 +354,24 @@ pnpm dev:mobile              # Start Metro bundler (press 'a' to run on Android)
 cd apps/mobile
 npx expo run:android
 ```
+
 > For detailed instructions on setting up an Android emulator, connecting a physical device, and configuring Google Services for push notifications, read the **[Mobile README](apps/mobile/README.md)**.
 
 ---
 
 ## 📖 Documentation
 
-| Document | Description |
-|---|---|
-| [Backend README](apps/api/README.md) | Backend architecture, API modules (leads, inventory, marketing), database, development guide |
-| [Frontend README](apps/web/README.md) | Frontend architecture, routing, marketing campaign wizards, components, development guide |
-| [Integrations Guide](integrations/README.md) | Voice agent adapters, PSTN carrier bridge, email & SMS provider adapters |
-| [Contributing Guide](CONTRIBUTING.md) | How to contribute to the project |
-| [Code of Conduct](CODE_OF_CONDUCT.md) | Community standards |
-| [Security Policy](SECURITY.md) | Reporting vulnerabilities |
-| [Changelog](CHANGELOG.md) | Release history |
-| [License](LICENSE) | MIT License |
+| Document                                           | Description                                                                                  |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [Backend README](apps/api/README.md)               | Backend architecture, API modules (leads, inventory, marketing), database, development guide |
+| [Frontend README](apps/web/README.md)              | Frontend architecture, routing, marketing campaign wizards, components, development guide    |
+| [Background Workers Guide](apps/workers/README.md) | BullMQ asynchronous job processors for Email, SMS, Voice, and WhatsApp campaigns             |
+| [Integrations Guide](integrations/README.md)       | Voice agent adapters, PSTN carrier bridge, email & SMS provider adapters                     |
+| [Contributing Guide](CONTRIBUTING.md)              | How to contribute to the project                                                             |
+| [Code of Conduct](CODE_OF_CONDUCT.md)              | Community standards                                                                          |
+| [Security Policy](SECURITY.md)                     | Reporting vulnerabilities                                                                    |
+| [Changelog](CHANGELOG.md)                          | Release history                                                                              |
+| [License](LICENSE)                                 | MIT License                                                                                  |
 
 ---
 
