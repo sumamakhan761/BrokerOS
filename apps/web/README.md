@@ -15,7 +15,7 @@
 
 ## Overview
 
-The frontend is a Next.js 16 App Router application that serves as the web dashboard for the CRM. It provides 12 role-specific views and a full omnichannel marketing platform (Email, SMS, AI Voice campaigns) accessible to the Marketing role.
+The frontend is a Next.js 16 App Router application that serves as the web dashboard for the CRM. It provides 12 role-specific views and a full omnichannel marketing platform (Email, SMS, AI Voice, WhatsApp campaigns, and Ads lead attribution) accessible to the Marketing role.
 
 ## Directory Structure
 
@@ -42,10 +42,16 @@ apps/web/
 │           │   ├── campaigns/new/     4-step SMS campaign wizard
 │           │   ├── campaigns/[id]/    Campaign detail + analytics
 │           │   └── settings/          SMS gateway integrations
-│           └── voice/
-│               ├── campaigns/new/     5-step AI voice campaign wizard
-│               ├── campaigns/[id]/    Campaign detail + analytics
-│               └── settings/          AI voice platform integrations
+│           ├── voice/
+│           │   ├── campaigns/new/     5-step AI voice campaign wizard
+│           │   ├── campaigns/[id]/    Campaign detail + analytics
+│           │   └── settings/          AI voice platform integrations
+│           ├── whatsapp/
+│           │   ├── campaigns/new/     WhatsApp broadcast wizard
+│           │   ├── campaigns/[id]/    Campaign detail + analytics
+│           │   ├── templates/         Meta template syncer
+│           │   └── settings/          WhatsApp Cloud API credentials
+│           └── ads/                   Ad account connections & lead form sync
 │
 ├── features/                   Domain feature UI
 │   ├── leads/                  Lead list, detail, follow-ups, call history
@@ -134,22 +140,29 @@ pnpm install
 ### 2. Environment Setup
 
 You must configure your `apps/web/.env` file properly before starting the dev server.
+
 ```bash
 cd apps/web
 cp .env.example .env
 ```
 
 #### A. API Configuration
+
 The frontend uses a proxy pattern. In local development, client-side requests go through Next.js to avoid CORS issues.
-*   `NEXT_PUBLIC_API_URL="/api/proxy"` *(Keep this default for local dev)*
-*   `BACKEND_URL="http://localhost:3333"` *(This is the direct server-side connection to your NestJS backend)*
+
+- `NEXT_PUBLIC_API_URL="/api/proxy"` _(Keep this default for local dev)_
+- `BACKEND_URL="http://localhost:3333"` _(This is the direct server-side connection to your NestJS backend)_
 
 #### B. App URL
+
 Used for authentication callbacks and Next.js internal redirects.
-*   `NEXT_PUBLIC_APP_URL="http://localhost:3000"`
+
+- `NEXT_PUBLIC_APP_URL="http://localhost:3000"`
 
 #### C. Mapbox (Required for CP & Sales)
+
 The CRM relies on Mapbox for GPS-verified field meetings (Sourcing Managers) and site visits (Sales Executives).
+
 1. Go to [Mapbox Account](https://account.mapbox.com/).
 2. Create an account and generate an access token.
 3. Set it in your `.env` file:
@@ -160,6 +173,7 @@ The CRM relies on Mapbox for GPS-verified field meetings (Sourcing Managers) and
 All commands should be executed from the **monorepo root**:
 
 #### Development
+
 ```bash
 pnpm dev:web                                  # Dev server → http://localhost:3000
 # OR using workspace filter directly:
@@ -167,6 +181,7 @@ pnpm --filter @brokeros/web dev
 ```
 
 #### Production
+
 ```bash
 pnpm --filter @brokeros/web exec next build   # Full verified production build
 pnpm --filter @brokeros/web start             # Serve production build
@@ -205,6 +220,6 @@ The frontend runs on port **3000** by default.
 
 <div align="center">
 
-**[← Back to main README](../README.md)**
+**[← Back to main README](../../README.md)**
 
 </div>
