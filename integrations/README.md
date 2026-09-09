@@ -106,8 +106,8 @@ The WhatsApp package manages direct communication with Meta's WhatsApp Cloud API
 
 Ingestion adapters for paid advertising lead generation:
 
-- **Google Ads (`@brokeros/int-ads-google`)**: Ingests Google Lead Form Webhooks, verifies google-key security headers, and transforms lead payloads into standard CRM lead fields.
-- **Meta Ads (`@brokeros/int-ads-meta`)**: Handles Facebook and Instagram Lead Ads webhooks, fetches full leadgen field values via Meta Graph API, and attributes source campaign/ad set metadata.
+- **Google & YouTube Ads (`@brokeros/int-ads-google`)**: Ingests Google Search, Performance Max, and YouTube Lead Form Webhooks, verifies security headers, and transforms lead payloads into standard CRM lead records.
+- **Meta & Instagram Ads (`@brokeros/int-ads-meta`)**: Handles Meta and Instagram Lead Ads webhooks, fetches full leadgen field values via Meta Graph API, and attributes source campaign/ad set metadata.
 
 ---
 
