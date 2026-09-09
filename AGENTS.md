@@ -63,10 +63,10 @@ We are migrating shared business logic out of the apps and into the `packages/` 
 
 External service adapters live in `integrations/` — one directory per channel. Each integration is a self-contained TypeScript package.
 
-- **`integrations/voice/`** (`@brokeros/int-voice`): 8 AI voice agent adapters (`vapi`, `retell`, `sarvam`, `bolna`, `elevenlabs`, `livekit`, `openai-realtime`, `pipecat`) + 4 PSTN carrier adapters (`vobiz`, `exotel`, `twilio`, `telnyx`) via `bridge/carrier-bridge-dispatcher.ts`.
+- **`integrations/voice/`** (`@brokeros/int-voice`): AI voice agent adapters (`vapi`, `retell`, `sarvam`, `bolna`, `elevenlabs`, `livekit`, `openai-realtime`, `pipecat`) and PSTN carrier adapters (`vobiz`, `exotel`, `twilio`, `telnyx`) via `bridge/carrier-bridge-dispatcher.ts`.
 - **`integrations/mail/`**: Email provider adapters (`sendgrid`, `brevo`, `mailchimp`, `aws-ses`).
 - **`integrations/sms/`**: SMS gateway adapters (`twilio`, `gupshup`, `sinch`, `aws-sns`).
-- **`integrations/whatsapp/`** (`@brokeros/int-whatsapp`): Meta WhatsApp Cloud API adapter for template broadcasting and automated messaging.
+- **`integrations/whatsapp/`** (`@brokeros/int-whatsapp`): Meta WhatsApp Cloud API adapter for templates, interactive messages, and webhook handling.
 - **`integrations/ads/`**: Ad platform lead webhook ingest adapters (`@brokeros/int-ads-google`, `@brokeros/int-ads-meta`).
 
 **CRITICAL RULES FOR AGENTS:**
@@ -147,22 +147,24 @@ As BrokerOS grows to include background workers, 3rd-party integrations, and new
 
 ## Map
 
-- API modules (`apps/api/src/`): `auth`, `leads`, `inventory`, `brokers`, `approvals`, `chat`, `notifications`, `dashboard`, `marketing` (email/sms/voice/whatsapp sub-modules).
+- API modules (`apps/api/src/`): `auth`, `leads`, `inventory`, `brokers`, `approvals`, `chat`, `notifications`, `dashboard`, `marketing` (whatsapp, voice, email, sms, ads sub-modules).
 - Marketing API sub-modules (`apps/api/src/marketing/`):
-  - `email/` — 4 controllers (campaigns, integrations, tracking, webhooks) + 4 services (analytics, audience, integrations, tracking).
-  - `sms/` — 4 controllers + 4 services (same pattern as email).
-  - `voice/` — 5 controllers (campaigns, integrations, audio, test, webhooks) + 6 services (campaign, dispatcher, analytics, audience, audio, tracking, integrations) + WebSocket gateway (voice-media-stream).
-  - `whatsapp/` — WhatsApp Cloud API campaigns, templates, broadcast dispatcher, and webhooks.
-- Web routes (`apps/web/app/`): `login` (public), `dashboard` (role-protected shell + sub-routes per role), `dashboard/marketing/` (email/sms/voice/whatsapp campaign management + settings).
+  - `whatsapp/` — inbox conversations, messages, contacts, flows, automations, pipelines, templates, AI assistant, broadcasts, webhooks, realtime gateway.
+  - `voice/` — campaigns, integrations, prompt editor, audio service, test calling, webhooks, carrier bridge dispatcher, WebSocket media stream gateway.
+  - `email/` — campaigns, integrations, audience, analytics, tracking, webhooks, facade.
+  - `sms/` — campaigns, integrations, audience, analytics, tracking, webhooks, facade.
+  - `ads/` — Meta, Instagram, Google, and YouTube lead webhook ingestion and campaign sync services.
+- Web routes (`apps/web/app/`): `login` (public), `dashboard` (role-protected shell + role-specific workspaces), `dashboard/marketing/` (whatsapp/voice/email/sms/ads).
 - Web marketing features (`apps/web/features/marketing/`):
-  - `email/` — 4-step wizard (Project/Sender → Audience → Template Editor → Review/Launch) + analytics components.
-  - `sms/` — 4-step wizard (Project/Gateway → Audience → Message/Mockup → Review/Launch) + analytics components.
-  - `voice/` — 5-step wizard (Project/Schedule → Audience → Telephony Carrier → AI Agent Composer [6 subcomponents] → Review/Launch) + analytics + voice picker modal.
-  - `whatsapp/` — Template selector, interactive preview, audience filter, broadcast campaign runner.
-- Mobile route groups (`apps/mobile/app/`): `(auth)` (login/signup), `(dashboard)` (14 role-specific screen dirs).
+  - `whatsapp/` — team inbox, chatbot flows, automations, broadcasts, contacts, pipelines, templates, settings.
+  - `voice/` — campaign creator, agent composer studio, prompt editor, voice picker modal, analytics.
+  - `email/` — campaign creator, HTML template editor, audience selector, analytics.
+  - `sms/` — campaign creator, phone mockup preview, short-link generator, analytics.
+  - `ads/` — Meta & Google ad account connector, campaign sync, KPI overview.
+- Mobile route groups (`apps/mobile/app/`): `(auth)` (login/signup), `(dashboard)` (role-specific screen views + native auto-dialer module).
 - Workers (`apps/workers/src/`): BullMQ processors for async jobs — `marketing-email.processor.ts`, `marketing-sms.processor.ts`, `marketing-voice.processor.ts`, `marketing-whatsapp.processor.ts`.
 - Shared packages: `packages/prisma/` (Schema & DB Client), `packages/storage/` (Blob wrappers), `packages/types/` (TS interfaces with domain sub-modules), `packages/validators/` (Zod schemas), `packages/constants/` (Pure constants with domain sub-modules).
-- Integrations: `integrations/voice/` (8 AI agents + 4 PSTN carriers), `integrations/mail/` (4 email providers), `integrations/sms/` (4 SMS gateways), `integrations/whatsapp/` (WhatsApp Cloud API), `integrations/ads/` (Google & Meta Ads lead webhooks).
+- Integrations: `integrations/voice/` (AI agents + PSTN carriers), `integrations/mail/` (email providers), `integrations/sms/` (SMS gateways), `integrations/whatsapp/` (WhatsApp Cloud API), `integrations/ads/` (Google & Meta Ads lead webhooks).
 - Skills: `.agents/skills/` (root), `apps/api/.agents/skills/`, `apps/web/.agents/skills/`, `apps/mobile/.agents/skills/`.
 
 ---
