@@ -47,11 +47,15 @@ apps/web/
 │           │   ├── campaigns/[id]/    Campaign detail + analytics
 │           │   └── settings/          AI voice platform integrations
 │           ├── whatsapp/
-│           │   ├── campaigns/new/     WhatsApp broadcast wizard
-│           │   ├── campaigns/[id]/    Campaign detail + analytics
-│           │   ├── templates/         Meta template syncer
-│           │   └── settings/          WhatsApp Cloud API credentials
-│           └── ads/                   Ad account connections & lead form sync
+│           │   ├── inbox/             Multi-agent shared team inbox
+│           │   ├── broadcasts/        WhatsApp template broadcasts
+│           │   ├── flows/             Interactive chatbot flow builder
+│           │   ├── automations/       Keyword and trigger-based automations
+│           │   ├── pipelines/         Deal pipelines and stages
+│           │   ├── contacts/          Contact directory, tags, and custom fields
+│           │   ├── templates/         Meta template catalog syncer
+│           │   └── settings/          Cloud API configuration and AI assistant
+│           └── ads/                   Meta, Instagram, Google, and YouTube ad management
 │
 ├── features/                   Domain feature UI
 │   ├── leads/                  Lead list, detail, follow-ups, call history
