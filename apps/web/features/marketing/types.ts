@@ -1,4 +1,22 @@
-export type EmailProviderType = 'SYSTEM_DEFAULT' | 'AWS_SES' | 'SENDGRID' | 'BREVO' | 'MAILCHIMP';
+import type {
+  SenderDomainRecord,
+  CampaignSenderPoolConfig,
+  CampaignSenderPoolItem,
+  PreFlightCostLineItem,
+  PreFlightCostSummary,
+  SenderDomainAnalytics,
+} from '@brokeros/types';
+
+export type {
+  SenderDomainRecord,
+  CampaignSenderPoolConfig,
+  CampaignSenderPoolItem,
+  PreFlightCostLineItem,
+  PreFlightCostSummary,
+  SenderDomainAnalytics,
+};
+
+export type EmailProviderType = 'SYSTEM_DEFAULT' | 'AWS_SES' | 'SENDGRID' | 'BREVO' | 'MAILCHIMP' | 'MULTI_PROVIDER';
 export type CampaignStatus = 'DRAFT' | 'SCHEDULED' | 'PROCESSING' | 'COMPLETED' | 'PAUSED' | 'FAILED' | 'CANCELLED';
 export type AudienceSourceType = 'CRM_DATABASE' | 'CSV_UPLOAD' | 'HYBRID';
 
@@ -24,6 +42,8 @@ export interface CampaignItem {
   project?: { id: string; name: string };
   integration?: { id: string; name: string; provider: string };
   createdBy?: { id: string; name: string; email: string };
+  allocationMode?: 'AUTO_EVEN' | 'CUSTOM_PERCENTAGE';
+  senderPools?: CampaignSenderPoolItem[];
 }
 
 export interface CsvLeadRow {
@@ -56,6 +76,7 @@ export interface IntegrationRecord {
   replyTo?: string;
   createdAt: string;
   updatedAt?: string;
+  senderDomains?: SenderDomainRecord[];
 }
 
 export type EmailIntegrationItem = IntegrationRecord;
