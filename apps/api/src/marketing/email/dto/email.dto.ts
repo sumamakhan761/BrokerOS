@@ -9,6 +9,7 @@ import {
 import type {
   AudienceFilterDto,
   AudienceSourceType,
+  CampaignSenderPoolConfig,
   CsvLeadRow,
   EmailProviderType,
   MarketingChannel,
@@ -93,6 +94,14 @@ export class CreateCampaignDto {
   @IsOptional()
   @IsNumber()
   currentStep?: number;
+
+  @IsOptional()
+  @IsString()
+  allocationMode?: 'AUTO_EVEN' | 'CUSTOM_PERCENTAGE';
+
+  @IsOptional()
+  @IsArray()
+  senderPools?: CampaignSenderPoolConfig[];
 }
 
 export class SaveDraftCampaignDto {
@@ -175,6 +184,14 @@ export class SaveDraftCampaignDto {
   @IsOptional()
   @IsNumber()
   currentStep?: number;
+
+  @IsOptional()
+  @IsString()
+  allocationMode?: 'AUTO_EVEN' | 'CUSTOM_PERCENTAGE';
+
+  @IsOptional()
+  @IsArray()
+  senderPools?: CampaignSenderPoolConfig[];
 }
 
 export class PreviewAudienceDto {
@@ -306,4 +323,63 @@ export class CreateTemplateDto {
   @IsOptional()
   @IsString()
   previewImageUrl?: string;
+}
+
+export class AddSenderDomainDto {
+  @IsString()
+  fromEmail!: string;
+
+  @IsOptional()
+  @IsString()
+  fromName?: string;
+
+  @IsOptional()
+  @IsString()
+  domain?: string;
+
+  @IsOptional()
+  @IsString()
+  replyTo?: string;
+
+  @IsOptional()
+  @IsNumber()
+  dailyQuota?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isWarmupMode?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isVerified?: boolean;
+}
+
+export class UpdateSenderDomainDto {
+  @IsOptional()
+  @IsString()
+  fromName?: string;
+
+  @IsOptional()
+  @IsString()
+  replyTo?: string;
+
+  @IsOptional()
+  @IsNumber()
+  dailyQuota?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isWarmupMode?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class CalculateCostEstimateDto {
+  @IsArray()
+  senderPools!: CampaignSenderPoolConfig[];
+
+  @IsNumber()
+  totalRecipients!: number;
 }
