@@ -76,6 +76,47 @@ export const EMAIL_PROVIDERS = {
     ],
     requiresCredentials: true,
   },
+  MULTI_PROVIDER: {
+    id: 'MULTI_PROVIDER',
+    type: 'MULTI_PROVIDER',
+    name: 'Distributed Multi-Provider',
+    badge: 'Multi-Stream',
+    description: 'Dynamic load distribution across multiple verified sender domains and engines.',
+    color: '#8B5CF6',
+    docsUrl: '',
+    fields: [],
+    requiresCredentials: false,
+  },
 } as const;
 
 export const EMAIL_PROVIDERS_LIST = Object.values(EMAIL_PROVIDERS);
+
+export const EMAIL_PROVIDER_PRICING_ESTIMATES = {
+  SYSTEM_DEFAULT: { costPer1kUSD: 0.10, costPer1kINR: 9.50, label: 'BrokerOS SES Dedicated (~$0.10/1k)' },
+  AWS_SES: { costPer1kUSD: 0.10, costPer1kINR: 9.50, label: 'AWS SES Direct (~$0.10/1k)' },
+  SENDGRID: { costPer1kUSD: 0.15, costPer1kINR: 14.28, label: 'Twilio SendGrid (~$0.15/1k)' },
+  BREVO: { costPer1kUSD: 0.12, costPer1kINR: 11.43, label: 'Brevo Cloud (~$0.12/1k)' },
+  MAILCHIMP: { costPer1kUSD: 0.20, costPer1kINR: 19.05, label: 'Mailchimp Mandrill (~$0.20/1k)' },
+  MULTI_PROVIDER: { costPer1kUSD: 0.12, costPer1kINR: 11.40, label: 'Distributed Multi-Engine (~$0.12/1k)' },
+} as const;
+
+export const PROVIDER_THROTTLE_LIMITS = {
+  AWS_SES: { maxPerSecond: 25, delayMs: 10 },
+  SYSTEM_DEFAULT: { maxPerSecond: 25, delayMs: 10 },
+  SENDGRID: { maxPerSecond: 25, delayMs: 15 },
+  BREVO: { maxPerSecond: 15, delayMs: 35 },
+  MAILCHIMP: { maxPerSecond: 20, delayMs: 20 },
+  MULTI_PROVIDER: { maxPerSecond: 50, delayMs: 10 },
+} as const;
+
+export const DELIVERABILITY_WARMUP_SCHEDULE = {
+  STAGE_1: { days: '1-3', maxDaily: 300, label: 'Warmup Stage 1 (300/day)' },
+  STAGE_2: { days: '4-7', maxDaily: 750, label: 'Warmup Stage 2 (750/day)' },
+  STAGE_3: { days: '8-14', maxDaily: 2000, label: 'Warmup Stage 3 (2,000/day)' },
+  MATURE: { days: '15+', maxDaily: 10000, label: 'Mature Domain (10,000+/day)' },
+} as const;
+
+export const ALLOCATION_MODES = {
+  AUTO_EVEN: 'AUTO_EVEN',
+  CUSTOM_WEIGHTED: 'CUSTOM_WEIGHTED',
+} as const;
