@@ -4,7 +4,7 @@
 
 import type { AudienceSourceType, CampaignStatus } from './common.js';
 
-export type EmailProviderType = 'SYSTEM_DEFAULT' | 'AWS_SES' | 'SENDGRID' | 'BREVO' | 'MAILCHIMP';
+export type EmailProviderType = 'SYSTEM_DEFAULT' | 'AWS_SES' | 'SENDGRID' | 'BREVO' | 'MAILCHIMP' | 'MULTI_PROVIDER';
 
 export interface EmailRecipient {
   email: string;
@@ -59,6 +59,97 @@ export interface EmailWebhookEvent {
   };
 }
 
+export interface DiscoveredSenderIdentity {
+  fromEmail: string;
+  fromName: string;
+  domain: string;
+  isVerified: boolean;
+  providerId?: string;
+}
+
+export interface SenderDomainRecord {
+  id: string;
+  integrationId: string;
+  fromEmail: string;
+  fromName: string;
+  domain: string;
+  replyTo?: string | null;
+  dailyQuota: number;
+  sentToday: number;
+  isWarmupMode: boolean;
+  isVerified: boolean;
+  isActive: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  integration?: {
+    id: string;
+    name: string;
+    provider: EmailProviderType;
+  };
+}
+
+export interface CampaignSenderPoolConfig {
+  senderDomainId?: string;
+  integrationId?: string;
+  allocationPercentage: number;
+  allocatedLeads?: number;
+  weight?: number;
+  fromName?: string;
+  fromEmail?: string;
+  domain?: string;
+  provider?: EmailProviderType;
+}
+
+export interface CampaignSenderPoolItem {
+  id: string;
+  campaignId: string;
+  senderDomainId: string;
+  weight: number;
+  allocatedRecipients: number;
+  sentCount: number;
+  deliveredCount: number;
+  failedCount: number;
+  status: string;
+  senderDomain?: SenderDomainRecord;
+}
+
+export interface PreFlightCostLineItem {
+  provider: EmailProviderType;
+  providerName: string;
+  domain: string;
+  fromEmail: string;
+  allocatedLeads: number;
+  percentage: number;
+  costPer1kUSD: number;
+  costUSD: number;
+  costINR: number;
+}
+
+export interface PreFlightCostSummary {
+  totalLeads: number;
+  totalCostUSD: number;
+  totalCostINR: number;
+  lineItems: PreFlightCostLineItem[];
+}
+
+export interface SenderDomainAnalytics {
+  senderPoolId: string;
+  domain: string;
+  fromEmail: string;
+  fromName: string;
+  provider: EmailProviderType;
+  allocatedRecipients: number;
+  sentCount: number;
+  deliveredCount: number;
+  deliveryRate: number;
+  openedCount: number;
+  openRate: number;
+  clickedCount: number;
+  clickRate: number;
+  bouncedCount: number;
+  bounceRate: number;
+}
+
 export interface ProviderCredentials {
   apiKey?: string;
   awsAccessKeyId?: string;
@@ -75,6 +166,7 @@ export interface IEmailMarketingProvider {
   validateCredentials(credentials: ProviderCredentials): Promise<boolean>;
   sendBatch(options: SendEmailOptions, credentials?: ProviderCredentials): Promise<SendEmailResult>;
   parseWebhookEvent(headers: Record<string, any>, payload: any): EmailWebhookEvent[];
+  listVerifiedSenders?(credentials?: ProviderCredentials): Promise<DiscoveredSenderIdentity[]>;
 }
 
 export interface CampaignAnalyticsSummary {
@@ -97,4 +189,5 @@ export interface CampaignAnalyticsSummary {
   complaintCount: number;
   topClickedLinks: Array<{ url: string; clicks: number }>;
   hourlyActivity: Array<{ hour: string; opens: number; clicks: number }>;
+  domainBreakdown?: SenderDomainAnalytics[];
 }
