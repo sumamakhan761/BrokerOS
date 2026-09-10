@@ -14,6 +14,7 @@ import {
   SaveDraftCampaignDto,
   PreviewAudienceDto,
   SendTestEmailDto,
+  CalculateCostEstimateDto,
 } from '../dto/email.dto.js';
 
 @Controller('api/marketing')
@@ -23,6 +24,11 @@ export class EmailCampaignsController {
   @Get('projects')
   async getProjects() {
     return this.emailService.getProjects();
+  }
+
+  @Post('campaigns/cost-estimate')
+  async calculateCostEstimate(@Body() dto: CalculateCostEstimateDto) {
+    return this.emailService.calculateCostEstimate(dto);
   }
 
   @Post('audience-preview')
