@@ -15,6 +15,8 @@ import {
   PreviewAudienceDto,
   SendTestEmailDto,
   CalculateCostEstimateDto,
+  BulkAssignLeadsDto,
+  ExportLeadsDto,
 } from '../dto/email.dto.js';
 
 @Controller('api/marketing')
@@ -92,6 +94,16 @@ export class EmailCampaignsController {
   @Post('campaigns/:id/dispatch')
   async dispatchCampaign(@Param('id') id: string) {
     return this.emailService.dispatchCampaign(id);
+  }
+
+  @Post('campaigns/leads/bulk-assign')
+  async bulkAssignLeads(@Req() req: any, @Body() dto: BulkAssignLeadsDto) {
+    return this.emailService.bulkAssignRecipientsToCrm(dto, req.user?.id);
+  }
+
+  @Post('campaigns/leads/export-data')
+  async exportLeadsData(@Body() dto: ExportLeadsDto) {
+    return this.emailService.getExportLeadsData(dto);
   }
 
   @Post('recipients/:recipientId/promote')
