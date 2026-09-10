@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../lib/database/prisma.service.js';
 import type {
   IEmailMarketingProvider,
@@ -9,7 +9,12 @@ import { SesAdapter } from '@brokeros/int-mail-ses';
 import { SendgridAdapter } from '@brokeros/int-mail-sendgrid';
 import { BrevoAdapter } from '@brokeros/int-mail-brevo';
 import { MailchimpAdapter } from '@brokeros/int-mail-mailchimp';
-import { ConnectIntegrationDto, SendTestEmailDto } from '../dto/email.dto.js';
+import {
+  ConnectIntegrationDto,
+  SendTestEmailDto,
+  AddSenderDomainDto,
+  UpdateSenderDomainDto,
+} from '../dto/email.dto.js';
 
 @Injectable()
 export class EmailIntegrationsService {
@@ -18,7 +23,7 @@ export class EmailIntegrationsService {
   private readonly brevoAdapter = new BrevoAdapter();
   private readonly mailchimpAdapter = new MailchimpAdapter();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   getAdapter(providerType: string): IEmailMarketingProvider {
     switch (providerType) {
@@ -125,8 +130,8 @@ export class EmailIntegrationsService {
 
     const resolvedFromEmail =
       dto.fromEmail &&
-      dto.fromEmail.includes('@') &&
-      dto.fromEmail !== 'marketing@example.com'
+        dto.fromEmail.includes('@') &&
+        dto.fromEmail !== 'marketing@example.com'
         ? dto.fromEmail
         : credentials?.fromEmail || dto.fromEmail || 'marketing@example.com';
 
@@ -177,19 +182,10 @@ export class EmailIntegrationsService {
   async listIntegrations() {
     return this.prisma.marketingIntegration.findMany({
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
-      select: {
-        id: true,
-        provider: true,
-        name: true,
-        isActive: true,
-        isDefault: true,
-        fromEmail: true,
-        fromName: true,
-        replyTo: true,
-        awsRegion: true,
-        mailchimpServer: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        senderDomains: {
+          orderBy: [{ isVerified: 'desc' }, { createdAt: 'asc' }],
+        },
       },
     });
   }
@@ -217,7 +213,7 @@ export class EmailIntegrationsService {
       });
     }
 
-    return this.prisma.marketingIntegration.create({
+    const created = await this.prisma.marketingIntegration.create({
       data: {
         provider: dto.provider as any,
         name: dto.name || `${dto.provider} Gateway`,
@@ -231,6 +227,212 @@ export class EmailIntegrationsService {
         fromName: dto.fromName || 'Sales Team',
         replyTo: dto.replyTo,
       },
+    });
+
+    // Auto-sync domains immediately upon connection
+    try {
+      await this.syncDomainsForIntegration(created.id);
+    } catch {
+      // Non-blocking sync failure on creation
+    }
+
+    return this.prisma.marketingIntegration.findUnique({
+      where: { id: created.id },
+      include: { senderDomains: true },
+    });
+  }
+
+  async syncDomainsForIntegration(integrationId: string) {
+    const integration = await this.prisma.marketingIntegration.findUnique({
+      where: { id: integrationId },
+    });
+    if (!integration) throw new NotFoundException('Integration not found');
+
+    const credentials: ProviderCredentials = {
+      apiKey: integration.apiKey || undefined,
+      awsAccessKeyId: integration.awsAccessKeyId || undefined,
+      awsSecretKey: integration.awsSecretKey || undefined,
+      awsRegion: integration.awsRegion || undefined,
+      mailchimpServer: integration.mailchimpServer || undefined,
+      fromEmail: integration.fromEmail,
+      fromName: integration.fromName,
+    };
+
+    const adapter = this.getAdapter(integration.provider);
+    let discovered: any[] = [];
+    if (typeof (adapter as any).listVerifiedSenders === 'function') {
+      try {
+        discovered = await (adapter as any).listVerifiedSenders(credentials);
+      } catch {
+        discovered = [];
+      }
+    }
+
+    // Upsert discovered identities
+    for (const identity of discovered) {
+      const email = (identity.fromEmail || identity.email || '').toLowerCase().trim();
+      if (!email || !email.includes('@')) continue;
+
+      const domain = identity.domain || email.split('@')[1] || '';
+      const fromName = identity.fromName || identity.name || integration.fromName || 'Sales Team';
+      const existing = await this.prisma.marketingSenderDomain.findFirst({
+        where: { integrationId, fromEmail: email },
+      });
+
+      if (existing) {
+        await this.prisma.marketingSenderDomain.update({
+          where: { id: existing.id },
+          data: {
+            domain,
+            fromName,
+            isVerified: identity.isVerified ?? true,
+          },
+        });
+      } else {
+        await this.prisma.marketingSenderDomain.create({
+          data: {
+            integrationId,
+            fromEmail: email,
+            fromName,
+            domain,
+            isVerified: identity.isVerified ?? true,
+            isActive: true,
+            dailyQuota: 500,
+            isWarmupMode: false,
+          },
+        });
+      }
+    }
+
+    // Ensure the integration's default fromEmail is also recorded as a verified sender domain
+    if (integration.fromEmail && integration.fromEmail.includes('@')) {
+      const defaultEmail = integration.fromEmail.toLowerCase().trim();
+      const exists = await this.prisma.marketingSenderDomain.findFirst({
+        where: { integrationId, fromEmail: defaultEmail },
+      });
+      if (!exists) {
+        await this.prisma.marketingSenderDomain.create({
+          data: {
+            integrationId,
+            fromEmail: defaultEmail,
+            fromName: integration.fromName || 'Sales Team',
+            domain: defaultEmail.split('@')[1] || '',
+            isVerified: true,
+            isActive: true,
+            dailyQuota: 500,
+            isWarmupMode: false,
+          },
+        });
+      }
+    }
+
+    return this.prisma.marketingSenderDomain.findMany({
+      where: { integrationId },
+      orderBy: [{ isVerified: 'desc' }, { createdAt: 'asc' }],
+    });
+  }
+
+  async addSenderDomain(integrationId: string, dto: AddSenderDomainDto) {
+    const integration = await this.prisma.marketingIntegration.findUnique({
+      where: { id: integrationId },
+    });
+    if (!integration) throw new NotFoundException('Integration not found');
+
+    const email = dto.fromEmail.toLowerCase().trim();
+    if (!email.includes('@')) {
+      throw new BadRequestException('A valid email address is required');
+    }
+
+    const domain = dto.domain?.trim() || email.split('@')[1];
+
+    const existing = await this.prisma.marketingSenderDomain.findFirst({
+      where: { integrationId, fromEmail: email },
+    });
+
+    if (existing) {
+      throw new BadRequestException(
+        `Sender identity "${email}" already registered for this integration`,
+      );
+    }
+
+    return this.prisma.marketingSenderDomain.create({
+      data: {
+        integrationId,
+        fromEmail: email,
+        fromName: dto.fromName || integration.fromName || 'Sales Team',
+        domain,
+        replyTo: dto.replyTo || integration.replyTo,
+        dailyQuota: dto.dailyQuota ?? 500,
+        isWarmupMode: dto.isWarmupMode ?? false,
+        isVerified: dto.isVerified ?? true,
+        isActive: true,
+      },
+    });
+  }
+
+  async updateSenderDomain(domainId: string, dto: UpdateSenderDomainDto) {
+    const domain = await this.prisma.marketingSenderDomain.findUnique({
+      where: { id: domainId },
+    });
+    if (!domain) throw new NotFoundException('Sender domain not found');
+
+    return this.prisma.marketingSenderDomain.update({
+      where: { id: domainId },
+      data: {
+        fromName: dto.fromName !== undefined ? dto.fromName : domain.fromName,
+        replyTo: dto.replyTo !== undefined ? dto.replyTo : domain.replyTo,
+        dailyQuota:
+          dto.dailyQuota !== undefined ? dto.dailyQuota : domain.dailyQuota,
+        isWarmupMode:
+          dto.isWarmupMode !== undefined
+            ? dto.isWarmupMode
+            : domain.isWarmupMode,
+        isActive: dto.isActive !== undefined ? dto.isActive : domain.isActive,
+      },
+    });
+  }
+
+  async deleteSenderDomain(domainId: string) {
+    const domain = await this.prisma.marketingSenderDomain.findUnique({
+      where: { id: domainId },
+    });
+    if (!domain) throw new NotFoundException('Sender domain not found');
+
+    // Check if domain is used in any active/scheduled campaigns
+    const activeCampaignsCount = await this.prisma.campaignSenderPool.count({
+      where: {
+        senderDomainId: domainId,
+        campaign: {
+          status: { in: ['PROCESSING', 'SCHEDULED'] },
+        },
+      },
+    });
+
+    if (activeCampaignsCount > 0) {
+      throw new BadRequestException(
+        'Cannot delete sender domain while active or scheduled campaigns are using it',
+      );
+    }
+
+    return this.prisma.marketingSenderDomain.delete({
+      where: { id: domainId },
+    });
+  }
+
+  async listAllActiveSenderDomains() {
+    return this.prisma.marketingSenderDomain.findMany({
+      where: { isActive: true },
+      include: {
+        integration: {
+          select: {
+            id: true,
+            provider: true,
+            name: true,
+            isActive: true,
+          },
+        },
+      },
+      orderBy: [{ integrationId: 'asc' }, { fromEmail: 'asc' }],
     });
   }
 

@@ -4,7 +4,10 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../lib/database/prisma.service.js';
-import type { AudienceEstimationResult } from '@brokeros/types';
+import type {
+  AudienceEstimationResult,
+  CampaignSenderPoolConfig,
+} from '@brokeros/types';
 import { PreviewAudienceDto } from '../dto/email.dto.js';
 
 @Injectable()
@@ -174,5 +177,109 @@ export class EmailAudienceService {
     });
 
     return newLead;
+  }
+
+  partitionAudienceAcrossPools<T extends Record<string, any>>(
+    recipients: T[],
+    poolConfigs: CampaignSenderPoolConfig[],
+    allocationMode: 'AUTO_EVEN' | 'CUSTOM_PERCENTAGE' = 'AUTO_EVEN',
+  ): {
+    partitionedRecipients: Array<
+      T & {
+        senderDomainId?: string;
+        assignedSenderEmail?: string;
+        assignedProvider?: string;
+        poolIndex?: number;
+      }
+    >;
+    allocations: Array<{
+      senderDomainId?: string;
+      weight: number;
+      count: number;
+    }>;
+  } {
+    const total = recipients.length;
+    if (total === 0 || !poolConfigs || poolConfigs.length === 0) {
+      return {
+        partitionedRecipients: recipients,
+        allocations: [],
+      };
+    }
+
+    const n = poolConfigs.length;
+
+    // Calculate normalized weights (sum to 1)
+    let weights: number[] = [];
+    if (allocationMode === 'AUTO_EVEN') {
+      weights = poolConfigs.map(() => 1 / n);
+    } else {
+      const rawSum = poolConfigs.reduce((acc, p) => acc + (p.weight || 0), 0);
+      if (rawSum <= 0) {
+        weights = poolConfigs.map(() => 1 / n);
+      } else {
+        weights = poolConfigs.map((p) => (p.weight || 0) / rawSum);
+      }
+    }
+
+    // Determine target counts per pool
+    const targetCounts = weights.map((w) => Math.floor(total * w));
+    const allocatedSum = targetCounts.reduce((acc, c) => acc + c, 0);
+    const remainder = total - allocatedSum;
+
+    // Distribute remainder by highest fractional parts
+    const remainders = weights.map((w, idx) => ({
+      idx,
+      fractional: total * w - targetCounts[idx],
+    }));
+    remainders.sort((a, b) => b.fractional - a.fractional);
+
+    for (let i = 0; i < remainder; i++) {
+      targetCounts[remainders[i].idx]++;
+    }
+
+    // Partition recipients
+    const partitionedRecipients: Array<
+      T & {
+        senderDomainId?: string;
+        assignedSenderEmail?: string;
+        assignedProvider?: string;
+        poolIndex?: number;
+      }
+    > = [];
+
+    const allocations: Array<{
+      senderDomainId?: string;
+      weight: number;
+      count: number;
+    }> = [];
+
+    let cursor = 0;
+    for (let i = 0; i < n; i++) {
+      const pool = poolConfigs[i];
+      const count = targetCounts[i];
+      const poolRecipients = recipients.slice(cursor, cursor + count);
+      cursor += count;
+
+      for (const recipient of poolRecipients) {
+        partitionedRecipients.push({
+          ...recipient,
+          senderDomainId: pool.senderDomainId,
+          assignedSenderEmail: pool.fromEmail,
+          assignedProvider: pool.provider,
+          poolIndex: i,
+        });
+      }
+
+      allocations.push({
+        senderDomainId: pool.senderDomainId,
+        weight: Number(weights[i].toFixed(4)),
+        count,
+      });
+    }
+
+    return {
+      partitionedRecipients,
+      allocations,
+    };
   }
 }
