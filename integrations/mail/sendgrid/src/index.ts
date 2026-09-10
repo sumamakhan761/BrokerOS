@@ -1,4 +1,5 @@
 import type {
+  DiscoveredSenderIdentity,
   EmailProviderType,
   EmailWebhookEvent,
   IEmailMarketingProvider,
@@ -182,6 +183,63 @@ export class SendgridClient {
       };
     }
   }
+
+  async listVerifiedSenders(): Promise<DiscoveredSenderIdentity[]> {
+    if (!this.apiKey) return [];
+    try {
+      const res = await fetch('https://api.sendgrid.com/v3/verified_senders', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (res.status === 200) {
+        const data: any = await res.json().catch(() => ({}));
+        const results = data?.results || (Array.isArray(data) ? data : []);
+        if (results.length > 0) {
+          return results
+            .map((item: any) => {
+              const fromEmail = item.from_email || item.email || '';
+              const domain = fromEmail.includes('@') ? fromEmail.split('@')[1] : '';
+              return {
+                fromEmail,
+                fromName: item.from_name || item.nickname || fromEmail.split('@')[0] || 'Sales Team',
+                domain,
+                isVerified: Boolean(item.verified),
+                providerId: String(item.id || ''),
+              };
+            })
+            .filter((s: DiscoveredSenderIdentity) => s.fromEmail && s.fromEmail.includes('@'));
+        }
+      }
+
+      const domainRes = await fetch('https://api.sendgrid.com/v3/whitelabel/domains', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+      });
+
+      if (domainRes.status === 200) {
+        const domains: any = await domainRes.json().catch(() => []);
+        if (Array.isArray(domains)) {
+          return domains.map((d: any) => ({
+            fromEmail: `sales@${d.domain}`,
+            fromName: `${d.domain.split('.')[0].toUpperCase()} Sales`,
+            domain: d.domain,
+            isVerified: Boolean(d.valid),
+            providerId: String(d.id || ''),
+          }));
+        }
+      }
+
+      return [];
+    } catch {
+      return [];
+    }
+  }
 }
 
 // ============================================================================
@@ -296,6 +354,11 @@ export class SendgridAdapter implements IEmailMarketingProvider {
   async sendBatch(options: SendEmailOptions, credentials?: ProviderCredentials): Promise<SendEmailResult> {
     const client = new SendgridClient(credentials);
     return client.send(options);
+  }
+
+  async listVerifiedSenders(credentials?: ProviderCredentials): Promise<DiscoveredSenderIdentity[]> {
+    const client = new SendgridClient(credentials);
+    return client.listVerifiedSenders();
   }
 
   parseWebhookEvent(headers: Record<string, any>, payload: any): EmailWebhookEvent[] {
