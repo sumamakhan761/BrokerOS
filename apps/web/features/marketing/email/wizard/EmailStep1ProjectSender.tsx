@@ -3,7 +3,6 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 
 export interface EmailStep1ProjectSenderProps {
   title: string;
@@ -12,12 +11,6 @@ export interface EmailStep1ProjectSenderProps {
   onProjectIdChange: (val: string) => void;
   isCpCampaign: boolean;
   onIsCpCampaignChange: (val: boolean) => void;
-  fromName: string;
-  onFromNameChange: (val: string) => void;
-  fromEmail: string;
-  onFromEmailChange: (val: string) => void;
-  replyTo: string;
-  onReplyToChange: (val: string) => void;
   projects: Array<{ id: string; name: string }>;
   isLoadingProjects: boolean;
   onNext: () => void;
@@ -30,12 +23,6 @@ export function EmailStep1ProjectSender({
   onProjectIdChange,
   isCpCampaign,
   onIsCpCampaignChange,
-  fromName,
-  onFromNameChange,
-  fromEmail,
-  onFromEmailChange,
-  replyTo,
-  onReplyToChange,
   projects,
   isLoadingProjects,
   onNext,
@@ -110,85 +97,25 @@ export function EmailStep1ProjectSender({
                 <button
                   type="button"
                   onClick={() => onIsCpCampaignChange(false)}
-                  className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${
-                    !isCpCampaign
-                      ? "bg-purple-50 border-[var(--brand-500)] text-[var(--brand-700)] shadow-xs"
-                      : "bg-slate-50 border-slate-200 text-[var(--text-secondary)] hover:bg-slate-100"
-                  }`}
+                  className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${!isCpCampaign
+                    ? "bg-purple-50 border-[var(--brand-500)] text-[var(--brand-700)] shadow-xs"
+                    : "bg-slate-50 border-slate-200 text-[var(--text-secondary)] hover:bg-slate-100"
+                    }`}
                 >
                   Direct Brokerage (Buyers)
                 </button>
                 <button
                   type="button"
                   onClick={() => onIsCpCampaignChange(true)}
-                  className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${
-                    isCpCampaign
-                      ? "bg-purple-50 border-[var(--brand-500)] text-[var(--brand-700)] shadow-xs"
-                      : "bg-slate-50 border-slate-200 text-[var(--text-secondary)] hover:bg-slate-100"
-                  }`}
+                  className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${isCpCampaign
+                    ? "bg-purple-50 border-[var(--brand-500)] text-[var(--brand-700)] shadow-xs"
+                    : "bg-slate-50 border-slate-200 text-[var(--text-secondary)] hover:bg-slate-100"
+                    }`}
                 >
                   Channel Partner Network
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Card 2: Sender Profile */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
-        <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
-              Sender Identity & Reply Channels
-            </h3>
-            <p className="text-xs font-medium text-[var(--text-tertiary)]">
-              Recipients will see this sender name and email in their inbox.
-            </p>
-          </div>
-          <Badge variant="default" className="text-[10px]">
-            Sender Config
-          </Badge>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
-              From Display Name
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Skyline Sales Team"
-              value={fromName}
-              onChange={(e) => onFromNameChange(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
-              From Email Address (Override)
-            </label>
-            <input
-              type="email"
-              placeholder="Leave empty to use Provider default"
-              value={fromEmail}
-              onChange={(e) => onFromEmailChange(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1.5">
-              Reply-To Email Address
-            </label>
-            <input
-              type="email"
-              placeholder="e.g. support@yourfirm.com"
-              value={replyTo}
-              onChange={(e) => onReplyToChange(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
-            />
           </div>
         </div>
       </div>
