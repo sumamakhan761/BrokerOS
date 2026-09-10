@@ -311,5 +311,102 @@ export interface VoiceAnalyticsSummary {
   recentCallLogs: VoiceCallLogItem[];
 }
 
+// ── Email Automation & Flows Types ──
 
+export interface EmailFlowNode {
+  id?: string;
+  flowId?: string;
+  nodeKey: string;
+  nodeType: 'send_email' | 'ai_reply' | 'update_lead' | 'add_tag' | 'pre_sales_handoff' | 'condition';
+  config: Record<string, any>;
+  positionX?: number;
+  positionY?: number;
+}
 
+export interface EmailFlow {
+  id: string;
+  name: string;
+  description?: string | null;
+  status: 'draft' | 'active' | 'archived';
+  triggerType: 'keyword_match' | 'any_reply' | 'campaign_reply';
+  triggerConfig?: Record<string, any>;
+  isGlobal: boolean;
+  campaignIds?: string[];
+  projectId?: string | null;
+  project?: { id: string; name: string };
+  nodes?: EmailFlowNode[];
+  _count?: { nodes: number; runs: number };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmailFlowRun {
+  id: string;
+  flowId: string;
+  recipientEmail: string;
+  campaignId?: string | null;
+  inboundMsgId?: string | null;
+  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+  executionLog?: Array<{
+    timestamp: string;
+    nodeKey: string;
+    nodeType: string;
+    action: string;
+    result: string;
+    error?: string;
+  }>;
+  createdAt: string;
+  completedAt?: string | null;
+}
+
+export interface EmailQuickReply {
+  id: string;
+  shortcut: string;
+  title: string;
+  subject?: string | null;
+  contentHtml: string;
+  category?: string | null;
+  isActive: boolean;
+  useCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmailTag {
+  id: string;
+  name: string;
+  color: string;
+  _count?: { recipients: number };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmailAiConfig {
+  id: string;
+  provider: 'groq' | 'openai';
+  model: string;
+  apiKey?: string | null;
+  systemPrompt: string;
+  isActive: boolean;
+  autoReplyEnabled: boolean;
+  autoReplyMaxPerLead: number;
+  updatedAt: string;
+}
+
+export interface EmailInboundMessage {
+  id: string;
+  provider: string;
+  fromEmail: string;
+  fromName?: string | null;
+  toEmail: string;
+  subject?: string | null;
+  bodyText?: string | null;
+  bodyHtml?: string | null;
+  messageId?: string | null;
+  inReplyTo?: string | null;
+  recipientId?: string | null;
+  campaignId?: string | null;
+  processed: boolean;
+  flowRunId?: string | null;
+  createdAt: string;
+}
