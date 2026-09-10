@@ -43,7 +43,10 @@ export class LeadsQueryService {
         where.assignedUserId = filters.userId;
       } else if (role?.code === 'PRE_SALES_MANAGER') {
         if (filters.managerUnassigned) {
-          where.assignedUserId = filters.userId;
+          where.OR = [
+            { assignedUserId: filters.userId },
+            { assignedUserId: null },
+          ];
         } else {
           const subordinates = await this.prisma.user.findMany({
             where: { managerId: filters.userId },
