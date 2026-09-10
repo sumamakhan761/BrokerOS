@@ -158,6 +158,8 @@ export default function CampaignDetailPage() {
           <RecipientActivityTable
             recipients={recipients}
             onPromoteRecipient={handlePromoteRecipient}
+            campaignId={campaignId}
+            campaignTitle={analytics?.title}
           />
         </div>
       )}
