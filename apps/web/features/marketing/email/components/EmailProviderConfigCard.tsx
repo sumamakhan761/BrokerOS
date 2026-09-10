@@ -11,9 +11,13 @@ import {
   Zap,
   ExternalLink,
   X,
+  RefreshCw,
+  Globe,
+  Mail,
+  Layers,
 } from "lucide-react";
 import { EMAIL_PROVIDERS } from "@brokeros/constants";
-import type { EmailProviderType, IntegrationRecord } from "@/features/marketing/types";
+import type { EmailProviderType, IntegrationRecord, SenderDomainRecord } from "@/features/marketing/types";
 export type { IntegrationRecord };
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -22,14 +26,27 @@ export interface EmailProviderConfigCardProps {
   integrations: IntegrationRecord[];
   onConnect: (payload: any) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onSyncDomains?: (id: string) => Promise<void>;
+  onAddDomain?: (integrationId: string, payload: any) => Promise<void>;
+  onDeleteDomain?: (domainId: string) => Promise<void>;
 }
 
 export function EmailProviderConfigCard({
   integrations,
   onConnect,
   onDelete,
+  onSyncDomains,
+  onAddDomain,
+  onDeleteDomain,
 }: EmailProviderConfigCardProps) {
   const [selectedProvider, setSelectedProvider] = useState<EmailProviderType | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [addingDomainIntegrationId, setAddingDomainIntegrationId] = useState<string | null>(null);
+  const [domainFormData, setDomainFormData] = useState({
+    fromEmail: "",
+    fromName: "Sales Team",
+    dailyQuota: 500,
+  });
   const [formData, setFormData] = useState({
     name: "",
     fromName: "Skyline Realty Marketing",
@@ -45,7 +62,7 @@ export function EmailProviderConfigCard({
   const handleOpenModal = (provider: EmailProviderType) => {
     setSelectedProvider(provider);
     setFormData({
-      name: `${EMAIL_PROVIDERS[provider]?.name || provider} Account`,
+      name: `${(EMAIL_PROVIDERS as Record<string, any>)[provider]?.name || provider} Account`,
       fromName: "Skyline Realty Marketing",
       fromEmail: "marketing@skylinerealty.com",
       apiKey: "",
@@ -140,47 +157,171 @@ export function EmailProviderConfigCard({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {integrations.map((int) => (
-              <div
-                key={int.id}
-                className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-xs font-extrabold text-[var(--text-primary)]">{int.name}</h4>
-                        <Badge variant="default" className="text-[10px]">
-                          {int.provider}
-                        </Badge>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {integrations.map((int) => {
+              const domains = int.senderDomains || [];
+              const isSyncing = syncingId === int.id;
+
+              return (
+                <div
+                  key={int.id}
+                  className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-4"
+                >
+                  <div>
+                    {/* Header */}
+                    <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs font-extrabold text-[var(--text-primary)]">{int.name}</h4>
+                          <Badge variant="default" className="text-[10px]">
+                            {int.provider}
+                          </Badge>
+                          {int.isDefault && (
+                            <Badge variant="brand" className="text-[10px]">
+                              Default
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5">
+                          Account Default: <span className="text-[var(--text-primary)] font-bold">{int.fromEmail}</span> ({int.fromName})
+                        </p>
                       </div>
-                      <p className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5">
-                        From: <span className="text-[var(--text-primary)] font-bold">{int.fromEmail}</span> ({int.fromName})
-                      </p>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(int.id)}
+                        className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-xl"
+                        title="Disconnect Provider"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
 
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(int.id)}
-                      className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-xl"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {/* Sender Domains Section */}
+                    <div className="mt-4 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Globe className="w-3.5 h-3.5 text-purple-600" />
+                          <span className="text-[11px] font-extrabold text-[var(--text-primary)] uppercase tracking-wider">
+                            Sender Domains & Mailboxes ({domains.length})
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          {onSyncDomains && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={isSyncing}
+                              onClick={async () => {
+                                setSyncingId(int.id);
+                                try {
+                                  await onSyncDomains(int.id);
+                                } finally {
+                                  setSyncingId(null);
+                                }
+                              }}
+                              className="h-6 px-2 text-[10px] font-bold gap-1 rounded-lg"
+                              title="Fetch verified sender identities directly from provider API"
+                            >
+                              <RefreshCw className={`w-3 h-3 ${isSyncing ? "animate-spin text-purple-600" : ""}`} />
+                              <span>{isSyncing ? "Syncing..." : "Sync Senders"}</span>
+                            </Button>
+                          )}
+
+                          {onAddDomain && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setAddingDomainIntegrationId(int.id);
+                                setDomainFormData({
+                                  fromEmail: "",
+                                  fromName: int.fromName || "Sales Team",
+                                  dailyQuota: 500,
+                                });
+                              }}
+                              className="h-6 px-2 text-[10px] font-bold gap-1 rounded-lg text-purple-700 bg-purple-50/60 hover:bg-purple-100/80 border-purple-200"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Add Identity</span>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {domains.length === 0 ? (
+                        <div className="p-3.5 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center">
+                          <p className="text-[11px] font-medium text-[var(--text-muted)]">
+                            No sender domains registered yet. Click &quot;Sync Senders&quot; to auto-discover or add manually.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                          {domains.map((d) => (
+                            <div
+                              key={d.id}
+                              className="p-2.5 bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200/60 rounded-xl flex items-center justify-between text-xs transition-colors"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                {d.isVerified ? (
+                                  <span title="Verified identity" className="inline-flex shrink-0">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  </span>
+                                ) : (
+                                  <span title="Unverified" className="inline-flex shrink-0">
+                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                                  </span>
+                                )}
+                                <div className="truncate">
+                                  <span className="font-bold text-[var(--text-primary)]">{d.fromEmail}</span>
+                                  <span className="text-[10px] text-[var(--text-muted)] ml-1.5">({d.fromName})</span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="px-1.5 py-0.5 bg-white border border-slate-200 text-slate-600 text-[9px] font-bold rounded-md">
+                                  {d.domain}
+                                </span>
+                                <span className="text-[10px] font-semibold text-[var(--text-tertiary)]">
+                                  {d.dailyQuota}/day
+                                </span>
+                                {d.isWarmupMode && (
+                                  <span className="px-1.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 text-[9px] font-bold rounded-md">
+                                    Warmup
+                                  </span>
+                                )}
+                                {onDeleteDomain && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => onDeleteDomain(d.id)}
+                                    className="h-5 w-5 text-slate-400 hover:text-rose-500 rounded-md p-0"
+                                    title="Remove sender domain"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px]">
+                    <span className="text-emerald-600 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Ready for dispatch
+                    </span>
+                    <span className="text-[var(--text-muted)]">
+                      Connected {new Date(int.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-100 text-[11px]">
-                  <span className="text-emerald-600 font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Ready for dispatch
-                  </span>
-                  <span className="text-[var(--text-muted)]">
-                    Connected {new Date(int.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -248,7 +389,7 @@ export function EmailProviderConfigCard({
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
-                  Connect {EMAIL_PROVIDERS[selectedProvider]?.name || selectedProvider}
+                  Connect {(EMAIL_PROVIDERS as Record<string, any>)[selectedProvider]?.name || selectedProvider}
                 </h3>
                 <p className="text-[11px] font-medium text-[var(--text-tertiary)]">
                   Configure your provider credentials for live delivery.
@@ -381,6 +522,122 @@ export function EmailProviderConfigCard({
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Verifying Credentials..." : "Test & Save Provider"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── 5. ADD SENDER IDENTITY MODAL ── */}
+      {addingDomainIntegrationId && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200/90 max-w-md w-full p-6 shadow-xl space-y-4 animate-enter">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-[var(--text-primary)]">
+                  Add Sender Identity / Mailbox
+                </h3>
+                <p className="text-[11px] font-medium text-[var(--text-tertiary)]">
+                  Register a verified domain or mailbox configured in your provider dashboard.
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setAddingDomainIntegrationId(null)}
+                className="h-7 w-7 text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!addingDomainIntegrationId || !onAddDomain) return;
+                setIsSubmitting(true);
+                try {
+                  await onAddDomain(addingDomainIntegrationId, domainFormData);
+                  setAddingDomainIntegrationId(null);
+                } catch (err: any) {
+                  alert(err?.message || "Failed to add sender domain");
+                } finally {
+                  setIsSubmitting(false);
+                }
+              }}
+              className="space-y-3.5"
+            >
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1">
+                  From Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="promotions@yourbrokerage.com"
+                  value={domainFormData.fromEmail}
+                  onChange={(e) =>
+                    setDomainFormData({ ...domainFormData, fromEmail: e.target.value })
+                  }
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1">
+                  Sender Display Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Skyline Offers & Updates"
+                  value={domainFormData.fromName}
+                  onChange={(e) =>
+                    setDomainFormData({ ...domainFormData, fromName: e.target.value })
+                  }
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold text-[var(--text-primary)] mb-1">
+                  Daily Quota Cap
+                </label>
+                <input
+                  type="number"
+                  min="50"
+                  max="100000"
+                  value={domainFormData.dailyQuota}
+                  onChange={(e) =>
+                    setDomainFormData({
+                      ...domainFormData,
+                      dailyQuota: Number(e.target.value),
+                    })
+                  }
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
+                />
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">
+                  Limits dispatches per day to preserve domain deliverability reputation.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAddingDomainIntegrationId(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="default"
+                  size="sm"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Registering..." : "Save Identity"}
                 </Button>
               </div>
             </form>
