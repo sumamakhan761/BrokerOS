@@ -1,4 +1,5 @@
 import type {
+  DiscoveredSenderIdentity,
   EmailProviderType,
   EmailWebhookEvent,
   IEmailMarketingProvider,
@@ -174,6 +175,42 @@ export class BrevoClient {
       };
     }
   }
+
+  async listVerifiedSenders(): Promise<DiscoveredSenderIdentity[]> {
+    if (!this.apiKey) return [];
+    try {
+      const res = await fetch('https://api.brevo.com/v3/senders', {
+        method: 'GET',
+        headers: {
+          'api-key': this.apiKey,
+          Accept: 'application/json',
+        },
+      });
+
+      if (res.status === 200) {
+        const data: any = await res.json().catch(() => ({}));
+        const senders = data?.senders || (Array.isArray(data) ? data : []);
+        if (Array.isArray(senders)) {
+          return senders
+            .map((s: any) => {
+              const fromEmail = s.email || '';
+              const domain = fromEmail.includes('@') ? fromEmail.split('@')[1] : '';
+              return {
+                fromEmail,
+                fromName: s.name || fromEmail.split('@')[0] || 'Sales Team',
+                domain,
+                isVerified: Boolean(s.active !== false),
+                providerId: String(s.id || ''),
+              };
+            })
+            .filter((s: DiscoveredSenderIdentity) => s.fromEmail && s.fromEmail.includes('@'));
+        }
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  }
 }
 
 // ============================================================================
@@ -289,6 +326,11 @@ export class BrevoAdapter implements IEmailMarketingProvider {
   async sendBatch(options: SendEmailOptions, credentials?: ProviderCredentials): Promise<SendEmailResult> {
     const client = new BrevoClient(credentials);
     return client.send(options);
+  }
+
+  async listVerifiedSenders(credentials?: ProviderCredentials): Promise<DiscoveredSenderIdentity[]> {
+    const client = new BrevoClient(credentials);
+    return client.listVerifiedSenders();
   }
 
   parseWebhookEvent(headers: Record<string, any>, payload: any): EmailWebhookEvent[] {
