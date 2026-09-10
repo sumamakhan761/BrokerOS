@@ -480,6 +480,7 @@ enum EmailProviderType {
   SENDGRID
   BREVO
   MAILCHIMP
+  MULTI_PROVIDER
 }
 
 enum CampaignStatus {
@@ -3036,11 +3037,40 @@ model MarketingIntegration {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  campaigns MarketingCampaign[]
+  campaigns     MarketingCampaign[]
+  senderDomains MarketingSenderDomain[]
 
   @@index([provider])
   @@index([isActive])
   @@map("marketing_integration")
+}
+
+model MarketingSenderDomain {
+  id            String               @id @default(uuid())
+  integrationId String
+  integration   MarketingIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  fromEmail String
+  fromName  String
+  domain    String
+  replyTo   String?
+
+  dailyQuota   Int     @default(2000)
+  sentToday    Int     @default(0)
+  isWarmupMode Boolean @default(false)
+  isVerified   Boolean @default(false)
+  isActive     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campaignPools CampaignSenderPool[]
+
+  @@unique([integrationId, fromEmail])
+  @@index([integrationId, isActive])
+  @@index([domain])
+  @@index([fromEmail])
+  @@map("marketing_sender_domain")
 }
 
 model EmailTemplate {
@@ -3071,9 +3101,10 @@ model MarketingCampaign {
   audienceSource AudienceSourceType @default(CRM_DATABASE)
 
   // Scope: Brokerage vs Channel Partner
-  isCpCampaign Boolean  @default(false)
-  projectId    String?
-  project      Project? @relation(fields: [projectId], references: [id])
+  isCpCampaign   Boolean  @default(false)
+  allocationMode String   @default("AUTO_EVEN")
+  projectId      String?
+  project        Project? @relation(fields: [projectId], references: [id])
 
   integrationId String?
   integration   MarketingIntegration? @relation(fields: [integrationId], references: [id])
@@ -3111,6 +3142,7 @@ model MarketingCampaign {
   updatedAt DateTime @updatedAt
 
   recipients     CampaignRecipient[]
+  senderPools    CampaignSenderPool[]
   trackingEvents EmailTrackingEvent[]
 
   @@index([status])
@@ -3121,10 +3153,45 @@ model MarketingCampaign {
   @@map("marketing_campaign")
 }
 
+model CampaignSenderPool {
+  id         String            @id @default(uuid())
+  campaignId String
+  campaign   MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  senderDomainId String?
+  senderDomain   MarketingSenderDomain? @relation(fields: [senderDomainId], references: [id], onDelete: SetNull)
+
+  domain    String?
+  fromEmail String?
+  fromName  String?
+  provider  String?
+
+  weight              Int    @default(1)
+  allocatedRecipients Int    @default(0)
+  sentCount           Int    @default(0)
+  deliveredCount      Int    @default(0)
+  failedCount         Int    @default(0)
+  status              String @default("QUEUED")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recipients CampaignRecipient[]
+
+  @@index([campaignId, senderDomainId])
+  @@index([campaignId, status])
+  @@map("campaign_sender_pool")
+}
+
 model CampaignRecipient {
   id         String            @id @default(uuid())
   campaignId String
   campaign   MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  senderPoolId        String?
+  senderPool          CampaignSenderPool? @relation(fields: [senderPoolId], references: [id], onDelete: SetNull)
+  assignedSenderEmail String?
+  assignedProvider    String?
 
   leadId String?
   lead   Lead?   @relation(fields: [leadId], references: [id])
@@ -3153,6 +3220,7 @@ model CampaignRecipient {
   updatedAt DateTime @updatedAt
 
   @@index([campaignId, status])
+  @@index([senderPoolId])
   @@index([email])
   @@index([leadId])
   @@map("campaign_recipient")
