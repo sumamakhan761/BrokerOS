@@ -23,11 +23,15 @@ import type {
   EmailProviderType,
   EmailIntegrationItem,
 } from "@/features/marketing/types";
+import type {
+  CampaignSenderPoolConfig,
+  PreFlightCostSummary,
+} from "@brokeros/types";
 
 const DRAFT_STORAGE_KEY = "brokeros_campaign_draft_v1";
 
 const WIZARD_STEPS = [
-  { num: 1, label: "Campaign Info", desc: "Title & Sender Profile" },
+  { num: 1, label: "Campaign Info", desc: "Title & Project Scope" },
   { num: 2, label: "Audience Target", desc: "CRM Filter or CSV" },
   { num: 3, label: "Template & Content", desc: "Visual Email Body" },
   { num: 4, label: "Provider & Launch", desc: "Engine & Pre-flight" },
@@ -66,6 +70,10 @@ export default function NewEmailCampaignPage() {
 
   // Form State: Step 4 (Provider Selection & Test)
   const [providerType, setProviderType] = useState<EmailProviderType>("SYSTEM_DEFAULT");
+  const [senderPools, setSenderPools] = useState<CampaignSenderPoolConfig[]>([]);
+  const [allocationMode, setAllocationMode] = useState<"AUTO_EVEN" | "CUSTOM_PERCENTAGE">("AUTO_EVEN");
+  const [costEstimate, setCostEstimate] = useState<PreFlightCostSummary | null>(null);
+  const [isLoadingEstimate, setIsLoadingEstimate] = useState(false);
   const [testEmail, setTestEmail] = useState("");
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [testSendStatus, setTestSendStatus] = useState<{ ok: boolean; msg: string } | null>(null);
@@ -130,6 +138,8 @@ export default function NewEmailCampaignPage() {
         if (draft.subject) setSubject(draft.subject);
         if (draft.htmlContent) setHtmlContent(draft.htmlContent);
         if (draft.providerType) setProviderType(draft.providerType);
+        if (draft.senderPools) setSenderPools(draft.senderPools);
+        if (draft.allocationMode) setAllocationMode(draft.allocationMode);
         if (draft.draftCampaignId) setDraftCampaignId(draft.draftCampaignId);
         if (draft.currentStep) setCurrentStep(draft.currentStep);
         setHasRestoredDraft(true);
@@ -162,6 +172,8 @@ export default function NewEmailCampaignPage() {
         subject,
         htmlContent,
         providerType,
+        senderPools,
+        allocationMode,
         currentStep,
       };
 
@@ -204,8 +216,44 @@ export default function NewEmailCampaignPage() {
     subject,
     htmlContent,
     providerType,
+    senderPools,
+    allocationMode,
     currentStep,
   ]);
+
+  // Cost Estimation Fetcher
+  const fetchCostEstimate = useCallback(
+    async (pools: CampaignSenderPoolConfig[], totalCount: number) => {
+      if (!pools || pools.length === 0) return;
+      try {
+        setIsLoadingEstimate(true);
+        const res = await fetch(`${baseUrl}/api/marketing/campaigns/cost-estimate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            totalLeads: totalCount,
+            senderPools: pools,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCostEstimate(data);
+        }
+      } catch {
+        // Fallback calculation in PreFlightModal handles network issues
+      } finally {
+        setIsLoadingEstimate(false);
+      }
+    },
+    [baseUrl]
+  );
+
+  useEffect(() => {
+    if (currentStep === 4 && senderPools.length > 0) {
+      const totalCount = audienceSource === "CSV_UPLOAD" ? csvRecipients.length : 1000;
+      fetchCostEstimate(senderPools, totalCount);
+    }
+  }, [currentStep, senderPools, audienceSource, csvRecipients.length, fetchCostEstimate]);
 
   // 4. Auto-save Draft on Changes (Debounced 1200ms)
   useEffect(() => {
@@ -251,6 +299,9 @@ export default function NewEmailCampaignPage() {
       setSubject(REAL_ESTATE_TEMPLATES[0].subject);
       setHtmlContent(REAL_ESTATE_TEMPLATES[0].htmlContent);
       setProviderType("SYSTEM_DEFAULT");
+      setSenderPools([]);
+      setAllocationMode("AUTO_EVEN");
+      setCostEstimate(null);
       setDraftCampaignId(null);
       setLastSavedTime(null);
       setHasRestoredDraft(false);
@@ -274,7 +325,12 @@ export default function NewEmailCampaignPage() {
     setIsSendingTest(true);
     setTestSendStatus(null);
     try {
-      const activeInt = integrations.find((i) => i.provider === providerType && i.isActive);
+      const activePool = senderPools[0];
+      const activeInt = integrations.find((i) =>
+        activePool?.integrationId ? i.id === activePool.integrationId : i.provider === providerType && i.isActive
+      );
+      const testFromEmail = activePool?.fromEmail || activeInt?.fromEmail || "";
+      const testFromName = activePool?.fromName || activeInt?.fromName || "Sales Team";
 
       const res = await fetch(`${baseUrl}/api/marketing/campaigns/send-test`, {
         method: "POST",
@@ -284,10 +340,10 @@ export default function NewEmailCampaignPage() {
           toEmail: testEmail,
           subject: subject || "Test Email Preview",
           htmlContent: htmlContent || "<p>Hello test</p>",
-          fromName: fromName || activeInt?.fromName || "Sales Team",
-          fromEmail: fromEmail || activeInt?.fromEmail || "marketing@example.com",
+          fromName: testFromName,
+          fromEmail: testFromEmail,
           replyTo: replyTo || undefined,
-          providerType,
+          providerType: activePool?.provider || providerType,
           integrationId: activeInt?.id,
         }),
       });
@@ -319,7 +375,13 @@ export default function NewEmailCampaignPage() {
       return;
     }
 
-    const activeInt = integrations.find((i) => i.provider === providerType && i.isActive);
+    const activePool = senderPools[0];
+    const activeInt = integrations.find((i) =>
+      activePool?.integrationId ? i.id === activePool.integrationId : i.provider === providerType && i.isActive
+    );
+    const resolvedProviderType = senderPools.length > 1 ? "MULTI_PROVIDER" : (activePool?.provider || providerType);
+    const resolvedFromEmail = activePool?.fromEmail || activeInt?.fromEmail || "";
+    const resolvedFromName = activePool?.fromName || activeInt?.fromName || "Sales Team";
 
     setIsSubmitting(true);
     try {
@@ -328,8 +390,8 @@ export default function NewEmailCampaignPage() {
         title,
         projectId: projectId || undefined,
         isCpCampaign,
-        fromName: fromName || activeInt?.fromName || "Sales Team",
-        fromEmail: fromEmail || activeInt?.fromEmail || "marketing@example.com",
+        fromName: resolvedFromName,
+        fromEmail: resolvedFromEmail,
         replyTo: replyTo || undefined,
         audienceSource,
         audienceFilters: audienceSource === "CRM_DATABASE" ? filters : undefined,
@@ -337,8 +399,10 @@ export default function NewEmailCampaignPage() {
         saveCsvAsCrmLeads: audienceSource === "CSV_UPLOAD" ? saveCsvAsCrmLeads : false,
         subject,
         htmlContent,
-        providerType,
+        providerType: resolvedProviderType,
         integrationId: activeInt?.id,
+        senderPools: senderPools.length > 0 ? senderPools : undefined,
+        allocationMode,
       };
 
       const res = await fetch(`${baseUrl}/api/marketing/campaigns`, {
@@ -453,12 +517,6 @@ export default function NewEmailCampaignPage() {
           onProjectIdChange={setProjectId}
           isCpCampaign={isCpCampaign}
           onIsCpCampaignChange={setIsCpCampaign}
-          fromName={fromName}
-          onFromNameChange={setFromName}
-          fromEmail={fromEmail}
-          onFromEmailChange={setFromEmail}
-          replyTo={replyTo}
-          onReplyToChange={setReplyTo}
           projects={projects}
           isLoadingProjects={isLoadingProjects}
           onNext={() => setCurrentStep(2)}
@@ -504,6 +562,7 @@ export default function NewEmailCampaignPage() {
         <EmailStep4ReviewLaunch
           audienceSource={audienceSource}
           csvRecipients={csvRecipients}
+          totalAudienceCount={audienceSource === "CSV_UPLOAD" ? csvRecipients.length : 1000}
           projectName={selectedProjectObj?.name}
           isCpCampaign={isCpCampaign}
           fromName={fromName}
@@ -511,6 +570,10 @@ export default function NewEmailCampaignPage() {
           providerType={providerType}
           onProviderTypeChange={setProviderType}
           integrations={integrations}
+          senderPools={senderPools}
+          onSenderPoolsChange={setSenderPools}
+          allocationMode={allocationMode}
+          onAllocationModeChange={setAllocationMode}
           testEmail={testEmail}
           onTestEmailChange={setTestEmail}
           onSendTest={handleSendTest}
@@ -519,6 +582,8 @@ export default function NewEmailCampaignPage() {
           isSubmitting={isSubmitting}
           onLaunch={handleLaunchCampaign}
           onBack={() => setCurrentStep(3)}
+          costEstimate={costEstimate}
+          isLoadingEstimate={isLoadingEstimate}
         />
       )}
     </DashboardPageWrapper>
