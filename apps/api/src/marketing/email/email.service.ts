@@ -5,13 +5,19 @@ import type {
   CampaignAnalyticsSummary,
   EmailWebhookEvent,
   IEmailMarketingProvider,
+  PreFlightCostSummary,
+  PreFlightCostLineItem,
 } from '@brokeros/types';
+import { EMAIL_PROVIDER_PRICING_ESTIMATES } from '@brokeros/constants';
 import {
   CreateCampaignDto,
   SaveDraftCampaignDto,
   PreviewAudienceDto,
   SendTestEmailDto,
   ConnectIntegrationDto,
+  AddSenderDomainDto,
+  UpdateSenderDomainDto,
+  CalculateCostEstimateDto,
 } from './dto/email.dto.js';
 import { EmailAudienceService } from './services/email-audience.service.js';
 import { EmailAnalyticsService } from './services/email-analytics.service.js';
@@ -26,7 +32,7 @@ export class EmailService {
     private readonly analyticsService: EmailAnalyticsService,
     private readonly integrationsService: EmailIntegrationsService,
     private readonly trackingService: EmailTrackingService,
-  ) {}
+  ) { }
 
   // ── FACADE DELEGATIONS ──
 
@@ -75,6 +81,89 @@ export class EmailService {
 
   async deleteIntegration(id: string) {
     return this.integrationsService.deleteIntegration(id);
+  }
+
+  async syncDomainsForIntegration(id: string) {
+    return this.integrationsService.syncDomainsForIntegration(id);
+  }
+
+  async addSenderDomain(integrationId: string, dto: AddSenderDomainDto) {
+    return this.integrationsService.addSenderDomain(integrationId, dto);
+  }
+
+  async updateSenderDomain(domainId: string, dto: UpdateSenderDomainDto) {
+    return this.integrationsService.updateSenderDomain(domainId, dto);
+  }
+
+  async deleteSenderDomain(domainId: string) {
+    return this.integrationsService.deleteSenderDomain(domainId);
+  }
+
+  async listAllActiveSenderDomains() {
+    return this.integrationsService.listAllActiveSenderDomains();
+  }
+
+  calculateCostEstimate(dto: CalculateCostEstimateDto): PreFlightCostSummary {
+    const totalRecipients = dto.totalRecipients || 0;
+    const pools = dto.senderPools || [];
+
+    if (pools.length === 0 || totalRecipients === 0) {
+      return {
+        totalLeads: totalRecipients,
+        totalCostUSD: 0,
+        totalCostINR: 0,
+        lineItems: [],
+      };
+    }
+
+    const partition = this.audienceService.partitionAudienceAcrossPools(
+      new Array(totalRecipients).fill(0),
+      pools,
+      pools.some((p) => (p.weight ?? 0) > 0) ? 'CUSTOM_PERCENTAGE' : 'AUTO_EVEN',
+    );
+
+    let totalUsd = 0;
+    let totalInr = 0;
+
+    const lineItems: PreFlightCostLineItem[] = pools.map((p, idx) => {
+      const allocated =
+        partition.allocations[idx]?.count ??
+        Math.floor(totalRecipients / pools.length);
+      const provider = p.provider || 'SYSTEM_DEFAULT';
+      const pricing =
+        EMAIL_PROVIDER_PRICING_ESTIMATES[
+        provider as keyof typeof EMAIL_PROVIDER_PRICING_ESTIMATES
+        ] || EMAIL_PROVIDER_PRICING_ESTIMATES.SYSTEM_DEFAULT;
+
+      const costPer1kUSD = pricing.costPer1kUSD;
+      const costUSD = Number(((allocated * costPer1kUSD) / 1000).toFixed(3));
+      const costINR = Number(((allocated * pricing.costPer1kINR) / 1000).toFixed(2));
+
+      totalUsd += costUSD;
+      totalInr += costINR;
+
+      return {
+        provider: provider as any,
+        providerName: pricing.label,
+        domain: p.domain || (p.fromEmail ? p.fromEmail.split('@')[1] : 'domain'),
+        fromEmail: p.fromEmail || '',
+        allocatedLeads: allocated,
+        percentage:
+          totalRecipients > 0
+            ? Number(((allocated / totalRecipients) * 100).toFixed(1))
+            : 0,
+        costPer1kUSD,
+        costUSD,
+        costINR,
+      };
+    });
+
+    return {
+      totalLeads: totalRecipients,
+      totalCostUSD: Number(totalUsd.toFixed(2)),
+      totalCostINR: Number(totalInr.toFixed(2)),
+      lineItems,
+    };
   }
 
   async recordOpenEvent(
@@ -200,18 +289,26 @@ export class EmailService {
       userId: validUserId,
     } = await this.resolveForeignKeys(dto, userId);
 
+    const hasMultiplePools = dto.senderPools && dto.senderPools.length > 1;
+    const providerType = hasMultiplePools
+      ? 'MULTI_PROVIDER'
+      : (dto.senderPools?.[0]?.provider || dto.providerType || 'SYSTEM_DEFAULT');
+
+    let savedCampaign: any;
+
     if (dto.campaignId) {
       const existing = await this.prisma.marketingCampaign.findUnique({
         where: { id: dto.campaignId },
       });
 
       if (existing) {
-        return this.prisma.marketingCampaign.update({
+        savedCampaign = await this.prisma.marketingCampaign.update({
           where: { id: dto.campaignId },
           data: {
             title: dto.title !== undefined ? dto.title : existing.title,
             channel: dto.channel ?? existing.channel,
-            providerType: dto.providerType ?? existing.providerType,
+            providerType: (providerType as any) ?? existing.providerType,
+            allocationMode: dto.allocationMode ?? existing.allocationMode,
             audienceSource: dto.audienceSource ?? existing.audienceSource,
             isCpCampaign: dto.isCpCampaign ?? existing.isCpCampaign,
             projectId:
@@ -246,30 +343,72 @@ export class EmailService {
       }
     }
 
-    return this.prisma.marketingCampaign.create({
-      data: {
-        title: dto.title?.trim() || 'Untitled Draft Campaign',
-        channel: dto.channel || 'EMAIL',
-        status: 'DRAFT',
-        providerType: dto.providerType || 'SYSTEM_DEFAULT',
-        audienceSource: dto.audienceSource || 'CRM_DATABASE',
-        isCpCampaign: dto.isCpCampaign || false,
-        projectId,
-        integrationId,
-        templateId,
-        subject: dto.subject || '',
-        fromName: dto.fromName || '',
-        fromEmail: dto.fromEmail || '',
-        replyTo: dto.replyTo || null,
-        htmlContent: dto.htmlContent || '',
-        audienceFilters: dto.audienceFilters
-          ? (dto.audienceFilters as any)
-          : undefined,
-        totalRecipients: 0,
-        scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
-        createdById: validUserId,
-      },
-    });
+    if (!savedCampaign) {
+      savedCampaign = await this.prisma.marketingCampaign.create({
+        data: {
+          title: dto.title?.trim() || 'Untitled Draft Campaign',
+          channel: dto.channel || 'EMAIL',
+          status: 'DRAFT',
+          providerType: providerType as any,
+          allocationMode: dto.allocationMode || 'AUTO_EVEN',
+          audienceSource: dto.audienceSource || 'CRM_DATABASE',
+          isCpCampaign: dto.isCpCampaign || false,
+          projectId,
+          integrationId,
+          templateId,
+          subject: dto.subject || '',
+          fromName: dto.fromName || '',
+          fromEmail: dto.fromEmail || '',
+          replyTo: dto.replyTo || null,
+          htmlContent: dto.htmlContent || '',
+          audienceFilters: dto.audienceFilters
+            ? (dto.audienceFilters as any)
+            : undefined,
+          totalRecipients: 0,
+          scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+          createdById: validUserId,
+        },
+      });
+    }
+
+    if (dto.senderPools) {
+      await this.prisma.campaignSenderPool.deleteMany({
+        where: { campaignId: savedCampaign.id },
+      });
+      if (dto.senderPools.length > 0) {
+        await Promise.all(
+          dto.senderPools.map(async (p) => {
+            let resolvedSenderDomainId = p.senderDomainId;
+            if (!resolvedSenderDomainId || resolvedSenderDomainId.startsWith('primary-')) {
+              resolvedSenderDomainId = undefined;
+              if (p.fromEmail) {
+                const foundDomain = await this.prisma.marketingSenderDomain.findFirst({
+                  where: { fromEmail: p.fromEmail.toLowerCase().trim() },
+                });
+                if (foundDomain) {
+                  resolvedSenderDomainId = foundDomain.id;
+                }
+              }
+            }
+
+            return this.prisma.campaignSenderPool.create({
+              data: {
+                campaignId: savedCampaign.id,
+                senderDomainId: resolvedSenderDomainId || null,
+                domain: p.domain || (p.fromEmail ? p.fromEmail.split('@')[1] : null),
+                fromEmail: p.fromEmail || null,
+                fromName: p.fromName || null,
+                provider: p.provider || null,
+                weight: Math.round(p.weight ?? p.allocationPercentage ?? (100 / dto.senderPools!.length)),
+                allocatedRecipients: p.allocatedLeads ?? 0,
+              },
+            });
+          }),
+        );
+      }
+    }
+
+    return savedCampaign;
   }
 
   async createCampaign(dto: CreateCampaignDto, userId?: string) {
@@ -288,6 +427,20 @@ export class EmailService {
       projectId: projectId || undefined,
     });
 
+    const hasMultiplePools = dto.senderPools && dto.senderPools.length > 1;
+    const resolvedProviderType = hasMultiplePools
+      ? 'MULTI_PROVIDER'
+      : (dto.senderPools?.[0]?.provider || dto.providerType || 'SYSTEM_DEFAULT');
+
+    const defaultFromEmail =
+      dto.fromEmail?.trim() ||
+      dto.senderPools?.[0]?.fromEmail ||
+      '';
+    const defaultFromName =
+      dto.fromName?.trim() ||
+      dto.senderPools?.[0]?.fromName ||
+      'Sales Team';
+
     let campaign: any;
 
     if (dto.campaignId) {
@@ -301,7 +454,8 @@ export class EmailService {
             title: dto.title,
             channel: dto.channel || 'EMAIL',
             status: dto.scheduledAt ? 'SCHEDULED' : 'PROCESSING',
-            providerType: dto.providerType || 'SYSTEM_DEFAULT',
+            providerType: resolvedProviderType as any,
+            allocationMode: dto.allocationMode || 'AUTO_EVEN',
             audienceSource: dto.audienceSource || 'CRM_DATABASE',
             isCpCampaign: dto.isCpCampaign || false,
             projectId,
@@ -309,9 +463,13 @@ export class EmailService {
             templateId,
             subject: dto.subject !== undefined ? dto.subject : existing.subject,
             fromName:
-              dto.fromName !== undefined ? dto.fromName : existing.fromName,
+              dto.fromName && dto.fromName.trim()
+                ? dto.fromName
+                : (existing.fromName || defaultFromName),
             fromEmail:
-              dto.fromEmail !== undefined ? dto.fromEmail : existing.fromEmail,
+              dto.fromEmail && dto.fromEmail.trim()
+                ? dto.fromEmail
+                : (existing.fromEmail || defaultFromEmail),
             replyTo:
               dto.replyTo !== undefined
                 ? dto.replyTo || null
@@ -337,15 +495,16 @@ export class EmailService {
           title: dto.title,
           channel: dto.channel || 'EMAIL',
           status: dto.scheduledAt ? 'SCHEDULED' : 'PROCESSING',
-          providerType: dto.providerType || 'SYSTEM_DEFAULT',
+          providerType: resolvedProviderType as any,
+          allocationMode: dto.allocationMode || 'AUTO_EVEN',
           audienceSource: dto.audienceSource || 'CRM_DATABASE',
           isCpCampaign: dto.isCpCampaign || false,
           projectId,
           integrationId,
           templateId,
           subject: dto.subject || '',
-          fromName: dto.fromName || '',
-          fromEmail: dto.fromEmail || '',
+          fromName: defaultFromName,
+          fromEmail: defaultFromEmail,
           replyTo: dto.replyTo || null,
           htmlContent: dto.htmlContent || '',
           audienceFilters: dto.audienceFilters as any,
@@ -356,7 +515,10 @@ export class EmailService {
       });
     }
 
-    // Populate Recipients
+    // Build raw Recipients
+    const rawRecipients: any[] = [];
+    const crmLeadsToCreate: any[] = [];
+
     if (dto.audienceSource === 'CSV_UPLOAD' && dto.csvRecipients?.length) {
       const unsubscribedSet = new Set(
         (
@@ -367,16 +529,13 @@ export class EmailService {
       );
       const seenEmails = new Set<string>();
 
-      const recipientData: any[] = [];
-      const crmLeadsToCreate: any[] = [];
-
       for (const row of dto.csvRecipients) {
         const email = row.email?.toLowerCase().trim();
         if (!email || seenEmails.has(email) || unsubscribedSet.has(email))
           continue;
         seenEmails.add(email);
 
-        recipientData.push({
+        rawRecipients.push({
           campaignId: campaign.id,
           email,
           name: row.name || email.split('@')[0],
@@ -403,10 +562,6 @@ export class EmailService {
             createdById: validUserId,
           });
         }
-      }
-
-      if (recipientData.length > 0) {
-        await this.prisma.campaignRecipient.createMany({ data: recipientData });
       }
 
       if (crmLeadsToCreate.length > 0) {
@@ -438,7 +593,6 @@ export class EmailService {
         ).map((u) => u.email.toLowerCase().trim()),
       );
       const seenEmails = new Set<string>();
-      const recipientData: any[] = [];
 
       for (const lead of leads) {
         if (!lead.email) continue;
@@ -446,7 +600,7 @@ export class EmailService {
         if (seenEmails.has(email) || unsubscribedSet.has(email)) continue;
         seenEmails.add(email);
 
-        recipientData.push({
+        rawRecipients.push({
           campaignId: campaign.id,
           leadId: lead.id,
           email,
@@ -463,9 +617,86 @@ export class EmailService {
           },
         });
       }
+    }
 
-      if (recipientData.length > 0) {
-        await this.prisma.campaignRecipient.createMany({ data: recipientData });
+    // Partition across sender domains if pools are configured
+    if (rawRecipients.length > 0) {
+      if (dto.senderPools && dto.senderPools.length > 0) {
+        const partitionResult =
+          this.audienceService.partitionAudienceAcrossPools(
+            rawRecipients,
+            dto.senderPools,
+            dto.allocationMode || 'AUTO_EVEN',
+          );
+
+        await this.prisma.campaignSenderPool.deleteMany({
+          where: { campaignId: campaign.id },
+        });
+
+        const createdPools = await Promise.all(
+          dto.senderPools.map(async (poolCfg, idx) => {
+            const alloc = partitionResult.allocations[idx];
+
+            let resolvedSenderDomainId = poolCfg.senderDomainId;
+            if (!resolvedSenderDomainId || resolvedSenderDomainId.startsWith('primary-')) {
+              resolvedSenderDomainId = undefined;
+              if (poolCfg.fromEmail) {
+                const foundDomain = await this.prisma.marketingSenderDomain.findFirst({
+                  where: { fromEmail: poolCfg.fromEmail.toLowerCase().trim() },
+                });
+                if (foundDomain) {
+                  resolvedSenderDomainId = foundDomain.id;
+                }
+              }
+            }
+
+            return this.prisma.campaignSenderPool.create({
+              data: {
+                campaignId: campaign.id,
+                senderDomainId: resolvedSenderDomainId || null,
+                domain: poolCfg.domain || (poolCfg.fromEmail ? poolCfg.fromEmail.split('@')[1] : null),
+                fromEmail: poolCfg.fromEmail || null,
+                fromName: poolCfg.fromName || null,
+                provider: poolCfg.provider || null,
+                weight: Math.round(alloc?.weight ?? poolCfg.allocationPercentage ?? (100 / dto.senderPools!.length)),
+                allocatedRecipients: alloc?.count ?? 0,
+                status: 'ACTIVE',
+              },
+            });
+          }),
+        );
+
+        const poolIdMap = new Map<number, string>();
+        createdPools.forEach((cp, idx) => {
+          poolIdMap.set(idx, cp.id);
+        });
+
+        const finalRecipients = partitionResult.partitionedRecipients.map(
+          (rec) => ({
+            campaignId: rec.campaignId,
+            leadId: rec.leadId || null,
+            email: rec.email,
+            name: rec.name,
+            phone: rec.phone,
+            status: rec.status,
+            source: rec.source,
+            mergeData: rec.mergeData,
+            senderPoolId:
+              rec.poolIndex !== undefined
+                ? poolIdMap.get(rec.poolIndex) || null
+                : null,
+            assignedSenderEmail: rec.assignedSenderEmail || null,
+            assignedProvider: rec.assignedProvider || null,
+          }),
+        );
+
+        await this.prisma.campaignRecipient.createMany({
+          data: finalRecipients,
+        });
+      } else {
+        await this.prisma.campaignRecipient.createMany({
+          data: rawRecipients,
+        });
       }
     }
 
@@ -482,7 +713,7 @@ export class EmailService {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ campaignId }),
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   async dispatchCampaign(id: string) {

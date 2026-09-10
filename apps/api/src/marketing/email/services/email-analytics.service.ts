@@ -86,6 +86,82 @@ export class EmailAnalyticsService {
       .sort((a, b) => b.clicks - a.clicks)
       .slice(0, 5);
 
+    const senderPools = await this.prisma.campaignSenderPool.findMany({
+      where: { campaignId },
+      include: {
+        senderDomain: {
+          include: {
+            integration: {
+              select: { provider: true, name: true },
+            },
+          },
+        },
+      },
+    });
+
+    const domainBreakdown = await Promise.all(
+      senderPools.map(async (pool) => {
+        const [poolDelivered, poolOpened, poolClicked, poolBounced] =
+          await Promise.all([
+            this.prisma.campaignRecipient.count({
+              where: {
+                campaignId,
+                senderPoolId: pool.id,
+                status: { in: ['DELIVERED', 'OPENED', 'CLICKED', 'SENT'] },
+              },
+            }),
+            this.prisma.campaignRecipient.count({
+              where: {
+                campaignId,
+                senderPoolId: pool.id,
+                OR: [
+                  { status: { in: ['OPENED', 'CLICKED'] } },
+                  { openCount: { gt: 0 } },
+                ],
+              },
+            }),
+            this.prisma.campaignRecipient.count({
+              where: {
+                campaignId,
+                senderPoolId: pool.id,
+                OR: [{ status: 'CLICKED' }, { clickCount: { gt: 0 } }],
+              },
+            }),
+            this.prisma.campaignRecipient.count({
+              where: {
+                campaignId,
+                senderPoolId: pool.id,
+                status: { in: ['BOUNCED', 'FAILED'] },
+              },
+            }),
+          ]);
+
+        const pSent = Math.max(pool.sentCount, poolDelivered + poolBounced);
+        const pDelivered = Math.max(pool.deliveredCount, poolDelivered);
+        const pOpenRate = pDelivered > 0 ? (poolOpened / pDelivered) * 100 : 0;
+        const pClickRate = pDelivered > 0 ? (poolClicked / pDelivered) * 100 : 0;
+        const pBounceRate = pSent > 0 ? (poolBounced / pSent) * 100 : 0;
+
+        return {
+          senderPoolId: pool.id,
+          domain: pool.senderDomain?.domain || pool.domain || 'default',
+          fromEmail: pool.senderDomain?.fromEmail || pool.fromEmail || 'default',
+          fromName: pool.senderDomain?.fromName || pool.fromName || 'Sales Team',
+          provider: (pool.senderDomain?.integration?.provider || pool.provider || 'SYSTEM_DEFAULT') as any,
+          allocatedRecipients: pool.allocatedRecipients,
+          sentCount: pSent,
+          deliveredCount: pDelivered,
+          deliveryRate: pSent > 0 ? Number(((pDelivered / pSent) * 100).toFixed(1)) : 0,
+          openedCount: poolOpened,
+          openRate: Number(pOpenRate.toFixed(1)),
+          clickedCount: poolClicked,
+          clickRate: Number(pClickRate.toFixed(1)),
+          bouncedCount: poolBounced,
+          bounceRate: Number(pBounceRate.toFixed(1)),
+        };
+      }),
+    );
+
     return {
       campaignId: campaign.id,
       title: campaign.title,
@@ -106,6 +182,7 @@ export class EmailAnalyticsService {
       complaintCount: campaign.complaintCount,
       topClickedLinks,
       hourlyActivity: [],
+      domainBreakdown: domainBreakdown.length > 0 ? domainBreakdown : undefined,
     };
   }
 
