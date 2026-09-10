@@ -383,3 +383,21 @@ export class CalculateCostEstimateDto {
   @IsNumber()
   totalRecipients!: number;
 }
+
+export class BulkAssignLeadsDto {
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  campaignIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  recipientIds?: string[];
+}
+
+export class ExportLeadsDto {
+  @IsArray()
+  @IsString({ each: true })
+  campaignIds!: string[];
+}

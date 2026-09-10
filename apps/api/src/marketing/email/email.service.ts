@@ -18,6 +18,8 @@ import {
   AddSenderDomainDto,
   UpdateSenderDomainDto,
   CalculateCostEstimateDto,
+  BulkAssignLeadsDto,
+  ExportLeadsDto,
 } from './dto/email.dto.js';
 import { EmailAudienceService } from './services/email-audience.service.js';
 import { EmailAnalyticsService } from './services/email-analytics.service.js';
@@ -48,6 +50,14 @@ export class EmailService {
 
   async promoteCsvRecipientToLead(recipientId: string, userId?: string) {
     return this.audienceService.promoteCsvRecipientToLead(recipientId, userId);
+  }
+
+  async bulkAssignRecipientsToCrm(dto: BulkAssignLeadsDto, userId?: string) {
+    return this.audienceService.bulkAssignRecipientsToCrm(dto, userId);
+  }
+
+  async getExportLeadsData(dto: ExportLeadsDto) {
+    return this.audienceService.getExportLeadsData(dto);
   }
 
   async getCampaignAnalytics(
