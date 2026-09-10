@@ -1,4 +1,5 @@
 import type {
+  DiscoveredSenderIdentity,
   EmailProviderType,
   EmailWebhookEvent,
   IEmailMarketingProvider,
@@ -67,6 +68,39 @@ export class MailchimpClient {
     } catch {
       // Fallback on network timeout
       return this.apiKey.length >= 20;
+    }
+  }
+
+  async listVerifiedSenders(): Promise<DiscoveredSenderIdentity[]> {
+    if (!this.apiKey) return [];
+    try {
+      const res = await fetch('https://mandrillapp.com/api/1.0/senders/list.json', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ key: this.apiKey }),
+      });
+
+      if (!res.ok) return [];
+
+      const list = await res.json().catch(() => []);
+      if (!Array.isArray(list)) return [];
+
+      return list.map((item: any) => {
+        const address = item.address || '';
+        const parts = address.split('@');
+        const domain = parts[1] || '';
+        const name = parts[0] || '';
+        return {
+          fromEmail: address,
+          fromName: name,
+          domain,
+          isVerified: true,
+        };
+      });
+    } catch {
+      return [];
     }
   }
 
@@ -230,6 +264,11 @@ export class MailchimpAdapter implements IEmailMarketingProvider {
   async validateCredentials(credentials: ProviderCredentials): Promise<boolean> {
     const client = new MailchimpClient(credentials);
     return client.validate();
+  }
+
+  async listVerifiedSenders(credentials?: ProviderCredentials): Promise<DiscoveredSenderIdentity[]> {
+    const client = new MailchimpClient(credentials);
+    return client.listVerifiedSenders();
   }
 
   async sendBatch(options: SendEmailOptions, credentials?: ProviderCredentials): Promise<SendEmailResult> {
