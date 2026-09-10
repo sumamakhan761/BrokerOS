@@ -67,12 +67,50 @@ export default function MarketingSettingsPage() {
     await fetchIntegrations();
   };
 
+  const handleSyncDomains = async (id: string) => {
+    const res = await fetch(`${baseUrl}/api/marketing/integrations/${id}/sync-domains`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err?.message || "Failed to sync sender domains from provider");
+    }
+    await fetchIntegrations();
+  };
+
+  const handleAddDomain = async (integrationId: string, payload: any) => {
+    const res = await fetch(`${baseUrl}/api/marketing/integrations/${integrationId}/domains`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err?.message || "Failed to add sender domain");
+    }
+    await fetchIntegrations();
+  };
+
+  const handleDeleteDomain = async (domainId: string) => {
+    if (!confirm("Are you sure you want to remove this sender domain identity?")) return;
+    const res = await fetch(`${baseUrl}/api/marketing/integrations/domains/${domainId}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      alert(err?.message || "Failed to remove sender domain");
+      return;
+    }
+    await fetchIntegrations();
+  };
+
   return (
     <DashboardPageWrapper
       loading={isLoading}
       error={error}
       title="Email Provider Integrations"
-      subtitle="Manage your default master engine and connect third-party enterprise providers (AWS SES, SendGrid, Brevo, Mailchimp)."
+      subtitle="Manage your default master engine, configure sender domains, and connect third-party enterprise providers (AWS SES, SendGrid, Brevo, Mailchimp)."
       headerRight={
         <div className="flex items-center gap-2">
           <Link href="/dashboard/marketing/email">
@@ -88,6 +126,9 @@ export default function MarketingSettingsPage() {
         integrations={integrations}
         onConnect={handleConnect}
         onDelete={handleDelete}
+        onSyncDomains={handleSyncDomains}
+        onAddDomain={handleAddDomain}
+        onDeleteDomain={handleDeleteDomain}
       />
     </DashboardPageWrapper>
   );
