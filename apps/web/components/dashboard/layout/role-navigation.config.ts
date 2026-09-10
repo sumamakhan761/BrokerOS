@@ -28,6 +28,11 @@ import {
   Zap,
   FileText,
   Search,
+  Workflow,
+  Sparkles,
+  Tag as TagIcon,
+  ShieldCheck,
+  Building2,
 } from "lucide-react";
 import { InstagramIcon } from "@/components/ui/InstagramIcon";
 
@@ -39,6 +44,56 @@ export interface NavLinkItem {
 }
 
 export function getRoleNavLinks(userRole: string, pathname: string): NavLinkItem[] {
+  // ── Marketing Subchannels (Active across any role visiting marketing routes) ──
+  if (pathname.startsWith("/dashboard/marketing/email")) {
+    return [
+      { name: "Email Overview", href: "/dashboard/marketing/email", icon: LayoutDashboard, roles: ["MARKETING", "ADMIN"] },
+      { name: "New Broadcast", href: "/dashboard/marketing/email/campaigns/new", icon: Send, roles: ["MARKETING", "ADMIN"] },
+      { name: "Interactive Flows", href: "/dashboard/marketing/email/flows", icon: Workflow, roles: ["MARKETING", "ADMIN"] },
+      { name: "Settings", href: "/dashboard/marketing/email/settings", icon: Settings, roles: ["MARKETING", "ADMIN"] },
+    ];
+  }
+
+  if (pathname.startsWith("/dashboard/marketing/whatsapp")) {
+    return [
+      { name: "WhatsApp Overview", href: "/dashboard/marketing/whatsapp", icon: LayoutDashboard, roles: ["MARKETING", "ADMIN"] },
+      { name: "Live Inbox", href: "/dashboard/marketing/whatsapp/inbox", icon: MessageSquare, roles: ["MARKETING", "ADMIN"] },
+      { name: "Pipelines & Deals", href: "/dashboard/marketing/whatsapp/pipelines", icon: GitBranch, roles: ["MARKETING", "ADMIN"] },
+      { name: "Broadcasts", href: "/dashboard/marketing/whatsapp/broadcasts", icon: Send, roles: ["MARKETING", "ADMIN"] },
+      { name: "Contacts", href: "/dashboard/marketing/whatsapp/contacts", icon: Users, roles: ["MARKETING", "ADMIN"] },
+      { name: "Automations", href: "/dashboard/marketing/whatsapp/automations", icon: Zap, roles: ["MARKETING", "ADMIN"] },
+      { name: "Interactive Flows", href: "/dashboard/marketing/whatsapp/flows", icon: Briefcase, roles: ["MARKETING", "ADMIN"] },
+      { name: "Templates", href: "/dashboard/marketing/whatsapp/templates", icon: FileText, roles: ["MARKETING", "ADMIN"] },
+      { name: "Settings", href: "/dashboard/marketing/whatsapp/settings", icon: Settings, roles: ["MARKETING", "ADMIN"] },
+    ];
+  }
+
+  if (pathname.startsWith("/dashboard/marketing/sms")) {
+    return [
+      { name: "SMS Overview", href: "/dashboard/marketing/sms", icon: LayoutDashboard, roles: ["MARKETING", "ADMIN"] },
+      { name: "New SMS Campaign", href: "/dashboard/marketing/sms/campaigns/new", icon: Star, roles: ["MARKETING", "ADMIN"] },
+      { name: "SMS Gateways & DLT", href: "/dashboard/marketing/sms/settings", icon: Settings, roles: ["MARKETING", "ADMIN"] },
+    ];
+  }
+
+  if (pathname.startsWith("/dashboard/marketing/voice")) {
+    return [
+      { name: "Voice Overview", href: "/dashboard/marketing/voice", icon: LayoutDashboard, roles: ["MARKETING", "ADMIN"] },
+      { name: "New Voice Call", href: "/dashboard/marketing/voice/campaigns/new", icon: PhoneCall, roles: ["MARKETING", "ADMIN"] },
+      { name: "Carrier & AI Gateways", href: "/dashboard/marketing/voice/settings", icon: Settings, roles: ["MARKETING", "ADMIN"] },
+    ];
+  }
+
+  if (pathname.startsWith("/dashboard/marketing/ads")) {
+    return [
+      { name: "Ads Hub Overview", href: "/dashboard/marketing/ads", icon: LayoutDashboard, roles: ["MARKETING", "ADMIN"] },
+      { name: "Meta (Facebook) Ads", href: "/dashboard/marketing/ads/meta", icon: Globe, roles: ["MARKETING", "ADMIN"] },
+      { name: "Instagram Ads", href: "/dashboard/marketing/ads/instagram", icon: InstagramIcon, roles: ["MARKETING", "ADMIN"] },
+      { name: "Google Ads", href: "/dashboard/marketing/ads/google", icon: Search, roles: ["MARKETING", "ADMIN"] },
+      { name: "YouTube Video Ads", href: "/dashboard/marketing/ads/youtube", icon: Video, roles: ["MARKETING", "ADMIN"] },
+    ];
+  }
+
   if (userRole === "PRE_SALES") {
     return [
       { name: "Overview", href: "/dashboard/pre-sales", icon: LayoutDashboard, roles: ["PRE_SALES"] },
@@ -228,6 +283,19 @@ export function getRoleNavLinks(userRole: string, pathname: string): NavLinkItem
       { name: "Email Marketing", href: "/dashboard/marketing/email", icon: Mail, roles: ["MARKETING"] },
       { name: "Analytics", href: "/dashboard/marketing/analytics", icon: BarChart2, roles: ["MARKETING"] },
       { name: "Settings & BYO", href: "/dashboard/marketing/settings", icon: Settings, roles: ["MARKETING"] },
+    ];
+  }
+
+  if (userRole === "ADMIN") {
+    return [
+      { name: "Overview", href: "/dashboard/business-manager", icon: LayoutDashboard, roles: ["ADMIN"] },
+      { name: "Marketing Hub", href: "/dashboard/marketing", icon: Mail, roles: ["ADMIN"] },
+      { name: "Pre-Sales Manager", href: "/dashboard/pre-sales-manager", icon: Users, roles: ["ADMIN"] },
+      { name: "Sales Manager", href: "/dashboard/sales-manager", icon: Briefcase, roles: ["ADMIN"] },
+      { name: "Post-Sales Manager", href: "/dashboard/post-sales-manager", icon: Handshake, roles: ["ADMIN"] },
+      { name: "CP Network", href: "/dashboard/channel-partner", icon: Package, roles: ["ADMIN"] },
+      { name: "Analytics", href: "/dashboard/business-manager/analytics", icon: BarChart2, roles: ["ADMIN"] },
+      { name: "Settings", href: "/dashboard/business-manager/settings", icon: Settings, roles: ["ADMIN"] },
     ];
   }
 
