@@ -10,8 +10,10 @@ import {
   UserX,
   ExternalLink,
   TrendingUp,
+  Layers,
 } from "lucide-react";
 import type { CampaignAnalyticsSummary } from "@brokeros/types";
+import { EMAIL_PROVIDERS } from "@brokeros/constants";
 import { Badge } from "@/components/ui/Badge";
 
 export interface EmailFunnelAnalyticsProps {
@@ -180,6 +182,98 @@ export function EmailFunnelAnalytics({ analytics }: EmailFunnelAnalyticsProps) {
           </div>
         </div>
       </div>
+
+      {/* ── SENDER DOMAIN PERFORMANCE BREAKDOWN ── */}
+      {analytics.domainBreakdown && analytics.domainBreakdown.length > 0 && (
+        <div className="p-6 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[var(--brand-600)]" />
+                <span>Sender Domain & Mailbox Performance</span>
+              </h3>
+              <p className="text-xs font-medium text-[var(--text-tertiary)]">
+                Isolated delivery, open, and click tracking across each distributed sender pool.
+              </p>
+            </div>
+            <Badge variant="brand" className="text-xs font-extrabold self-start sm:self-auto">
+              {analytics.domainBreakdown.length} Sender Stream{analytics.domainBreakdown.length > 1 ? "s" : ""}
+            </Badge>
+          </div>
+
+          <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200/80 text-[10px] font-extrabold text-[var(--text-tertiary)] uppercase tracking-wider">
+                    <th className="py-2.5 px-3.5">Sender Mailbox</th>
+                    <th className="py-2.5 px-3.5">Engine</th>
+                    <th className="py-2.5 px-3.5 text-right">Allocated</th>
+                    <th className="py-2.5 px-3.5 text-right">Sent</th>
+                    <th className="py-2.5 px-3.5 text-right">Delivered</th>
+                    <th className="py-2.5 px-3.5 text-right">Opens</th>
+                    <th className="py-2.5 px-3.5 text-right">Clicks</th>
+                    <th className="py-2.5 px-3.5 text-right">Bounces</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {analytics.domainBreakdown.map((item) => (
+                    <tr key={item.senderPoolId} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-3 px-3.5">
+                        <div className="font-extrabold text-[var(--text-primary)]">{item.domain}</div>
+                        <div className="text-[11px] text-[var(--text-tertiary)] font-medium truncate max-w-[200px]">
+                          {item.fromEmail} ({item.fromName})
+                        </div>
+                      </td>
+                      <td className="py-3 px-3.5">
+                        <Badge variant="default" className="text-[10px] font-extrabold">
+                          {(EMAIL_PROVIDERS as Record<string, any>)[item.provider]?.name || item.provider}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-3.5 text-right font-extrabold text-purple-700 tabular-nums">
+                        {item.allocatedRecipients.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3.5 text-right font-bold text-slate-800 tabular-nums">
+                        {item.sentCount.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3.5 text-right tabular-nums">
+                        <span className="font-extrabold text-emerald-600">{item.deliveryRate}%</span>
+                        <div className="text-[10px] text-[var(--text-muted)] font-medium">
+                          {item.deliveredCount.toLocaleString()}
+                        </div>
+                      </td>
+                      <td className="py-3 px-3.5 text-right tabular-nums">
+                        <span className="font-extrabold text-sky-600">{item.openRate}%</span>
+                        <div className="text-[10px] text-[var(--text-muted)] font-medium">
+                          {item.openedCount.toLocaleString()}
+                        </div>
+                      </td>
+                      <td className="py-3 px-3.5 text-right tabular-nums">
+                        <span className="font-extrabold text-[var(--brand-600)]">{item.clickRate}%</span>
+                        <div className="text-[10px] text-[var(--text-muted)] font-medium">
+                          {item.clickedCount.toLocaleString()}
+                        </div>
+                      </td>
+                      <td className="py-3 px-3.5 text-right tabular-nums">
+                        <span
+                          className={`font-extrabold ${
+                            item.bounceRate > 3 ? "text-rose-600" : "text-slate-600"
+                          }`}
+                        >
+                          {item.bounceRate}%
+                        </span>
+                        <div className="text-[10px] text-[var(--text-muted)] font-medium">
+                          {item.bouncedCount.toLocaleString()}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
