@@ -4,7 +4,13 @@ import { SesAdapter } from '@brokeros/int-mail-ses';
 import { SendgridAdapter } from '@brokeros/int-mail-sendgrid';
 import { BrevoAdapter } from '@brokeros/int-mail-brevo';
 import { MailchimpAdapter } from '@brokeros/int-mail-mailchimp';
-import type { IEmailMarketingProvider, ProviderCredentials, SendEmailOptions } from '@brokeros/types';
+import { PROVIDER_THROTTLE_LIMITS } from '@brokeros/constants';
+import type {
+  EmailProviderType,
+  IEmailMarketingProvider,
+  ProviderCredentials,
+  SendEmailOptions,
+} from '@brokeros/types';
 
 export interface CampaignDispatchJobData {
   campaignId: string;
@@ -102,6 +108,15 @@ export class MarketingEmailProcessor implements OnModuleInit, OnModuleDestroy {
         integration: true,
         project: true,
         createdBy: true,
+        senderPools: {
+          include: {
+            senderDomain: {
+              include: {
+                integration: true,
+              },
+            },
+          },
+        },
         recipients: {
           where: { status: 'QUEUED' },
           take: 5000,
@@ -119,138 +134,152 @@ export class MarketingEmailProcessor implements OnModuleInit, OnModuleDestroy {
       data: { status: 'PROCESSING', startedAt: new Date() },
     });
 
-    const adapter = this.getAdapter(campaign.providerType);
-    let credentials: ProviderCredentials | undefined;
-
-    if (campaign.integration) {
-      credentials = {
-        apiKey: campaign.integration.apiKey || undefined,
-        awsAccessKeyId: campaign.integration.awsAccessKeyId || undefined,
-        awsSecretKey: campaign.integration.awsSecretKey || undefined,
-        awsRegion: campaign.integration.awsRegion || undefined,
-        mailchimpServer: campaign.integration.mailchimpServer || undefined,
-        fromEmail: campaign.integration.fromEmail,
-        fromName: campaign.integration.fromName,
-      };
-    } else if (campaign.providerType !== 'SYSTEM_DEFAULT') {
-      const activeIntegration = await this.prisma.marketingIntegration.findFirst({
-        where: { provider: campaign.providerType as any, isActive: true },
-        orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
-      });
-      if (activeIntegration) {
-        credentials = {
-          apiKey: activeIntegration.apiKey || undefined,
-          awsAccessKeyId: activeIntegration.awsAccessKeyId || undefined,
-          awsSecretKey: activeIntegration.awsSecretKey || undefined,
-          awsRegion: activeIntegration.awsRegion || undefined,
-          mailchimpServer: activeIntegration.mailchimpServer || undefined,
-          fromEmail: activeIntegration.fromEmail,
-          fromName: activeIntegration.fromName,
-        };
-      }
-    }
-
     const appBaseUrl =
       process.env.API_PUBLIC_URL ||
       'http://localhost:3333';
-    const batchSize = 100;
-    const recipients = campaign.recipients;
 
-    for (let i = 0; i < recipients.length; i += batchSize) {
-      const chunk = recipients.slice(i, i + batchSize);
+    if (campaign.senderPools && campaign.senderPools.length > 0) {
+      this.logger.log(
+        `Campaign ${campaignId} has ${campaign.senderPools.length} sender domain pools. Spawning parallel execution streams...`,
+      );
 
-      for (const rec of chunk) {
-        try {
-          const mergeData = (rec.mergeData as any) || {};
-          const recipientName = rec.name || mergeData.name || 'Valued Client';
-          const nameParts = recipientName.trim().split(' ');
-          const firstName = mergeData.firstName || nameParts[0] || 'Valued Client';
-          const lastName = mergeData.lastName || nameParts.slice(1).join(' ') || '';
+      await Promise.all(
+        campaign.senderPools.map((pool: any) =>
+          this.processDomainStream(campaign, pool, appBaseUrl),
+        ),
+      );
+    } else {
+      // Single-provider legacy fallback
+      const adapter = this.getAdapter(campaign.providerType);
+      let credentials: ProviderCredentials | undefined;
 
-          const tagData = {
-            firstName,
-            lastName,
-            fullName: recipientName,
-            city: mergeData.city || campaign.project?.city || 'your city',
-            projectName: mergeData.projectName || campaign.project?.name || 'Luxury Residence',
-            projectLocation: campaign.project?.address || campaign.project?.city || 'Prime Location',
-            projectStartingPrice: mergeData.budget ? `₹${(mergeData.budget / 10000000).toFixed(2)} Cr` : '₹1.50 Cr',
-            projectBrochureUrl: campaign.project?.brochureUrl || '#',
-            agentName: mergeData.agentName || campaign.createdBy?.name || campaign.fromName || 'Sales Team',
-            agentPhone: mergeData.agentPhone || campaign.createdBy?.phoneNumber || '+91 98000 00000',
-            unsubscribeUrl: `${appBaseUrl}/api/marketing/unsubscribe?email=${encodeURIComponent(rec.email)}&cid=${campaignId}`,
+      if (campaign.integration) {
+        credentials = {
+          apiKey: campaign.integration.apiKey || undefined,
+          awsAccessKeyId: campaign.integration.awsAccessKeyId || undefined,
+          awsSecretKey: campaign.integration.awsSecretKey || undefined,
+          awsRegion: campaign.integration.awsRegion || undefined,
+          mailchimpServer: campaign.integration.mailchimpServer || undefined,
+          fromEmail: campaign.integration.fromEmail,
+          fromName: campaign.integration.fromName,
+        };
+      } else if (campaign.providerType !== 'SYSTEM_DEFAULT') {
+        const activeIntegration = await this.prisma.marketingIntegration.findFirst({
+          where: { provider: campaign.providerType as any, isActive: true },
+          orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+        });
+        if (activeIntegration) {
+          credentials = {
+            apiKey: activeIntegration.apiKey || undefined,
+            awsAccessKeyId: activeIntegration.awsAccessKeyId || undefined,
+            awsSecretKey: activeIntegration.awsSecretKey || undefined,
+            awsRegion: activeIntegration.awsRegion || undefined,
+            mailchimpServer: activeIntegration.mailchimpServer || undefined,
+            fromEmail: activeIntegration.fromEmail,
+            fromName: activeIntegration.fromName,
           };
+        }
+      }
 
-          const replaceTags = (text: string) => {
-            if (!text) return '';
-            return text
-              .replace(/{{lead\.firstName}}/gi, tagData.firstName)
-              .replace(/{{lead\.lastName}}/gi, tagData.lastName)
-              .replace(/{{lead\.fullName}}/gi, tagData.fullName)
-              .replace(/{{lead\.city}}/gi, tagData.city)
-              .replace(/{{project\.name}}/gi, tagData.projectName)
-              .replace(/{{project\.location}}/gi, tagData.projectLocation)
-              .replace(/{{project\.startingPrice}}/gi, tagData.projectStartingPrice)
-              .replace(/{{project\.brochureUrl}}/gi, tagData.projectBrochureUrl)
-              .replace(/{{agent\.name}}/gi, tagData.agentName)
-              .replace(/{{agent\.phone}}/gi, tagData.agentPhone)
-              .replace(/{{unsubscribeUrl}}/gi, tagData.unsubscribeUrl);
-          };
+      const batchSize = 100;
+      const recipients = campaign.recipients;
 
-          let personalizedHtml = replaceTags(campaign.htmlContent);
-          const personalizedSubject = replaceTags(campaign.subject);
+      for (let i = 0; i < recipients.length; i += batchSize) {
+        const chunk = recipients.slice(i, i + batchSize);
 
-          // Inject open tracking pixel (Gmail/Outlook compatible)
-          const openPixelUrl = `${appBaseUrl}/api/marketing/track/open?cid=${campaignId}&rid=${rec.id}`;
-          const trackingPixelHtml = `<img src="${openPixelUrl}" alt="" width="1" height="1" border="0" style="height:1px !important;width:1px !important;border-width:0 !important;margin:0 !important;padding:0 !important;" />`;
-          personalizedHtml += trackingPixelHtml;
+        for (const rec of chunk) {
+          try {
+            const mergeData = (rec.mergeData as any) || {};
+            const recipientName = rec.name || mergeData.name || 'Valued Client';
+            const nameParts = recipientName.trim().split(' ');
+            const firstName = mergeData.firstName || nameParts[0] || 'Valued Client';
+            const lastName = mergeData.lastName || nameParts.slice(1).join(' ') || '';
 
-          // Rewrite links for click tracking
-          personalizedHtml = personalizedHtml.replace(
-            /href=["'](https?:\/\/[^"']+)["']/gi,
-            (match, originalUrl) => {
-              if (originalUrl.includes('/api/marketing/')) return match;
-              const clickTrackUrl = `${appBaseUrl}/api/marketing/track/click?cid=${campaignId}&rid=${rec.id}&url=${encodeURIComponent(originalUrl)}`;
-              return `href="${clickTrackUrl}"`;
-            },
-          );
+            const tagData = {
+              firstName,
+              lastName,
+              fullName: recipientName,
+              city: mergeData.city || campaign.project?.city || 'your city',
+              projectName: mergeData.projectName || campaign.project?.name || 'Luxury Residence',
+              projectLocation: campaign.project?.address || campaign.project?.city || 'Prime Location',
+              projectStartingPrice: mergeData.budget ? `₹${(mergeData.budget / 10000000).toFixed(2)} Cr` : '₹1.50 Cr',
+              projectBrochureUrl: campaign.project?.brochureUrl || '#',
+              agentName: mergeData.agentName || campaign.createdBy?.name || campaign.fromName || 'Sales Team',
+              agentPhone: mergeData.agentPhone || campaign.createdBy?.phoneNumber || '+91 98000 00000',
+              unsubscribeUrl: `${appBaseUrl}/api/marketing/unsubscribe?email=${encodeURIComponent(rec.email)}&cid=${campaignId}`,
+            };
 
-          const sendOptions: SendEmailOptions = {
-            fromEmail: campaign.fromEmail,
-            fromName: campaign.fromName,
-            replyTo: campaign.replyTo || undefined,
-            to: [{ email: rec.email, name: rec.name || undefined }],
-            subject: personalizedSubject,
-            htmlContent: personalizedHtml,
-          };
+            const replaceTags = (text: string) => {
+              if (!text) return '';
+              return text
+                .replace(/{{lead\.firstName}}/gi, tagData.firstName)
+                .replace(/{{lead\.lastName}}/gi, tagData.lastName)
+                .replace(/{{lead\.fullName}}/gi, tagData.fullName)
+                .replace(/{{lead\.city}}/gi, tagData.city)
+                .replace(/{{project\.name}}/gi, tagData.projectName)
+                .replace(/{{project\.location}}/gi, tagData.projectLocation)
+                .replace(/{{project\.startingPrice}}/gi, tagData.projectStartingPrice)
+                .replace(/{{project\.brochureUrl}}/gi, tagData.projectBrochureUrl)
+                .replace(/{{agent\.name}}/gi, tagData.agentName)
+                .replace(/{{agent\.phone}}/gi, tagData.agentPhone)
+                .replace(/{{unsubscribeUrl}}/gi, tagData.unsubscribeUrl);
+            };
 
-          const sendResult = await adapter.sendBatch(sendOptions, credentials);
+            let personalizedHtml = replaceTags(campaign.htmlContent);
+            const personalizedSubject = replaceTags(campaign.subject);
 
-          if (sendResult.success) {
-            await this.prisma.campaignRecipient.update({
-              where: { id: rec.id },
-              data: {
-                status: 'DELIVERED',
-                providerMsgId: sendResult.providerMessageId,
-                sentAt: new Date(),
-                deliveredAt: new Date(),
+            // Inject open tracking pixel
+            const openPixelUrl = `${appBaseUrl}/api/marketing/track/open?cid=${campaignId}&rid=${rec.id}`;
+            const trackingPixelHtml = `<img src="${openPixelUrl}" alt="" width="1" height="1" border="0" style="height:1px !important;width:1px !important;border-width:0 !important;margin:0 !important;padding:0 !important;" />`;
+            personalizedHtml += trackingPixelHtml;
+
+            // Rewrite links for click tracking
+            personalizedHtml = personalizedHtml.replace(
+              /href=["'](https?:\/\/[^"']+)["']/gi,
+              (match, originalUrl) => {
+                if (originalUrl.includes('/api/marketing/')) return match;
+                const clickTrackUrl = `${appBaseUrl}/api/marketing/track/click?cid=${campaignId}&rid=${rec.id}&url=${encodeURIComponent(originalUrl)}`;
+                return `href="${clickTrackUrl}"`;
               },
-            });
-            await this.prisma.marketingCampaign.update({
-              where: { id: campaignId },
-              data: {
-                sentCount: { increment: 1 },
-                deliveredCount: { increment: 1 },
-              },
-            });
-          } else {
-            await this.prisma.campaignRecipient.update({
-              where: { id: rec.id },
-              data: { status: 'FAILED', bounceReason: sendResult.error },
-            });
+            );
+
+            const sendOptions: SendEmailOptions = {
+              fromEmail: campaign.fromEmail,
+              fromName: campaign.fromName,
+              replyTo: campaign.replyTo || undefined,
+              to: [{ email: rec.email, name: rec.name || undefined }],
+              subject: personalizedSubject,
+              htmlContent: personalizedHtml,
+            };
+
+            const sendResult = await adapter.sendBatch(sendOptions, credentials);
+
+            if (sendResult.success) {
+              await this.prisma.campaignRecipient.update({
+                where: { id: rec.id },
+                data: {
+                  status: 'DELIVERED',
+                  providerMsgId: sendResult.providerMessageId,
+                  sentAt: new Date(),
+                  deliveredAt: new Date(),
+                },
+              });
+              await this.prisma.marketingCampaign.update({
+                where: { id: campaignId },
+                data: {
+                  sentCount: { increment: 1 },
+                  deliveredCount: { increment: 1 },
+                },
+              });
+            } else {
+              await this.prisma.campaignRecipient.update({
+                where: { id: rec.id },
+                data: { status: 'FAILED', bounceReason: sendResult.error },
+              });
+            }
+          } catch (itemErr: any) {
+            this.logger.error(`Failed to send to recipient ${rec.email}: ${itemErr?.message}`);
           }
-        } catch (itemErr: any) {
-          this.logger.error(`Failed to send to recipient ${rec.email}: ${itemErr?.message}`);
         }
       }
     }
@@ -261,5 +290,229 @@ export class MarketingEmailProcessor implements OnModuleInit, OnModuleDestroy {
     });
 
     this.logger.log(`Campaign ${campaignId} processing finished`);
+  }
+
+  private async processDomainStream(
+    campaign: any,
+    pool: any,
+    appBaseUrl: string,
+  ): Promise<void> {
+    const domainRecord = pool.senderDomain;
+    let integration = domainRecord?.integration;
+
+    const poolProvider = pool.provider || pool.assignedProvider;
+
+    // 1. If not linked through senderDomain, find active integration matching pool's provider and fromEmail
+    if (!integration && poolProvider) {
+      if (pool.fromEmail) {
+        integration = await this.prisma.marketingIntegration.findFirst({
+          where: {
+            provider: poolProvider as any,
+            isActive: true,
+            OR: [
+              { fromEmail: pool.fromEmail },
+              { senderDomains: { some: { fromEmail: pool.fromEmail } } },
+            ],
+          },
+          orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+        });
+      }
+
+      // 2. Fallback to any active integration for this provider
+      if (!integration) {
+        integration = await this.prisma.marketingIntegration.findFirst({
+          where: { provider: poolProvider as any, isActive: true },
+          orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+        });
+      }
+    }
+
+    // 3. Fallback to campaign-level integration
+    if (!integration) {
+      integration = campaign.integration;
+    }
+
+    const provider = (integration?.provider || poolProvider || campaign.providerType || 'SYSTEM_DEFAULT') as EmailProviderType;
+    const adapter = this.getAdapter(provider);
+
+    const throttleConfig =
+      PROVIDER_THROTTLE_LIMITS[provider as keyof typeof PROVIDER_THROTTLE_LIMITS] ||
+      PROVIDER_THROTTLE_LIMITS.SYSTEM_DEFAULT;
+    const pacingDelayMs = throttleConfig.delayMs || 15;
+
+    const fromEmail = pool.fromEmail || domainRecord?.fromEmail || integration?.fromEmail || campaign.fromEmail;
+    const fromName = pool.fromName || domainRecord?.fromName || integration?.fromName || campaign.fromName || 'Sales Team';
+    const replyTo = domainRecord?.replyTo || integration?.replyTo || campaign.replyTo || undefined;
+
+    let credentials: ProviderCredentials | undefined;
+    if (integration) {
+      credentials = {
+        apiKey: integration.apiKey || undefined,
+        awsAccessKeyId: integration.awsAccessKeyId || undefined,
+        awsSecretKey: integration.awsSecretKey || undefined,
+        awsRegion: integration.awsRegion || undefined,
+        mailchimpServer: integration.mailchimpServer || undefined,
+        fromEmail,
+        fromName,
+      };
+    } else {
+      this.logger.warn(
+        `[DomainStream ${fromEmail}] No integration found in database for pool provider=${provider}. Using default adapter environment credentials.`,
+      );
+    }
+
+    const recipients = await this.prisma.campaignRecipient.findMany({
+      where: {
+        campaignId: campaign.id,
+        senderPoolId: pool.id,
+        status: 'QUEUED',
+      },
+      take: 5000,
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const domainEmail = fromEmail || domainRecord?.fromEmail || pool.id;
+    this.logger.log(
+      `[DomainStream ${domainEmail}] Starting stream with ${recipients.length} recipients via ${provider} (pacing: ${pacingDelayMs}ms, integrationId=${integration?.id || 'none'})`,
+    );
+
+    let consecutiveRateLimits = 0;
+
+    for (const rec of recipients) {
+      try {
+        if (pacingDelayMs > 0) {
+          await new Promise((r) => setTimeout(r, pacingDelayMs));
+        }
+
+        const mergeData = (rec.mergeData as any) || {};
+        const recipientName = rec.name || mergeData.name || 'Valued Client';
+        const nameParts = recipientName.trim().split(' ');
+        const firstName = mergeData.firstName || nameParts[0] || 'Valued Client';
+        const lastName = mergeData.lastName || nameParts.slice(1).join(' ') || '';
+
+        const tagData = {
+          firstName,
+          lastName,
+          fullName: recipientName,
+          city: mergeData.city || campaign.project?.city || 'your city',
+          projectName: mergeData.projectName || campaign.project?.name || 'Luxury Residence',
+          projectLocation: campaign.project?.address || campaign.project?.city || 'Prime Location',
+          projectStartingPrice: mergeData.budget ? `₹${(mergeData.budget / 10000000).toFixed(2)} Cr` : '₹1.50 Cr',
+          projectBrochureUrl: campaign.project?.brochureUrl || '#',
+          agentName: mergeData.agentName || campaign.createdBy?.name || fromName,
+          agentPhone: mergeData.agentPhone || campaign.createdBy?.phoneNumber || '+91 98000 00000',
+          unsubscribeUrl: `${appBaseUrl}/api/marketing/unsubscribe?email=${encodeURIComponent(rec.email)}&cid=${campaign.id}`,
+        };
+
+        const replaceTags = (text: string) => {
+          if (!text) return '';
+          return text
+            .replace(/{{lead\.firstName}}/gi, tagData.firstName)
+            .replace(/{{lead\.lastName}}/gi, tagData.lastName)
+            .replace(/{{lead\.fullName}}/gi, tagData.fullName)
+            .replace(/{{lead\.city}}/gi, tagData.city)
+            .replace(/{{project\.name}}/gi, tagData.projectName)
+            .replace(/{{project\.location}}/gi, tagData.projectLocation)
+            .replace(/{{project\.startingPrice}}/gi, tagData.projectStartingPrice)
+            .replace(/{{project\.brochureUrl}}/gi, tagData.projectBrochureUrl)
+            .replace(/{{agent\.name}}/gi, tagData.agentName)
+            .replace(/{{agent\.phone}}/gi, tagData.agentPhone)
+            .replace(/{{unsubscribeUrl}}/gi, tagData.unsubscribeUrl);
+        };
+
+        let personalizedHtml = replaceTags(campaign.htmlContent);
+        const personalizedSubject = replaceTags(campaign.subject);
+
+        // Inject open tracking pixel
+        const openPixelUrl = `${appBaseUrl}/api/marketing/track/open?cid=${campaign.id}&rid=${rec.id}`;
+        const trackingPixelHtml = `<img src="${openPixelUrl}" alt="" width="1" height="1" border="0" style="height:1px !important;width:1px !important;border-width:0 !important;margin:0 !important;padding:0 !important;" />`;
+        personalizedHtml += trackingPixelHtml;
+
+        // Rewrite links for click tracking
+        personalizedHtml = personalizedHtml.replace(
+          /href=["'](https?:\/\/[^"']+)["']/gi,
+          (match, originalUrl) => {
+            if (originalUrl.includes('/api/marketing/')) return match;
+            const clickTrackUrl = `${appBaseUrl}/api/marketing/track/click?cid=${campaign.id}&rid=${rec.id}&url=${encodeURIComponent(originalUrl)}`;
+            return `href="${clickTrackUrl}"`;
+          },
+        );
+
+        const sendOptions: SendEmailOptions = {
+          fromEmail,
+          fromName,
+          replyTo,
+          to: [{ email: rec.email, name: rec.name || undefined }],
+          subject: personalizedSubject,
+          htmlContent: personalizedHtml,
+        };
+
+        let sendResult = await adapter.sendBatch(sendOptions, credentials);
+
+        // Dynamic rate limit handling with backoff
+        if (!sendResult.success && sendResult.error?.toLowerCase().includes('rate limit')) {
+          consecutiveRateLimits++;
+          this.logger.warn(
+            `[DomainStream ${fromEmail}] Rate limit hit (${consecutiveRateLimits}). Backing off for 2.5s...`,
+          );
+          await new Promise((r) => setTimeout(r, 2500));
+          // Retry once
+          sendResult = await adapter.sendBatch(sendOptions, credentials);
+        } else {
+          consecutiveRateLimits = 0;
+        }
+
+        if (sendResult.success) {
+          await this.prisma.campaignRecipient.update({
+            where: { id: rec.id },
+            data: {
+              status: 'DELIVERED',
+              providerMsgId: sendResult.providerMessageId,
+              sentAt: new Date(),
+              deliveredAt: new Date(),
+            },
+          });
+
+          await Promise.all([
+            this.prisma.campaignSenderPool.update({
+              where: { id: pool.id },
+              data: {
+                sentCount: { increment: 1 },
+                deliveredCount: { increment: 1 },
+              },
+            }),
+            this.prisma.marketingCampaign.update({
+              where: { id: campaign.id },
+              data: {
+                sentCount: { increment: 1 },
+                deliveredCount: { increment: 1 },
+              },
+            }),
+          ]);
+        } else {
+          this.logger.error(
+            `[DomainStream ${fromEmail}] Failed sending to ${rec.email} via ${provider}: ${sendResult.error}`,
+          );
+
+          await this.prisma.campaignRecipient.update({
+            where: { id: rec.id },
+            data: { status: 'FAILED', bounceReason: sendResult.error },
+          });
+
+          await this.prisma.campaignSenderPool.update({
+            where: { id: pool.id },
+            data: {
+              failedCount: { increment: 1 },
+            },
+          });
+        }
+      } catch (itemErr: any) {
+        this.logger.error(
+          `[DomainStream ${fromEmail}] Error sending to ${rec.email}: ${itemErr?.message}`,
+        );
+      }
+    }
+
+    this.logger.log(`[DomainStream ${fromEmail}] Stream completed.`);
   }
 }
