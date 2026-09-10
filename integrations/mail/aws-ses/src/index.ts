@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import type {
+  DiscoveredSenderIdentity,
   EmailProviderType,
   EmailWebhookEvent,
   IEmailMarketingProvider,
@@ -176,6 +177,61 @@ export class SesClient {
     } catch {
       // Fallback on network timeout
       return isValidKeyId && isValidSecret;
+    }
+  }
+
+  async listVerifiedSenders(): Promise<DiscoveredSenderIdentity[]> {
+    try {
+      if (!this.accessKeyId || !this.secretKey) return [];
+
+      const signed = signAwsRequest(
+        'GET',
+        '/v2/email/identities',
+        '',
+        'ses',
+        this.region,
+        this.accessKeyId,
+        this.secretKey,
+      );
+
+      const res = await fetch(signed.url, {
+        method: 'GET',
+        headers: signed.headers,
+      });
+
+      if (!res.ok) return [];
+
+      const data = await res.json().catch(() => ({}));
+      const identities = data?.EmailIdentities || [];
+      const senders: DiscoveredSenderIdentity[] = [];
+
+      for (const item of identities) {
+        const identityName = item.IdentityName || '';
+        const isDomain = item.IdentityType === 'DOMAIN' || !identityName.includes('@');
+        const isVerified = item.VerificationStatus === 'SUCCESS' || item.SendingEnabled === true;
+
+        if (isDomain) {
+          senders.push({
+            fromEmail: `info@${identityName}`,
+            fromName: identityName,
+            domain: identityName,
+            isVerified,
+          });
+        } else {
+          const domain = identityName.split('@')[1] || '';
+          const localPart = identityName.split('@')[0] || '';
+          senders.push({
+            fromEmail: identityName,
+            fromName: localPart,
+            domain,
+            isVerified,
+          });
+        }
+      }
+
+      return senders;
+    } catch {
+      return [];
     }
   }
 
@@ -406,6 +462,11 @@ export class SesAdapter implements IEmailMarketingProvider {
   async validateCredentials(credentials: ProviderCredentials): Promise<boolean> {
     const client = new SesClient(credentials);
     return client.validate();
+  }
+
+  async listVerifiedSenders(credentials?: ProviderCredentials): Promise<DiscoveredSenderIdentity[]> {
+    const client = new SesClient(credentials);
+    return client.listVerifiedSenders();
   }
 
   async sendBatch(options: SendEmailOptions, credentials?: ProviderCredentials): Promise<SendEmailResult> {
