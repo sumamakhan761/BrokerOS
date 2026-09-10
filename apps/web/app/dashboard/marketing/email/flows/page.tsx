@@ -1,0 +1,40 @@
+// ============================================================================
+// BrokerOS — Email Interactive Flows Management Page
+// ============================================================================
+
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { ArrowLeft, Settings, Mail } from 'lucide-react';
+import { DashboardPageWrapper } from '@/components/dashboard/DashboardPageWrapper';
+import { Button } from '@/components/ui/Button';
+import { EmailFlowsTable } from '@/features/marketing/email/components/flows/EmailFlowsTable';
+
+export default function EmailFlowsPage() {
+  return (
+    <DashboardPageWrapper
+      loading={false}
+      title="2-Way Email Automation Flows"
+      subtitle="Configure keyword auto-responders, Groq AI concierge, lead status updates, and Pre-Sales handoff sequences."
+      headerRight={
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/marketing/email">
+            <Button variant="outline" size="sm" className="gap-2 text-xs font-bold">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Broadcasts</span>
+            </Button>
+          </Link>
+          <Link href="/dashboard/marketing/email/settings">
+            <Button variant="outline" size="sm" className="gap-2 text-xs font-bold">
+              <Settings className="w-3.5 h-3.5" />
+              <span>Settings & Tools</span>
+            </Button>
+          </Link>
+        </div>
+      }
+    >
+      <EmailFlowsTable />
+    </DashboardPageWrapper>
+  );
+}
