@@ -12,6 +12,7 @@ import {
   Settings,
   Sparkles,
   Zap,
+  Workflow,
   ArrowLeft,
 } from "lucide-react";
 import { DashboardPageWrapper } from "@/components/dashboard/DashboardPageWrapper";
@@ -96,17 +97,23 @@ export default function EmailMarketingDashboard() {
       title="Email Marketing Engine"
       subtitle="Broadcast targeted real estate campaigns, project launch brochures, and CP commission updates."
       headerRight={
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <Link href="/dashboard/marketing">
             <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Marketing Hub</span>
             </Button>
           </Link>
+          <Link href="/dashboard/marketing/email/flows">
+            <Button variant="outline" size="sm" className="gap-2 text-xs font-bold">
+              <Workflow className="w-3.5 h-3.5 text-purple-600" />
+              <span>Interactive Flows</span>
+            </Button>
+          </Link>
           <Link href="/dashboard/marketing/email/settings">
             <Button variant="outline" size="sm" className="gap-2 text-xs font-bold">
               <Settings className="w-3.5 h-3.5" />
-              <span>Integrations & BYO</span>
+              <span>Settings & Tools</span>
             </Button>
           </Link>
           <Link href="/dashboard/marketing/email/campaigns/new">
@@ -118,6 +125,31 @@ export default function EmailMarketingDashboard() {
         </div>
       }
     >
+      {/* ── Subnavigation Tabs ── */}
+      <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200/80 rounded-2xl overflow-x-auto shadow-2xs">
+        <Link
+          href="/dashboard/marketing/email"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 text-white shadow-xs"
+        >
+          <Mail className="w-3.5 h-3.5" />
+          <span>Broadcast Campaigns</span>
+        </Link>
+        <Link
+          href="/dashboard/marketing/email/flows"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-subtle transition-all"
+        >
+          <Workflow className="w-3.5 h-3.5 text-purple-600" />
+          <span>2-Way Automation Flows</span>
+        </Link>
+        <Link
+          href="/dashboard/marketing/email/settings"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-subtle transition-all"
+        >
+          <Settings className="w-3.5 h-3.5" />
+          <span>Settings, AI & Webhooks</span>
+        </Link>
+      </div>
+
       {/* ── System Engine Status Banner ── */}
       <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -126,16 +158,16 @@ export default function EmailMarketingDashboard() {
           </div>
           <div>
             <div className="text-xs font-extrabold text-[var(--text-primary)]">
-              BrokerOS Master Email Engine (AWS SES)
+              BrokerOS Master Email Engine (AWS SES + SendGrid + Brevo + Mailchimp)
             </div>
             <div className="text-[11px] font-medium text-[var(--text-tertiary)]">
-              High inbox placement with automated SPF, DKIM, and MX verification enabled. Zero setup required.
+              High inbox placement, automated SPF/DKIM verification, and 2-way AI autoresponder flows active.
             </div>
           </div>
         </div>
-        <Link href="/dashboard/marketing/email/settings">
-          <Button variant="outline" size="sm" className="text-xs font-bold">
-            Manage BYO Accounts &rarr;
+        <Link href="/dashboard/marketing/email/flows">
+          <Button variant="outline" size="sm" className="text-xs font-bold gap-1.5">
+            <span>Configure Reply Flows &rarr;</span>
           </Button>
         </Link>
       </div>
