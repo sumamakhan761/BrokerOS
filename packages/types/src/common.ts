@@ -45,6 +45,7 @@ export interface CsvLeadRow {
   city?: string;
   budget?: number;
   interestedProject?: string;
+  projectName?: string;
   temperature?: 'HOT' | 'WARM' | 'COLD';
   tags?: string[];
   customFields?: Record<string, any>;
