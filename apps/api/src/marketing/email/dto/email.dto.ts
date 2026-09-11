@@ -397,7 +397,13 @@ export class BulkAssignLeadsDto {
 }
 
 export class ExportLeadsDto {
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  campaignIds!: string[];
+  campaignIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  recipientIds?: string[];
 }
