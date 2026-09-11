@@ -73,8 +73,10 @@ export function getRoleNavLinks(userRole: string, pathname: string): NavLinkItem
   if (pathname.startsWith("/dashboard/marketing/sms")) {
     return [
       { name: "SMS Overview", href: "/dashboard/marketing/sms", icon: LayoutDashboard, roles: ["MARKETING", "ADMIN"] },
-      { name: "New SMS Campaign", href: "/dashboard/marketing/sms/campaigns/new", icon: Star, roles: ["MARKETING", "ADMIN"] },
-      { name: "SMS Gateways & DLT", href: "/dashboard/marketing/sms/settings", icon: Settings, roles: ["MARKETING", "ADMIN"] },
+      { name: "Live Inbox", href: "/dashboard/marketing/sms/inbox", icon: Inbox, roles: ["MARKETING", "ADMIN"] },
+      { name: "New Broadcast", href: "/dashboard/marketing/sms/campaigns/new", icon: Send, roles: ["MARKETING", "ADMIN"] },
+      { name: "2-Way Flows", href: "/dashboard/marketing/sms/flows", icon: Workflow, roles: ["MARKETING", "ADMIN"] },
+      { name: "Gateways & Settings", href: "/dashboard/marketing/sms/settings", icon: Settings, roles: ["MARKETING", "ADMIN"] },
     ];
   }
 
@@ -244,8 +246,10 @@ export function getRoleNavLinks(userRole: string, pathname: string): NavLinkItem
     if (isSmsSub) {
       return [
         { name: "SMS Overview", href: "/dashboard/marketing/sms", icon: LayoutDashboard, roles: ["MARKETING"] },
-        { name: "New SMS Campaign", href: "/dashboard/marketing/sms/campaigns/new", icon: Star, roles: ["MARKETING"] },
-        { name: "SMS Gateways & DLT", href: "/dashboard/marketing/sms/settings", icon: Settings, roles: ["MARKETING"] },
+        { name: "Live Inbox", href: "/dashboard/marketing/sms/inbox", icon: Inbox, roles: ["MARKETING"] },
+        { name: "New Broadcast", href: "/dashboard/marketing/sms/campaigns/new", icon: Send, roles: ["MARKETING"] },
+        { name: "2-Way Flows", href: "/dashboard/marketing/sms/flows", icon: Workflow, roles: ["MARKETING"] },
+        { name: "Gateways & Settings", href: "/dashboard/marketing/sms/settings", icon: Settings, roles: ["MARKETING"] },
       ];
     }
     if (isVoiceSub) {
