@@ -31,6 +31,15 @@ import { SmsCampaignsController } from './sms/controllers/sms-campaigns.controll
 import { SmsIntegrationsController } from './sms/controllers/sms-integrations.controller.js';
 import { SmsTrackingController } from './sms/controllers/sms-tracking.controller.js';
 import { SmsWebhooksController } from './sms/controllers/sms-webhooks.controller.js';
+import { SmsInboundController } from './sms/controllers/sms-inbound.controller.js';
+import { SmsFlowsController } from './sms/controllers/sms-flows.controller.js';
+import { SmsSettingsToolsController } from './sms/controllers/sms-settings-tools.controller.js';
+import { SmsInboxController } from './sms/controllers/sms-inbox.controller.js';
+import { SmsInboundService } from './sms/services/sms-inbound.service.js';
+import { SmsFlowsService } from './sms/services/sms-flows.service.js';
+import { SmsInboxService } from './sms/services/sms-inbox.service.js';
+import { SmsAutomationEngineService } from './sms/automations/sms-automation-engine.service.js';
+import { SmsAiService } from './sms/ai/sms-ai.service.js';
 
 // Voice Domain
 import { VoiceService } from './voice/voice.service.js';
@@ -90,6 +99,10 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module.js';
     SmsIntegrationsController,
     SmsTrackingController,
     SmsWebhooksController,
+    SmsInboundController,
+    SmsFlowsController,
+    SmsSettingsToolsController,
+    SmsInboxController,
 
     // Voice Controllers
     VoiceCampaignsController,
@@ -130,6 +143,11 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module.js';
     SmsIntegrationsService,
     SmsTrackingService,
     SmsService,
+    SmsInboundService,
+    SmsFlowsService,
+    SmsInboxService,
+    SmsAutomationEngineService,
+    SmsAiService,
 
     // Voice Services
     VoiceAudienceService,
@@ -167,6 +185,8 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module.js';
     SmsAnalyticsService,
     SmsIntegrationsService,
     SmsTrackingService,
+    SmsInboxService,
+    SmsFlowsService,
 
     VoiceService,
     VoiceAudienceService,
@@ -189,4 +209,4 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module.js';
     YouTubeAdsService,
   ],
 })
-export class MarketingModule {}
+export class MarketingModule { }

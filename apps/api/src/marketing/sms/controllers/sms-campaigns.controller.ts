@@ -14,15 +14,23 @@ import {
   SaveDraftSmsCampaignDto,
   PreviewSmsAudienceDto,
   SendTestSmsDto,
+  CalculateSmsCostEstimateDto,
+  BulkAssignSmsLeadsDto,
+  ExportSmsLeadsDto,
 } from '../dto/sms.dto.js';
 
 @Controller('api/marketing/sms')
 export class SmsCampaignsController {
-  constructor(private readonly smsService: SmsService) {}
+  constructor(private readonly smsService: SmsService) { }
 
   @Get('projects')
   async getProjects() {
     return this.smsService.getProjects();
+  }
+
+  @Post('campaigns/cost-estimate')
+  async calculateCostEstimate(@Body() dto: CalculateSmsCostEstimateDto) {
+    return this.smsService.calculateCostEstimate(dto);
   }
 
   @Post('audience-preview')
@@ -53,7 +61,11 @@ export class SmsCampaignsController {
       includeDrafts?: string | boolean;
     },
   ) {
-    return this.smsService.findAllCampaigns(query);
+    const list = await this.smsService.findAllCampaigns(query);
+    return {
+      items: list,
+      total: Array.isArray(list) ? list.length : 0,
+    };
   }
 
   @Get('campaigns/:id')
@@ -75,7 +87,14 @@ export class SmsCampaignsController {
   async getRecipients(
     @Param('id') id: string,
     @Query()
-    query: { page?: number; limit?: number; status?: string; search?: string },
+    query: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      search?: string;
+      engagement?: string;
+      crmStatus?: string;
+    },
   ) {
     return this.smsService.getCampaignRecipients(id, query);
   }
@@ -88,6 +107,17 @@ export class SmsCampaignsController {
   @Post('campaigns/:id/dispatch')
   async dispatchCampaign(@Param('id') id: string) {
     return this.smsService.dispatchCampaign(id);
+  }
+
+  @Post('campaigns/leads/bulk-assign')
+  async bulkAssignLeads(@Req() req: any, @Body() dto: BulkAssignSmsLeadsDto) {
+    const userId = req?.user?.id || req?.session?.userId;
+    return this.smsService.bulkAssignRecipientsToCrm(dto, userId);
+  }
+
+  @Post('campaigns/leads/export-data')
+  async exportLeadsData(@Body() dto: ExportSmsLeadsDto) {
+    return this.smsService.getExportLeadsData(dto);
   }
 
   @Post('recipients/:id/promote')
