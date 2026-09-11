@@ -16,7 +16,7 @@ import {
 
 @Injectable()
 export class EmailAudienceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   buildLeadWhereClause(
     filters: any = {},
@@ -353,14 +353,17 @@ export class EmailAudienceService {
   }
 
   async getExportLeadsData(dto: ExportLeadsDto) {
-    if (!dto.campaignIds || dto.campaignIds.length === 0) {
-      throw new BadRequestException('At least one campaignId is required');
+    const where: any = {};
+    if (dto.recipientIds && dto.recipientIds.length > 0) {
+      where.id = { in: dto.recipientIds };
+    } else if (dto.campaignIds && dto.campaignIds.length > 0) {
+      where.campaignId = { in: dto.campaignIds };
+    } else {
+      throw new BadRequestException('At least one campaignId or recipientId is required');
     }
 
     const recipients = await this.prisma.campaignRecipient.findMany({
-      where: {
-        campaignId: { in: dto.campaignIds },
-      },
+      where,
       include: {
         campaign: {
           select: {
