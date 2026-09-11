@@ -30,8 +30,12 @@ export { SmsFunnelAnalytics } from "../sms/components/SmsFunnelAnalytics";
 export { SmsRecipientTable } from "../sms/components/SmsRecipientTable";
 export { SmsMessageEditor } from "../sms/components/SmsMessageEditor";
 export { SmsPhoneMockup } from "../sms/components/SmsPhoneMockup";
+export { SmsPreFlightModal } from "../sms/components/SmsPreFlightModal";
 export { SmsProviderConfigCard } from "../sms/components/SmsProviderConfigCard";
 export type { SmsIntegrationRecord } from "../sms/components/SmsProviderConfigCard";
+export { SmsAiConfigCard } from "../sms/components/settings/SmsAiConfigCard";
+export { SmsTagsAndQuickReplies } from "../sms/components/settings/SmsTagsAndQuickReplies";
+export { SmsWebhookDiagnostics } from "../sms/components/settings/SmsWebhookDiagnostics";
 
 // SMS Wizard Steps
 export { SmsStep1ProjectGateway } from "../sms/wizard/SmsStep1ProjectGateway";
