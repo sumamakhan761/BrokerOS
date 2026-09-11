@@ -188,18 +188,98 @@ export class EmailAnalyticsService {
 
   async getCampaignRecipients(
     campaignId: string,
-    query?: { page?: number; limit?: number; status?: string; search?: string },
+    query?: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      search?: string;
+      engagement?: string;
+      crmStatus?: string;
+      source?: string;
+    },
   ) {
     const page = Number(query?.page) || 1;
-    const limit = Number(query?.limit) || 25;
+    const limit = Number(query?.limit) || 500;
     const skip = (page - 1) * limit;
+
+    // Track inbound replies associated with this campaign or recipient
+    const repliedMessages = await this.prisma.emailInboundMessage.findMany({
+      where: {
+        OR: [{ matchedCampaignId: campaignId }, { matchedRecipientId: { not: null } }],
+      },
+      select: { matchedRecipientId: true },
+    });
+    const repliedRecipientIds = new Set(
+      repliedMessages.map((m) => m.matchedRecipientId).filter(Boolean) as string[],
+    );
+
+    // Compute live counter breakdown across the entire campaign
+    const [totalCount, openedCount, clickedCount, bouncedCount, crmLeadsCount] = await Promise.all([
+      this.prisma.campaignRecipient.count({ where: { campaignId } }),
+      this.prisma.campaignRecipient.count({
+        where: {
+          campaignId,
+          OR: [{ openCount: { gt: 0 } }, { status: { in: ['OPENED', 'CLICKED'] } }],
+        },
+      }),
+      this.prisma.campaignRecipient.count({
+        where: {
+          campaignId,
+          OR: [{ clickCount: { gt: 0 } }, { status: 'CLICKED' }],
+        },
+      }),
+      this.prisma.campaignRecipient.count({
+        where: {
+          campaignId,
+          status: { in: ['BOUNCED', 'FAILED'] },
+        },
+      }),
+      this.prisma.campaignRecipient.count({
+        where: {
+          campaignId,
+          leadId: { not: null },
+        },
+      }),
+    ]);
+
+    const repliedCount = repliedRecipientIds.size;
+    const unopenedCount = Math.max(0, totalCount - openedCount - bouncedCount);
+    const unpromotedCount = Math.max(0, totalCount - crmLeadsCount);
 
     const where: any = { campaignId };
     if (query?.status) where.status = query.status;
+    if (query?.source) where.source = query.source;
+
+    // Filter by CRM status
+    if (query?.crmStatus === 'UNPROMOTED') {
+      where.leadId = null;
+    } else if (query?.crmStatus === 'IN_CRM') {
+      where.leadId = { not: null };
+    }
+
+    // Filter by Engagement
+    if (query?.engagement === 'OPENED') {
+      where.OR = [{ openCount: { gt: 0 } }, { status: { in: ['OPENED', 'CLICKED'] } }];
+    } else if (query?.engagement === 'CLICKED') {
+      where.OR = [{ clickCount: { gt: 0 } }, { status: 'CLICKED' }];
+    } else if (query?.engagement === 'UNOPENED') {
+      where.openCount = 0;
+      where.status = { notIn: ['BOUNCED', 'FAILED'] };
+    } else if (query?.engagement === 'BOUNCED') {
+      where.status = { in: ['BOUNCED', 'FAILED'] };
+    } else if (query?.engagement === 'REPLIED') {
+      where.id = { in: Array.from(repliedRecipientIds) };
+    }
+
     if (query?.search) {
-      where.OR = [
-        { email: { contains: query.search, mode: 'insensitive' } },
-        { name: { contains: query.search, mode: 'insensitive' } },
+      where.AND = [
+        {
+          OR: [
+            { email: { contains: query.search, mode: 'insensitive' } },
+            { name: { contains: query.search, mode: 'insensitive' } },
+            { phone: { contains: query.search } },
+          ],
+        },
       ];
     }
 
@@ -230,11 +310,24 @@ export class EmailAnalyticsService {
     ]);
 
     return {
-      items,
+      items: items.map((r) => ({
+        ...r,
+        hasReplied: repliedRecipientIds.has(r.id),
+      })),
       total,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
+      counts: {
+        all: totalCount,
+        opened: openedCount,
+        clicked: clickedCount,
+        replied: repliedCount,
+        unopened: unopenedCount,
+        bounced: bouncedCount,
+        inCrm: crmLeadsCount,
+        unpromoted: unpromotedCount,
+      },
     };
   }
 }
