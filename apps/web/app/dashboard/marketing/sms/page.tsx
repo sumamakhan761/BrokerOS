@@ -13,6 +13,8 @@ import {
   Sparkles,
   Zap,
   ArrowLeft,
+  Inbox,
+  Workflow,
 } from "lucide-react";
 import { DashboardPageWrapper } from "@/components/dashboard/DashboardPageWrapper";
 import { StatCards } from "@/components/dashboard/StatCards";
@@ -39,7 +41,8 @@ export default function SmsMarketingDashboard() {
 
         if (campRes.ok) {
           const data = await campRes.json();
-          setCampaigns(data?.items || []);
+          const items = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+          setCampaigns(items);
         } else {
           setCampaigns([]);
         }
@@ -59,7 +62,10 @@ export default function SmsMarketingDashboard() {
     load();
   }, [baseUrl]);
 
-  const activeGateway = integrations.find((i) => i.isDefault && i.isActive) || integrations.find((i) => i.isActive) || integrations[0];
+  const activeGateway =
+    integrations.find((i) => i.isDefault && i.isActive) ||
+    integrations.find((i) => i.isActive) ||
+    integrations[0];
 
   const totalSent = campaigns.reduce((acc, c) => acc + (c.sentCount || 0), 0);
   const totalDelivered = campaigns.reduce((acc, c) => acc + (c.deliveredCount || 0), 0);
@@ -107,28 +113,72 @@ export default function SmsMarketingDashboard() {
       title="SMS Marketing Engine"
       subtitle="Broadcast high-speed bulk SMS alerts, DLT template notifications, and dynamic trackable brochure links."
       headerRight={
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <Link href="/dashboard/marketing">
             <Button variant="ghost" size="sm" className="gap-1.5 text-xs font-bold">
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Marketing Hub</span>
             </Button>
           </Link>
+          <Link href="/dashboard/marketing/sms/inbox">
+            <Button variant="outline" size="sm" className="gap-2 text-xs font-bold text-blue-600 border-blue-200 hover:bg-blue-50">
+              <Inbox className="w-3.5 h-3.5" />
+              <span>Live Inbox</span>
+            </Button>
+          </Link>
+          <Link href="/dashboard/marketing/sms/flows">
+            <Button variant="outline" size="sm" className="gap-2 text-xs font-bold text-purple-600 border-purple-200 hover:bg-purple-50">
+              <Workflow className="w-3.5 h-3.5" />
+              <span>Interactive Flows</span>
+            </Button>
+          </Link>
           <Link href="/dashboard/marketing/sms/settings">
             <Button variant="outline" size="sm" className="gap-2 text-xs font-bold">
               <Settings className="w-3.5 h-3.5" />
-              <span>Gateways & DLT</span>
+              <span>Settings & Tools</span>
             </Button>
           </Link>
           <Link href="/dashboard/marketing/sms/campaigns/new">
-            <Button variant="default" size="sm" className="gap-2 text-xs font-bold shadow-sm">
+            <Button variant="default" size="sm" className="gap-2 text-xs font-bold shadow-sm bg-amber-500 hover:bg-amber-600 text-slate-950">
               <Plus className="w-3.5 h-3.5" />
-              <span>+ New SMS Campaign</span>
+              <span>New SMS Campaign</span>
             </Button>
           </Link>
         </div>
       }
     >
+      {/* ── Subnavigation Tabs ── */}
+      <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200/80 rounded-2xl overflow-x-auto shadow-2xs">
+        <Link
+          href="/dashboard/marketing/sms/inbox"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-subtle transition-all"
+        >
+          <Inbox className="w-3.5 h-3.5 text-blue-600" />
+          <span>Live Team Inbox</span>
+        </Link>
+        <Link
+          href="/dashboard/marketing/sms"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 text-slate-950 shadow-xs font-extrabold"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          <span>Broadcast Campaigns</span>
+        </Link>
+        <Link
+          href="/dashboard/marketing/sms/flows"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-subtle transition-all"
+        >
+          <Workflow className="w-3.5 h-3.5 text-purple-600" />
+          <span>2-Way Automation Flows</span>
+        </Link>
+        <Link
+          href="/dashboard/marketing/sms/settings"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-subtle transition-all"
+        >
+          <Settings className="w-3.5 h-3.5" />
+          <span>Gateways, Numbers & AI</span>
+        </Link>
+      </div>
+
       {/* ── Active Gateway Status Banner ── */}
       {activeGateway ? (
         <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
@@ -141,15 +191,22 @@ export default function SmsMarketingDashboard() {
                 Active SMS Route: {activeGateway.name} ({activeGateway.provider}) — Sender: <span className="font-mono text-emerald-700">{activeGateway.fromSender}</span>
               </div>
               <div className="text-[11px] font-medium text-[var(--text-tertiary)]">
-                Carrier connected • Automated handset DLR callbacks, TRAI DLT headers & shortlink click tracking.
+                Carrier connected • Multi-pool phone parallelism, automated handset DLR callbacks, TRAI DLT headers & shortlink tracking active.
               </div>
             </div>
           </div>
-          <Link href="/dashboard/marketing/sms/settings">
-            <Button variant="outline" size="sm" className="text-xs font-bold">
-              Manage Gateways &rarr;
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/dashboard/marketing/sms/flows">
+              <Button variant="outline" size="sm" className="text-xs font-bold gap-1.5">
+                <span>Configure Reply Flows &rarr;</span>
+              </Button>
+            </Link>
+            <Link href="/dashboard/marketing/sms/settings">
+              <Button variant="outline" size="sm" className="text-xs font-bold">
+                Manage Gateways
+              </Button>
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="p-4 bg-amber-50/90 rounded-2xl border border-amber-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
@@ -167,7 +224,7 @@ export default function SmsMarketingDashboard() {
             </div>
           </div>
           <Link href="/dashboard/marketing/sms/settings">
-            <Button variant="default" size="sm" className="text-xs font-bold">
+            <Button variant="default" size="sm" className="text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950">
               Connect Gateway &rarr;
             </Button>
           </Link>
