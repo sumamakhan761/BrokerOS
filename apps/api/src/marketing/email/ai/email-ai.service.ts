@@ -21,6 +21,7 @@ export interface EmailAiGenerateReplyArgs {
     amenities?: string[];
     brochureUrl?: string;
   } | null;
+  customInstructions?: string;
 }
 
 @Injectable()
@@ -178,7 +179,8 @@ INSTRUCTIONS FOR EMAIL FORMATTING:
 - Keep the reply courteous, concise, and professional (under 150 words).
 - Address their specific question directly.
 - Include a strong, polite call-to-action inviting them to book a physical site visit or request a call.
-- Do NOT output markdown code blocks. Output clean plain text paragraphs suitable for email.`;
+- Do NOT output markdown code blocks. Output clean plain text paragraphs suitable for email.
+${args.customInstructions ? `\nADDITIONAL PERSONA INSTRUCTIONS:\n${args.customInstructions}` : ''}`;
 
     const userPrompt = `A prospective buyer has replied to our broadcast regarding "${args.originalCampaignTitle || projectName}".
 Original Subject: ${args.originalSubject || 'Exclusive Property Update'}
