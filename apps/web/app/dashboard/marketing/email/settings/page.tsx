@@ -16,6 +16,7 @@ import {
   Tag as TagIcon,
   ShieldCheck,
   Building2,
+  Inbox,
 } from "lucide-react";
 import { DashboardPageWrapper } from "@/components/dashboard/DashboardPageWrapper";
 import { Button } from "@/components/ui/Button";
@@ -82,7 +83,9 @@ function EmailSettingsInner() {
   const fetchIntegrations = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(`${baseUrl}/api/marketing/integrations`);
+      const res = await fetch(`${baseUrl}/api/marketing/integrations`, {
+        credentials: "include",
+      });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -118,6 +121,7 @@ function EmailSettingsInner() {
     const res = await fetch(`${baseUrl}/api/marketing/integrations`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
@@ -129,7 +133,10 @@ function EmailSettingsInner() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to disconnect this provider?")) return;
-    await fetch(`${baseUrl}/api/marketing/integrations/${id}`, { method: "DELETE" });
+    await fetch(`${baseUrl}/api/marketing/integrations/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
     await fetchIntegrations();
   };
 
@@ -137,6 +144,7 @@ function EmailSettingsInner() {
     const res = await fetch(`${baseUrl}/api/marketing/integrations/${id}/sync-domains`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
     });
     if (!res.ok) {
       const err = await res.json();
@@ -149,6 +157,7 @@ function EmailSettingsInner() {
     const res = await fetch(`${baseUrl}/api/marketing/integrations/${integrationId}/domains`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
@@ -162,6 +171,7 @@ function EmailSettingsInner() {
     if (!confirm("Are you sure you want to remove this sender domain identity?")) return;
     const res = await fetch(`${baseUrl}/api/marketing/integrations/domains/${domainId}`, {
       method: "DELETE",
+      credentials: "include",
     });
     if (!res.ok) {
       const err = await res.json();
@@ -179,6 +189,12 @@ function EmailSettingsInner() {
       subtitle="Manage your enterprise email providers, Groq AI autoreply concierges, team canned shortcuts, lead tags, and inbound mail webhooks."
       headerRight={
         <div className="flex items-center gap-2">
+          <Link href="/dashboard/marketing/email/inbox">
+            <Button variant="outline" size="sm" className="gap-2 text-xs font-bold text-blue-600 border-blue-200 hover:bg-blue-50">
+              <Inbox className="w-3.5 h-3.5" />
+              <span>Live Inbox</span>
+            </Button>
+          </Link>
           <Link href="/dashboard/marketing/email">
             <Button variant="outline" size="sm" className="gap-2 text-xs font-bold">
               <ArrowLeft className="w-3.5 h-3.5" />
