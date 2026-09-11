@@ -77,3 +77,43 @@ export interface EmailQuickReplyItem {
   contentHtml: string;
   category?: string | null;
 }
+
+export const DEFAULT_EMAIL_QUICK_REPLIES: EmailQuickReplyItem[] = [
+  {
+    id: 'qr-site-visit',
+    shortcut: '/site-visit',
+    title: 'Site Visit Confirmation',
+    contentHtml: 'We would be delighted to host you for a private site inspection this weekend. Our luxury concierge will meet you at the reception. What time works best for you?',
+  },
+  {
+    id: 'qr-pricing',
+    shortcut: '/pricing',
+    title: 'Payment Plan & Pricing',
+    contentHtml: 'Attached please find the comprehensive payment milestone schedule and current inventory availability with flexible developer payment options.',
+  },
+  {
+    id: 'qr-brochure',
+    shortcut: '/brochure',
+    title: 'Project Brochure Download',
+    contentHtml: 'Here is the high-resolution architectural brochure including full floor plans, penthouse specs, and world-class amenities overview.',
+  },
+  {
+    id: 'qr-followup',
+    shortcut: '/followup',
+    title: 'Gentle Follow-up',
+    contentHtml: 'Following up on our recent conversation regarding the residences. Have you had a chance to review the floor layout options?',
+  },
+  {
+    id: 'qr-floorplan',
+    shortcut: '/floorplan',
+    title: 'Floor Plans & Carpet Area',
+    contentHtml: 'Attached are the detailed 2 BHK and 3 BHK floor plans and carpet area breakdown for your review.',
+  },
+  {
+    id: 'qr-callback',
+    shortcut: '/callback',
+    title: 'Schedule Advisor Call',
+    contentHtml: 'Would you be available for a brief 5-minute call today with our senior project advisor to address your queries?',
+  },
+];
+
