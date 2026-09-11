@@ -1,4 +1,6 @@
 import type {
+  DiscoveredSenderNumber,
+  InboundSmsPayload,
   ISmsMarketingProvider,
   SendSmsOptions,
   SendSmsResult,
@@ -17,6 +19,7 @@ export interface TwilioWebhookPayload {
   AccountSid?: string;
   From?: string;
   To?: string;
+  Body?: string;
   MessageStatus?: 'queued' | 'sending' | 'sent' | 'delivered' | 'undelivered' | 'failed';
   SmsStatus?: string;
   ErrorCode?: string;
@@ -63,6 +66,56 @@ export class TwilioSmsClient {
     }
   }
 
+  async listSenderNumbers(): Promise<DiscoveredSenderNumber[]> {
+    const discovered: DiscoveredSenderNumber[] = [];
+
+    if (this.fromNumber) {
+      discovered.push({
+        phoneNumber: this.fromNumber,
+        senderId: 'Twilio Default',
+        provider: 'TWILIO',
+        isVerified: true,
+      });
+    }
+
+    if (!this.accountSid || !this.authToken) {
+      return discovered;
+    }
+
+    try {
+      const authHeader = Buffer.from(`${this.accountSid}:${this.authToken}`).toString('base64');
+      const res = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${this.accountSid}/IncomingPhoneNumbers.json?PageSize=50`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Basic ${authHeader}`,
+          },
+        }
+      );
+
+      if (res.status === 200) {
+        const data = (await res.json()) as any;
+        const numbers = data?.incoming_phone_numbers || [];
+        for (const num of numbers) {
+          const phone = num?.phone_number;
+          if (phone && !discovered.some((d) => d.phoneNumber === phone)) {
+            discovered.push({
+              phoneNumber: phone,
+              senderId: num?.friendly_name || 'Twilio Active',
+              provider: 'TWILIO',
+              isVerified: true,
+            });
+          }
+        }
+      }
+    } catch {
+      // Return existing discovered fallback
+    }
+
+    return discovered;
+  }
+
   async send(options: SendSmsOptions): Promise<SendSmsResult> {
     try {
       if (!this.accountSid || !this.authToken) {
@@ -88,7 +141,17 @@ export class TwilioSmsClient {
       let successCount = 0;
       let lastMsgId: string | undefined;
 
-      const fromSender = options.from || this.messagingServiceSid || this.fromNumber || '';
+      // Intelligently resolve the effective Twilio sender identity:
+      // Alphanumeric IDs (e.g. SKYLIN) fail on Twilio when sending to destinations like India (+91).
+      // If options.from is alphanumeric or empty, prefer the verified E.164 phone number or MessagingServiceSid!
+      let fromSender = (options.from || '').trim();
+      if (this.messagingServiceSid && (!fromSender || fromSender.startsWith('MG') || !fromSender.startsWith('+'))) {
+        fromSender = this.messagingServiceSid;
+      } else if (this.fromNumber && (!fromSender || !fromSender.startsWith('+'))) {
+        fromSender = this.fromNumber;
+      } else if (!fromSender) {
+        fromSender = this.fromNumber || this.messagingServiceSid || '';
+      }
 
       for (const rec of options.to) {
         const params = new URLSearchParams();
@@ -179,6 +242,25 @@ export class TwilioSmsWebhookParser {
 
     return events;
   }
+
+  static parseInbound(headers: Record<string, any>, payload: any): InboundSmsPayload | null {
+    if (!payload || typeof payload !== 'object') return null;
+    const fromPhone = payload.From || payload.from || '';
+    const toPhone = payload.To || payload.to || '';
+    const textBody = payload.Body || payload.body || payload.text || '';
+    const providerMsgId = payload.MessageSid || payload.SmsSid || payload.messageId;
+
+    if (!fromPhone || !textBody) return null;
+
+    return {
+      fromPhone,
+      toPhone,
+      textBody,
+      provider: 'TWILIO',
+      providerMsgId,
+      headers,
+    };
+  }
 }
 
 // ============================================================================
@@ -198,7 +280,16 @@ export class TwilioSmsAdapter implements ISmsMarketingProvider {
     return client.send(options);
   }
 
+  async listSenderNumbers(credentials?: SmsProviderCredentials): Promise<DiscoveredSenderNumber[]> {
+    const client = new TwilioSmsClient(credentials);
+    return client.listSenderNumbers();
+  }
+
   parseWebhookEvent(headers: Record<string, any>, payload: any): SmsWebhookEvent[] {
     return TwilioSmsWebhookParser.parse(headers, payload);
+  }
+
+  parseInboundMessage(headers: Record<string, any>, payload: any): InboundSmsPayload | null {
+    return TwilioSmsWebhookParser.parseInbound(headers, payload);
   }
 }
