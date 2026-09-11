@@ -1,4 +1,6 @@
 import type {
+  DiscoveredSenderNumber,
+  InboundSmsPayload,
   ISmsMarketingProvider,
   SendSmsOptions,
   SendSmsResult,
@@ -55,6 +57,50 @@ export class SinchSmsClient {
     } catch {
       return this.servicePlanId.length >= 10 && this.apiKey.length >= 15;
     }
+  }
+
+  async listSenderNumbers(): Promise<DiscoveredSenderNumber[]> {
+    const discovered: DiscoveredSenderNumber[] = [];
+    if (this.fromNumber) {
+      discovered.push({
+        phoneNumber: this.fromNumber,
+        senderId: 'Sinch Verified',
+        provider: 'SINCH',
+        isVerified: true,
+      });
+    }
+
+    if (!this.servicePlanId || !this.apiKey) return discovered;
+
+    try {
+      const res = await fetch(
+        `https://numbers.api.sinch.com/v1/projects/${this.servicePlanId}/activePhoneNumbers`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+        }
+      );
+      if (res.status === 200) {
+        const data = (await res.json()) as any;
+        const numbers = data?.activeNumbers || [];
+        for (const num of numbers) {
+          const phone = num?.phoneNumber;
+          if (phone && !discovered.some((d) => d.phoneNumber === phone)) {
+            discovered.push({
+              phoneNumber: phone,
+              senderId: num?.displayName || 'Sinch Virtual',
+              provider: 'SINCH',
+              isVerified: true,
+            });
+          }
+        }
+      }
+    } catch {
+      // Return fallback
+    }
+
+    return discovered;
   }
 
   async send(options: SendSmsOptions): Promise<SendSmsResult> {
@@ -160,6 +206,26 @@ export class SinchSmsWebhookParser {
 
     return events;
   }
+
+  static parseInbound(headers: Record<string, any>, payload: any): InboundSmsPayload | null {
+    if (!payload || typeof payload !== 'object') return null;
+
+    const fromPhone = payload.from || payload.From;
+    const toPhone = payload.to || payload.To || '';
+    const textBody = payload.body || payload.Body || payload.text;
+    const providerMsgId = payload.id || payload.batch_id || payload.messageId;
+
+    if (!fromPhone || !textBody) return null;
+
+    return {
+      fromPhone,
+      toPhone,
+      textBody,
+      provider: 'SINCH',
+      providerMsgId,
+      headers,
+    };
+  }
 }
 
 // ============================================================================
@@ -179,7 +245,16 @@ export class SinchSmsAdapter implements ISmsMarketingProvider {
     return client.send(options);
   }
 
+  async listSenderNumbers(credentials?: SmsProviderCredentials): Promise<DiscoveredSenderNumber[]> {
+    const client = new SinchSmsClient(credentials);
+    return client.listSenderNumbers();
+  }
+
   parseWebhookEvent(headers: Record<string, any>, payload: any): SmsWebhookEvent[] {
     return SinchSmsWebhookParser.parse(headers, payload);
+  }
+
+  parseInboundMessage(headers: Record<string, any>, payload: any): InboundSmsPayload | null {
+    return SinchSmsWebhookParser.parseInbound(headers, payload);
   }
 }
