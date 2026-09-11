@@ -11,11 +11,12 @@ import {
   Smartphone,
   ShieldAlert,
 } from "lucide-react";
-import type { SmsAnalyticsSummary } from "@/features/marketing/types";
+import type { SmsCampaignAnalyticsSummary } from "@brokeros/types";
+import { SMS_PROVIDERS } from "@brokeros/constants";
 import { Badge } from "@/components/ui/Badge";
 
 export interface SmsFunnelAnalyticsProps {
-  analytics: SmsAnalyticsSummary;
+  analytics: SmsCampaignAnalyticsSummary | any;
 }
 
 export function SmsFunnelAnalytics({ analytics }: SmsFunnelAnalyticsProps) {
@@ -24,8 +25,18 @@ export function SmsFunnelAnalytics({ analytics }: SmsFunnelAnalyticsProps) {
   const clicked = analytics.clickedCount || 0;
   const failed = analytics.failedCount || 0;
 
-  const deliveryRate = analytics.deliveryRate !== undefined ? analytics.deliveryRate : (sent > 0 ? Number(((delivered / sent) * 100).toFixed(1)) : 0);
-  const clickRate = analytics.clickRate !== undefined ? analytics.clickRate : (delivered > 0 ? Number(((clicked / delivered) * 100).toFixed(1)) : 0);
+  const deliveryRate =
+    analytics.deliveryRate !== undefined
+      ? analytics.deliveryRate
+      : sent > 0
+      ? Number(((delivered / sent) * 100).toFixed(1))
+      : 0;
+  const clickRate =
+    analytics.clickRate !== undefined
+      ? analytics.clickRate
+      : delivered > 0
+      ? Number(((clicked / delivered) * 100).toFixed(1))
+      : 0;
   const failRate = sent > 0 ? ((failed / sent) * 100).toFixed(1) : "0.0";
 
   const steps = [
@@ -81,7 +92,7 @@ export function SmsFunnelAnalytics({ analytics }: SmsFunnelAnalyticsProps) {
         <div className="p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
           <div className="flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] mb-1">
             <span>Shortlink CTR</span>
-            <MousePointerClick className="w-4 h-4 text-[var(--brand-600)]" />
+            <MousePointerClick className="w-4 h-4 text-amber-600" />
           </div>
           <p className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">{clickRate}%</p>
           <p className="text-[11px] font-medium text-[var(--text-muted)] mt-1">
@@ -152,6 +163,103 @@ export function SmsFunnelAnalytics({ analytics }: SmsFunnelAnalyticsProps) {
         </div>
       </div>
 
+      {/* ── SENDER PHONE & POOL PERFORMANCE BREAKDOWN ── */}
+      {analytics.senderBreakdown && analytics.senderBreakdown.length > 0 && (
+        <div className="p-6 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-2">
+                <Layers className="w-4 h-4 text-amber-600" />
+                <span>Multi-Sender Pool & Number Performance</span>
+              </h3>
+              <p className="text-xs font-medium text-[var(--text-tertiary)]">
+                Isolated delivery, throughput, CTR, and segment consumption across distributed carrier phone numbers.
+              </p>
+            </div>
+            <Badge variant="default" className="text-xs font-extrabold self-start sm:self-auto bg-amber-50 text-amber-900 border-amber-200">
+              {analytics.senderBreakdown.length} Parallel Phone Stream{analytics.senderBreakdown.length > 1 ? "s" : ""}
+            </Badge>
+          </div>
+
+          <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200/80 text-[10px] font-extrabold text-[var(--text-tertiary)] uppercase tracking-wider">
+                    <th className="py-2.5 px-3.5">Sender Number / ID</th>
+                    <th className="py-2.5 px-3.5">Gateway Route</th>
+                    <th className="py-2.5 px-3.5 text-right">Allocated Leads</th>
+                    <th className="py-2.5 px-3.5 text-right">Dispatched</th>
+                    <th className="py-2.5 px-3.5 text-right">Delivered</th>
+                    <th className="py-2.5 px-3.5 text-right">Clicks (CTR)</th>
+                    <th className="py-2.5 px-3.5 text-right">Segments</th>
+                    <th className="py-2.5 px-3.5 text-right">Failed</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {analytics.senderBreakdown.map((item: any) => {
+                    const prov =
+                      (SMS_PROVIDERS as Record<string, any>)[item.provider] ||
+                      SMS_PROVIDERS.TWILIO;
+                    return (
+                      <tr key={item.senderPoolId} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-3 px-3.5">
+                          <div className="font-extrabold text-[var(--text-primary)] font-mono">
+                            {item.phoneNumber || item.senderId || "Default Gateway"}
+                          </div>
+                          {item.senderId && item.phoneNumber && (
+                            <div className="text-[10px] text-[var(--text-tertiary)] font-bold">
+                              ID: {item.senderId}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-3.5">
+                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-800">
+                            <span
+                              className="w-1.5 h-1.5 rounded-full"
+                              style={{ backgroundColor: prov.color }}
+                            />
+                            <span>{prov.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3.5 text-right font-extrabold text-amber-700 tabular-nums">
+                          {item.allocatedRecipients.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-3.5 text-right font-bold text-slate-800 tabular-nums">
+                          {item.sentCount.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-3.5 text-right tabular-nums">
+                          <span className="font-extrabold text-emerald-600">{item.deliveryRate}%</span>
+                          <div className="text-[10px] text-[var(--text-muted)] font-medium">
+                            {item.deliveredCount.toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="py-3 px-3.5 text-right tabular-nums">
+                          <span className="font-extrabold text-amber-600">{item.clickRate}%</span>
+                          <div className="text-[10px] text-[var(--text-muted)] font-medium">
+                            {item.clickedCount.toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="py-3 px-3.5 text-right font-mono font-bold text-slate-700 tabular-nums">
+                          {(item.totalSegmentsSent || 0).toLocaleString()}
+                        </td>
+                        <td className="py-3 px-3.5 text-right font-bold tabular-nums">
+                          {item.failedCount > 0 ? (
+                            <span className="text-rose-500 font-extrabold">{item.failedCount}</span>
+                          ) : (
+                            <span className="text-slate-400">0</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── TOP CLICKED LINKS & HYGIENE ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Top Clicked Links */}
@@ -161,7 +269,7 @@ export function SmsFunnelAnalytics({ analytics }: SmsFunnelAnalyticsProps) {
             <p className="text-xs text-[var(--text-muted)]">No shortlink clicks recorded yet.</p>
           ) : (
             <div className="space-y-3">
-              {analytics.topClickedLinks.map((link, idx) => (
+              {analytics.topClickedLinks.map((link: any, idx: number) => (
                 <div
                   key={idx}
                   className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/80"
