@@ -3326,22 +3326,6 @@ model EmailFlowRun {
   @@map("email_flow_run")
 }
 
-model EmailQuickReply {
-  id          String   @id @default(uuid())
-  shortcut    String   @unique // e.g. "/site-visit", "/pricing"
-  title       String
-  subject     String?
-  contentHtml String   @db.Text
-  category    String?  @default("General")
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([shortcut])
-  @@index([isActive])
-  @@map("email_quick_reply")
-}
-
 model EmailTag {
   id        String   @id @default(uuid())
   name      String   @unique
