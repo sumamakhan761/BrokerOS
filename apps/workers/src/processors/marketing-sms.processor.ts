@@ -4,14 +4,20 @@ import { TwilioSmsAdapter } from '@brokeros/int-sms-twilio';
 import { AwsSnsSmsAdapter } from '@brokeros/int-sms-aws-sns';
 import { SinchSmsAdapter } from '@brokeros/int-sms-sinch';
 import { GupshupSmsAdapter } from '@brokeros/int-sms-gupshup';
-import type { ISmsMarketingProvider, SendSmsOptions, SmsProviderCredentials } from '@brokeros/types';
+import {
+  SMS_PROVIDER_THROTTLE_LIMITS,
+  calculateSmsSegments,
+} from '@brokeros/constants';
+import type {
+  ISmsMarketingProvider,
+  SendSmsOptions,
+  SmsProviderCredentials,
+  SmsProviderType,
+} from '@brokeros/types';
 
 export interface SmsCampaignDispatchJobData {
   campaignId: string;
 }
-
-// Standard GSM-7 character set regex test
-const GSM7_REGEX = /^[@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\x1BÆæßÉ !"#¤%&'()*+,\-./0-9:;<=>?¡A-ZÄÖÑÜ§¿a-zäöñüà^{}\\[~\]|€]*$/;
 
 @Injectable()
 export class MarketingSmsProcessor implements OnModuleInit, OnModuleDestroy {
@@ -91,37 +97,34 @@ export class MarketingSmsProcessor implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // Calculate SMS segments based on GSM-7 vs Unicode encoding
-  static calculateSegments(text: string): { segments: number; isUnicode: boolean; charCount: number } {
-    const charCount = text.length;
-    const isUnicode = !GSM7_REGEX.test(text);
-
-    if (isUnicode) {
-      if (charCount <= 70) return { segments: 1, isUnicode: true, charCount };
-      return { segments: Math.ceil(charCount / 67), isUnicode: true, charCount };
-    } else {
-      if (charCount <= 160) return { segments: 1, isUnicode: false, charCount };
-      return { segments: Math.ceil(charCount / 153), isUnicode: false, charCount };
-    }
-  }
-
-  // E.164 standard phone normalization
+  // E.164 standard phone normalization (with Excel scientific notation un-exponential support)
   static normalizePhoneNumber(rawPhone: string, defaultCountryCode = '+91'): string {
     if (!rawPhone) return '';
-    let cleaned = rawPhone.replace(/[^\d+]/g, '');
+    let str = String(rawPhone).trim();
 
-    if (!cleaned.startsWith('+')) {
-      if (cleaned.length === 10) {
-        cleaned = `${defaultCountryCode}${cleaned}`;
-      } else if (cleaned.length === 12 && cleaned.startsWith('91')) {
-        cleaned = `+${cleaned}`;
-      } else if (cleaned.length === 11 && cleaned.startsWith('1')) {
-        cleaned = `+${cleaned}`;
-      } else {
-        cleaned = `+${cleaned}`;
+    // 1. Un-exponential scientific notation from Excel (e.g. "9.19892E+11" -> "919892407542")
+    if (/[eE]\+?[0-9]+/.test(str)) {
+      const num = Number(str);
+      if (!isNaN(num) && isFinite(num)) {
+        str = num.toLocaleString('fullwide', { useGrouping: false });
       }
     }
-    return cleaned;
+
+    const hasPlus = str.startsWith('+');
+    const digits = str.replace(/\D/g, '');
+    if (!digits) return '';
+
+    if (hasPlus) return `+${digits}`;
+
+    if (digits.length === 10) {
+      return `${defaultCountryCode}${digits}`;
+    } else if (digits.length === 12 && digits.startsWith('91')) {
+      return `+${digits}`;
+    } else if (digits.length === 11 && digits.startsWith('1')) {
+      return `+${digits}`;
+    }
+
+    return `+${digits}`;
   }
 
   async processSmsCampaign(jobData: SmsCampaignDispatchJobData): Promise<void> {
@@ -131,9 +134,26 @@ export class MarketingSmsProcessor implements OnModuleInit, OnModuleDestroy {
     const campaign = await this.prisma.smsCampaign.findUnique({
       where: { id: campaignId },
       include: {
-        integration: true,
+        integration: {
+          include: {
+            senderNumbers: true,
+          },
+        },
         project: true,
         createdBy: true,
+        senderPools: {
+          include: {
+            senderNumber: {
+              include: {
+                integration: {
+                  include: {
+                    senderNumbers: true,
+                  },
+                },
+              },
+            },
+          },
+        },
         recipients: {
           where: { status: 'QUEUED' },
           take: 5000,
@@ -151,160 +171,211 @@ export class MarketingSmsProcessor implements OnModuleInit, OnModuleDestroy {
       data: { status: 'PROCESSING', startedAt: new Date() },
     });
 
-    const adapter = this.getAdapter(campaign.providerType);
-    let credentials: SmsProviderCredentials | undefined;
-
-    if (campaign.integration) {
-      credentials = {
-        accountSid: campaign.integration.accountSid || undefined,
-        authToken: campaign.integration.authToken || undefined,
-        messagingServiceSid: campaign.integration.messagingServiceSid || undefined,
-        apiKey: campaign.integration.apiKey || undefined,
-        servicePlanId: campaign.integration.servicePlanId || undefined,
-        awsAccessKeyId: campaign.integration.awsAccessKeyId || undefined,
-        awsSecretKey: campaign.integration.awsSecretKey || undefined,
-        awsRegion: campaign.integration.awsRegion || undefined,
-        dltEntityId: campaign.integration.dltEntityId || undefined,
-        fromNumber: campaign.integration.fromSender,
-        senderId: campaign.integration.fromSender,
-      };
-    } else {
-      const activeIntegration = await this.prisma.smsIntegration.findFirst({
-        where: { provider: campaign.providerType as any, isActive: true },
-        orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
-      });
-      if (activeIntegration) {
-        credentials = {
-          accountSid: activeIntegration.accountSid || undefined,
-          authToken: activeIntegration.authToken || undefined,
-          messagingServiceSid: activeIntegration.messagingServiceSid || undefined,
-          apiKey: activeIntegration.apiKey || undefined,
-          servicePlanId: activeIntegration.servicePlanId || undefined,
-          awsAccessKeyId: activeIntegration.awsAccessKeyId || undefined,
-          awsSecretKey: activeIntegration.awsSecretKey || undefined,
-          awsRegion: activeIntegration.awsRegion || undefined,
-          dltEntityId: activeIntegration.dltEntityId || undefined,
-          fromNumber: activeIntegration.fromSender,
-          senderId: activeIntegration.fromSender,
-        };
-      }
-    }
-
     const appBaseUrl = process.env.API_PUBLIC_URL || 'http://localhost:3333';
-    const batchSize = 50;
-    const recipients = campaign.recipients;
-    let campaignTotalSegments = 0;
 
-    for (let i = 0; i < recipients.length; i += batchSize) {
-      const chunk = recipients.slice(i, i + batchSize);
+    if (campaign.senderPools && campaign.senderPools.length > 0) {
+      this.logger.log(
+        `SMS Campaign ${campaignId} has ${campaign.senderPools.length} sender pools. Spawning parallel worker streams...`,
+      );
 
-      for (const rec of chunk) {
-        try {
-          const mergeData = (rec.mergeData as any) || {};
-          const recipientName = rec.name || mergeData.name || 'Client';
-          const firstName = mergeData.firstName || recipientName.split(' ')[0] || 'Client';
+      await Promise.all(
+        campaign.senderPools.map((pool: any) =>
+          this.processPhoneStream(campaign, pool, appBaseUrl),
+        ),
+      );
+    } else {
+      // Single-sender legacy fallback
+      const adapter = this.getAdapter(campaign.providerType);
+      let credentials: SmsProviderCredentials | undefined;
+      let effectiveFromPhone = campaign.fromSender;
 
-          const normalizedPhone = MarketingSmsProcessor.normalizePhoneNumber(rec.phone);
-          if (!normalizedPhone || normalizedPhone.length < 8) {
-            await this.prisma.smsRecipient.update({
-              where: { id: rec.id },
-              data: { status: 'FAILED', failReason: 'Invalid phone number format' },
-            });
-            continue;
+      if (campaign.integration) {
+        if (campaign.providerType === 'TWILIO') {
+          if (campaign.integration.messagingServiceSid) {
+            effectiveFromPhone = campaign.integration.messagingServiceSid;
+          } else if (!effectiveFromPhone || !effectiveFromPhone.startsWith('+')) {
+            const candidate =
+              campaign.integration.senderNumbers?.find((s: any) => s.phoneNumber?.startsWith('+'))?.phoneNumber ||
+              (campaign.integration.fromSender?.startsWith('+') ? campaign.integration.fromSender : null) ||
+              process.env.TWILIO_PHONE_NUMBER;
+            if (candidate) {
+              effectiveFromPhone = candidate;
+            }
+          }
+        }
+
+        credentials = {
+          accountSid: campaign.integration.accountSid || undefined,
+          authToken: campaign.integration.authToken || undefined,
+          messagingServiceSid: campaign.integration.messagingServiceSid || undefined,
+          apiKey: campaign.integration.apiKey || undefined,
+          servicePlanId: campaign.integration.servicePlanId || undefined,
+          awsAccessKeyId: campaign.integration.awsAccessKeyId || undefined,
+          awsSecretKey: campaign.integration.awsSecretKey || undefined,
+          awsRegion: campaign.integration.awsRegion || undefined,
+          dltEntityId: campaign.integration.dltEntityId || undefined,
+          fromNumber: effectiveFromPhone,
+          senderId: effectiveFromPhone,
+        };
+      } else {
+        const activeIntegration = await this.prisma.smsIntegration.findFirst({
+          where: { provider: campaign.providerType as any, isActive: true },
+          include: { senderNumbers: true },
+          orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+        });
+        if (activeIntegration) {
+          if (campaign.providerType === 'TWILIO') {
+            if (activeIntegration.messagingServiceSid) {
+              effectiveFromPhone = activeIntegration.messagingServiceSid;
+            } else if (!effectiveFromPhone || !effectiveFromPhone.startsWith('+')) {
+              effectiveFromPhone =
+                activeIntegration.senderNumbers?.find((s: any) => s.phoneNumber?.startsWith('+'))?.phoneNumber ||
+                (activeIntegration.fromSender?.startsWith('+') ? activeIntegration.fromSender : null) ||
+                process.env.TWILIO_PHONE_NUMBER ||
+                '';
+            }
           }
 
-          // Generate dynamic short link code for link tracking
-          const shortCode = `${Math.random().toString(36).substring(2, 6)}${Date.now().toString(36).slice(-2)}`;
-          const destinationUrl = campaign.project?.brochureUrl || 'https://brokeros.io';
+          credentials = {
+            accountSid: activeIntegration.accountSid || undefined,
+            authToken: activeIntegration.authToken || undefined,
+            messagingServiceSid: activeIntegration.messagingServiceSid || undefined,
+            apiKey: activeIntegration.apiKey || undefined,
+            servicePlanId: activeIntegration.servicePlanId || undefined,
+            awsAccessKeyId: activeIntegration.awsAccessKeyId || undefined,
+            awsSecretKey: activeIntegration.awsSecretKey || undefined,
+            awsRegion: activeIntegration.awsRegion || undefined,
+            dltEntityId: activeIntegration.dltEntityId || undefined,
+            fromNumber: effectiveFromPhone,
+            senderId: effectiveFromPhone,
+          };
+        }
+      }
 
-          await this.prisma.smsShortLink.create({
-            data: {
-              code: shortCode,
-              destinationUrl,
+      const batchSize = 50;
+      const recipients = campaign.recipients;
+
+      for (let i = 0; i < recipients.length; i += batchSize) {
+        const chunk = recipients.slice(i, i + batchSize);
+
+        for (const rec of chunk) {
+          try {
+            const mergeData = (rec.mergeData as any) || {};
+            const recipientName = rec.name || mergeData.name || 'Client';
+            const firstName = mergeData.firstName || recipientName.split(' ')[0] || 'Client';
+
+            const normalizedPhone = MarketingSmsProcessor.normalizePhoneNumber(rec.phone);
+            if (!normalizedPhone || normalizedPhone.length < 8) {
+              await this.prisma.smsRecipient.update({
+                where: { id: rec.id },
+                data: {
+                  status: 'FAILED',
+                  failReason: 'Invalid phone number format',
+                  assignedProvider: campaign.providerType,
+                  assignedSenderPhone: campaign.fromSender,
+                },
+              });
+              await this.prisma.smsCampaign.update({
+                where: { id: campaignId },
+                data: { failedCount: { increment: 1 } },
+              });
+              continue;
+            }
+
+            const shortCode = `${Math.random().toString(36).substring(2, 6)}${Date.now().toString(36).slice(-2)}`;
+            const destinationUrl = campaign.project?.brochureUrl || 'https://brokeros.io';
+
+            await this.prisma.smsShortLink.create({
+              data: {
+                code: shortCode,
+                destinationUrl,
+                campaignId,
+                recipientId: rec.id,
+              },
+            });
+
+            const shortUrl = `${appBaseUrl}/s/${shortCode}`;
+
+            const tagData = {
+              firstName,
+              fullName: recipientName,
+              projectName: mergeData.projectName || campaign.project?.name || 'Luxury Residence',
+              projectStartingPrice: mergeData.budget ? `₹${(mergeData.budget / 10000000).toFixed(2)} Cr` : '₹1.50 Cr',
+              projectLocation: campaign.project?.address || campaign.project?.city || 'Prime Corridor',
+              agentName: mergeData.agentName || campaign.createdBy?.name || 'Sales Team',
+              agentPhone: mergeData.agentPhone || campaign.createdBy?.phoneNumber || '+91 98000 00000',
+              shortUrl,
+              optOut: 'Reply STOP to unsub',
+            };
+
+            let personalizedMsg = campaign.messageContent
+              .replace(/{{lead\.firstName}}/gi, tagData.firstName)
+              .replace(/{{lead\.fullName}}/gi, tagData.fullName)
+              .replace(/{{project\.name}}/gi, tagData.projectName)
+              .replace(/{{project\.startingPrice}}/gi, tagData.projectStartingPrice)
+              .replace(/{{project\.location}}/gi, tagData.projectLocation)
+              .replace(/{{agent\.name}}/gi, tagData.agentName)
+              .replace(/{{agent\.phone}}/gi, tagData.agentPhone)
+              .replace(/{{shortUrl}}/gi, tagData.shortUrl)
+              .replace(/{{optOut}}/gi, tagData.optOut);
+
+            if (!personalizedMsg.includes(shortUrl) && !campaign.messageContent.includes('{{shortUrl}}')) {
+              personalizedMsg = personalizedMsg.replace(/https?:\/\/[^\s]+/gi, shortUrl);
+            }
+
+            const { segments } = calculateSmsSegments(personalizedMsg);
+
+            const sendOptions: SendSmsOptions = {
+              from: effectiveFromPhone,
+              to: [{ phone: normalizedPhone, name: recipientName }],
+              message: personalizedMsg,
               campaignId,
-              recipientId: rec.id,
-            },
-          });
+              dltTemplateId: campaign.dltTemplateId || undefined,
+              dltEntityId: credentials?.dltEntityId || undefined,
+            };
 
-          const shortUrl = `${appBaseUrl}/s/${shortCode}`;
+            const sendResult = await adapter.sendBatch(sendOptions, credentials);
 
-          const tagData = {
-            firstName,
-            fullName: recipientName,
-            projectName: mergeData.projectName || campaign.project?.name || 'Luxury Residence',
-            projectStartingPrice: mergeData.budget ? `₹${(mergeData.budget / 10000000).toFixed(2)} Cr` : '₹1.50 Cr',
-            projectLocation: campaign.project?.address || campaign.project?.city || 'Prime Corridor',
-            agentName: mergeData.agentName || campaign.createdBy?.name || 'Sales Team',
-            agentPhone: mergeData.agentPhone || campaign.createdBy?.phoneNumber || '+91 98000 00000',
-            shortUrl,
-            optOut: 'Reply STOP to unsub',
-          };
-
-          let personalizedMsg = campaign.messageContent
-            .replace(/{{lead\.firstName}}/gi, tagData.firstName)
-            .replace(/{{lead\.fullName}}/gi, tagData.fullName)
-            .replace(/{{project\.name}}/gi, tagData.projectName)
-            .replace(/{{project\.startingPrice}}/gi, tagData.projectStartingPrice)
-            .replace(/{{project\.location}}/gi, tagData.projectLocation)
-            .replace(/{{agent\.name}}/gi, tagData.agentName)
-            .replace(/{{agent\.phone}}/gi, tagData.agentPhone)
-            .replace(/{{shortUrl}}/gi, tagData.shortUrl)
-            .replace(/{{optOut}}/gi, tagData.optOut);
-
-          // If message contains raw long URLs, replace with short link
-          if (!personalizedMsg.includes(shortUrl) && !campaign.messageContent.includes('{{shortUrl}}')) {
-            personalizedMsg = personalizedMsg.replace(/https?:\/\/[^\s]+/gi, shortUrl);
+            if (sendResult.success) {
+              await this.prisma.smsRecipient.update({
+                where: { id: rec.id },
+                data: {
+                  status: 'DELIVERED',
+                  providerMsgId: sendResult.providerMessageId,
+                  segmentsCount: segments,
+                  sentAt: new Date(),
+                  deliveredAt: new Date(),
+                  assignedProvider: campaign.providerType,
+                  assignedSenderPhone: effectiveFromPhone,
+                },
+              });
+              await this.prisma.smsCampaign.update({
+                where: { id: campaignId },
+                data: {
+                  sentCount: { increment: 1 },
+                  deliveredCount: { increment: 1 },
+                  totalSegmentsSent: { increment: segments },
+                },
+              });
+            } else {
+              await this.prisma.smsRecipient.update({
+                where: { id: rec.id },
+                data: {
+                  status: 'FAILED',
+                  failReason: sendResult.error || 'Carrier dispatch error',
+                  segmentsCount: segments,
+                  assignedProvider: campaign.providerType,
+                  assignedSenderPhone: effectiveFromPhone,
+                },
+              });
+              await this.prisma.smsCampaign.update({
+                where: { id: campaignId },
+                data: { failedCount: { increment: 1 } },
+              });
+            }
+          } catch (itemErr: any) {
+            this.logger.error(`Failed to dispatch SMS to recipient ${rec.phone}: ${itemErr?.message}`);
           }
-
-          const { segments } = MarketingSmsProcessor.calculateSegments(personalizedMsg);
-          campaignTotalSegments += segments;
-
-          const sendOptions: SendSmsOptions = {
-            from: campaign.fromSender,
-            to: [{ phone: normalizedPhone, name: recipientName }],
-            message: personalizedMsg,
-            campaignId,
-            dltTemplateId: campaign.dltTemplateId || undefined,
-            dltEntityId: credentials?.dltEntityId || undefined,
-          };
-
-          const sendResult = await adapter.sendBatch(sendOptions, credentials);
-
-          if (sendResult.success) {
-            await this.prisma.smsRecipient.update({
-              where: { id: rec.id },
-              data: {
-                status: 'DELIVERED',
-                providerMsgId: sendResult.providerMessageId,
-                segmentsCount: segments,
-                sentAt: new Date(),
-                deliveredAt: new Date(),
-              },
-            });
-            await this.prisma.smsCampaign.update({
-              where: { id: campaignId },
-              data: {
-                sentCount: { increment: 1 },
-                deliveredCount: { increment: 1 },
-                totalSegmentsSent: { increment: segments },
-              },
-            });
-          } else {
-            await this.prisma.smsRecipient.update({
-              where: { id: rec.id },
-              data: {
-                status: 'FAILED',
-                failReason: sendResult.error || 'Carrier dispatch error',
-                segmentsCount: segments,
-              },
-            });
-            await this.prisma.smsCampaign.update({
-              where: { id: campaignId },
-              data: { failedCount: { increment: 1 } },
-            });
-          }
-        } catch (itemErr: any) {
-          this.logger.error(`Failed to dispatch SMS to recipient ${rec.phone}: ${itemErr?.message}`);
         }
       }
     }
@@ -314,6 +385,272 @@ export class MarketingSmsProcessor implements OnModuleInit, OnModuleDestroy {
       data: { status: 'COMPLETED', completedAt: new Date() },
     });
 
-    this.logger.log(`SMS Campaign ${campaignId} processing complete! Total segments: ${campaignTotalSegments}`);
+    this.logger.log(`SMS Campaign ${campaignId} processing complete!`);
+  }
+
+  private async processPhoneStream(
+    campaign: any,
+    pool: any,
+    appBaseUrl: string,
+  ): Promise<void> {
+    const senderNumberRecord = pool.senderNumber;
+    let integration = senderNumberRecord?.integration;
+
+    const poolProvider = pool.provider || senderNumberRecord?.provider;
+
+    // 1. If not linked through senderNumber, find active integration matching pool's provider
+    if (!integration && poolProvider) {
+      if (pool.phoneNumber) {
+        integration = await this.prisma.smsIntegration.findFirst({
+          where: {
+            provider: poolProvider as any,
+            isActive: true,
+            OR: [
+              { fromSender: pool.phoneNumber },
+              { senderNumbers: { some: { phoneNumber: pool.phoneNumber } } },
+            ],
+          },
+          orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+        });
+      }
+
+      if (!integration) {
+        integration = await this.prisma.smsIntegration.findFirst({
+          where: { provider: poolProvider as any, isActive: true },
+          orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+        });
+      }
+    }
+
+    // 2. Fallback to campaign-level integration
+    if (!integration) {
+      integration = campaign.integration;
+    }
+
+    const provider = (integration?.provider || poolProvider || campaign.providerType || 'TWILIO') as SmsProviderType;
+    const adapter = this.getAdapter(provider);
+
+    const throttleConfig =
+      SMS_PROVIDER_THROTTLE_LIMITS[provider as keyof typeof SMS_PROVIDER_THROTTLE_LIMITS] ||
+      SMS_PROVIDER_THROTTLE_LIMITS.TWILIO;
+    const pacingDelayMs = throttleConfig.delayMs || 15;
+
+    const fromPhone =
+      pool.phoneNumber ||
+      pool.senderId ||
+      senderNumberRecord?.phoneNumber ||
+      senderNumberRecord?.senderId ||
+      integration?.fromSender ||
+      campaign.fromSender;
+
+    let credentials: SmsProviderCredentials | undefined;
+    if (integration) {
+      credentials = {
+        accountSid: integration.accountSid || undefined,
+        authToken: integration.authToken || undefined,
+        messagingServiceSid: integration.messagingServiceSid || undefined,
+        apiKey: integration.apiKey || undefined,
+        servicePlanId: integration.servicePlanId || undefined,
+        awsAccessKeyId: integration.awsAccessKeyId || undefined,
+        awsSecretKey: integration.awsSecretKey || undefined,
+        awsRegion: integration.awsRegion || undefined,
+        dltEntityId: integration.dltEntityId || undefined,
+        fromNumber: fromPhone,
+        senderId: fromPhone,
+      };
+    }
+
+    await this.prisma.campaignSmsSenderPool.update({
+      where: { id: pool.id },
+      data: { status: 'STREAMING' },
+    });
+
+    const recipients = await this.prisma.smsRecipient.findMany({
+      where: {
+        campaignId: campaign.id,
+        senderPoolId: pool.id,
+        status: 'QUEUED',
+      },
+      take: 5000,
+      orderBy: { createdAt: 'asc' },
+    });
+
+    this.logger.log(
+      `[PhoneStream ${fromPhone}] Starting stream with ${recipients.length} recipients via ${provider} (pacing: ${pacingDelayMs}ms, integrationId=${integration?.id || 'none'})`,
+    );
+
+    let consecutiveRateLimits = 0;
+
+    for (const rec of recipients) {
+      try {
+        if (pacingDelayMs > 0) {
+          await new Promise((r) => setTimeout(r, pacingDelayMs));
+        }
+
+        const normalizedPhone = MarketingSmsProcessor.normalizePhoneNumber(rec.phone);
+        if (!normalizedPhone || normalizedPhone.length < 8) {
+          await this.prisma.smsRecipient.update({
+            where: { id: rec.id },
+            data: {
+              status: 'FAILED',
+              failReason: 'Invalid phone number format',
+              assignedProvider: provider,
+              assignedSenderPhone: fromPhone,
+            },
+          });
+          await this.prisma.campaignSmsSenderPool.update({
+            where: { id: pool.id },
+            data: { failedCount: { increment: 1 } },
+          });
+          await this.prisma.smsCampaign.update({
+            where: { id: campaign.id },
+            data: { failedCount: { increment: 1 } },
+          });
+          continue;
+        }
+
+        const mergeData = (rec.mergeData as any) || {};
+        const recipientName = rec.name || mergeData.name || 'Client';
+        const firstName = mergeData.firstName || recipientName.split(' ')[0] || 'Client';
+
+        const shortCode = `${Math.random().toString(36).substring(2, 6)}${Date.now().toString(36).slice(-2)}`;
+        const destinationUrl = campaign.project?.brochureUrl || 'https://brokeros.io';
+
+        await this.prisma.smsShortLink.create({
+          data: {
+            code: shortCode,
+            destinationUrl,
+            campaignId: campaign.id,
+            recipientId: rec.id,
+          },
+        });
+
+        const shortUrl = `${appBaseUrl}/s/${shortCode}`;
+
+        const tagData = {
+          firstName,
+          fullName: recipientName,
+          projectName: mergeData.projectName || campaign.project?.name || 'Luxury Residence',
+          projectStartingPrice: mergeData.budget ? `₹${(mergeData.budget / 10000000).toFixed(2)} Cr` : '₹1.50 Cr',
+          projectLocation: campaign.project?.address || campaign.project?.city || 'Prime Corridor',
+          agentName: mergeData.agentName || campaign.createdBy?.name || 'Sales Team',
+          agentPhone: mergeData.agentPhone || campaign.createdBy?.phoneNumber || '+91 98000 00000',
+          shortUrl,
+          optOut: 'Reply STOP to unsub',
+        };
+
+        let personalizedMsg = campaign.messageContent
+          .replace(/{{lead\.firstName}}/gi, tagData.firstName)
+          .replace(/{{lead\.fullName}}/gi, tagData.fullName)
+          .replace(/{{project\.name}}/gi, tagData.projectName)
+          .replace(/{{project\.startingPrice}}/gi, tagData.projectStartingPrice)
+          .replace(/{{project\.location}}/gi, tagData.projectLocation)
+          .replace(/{{agent\.name}}/gi, tagData.agentName)
+          .replace(/{{agent\.phone}}/gi, tagData.agentPhone)
+          .replace(/{{shortUrl}}/gi, tagData.shortUrl)
+          .replace(/{{optOut}}/gi, tagData.optOut);
+
+        if (!personalizedMsg.includes(shortUrl) && !campaign.messageContent.includes('{{shortUrl}}')) {
+          personalizedMsg = personalizedMsg.replace(/https?:\/\/[^\s]+/gi, shortUrl);
+        }
+
+        const { segments } = calculateSmsSegments(personalizedMsg);
+
+        const sendOptions: SendSmsOptions = {
+          from: fromPhone,
+          to: [{ phone: normalizedPhone, name: recipientName }],
+          message: personalizedMsg,
+          campaignId: campaign.id,
+          dltTemplateId: campaign.dltTemplateId || undefined,
+          dltEntityId: credentials?.dltEntityId || undefined,
+        };
+
+        let sendResult = await adapter.sendBatch(sendOptions, credentials);
+
+        // Check for 429 Too Many Requests rate-limit backoff
+        if (!sendResult.success && sendResult.error && /rate limit|429|too many/i.test(sendResult.error)) {
+          consecutiveRateLimits++;
+          const backoffTime = Math.min(2500 * consecutiveRateLimits, 15000);
+          this.logger.warn(`[PhoneStream ${fromPhone}] 429 Rate Limit hit. Backing off for ${backoffTime}ms...`);
+          await new Promise((r) => setTimeout(r, backoffTime));
+          sendResult = await adapter.sendBatch(sendOptions, credentials);
+        } else {
+          consecutiveRateLimits = 0;
+        }
+
+        if (sendResult.success) {
+          await this.prisma.smsRecipient.update({
+            where: { id: rec.id },
+            data: {
+              status: 'DELIVERED',
+              providerMsgId: sendResult.providerMessageId,
+              segmentsCount: segments,
+              sentAt: new Date(),
+              deliveredAt: new Date(),
+              assignedProvider: provider,
+              assignedSenderPhone: fromPhone,
+            },
+          });
+
+          await this.prisma.campaignSmsSenderPool.update({
+            where: { id: pool.id },
+            data: {
+              sentCount: { increment: 1 },
+              deliveredCount: { increment: 1 },
+            },
+          });
+
+          await this.prisma.smsCampaign.update({
+            where: { id: campaign.id },
+            data: {
+              sentCount: { increment: 1 },
+              deliveredCount: { increment: 1 },
+              totalSegmentsSent: { increment: segments },
+            },
+          });
+
+          if (senderNumberRecord?.id) {
+            await this.prisma.smsSenderNumber.update({
+              where: { id: senderNumberRecord.id },
+              data: { sentToday: { increment: 1 } },
+            }).catch(() => { });
+          }
+        } else {
+          await this.prisma.smsRecipient.update({
+            where: { id: rec.id },
+            data: {
+              status: 'FAILED',
+              failReason: sendResult.error || 'Carrier delivery error',
+              segmentsCount: segments,
+              assignedProvider: provider,
+              assignedSenderPhone: fromPhone,
+            },
+          });
+
+          await this.prisma.campaignSmsSenderPool.update({
+            where: { id: pool.id },
+            data: {
+              failedCount: { increment: 1 },
+            },
+          });
+
+          await this.prisma.smsCampaign.update({
+            where: { id: campaign.id },
+            data: {
+              failedCount: { increment: 1 },
+            },
+          });
+        }
+      } catch (itemErr: any) {
+        this.logger.error(`[PhoneStream ${fromPhone}] Failed recipient ${rec.phone}: ${itemErr?.message}`);
+      }
+    }
+
+    await this.prisma.campaignSmsSenderPool.update({
+      where: { id: pool.id },
+      data: { status: 'COMPLETED' },
+    });
+
+    this.logger.log(`[PhoneStream ${fromPhone}] Stream finished`);
   }
 }
