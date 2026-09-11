@@ -354,47 +354,41 @@ export class EmailInboundService {
    * Live Test Simulator: Injects a test lead reply without DNS MX setup
    */
   async simulateInboundReply(dto: SimulateInboundReplyDto) {
-    const inboundRes = await this.handleInboundEmail({
-      from: dto.leadEmail,
-      to: dto.senderEmail,
+    const fromEmail = this.cleanEmail(dto.leadEmail) || 'prospect-tester@example.com';
+    const toEmail = this.cleanEmail(dto.senderEmail) || 'sales@brokeros.com';
+
+    const automationResult = await this.automationEngine.processInboundReply({
+      fromEmail,
+      toEmail,
       subject: dto.subject,
-      text: dto.bodyText,
+      body: dto.bodyText,
       provider: 'SIMULATOR',
+      forceFlowId: dto.flowId,
+      isSimulation: true,
     });
 
-    // Generate real-time AI reply preview so the Live Concierge Test Bench
-    // in Email AI Settings displays the full model output
-    let aiReply: { subject: string; textBody: string; htmlBody: string } | null = null;
-    let aiError: string | null = null;
-    try {
-      aiReply = await this.aiService.generateAutoreply({
-        leadName: 'Prospect',
-        inboundSubject: dto.subject,
-        inboundBody: dto.bodyText,
-        originalCampaignTitle: 'Skyline Crest Residences',
-      });
-    } catch (err: any) {
-      aiError = err.message;
-      this.logger.warn(`AI simulator preview notice: ${err.message}`);
-    }
-
-    const executedText = inboundRes.actionsExecuted?.length
-      ? inboundRes.actionsExecuted.join('\n')
-      : null;
-
     const outputText =
-      aiReply?.textBody ||
-      executedText ||
-      (aiError ? `AI Notice: ${aiError}` : 'Inbound query processed successfully by Email Automation Engine.');
+      automationResult.outboundReply ||
+      (automationResult.actionsExecuted?.length ? automationResult.actionsExecuted.join('\n') : null) ||
+      'Inbound simulation processed with no outbound action.';
 
     return {
-      ...inboundRes,
-      outboundReply: inboundRes.outboundReply || aiReply?.textBody,
+      status: 'ok',
+      matchedFlowId: automationResult.matchedFlowId || null,
+      flowName: automationResult.flowName || null,
+      triggerMatched: automationResult.triggerMatched ?? true,
+      triggerReason: automationResult.triggerReason || null,
+      actionsExecuted: automationResult.actionsExecuted || [],
+      outboundReply: automationResult.outboundReply || null,
+      renderedSubject: automationResult.renderedSubject || null,
+      renderedBody: automationResult.renderedBody || automationResult.outboundReply || null,
       summary: outputText,
       output: {
         text: outputText,
-        subject: aiReply?.subject,
-        html: aiReply?.htmlBody,
+        subject: automationResult.renderedSubject || dto.subject,
+        html: automationResult.renderedBody
+          ? `<p>${automationResult.renderedBody.replace(/\n/g, '<br/>')}</p>`
+          : null,
       },
     };
   }
