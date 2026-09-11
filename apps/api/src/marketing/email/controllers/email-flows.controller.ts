@@ -12,11 +12,15 @@ import {
   Body,
 } from '@nestjs/common';
 import { EmailFlowsService } from '../services/email-flows.service.js';
-import { CreateEmailFlowDto, UpdateEmailFlowDto } from '../dto/email-flows.dto.js';
+import { EmailInboundService } from '../services/email-inbound.service.js';
+import { CreateEmailFlowDto, UpdateEmailFlowDto, SimulateInboundReplyDto } from '../dto/email-flows.dto.js';
 
 @Controller('api/marketing/email/flows')
 export class EmailFlowsController {
-  constructor(private readonly flowsService: EmailFlowsService) { }
+  constructor(
+    private readonly flowsService: EmailFlowsService,
+    private readonly inboundService: EmailInboundService,
+  ) { }
 
   @Get()
   async findAll() {
@@ -56,5 +60,16 @@ export class EmailFlowsController {
   @Get(':id/runs')
   async getFlowRuns(@Param('id') id: string) {
     return this.flowsService.getFlowRuns(id);
+  }
+
+  @Post(':id/simulate')
+  async simulate(@Param('id') id: string, @Body() dto: Partial<SimulateInboundReplyDto>) {
+    return this.inboundService.simulateInboundReply({
+      flowId: id,
+      leadEmail: dto.leadEmail || 'prospect-tester@example.com',
+      senderEmail: dto.senderEmail || 'sales@brokeros.com',
+      subject: dto.subject || 'Inquiry regarding property and visit',
+      bodyText: dto.bodyText || '',
+    });
   }
 }
