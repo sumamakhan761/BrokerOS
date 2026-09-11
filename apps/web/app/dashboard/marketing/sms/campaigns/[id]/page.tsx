@@ -209,6 +209,8 @@ export default function SmsCampaignDetailPage() {
           recipients={recipients}
           loading={isLoading}
           onPromote={handlePromoteRecipient}
+          campaignId={campaignId}
+          campaignTitle={campaign?.title}
         />
       </div>
     </DashboardPageWrapper>
