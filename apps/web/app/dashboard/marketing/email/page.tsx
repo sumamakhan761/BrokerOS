@@ -14,6 +14,7 @@ import {
   Zap,
   Workflow,
   ArrowLeft,
+  Inbox,
 } from "lucide-react";
 import { DashboardPageWrapper } from "@/components/dashboard/DashboardPageWrapper";
 import { StatCards } from "@/components/dashboard/StatCards";
@@ -104,6 +105,12 @@ export default function EmailMarketingDashboard() {
               <span>Marketing Hub</span>
             </Button>
           </Link>
+          <Link href="/dashboard/marketing/email/inbox">
+            <Button variant="outline" size="sm" className="gap-2 text-xs font-bold text-blue-600 border-blue-200 hover:bg-blue-50">
+              <Inbox className="w-3.5 h-3.5" />
+              <span>Live Inbox</span>
+            </Button>
+          </Link>
           <Link href="/dashboard/marketing/email/flows">
             <Button variant="outline" size="sm" className="gap-2 text-xs font-bold">
               <Workflow className="w-3.5 h-3.5 text-purple-600" />
@@ -127,6 +134,13 @@ export default function EmailMarketingDashboard() {
     >
       {/* ── Subnavigation Tabs ── */}
       <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200/80 rounded-2xl overflow-x-auto shadow-2xs">
+        <Link
+          href="/dashboard/marketing/email/inbox"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-subtle transition-all"
+        >
+          <Inbox className="w-3.5 h-3.5 text-blue-600" />
+          <span>Live Inbox</span>
+        </Link>
         <Link
           href="/dashboard/marketing/email"
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 text-white shadow-xs"
