@@ -28,6 +28,7 @@ export default function CampaignDetailPage() {
 
   const [analytics, setAnalytics] = useState<CampaignAnalyticsSummary | null>(null);
   const [recipients, setRecipients] = useState<any[]>([]);
+  const [recipientCounts, setRecipientCounts] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,12 +39,16 @@ export default function CampaignDetailPage() {
     setError(null);
     try {
       const [analyticsRes, recipientsRes] = await Promise.all([
-        fetch(`${baseUrl}/api/marketing/campaigns/${campaignId}/analytics`).then(async (r) => {
+        fetch(`${baseUrl}/api/marketing/campaigns/${campaignId}/analytics`, {
+          credentials: "include",
+        }).then(async (r) => {
           if (!r.ok) throw new Error(`Campaign not found (${r.status})`);
           return r.json();
         }),
-        fetch(`${baseUrl}/api/marketing/campaigns/${campaignId}/recipients`).then(async (r) => {
-          if (!r.ok) return { items: [] };
+        fetch(`${baseUrl}/api/marketing/campaigns/${campaignId}/recipients?limit=500`, {
+          credentials: "include",
+        }).then(async (r) => {
+          if (!r.ok) return { items: [], counts: null };
           return r.json();
         }),
       ]);
@@ -52,6 +57,9 @@ export default function CampaignDetailPage() {
         setAnalytics(analyticsRes);
       }
       setRecipients(recipientsRes?.items || []);
+      if (recipientsRes?.counts) {
+        setRecipientCounts(recipientsRes.counts);
+      }
     } catch (err: any) {
       setError(err?.message || "Failed to load campaign analytics");
       setAnalytics(null);
@@ -157,6 +165,7 @@ export default function CampaignDetailPage() {
           {/* Recipient Activity Table */}
           <RecipientActivityTable
             recipients={recipients}
+            counts={recipientCounts}
             onPromoteRecipient={handlePromoteRecipient}
             campaignId={campaignId}
             campaignTitle={analytics?.title}
