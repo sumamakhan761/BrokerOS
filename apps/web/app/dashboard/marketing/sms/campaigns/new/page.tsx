@@ -22,6 +22,7 @@ import type {
   CsvLeadRow,
   SmsProviderType,
 } from "@/features/marketing/types";
+import type { CampaignSmsSenderPoolConfig } from "@brokeros/types";
 
 const SMS_DRAFT_STORAGE_KEY = "brokeros_sms_campaign_draft_v1";
 
@@ -63,14 +64,33 @@ export default function NewSmsCampaignPage() {
   const [messageContent, setMessageContent] = useState<string>(DEFAULT_SMS_TEMPLATES[0].message);
 
   // Form State: Step 4 (Test SMS & Review)
+  const [senderPools, setSenderPools] = useState<CampaignSmsSenderPoolConfig[]>([]);
+  const [allocationMode, setAllocationMode] = useState<"AUTO_EVEN" | "CUSTOM_PERCENTAGE">("AUTO_EVEN");
   const [testPhone, setTestPhone] = useState("");
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [testSendStatus, setTestSendStatus] = useState<{ ok: boolean; msg: string } | null>(null);
 
   // External data
   const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
+  const [integrations, setIntegrations] = useState<any[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Provider change handler to automatically adapt fromSender to verified number
+  const handleProviderTypeChange = (newProvider: SmsProviderType) => {
+    setProviderType(newProvider);
+    const matched = integrations.find((i) => i.provider === newProvider && i.isActive);
+    if (matched) {
+      const best =
+        matched.senderNumbers?.find((n: any) => n.phoneNumber?.startsWith("+"))?.phoneNumber ||
+        matched.fromSender;
+      if (best) {
+        setFromSender(best);
+        return;
+      }
+    }
+    setFromSender("");
+  };
 
   // Draft Auto-Save State
   const [draftCampaignId, setDraftCampaignId] = useState<string | null>(null);
@@ -79,15 +99,35 @@ export default function NewSmsCampaignPage() {
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Fetch Projects
+  // 1. Fetch Projects & SMS Integrations
   useEffect(() => {
-    async function loadProjects() {
+    async function loadProjectsAndIntegrations() {
       try {
         setIsLoadingProjects(true);
-        const res = await fetch(`${baseUrl}/api/marketing/sms/projects`);
-        if (res.ok) {
-          const data = await res.json();
+        const [pRes, iRes] = await Promise.all([
+          fetch(`${baseUrl}/api/marketing/sms/projects`),
+          fetch(`${baseUrl}/api/marketing/sms/integrations`),
+        ]);
+
+        if (pRes.ok) {
+          const data = await pRes.json();
           setProjects(data || []);
+        }
+        if (iRes.ok) {
+          const intData = await iRes.json();
+          const list = Array.isArray(intData) ? intData : [];
+          setIntegrations(list);
+
+          // If fromSender is empty or legacy default, initialize to active provider's sender
+          const twilioInt = list.find((i: any) => i.provider === "TWILIO" && i.isActive);
+          if (twilioInt) {
+            const verified =
+              twilioInt.senderNumbers?.find((n: any) => n.phoneNumber?.startsWith("+"))?.phoneNumber ||
+              twilioInt.fromSender;
+            if (verified) {
+              setFromSender(verified);
+            }
+          }
         }
       } catch {
         // Fallback gracefully
@@ -95,7 +135,7 @@ export default function NewSmsCampaignPage() {
         setIsLoadingProjects(false);
       }
     }
-    loadProjects();
+    loadProjectsAndIntegrations();
   }, [baseUrl]);
 
   // 2. Restore Draft from LocalStorage on mount
@@ -294,7 +334,9 @@ export default function NewSmsCampaignPage() {
         projectId: projectId || undefined,
         isCpCampaign,
         fromSender: fromSender || "SKYLIN",
-        providerType,
+        providerType: senderPools.length > 1 ? "MULTI_PROVIDER" : providerType,
+        senderPools: senderPools.length > 0 ? senderPools : undefined,
+        allocationMode,
         dltTemplateId: dltTemplateId || undefined,
         messageContent,
         audienceSource,
@@ -405,7 +447,7 @@ export default function NewSmsCampaignPage() {
         />
       </div>
 
-      {/* ── STEP 1: CAMPAIGN INFORMATION & GATEWAY ── */}
+      {/* ── STEP 1: CAMPAIGN INFORMATION ── */}
       {currentStep === 1 && (
         <SmsStep1ProjectGateway
           title={title}
@@ -414,12 +456,6 @@ export default function NewSmsCampaignPage() {
           onProjectIdChange={setProjectId}
           isCpCampaign={isCpCampaign}
           onIsCpCampaignChange={setIsCpCampaign}
-          providerType={providerType}
-          onProviderTypeChange={setProviderType}
-          fromSender={fromSender}
-          onFromSenderChange={setFromSender}
-          dltTemplateId={dltTemplateId}
-          onDltTemplateIdChange={setDltTemplateId}
           projects={projects}
           isLoadingProjects={isLoadingProjects}
           onNext={() => setCurrentStep(2)}
@@ -466,6 +502,12 @@ export default function NewSmsCampaignPage() {
           fromSender={fromSender}
           providerType={providerType}
           projectName={selectedProjectObj?.name}
+          messageContent={messageContent}
+          integrations={integrations}
+          senderPools={senderPools}
+          onSenderPoolsChange={setSenderPools}
+          allocationMode={allocationMode}
+          onAllocationModeChange={setAllocationMode}
           testPhone={testPhone}
           onTestPhoneChange={setTestPhone}
           onSendTest={handleSendTest}
