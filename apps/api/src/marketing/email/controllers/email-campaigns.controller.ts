@@ -81,7 +81,15 @@ export class EmailCampaignsController {
   async getRecipients(
     @Param('id') id: string,
     @Query()
-    query: { page?: number; limit?: number; status?: string; search?: string },
+    query: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      search?: string;
+      engagement?: string;
+      crmStatus?: string;
+      source?: string;
+    },
   ) {
     return this.emailService.getCampaignRecipients(id, query);
   }
