@@ -108,6 +108,19 @@ export interface SmsCampaignItem {
   createdBy?: { id: string; name: string; email: string };
 }
 
+export interface SmsSenderNumberRecord {
+  id: string;
+  phoneNumber: string;
+  dltHeader?: string | null;
+  dailyQuota: number;
+  sentToday: number;
+  isActive: boolean;
+  isVerified: boolean;
+  provider: string;
+  integrationId: string;
+  createdAt?: string;
+}
+
 export interface SmsIntegrationRecord {
   id: string;
   provider: SmsProviderType;
@@ -117,6 +130,7 @@ export interface SmsIntegrationRecord {
   fromSender: string;
   awsRegion?: string;
   dltEntityId?: string;
+  senderNumbers?: SmsSenderNumberRecord[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -129,6 +143,7 @@ export interface SmsRecipientItem {
   source: AudienceSourceType;
   segmentsCount: number;
   clickCount: number;
+  sentAt?: string;
   firstClickedAt?: string;
   deliveredAt?: string;
   failReason?: string;
