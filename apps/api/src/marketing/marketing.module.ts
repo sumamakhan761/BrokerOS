@@ -14,8 +14,10 @@ import { EmailWebhooksController } from './email/controllers/email-webhooks.cont
 import { EmailInboundController } from './email/controllers/email-inbound.controller.js';
 import { EmailFlowsController } from './email/controllers/email-flows.controller.js';
 import { EmailSettingsToolsController } from './email/controllers/email-settings-tools.controller.js';
+import { EmailInboxController } from './email/controllers/email-inbox.controller.js';
 import { EmailInboundService } from './email/services/email-inbound.service.js';
 import { EmailFlowsService } from './email/services/email-flows.service.js';
+import { EmailInboxService } from './email/services/email-inbox.service.js';
 import { EmailAutomationEngineService } from './email/automations/email-automation-engine.service.js';
 import { EmailAiService } from './email/ai/email-ai.service.js';
 
@@ -81,6 +83,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module.js';
     EmailInboundController,
     EmailFlowsController,
     EmailSettingsToolsController,
+    EmailInboxController,
 
     // SMS Controllers
     SmsCampaignsController,
@@ -117,6 +120,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module.js';
     EmailService,
     EmailInboundService,
     EmailFlowsService,
+    EmailInboxService,
     EmailAutomationEngineService,
     EmailAiService,
 
@@ -156,6 +160,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module.js';
     EmailAnalyticsService,
     EmailIntegrationsService,
     EmailTrackingService,
+    EmailInboxService,
 
     SmsService,
     SmsAudienceService,

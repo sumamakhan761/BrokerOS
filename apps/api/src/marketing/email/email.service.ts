@@ -68,7 +68,15 @@ export class EmailService {
 
   async getCampaignRecipients(
     campaignId: string,
-    query?: { page?: number; limit?: number; status?: string; search?: string },
+    query?: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      search?: string;
+      engagement?: string;
+      crmStatus?: string;
+      source?: string;
+    },
   ) {
     return this.analyticsService.getCampaignRecipients(campaignId, query);
   }
