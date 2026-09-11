@@ -89,7 +89,79 @@ export class EmailInboundService {
       },
     });
 
-    // 3. Dispatch to Email Automation Engine
+    // 3. Sync to 2-Way Email Team Inbox (EmailConversation & EmailMessage)
+    try {
+      let conversation = await this.prisma.emailConversation.findFirst({
+        where: {
+          contactEmail: { equals: fromEmail, mode: 'insensitive' },
+          isActive: true,
+        },
+      });
+
+      const contactName =
+        matchedRecipient?.name ||
+        (matchedRecipient?.lead
+          ? `${matchedRecipient.lead.firstName || ''} ${matchedRecipient.lead.lastName || ''}`.trim()
+          : null) ||
+        fromEmail.split('@')[0];
+
+      if (!conversation) {
+        conversation = await this.prisma.emailConversation.create({
+          data: {
+            contactEmail: fromEmail,
+            contactName,
+            subject: subject || 'New Inquiry',
+            leadId: matchedRecipient?.leadId || null,
+            campaignId: matchedRecipient?.campaignId || null,
+            recipientId: matchedRecipient?.id || null,
+            assignedProvider: matchedRecipient?.assignedProvider || provider || 'SYSTEM_DEFAULT',
+            assignedSenderEmail: toEmail || matchedRecipient?.assignedSenderEmail || 'sales@brokeros.com',
+            assignedSenderName: matchedRecipient?.campaign?.fromName || 'Sales Team',
+            status: 'open',
+            unreadCount: 1,
+            lastMessageText: body.slice(0, 180) || 'New inbound email',
+            lastMessageAt: new Date(),
+          },
+        });
+      } else {
+        conversation = await this.prisma.emailConversation.update({
+          where: { id: conversation.id },
+          data: {
+            unreadCount: { increment: 1 },
+            lastMessageText: body.slice(0, 180) || 'New inbound reply',
+            lastMessageAt: new Date(),
+            status: 'open',
+            ...(matchedRecipient?.leadId && !conversation.leadId ? { leadId: matchedRecipient.leadId } : {}),
+            ...(matchedRecipient?.assignedProvider ? { assignedProvider: matchedRecipient.assignedProvider } : {}),
+            ...(toEmail ? { assignedSenderEmail: toEmail } : {}),
+          },
+        });
+      }
+
+      // Record inbound EmailMessage
+      await this.prisma.emailMessage.create({
+        data: {
+          conversationId: conversation.id,
+          direction: 'INBOUND',
+          senderType: 'contact',
+          senderName: contactName,
+          fromEmail,
+          toEmail,
+          subject,
+          bodyText: dto.text || body,
+          bodyHtml: dto.html,
+          status: 'DELIVERED',
+          provider,
+          providerMsgId,
+          inReplyTo,
+          sentAt: new Date(),
+        },
+      });
+    } catch (err: any) {
+      this.logger.warn(`Failed to sync inbound email to EmailConversation: ${err.message}`);
+    }
+
+    // 4. Dispatch to Email Automation Engine
     const automationResult = await this.automationEngine.processInboundReply({
       inboundId: inboundLog.id,
       fromEmail,
@@ -103,6 +175,43 @@ export class EmailInboundService {
       recipient: matchedRecipient,
     });
 
+    // 5. If automation produced an outbound reply, record it in thread as a bot reply
+    if (automationResult.outboundReply) {
+      try {
+        const conv = await this.prisma.emailConversation.findFirst({
+          where: { contactEmail: { equals: fromEmail, mode: 'insensitive' } },
+        });
+        if (conv) {
+          await this.prisma.emailMessage.create({
+            data: {
+              conversationId: conv.id,
+              direction: 'OUTBOUND',
+              senderType: 'bot',
+              senderName: 'Automated Bot',
+              fromEmail: conv.assignedSenderEmail || toEmail,
+              toEmail: fromEmail,
+              subject: `Re: ${subject}`,
+              bodyText: automationResult.outboundReply,
+              bodyHtml: `<p>${automationResult.outboundReply.replace(/\n/g, '<br/>')}</p>`,
+              status: 'SENT',
+              provider: conv.assignedProvider,
+              isAiGenerated: true,
+              sentAt: new Date(),
+            },
+          });
+          await this.prisma.emailConversation.update({
+            where: { id: conv.id },
+            data: {
+              lastMessageText: automationResult.outboundReply.slice(0, 180),
+              lastMessageAt: new Date(),
+            },
+          });
+        }
+      } catch (err: any) {
+        this.logger.warn(`Failed to record bot reply to EmailMessage: ${err.message}`);
+      }
+    }
+
     return {
       status: 'ok',
       inboundId: inboundLog.id,
@@ -111,6 +220,9 @@ export class EmailInboundService {
       assignedProvider: matchedRecipient?.assignedProvider || null,
       assignedSenderEmail: matchedRecipient?.assignedSenderEmail || null,
       actionsExecuted: automationResult.actionsExecuted,
+      matchedFlowId: automationResult.matchedFlowId,
+      flowName: automationResult.flowName,
+      outboundReply: automationResult.outboundReply,
     };
   }
 
@@ -277,6 +389,7 @@ export class EmailInboundService {
 
     return {
       ...inboundRes,
+      outboundReply: inboundRes.outboundReply || aiReply?.textBody,
       summary: outputText,
       output: {
         text: outputText,
