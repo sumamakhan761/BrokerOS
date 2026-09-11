@@ -1,4 +1,6 @@
 import type {
+  DiscoveredSenderNumber,
+  InboundSmsPayload,
   ISmsMarketingProvider,
   SendSmsOptions,
   SendSmsResult,
@@ -32,12 +34,23 @@ export class GupshupSmsClient {
   constructor(credentials?: SmsProviderCredentials) {
     this.apiKey = credentials?.apiKey || process.env.GUPSHUP_API_KEY || '';
     this.dltEntityId = credentials?.dltEntityId || process.env.GUPSHUP_DLT_ENTITY_ID;
-    this.senderId = credentials?.senderId || process.env.GUPSHUP_SENDER_ID || 'SKYLIN';
+    this.senderId = credentials?.senderId || process.env.GUPSHUP_SENDER_ID || 'SKYLRE';
   }
 
   async validate(): Promise<boolean> {
     if (!this.apiKey) return false;
     return this.apiKey.length >= 8;
+  }
+
+  async listSenderNumbers(): Promise<DiscoveredSenderNumber[]> {
+    const discovered: DiscoveredSenderNumber[] = [];
+    const sid = this.senderId || 'SKYLRE';
+    discovered.push({
+      senderId: sid,
+      provider: 'GUPSHUP',
+      isVerified: true,
+    });
+    return discovered;
   }
 
   async send(options: SendSmsOptions): Promise<SendSmsResult> {
@@ -60,7 +73,7 @@ export class GupshupSmsClient {
         };
       }
 
-      const sender = options.from || this.senderId || 'SKYLIN';
+      const sender = options.from || this.senderId || 'SKYLRE';
       const toPhoneNumbers = options.to.map((r) => r.phone.replace(/[^0-9]/g, '')).join(',');
 
       const params = new URLSearchParams();
@@ -88,7 +101,8 @@ export class GupshupSmsClient {
       const isSuccess = res.status === 200 && (data?.response?.status === 'success' || !data?.response?.status);
 
       if (isSuccess) {
-        const providerMessageId = data?.response?.id || `gs-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        const providerMessageId =
+          data?.response?.id || `gs-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
         return {
           success: true,
           provider: 'GUPSHUP',
@@ -151,6 +165,26 @@ export class GupshupWebhookParser {
 
     return events;
   }
+
+  static parseInbound(headers: Record<string, any>, payload: any): InboundSmsPayload | null {
+    if (!payload || typeof payload !== 'object') return null;
+
+    const fromPhone = payload.phoneNo || payload.mobile || payload.msisdn || payload.from;
+    const toPhone = payload.mask || payload.to || '';
+    const textBody = payload.text || payload.message || payload.msg;
+    const providerMsgId = payload.externalId || payload.id;
+
+    if (!fromPhone || !textBody) return null;
+
+    return {
+      fromPhone,
+      toPhone,
+      textBody,
+      provider: 'GUPSHUP',
+      providerMsgId,
+      headers,
+    };
+  }
 }
 
 // ============================================================================
@@ -170,7 +204,16 @@ export class GupshupSmsAdapter implements ISmsMarketingProvider {
     return client.send(options);
   }
 
+  async listSenderNumbers(credentials?: SmsProviderCredentials): Promise<DiscoveredSenderNumber[]> {
+    const client = new GupshupSmsClient(credentials);
+    return client.listSenderNumbers();
+  }
+
   parseWebhookEvent(headers: Record<string, any>, payload: any): SmsWebhookEvent[] {
     return GupshupWebhookParser.parse(headers, payload);
+  }
+
+  parseInboundMessage(headers: Record<string, any>, payload: any): InboundSmsPayload | null {
+    return GupshupWebhookParser.parseInbound(headers, payload);
   }
 }
