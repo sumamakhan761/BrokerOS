@@ -134,6 +134,10 @@ export class UniversalInboundEmailDto {
 }
 
 export class SimulateInboundReplyDto {
+  @IsOptional()
+  @IsString()
+  flowId?: string;
+
   @IsString()
   leadEmail!: string;
 
@@ -151,52 +155,7 @@ export class SimulateInboundReplyDto {
   bodyText!: string;
 }
 
-// ── Quick Reply & Tag DTOs ──
-
-export class CreateEmailQuickReplyDto {
-  @IsString()
-  shortcut!: string; // e.g. "/site-visit"
-
-  @IsString()
-  title!: string;
-
-  @IsOptional()
-  @IsString()
-  subject?: string;
-
-  @IsString()
-  contentHtml!: string;
-
-  @IsOptional()
-  @IsString()
-  category?: string;
-}
-
-export class UpdateEmailQuickReplyDto {
-  @IsOptional()
-  @IsString()
-  shortcut?: string;
-
-  @IsOptional()
-  @IsString()
-  title?: string;
-
-  @IsOptional()
-  @IsString()
-  subject?: string;
-
-  @IsOptional()
-  @IsString()
-  contentHtml?: string;
-
-  @IsOptional()
-  @IsString()
-  category?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
-}
+// ── Tag DTOs ──
 
 export class CreateEmailTagDto {
   @IsString()
