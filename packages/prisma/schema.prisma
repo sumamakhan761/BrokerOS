@@ -590,6 +590,7 @@ model User {
   chatRoomMembers          ChatRoomMember[]
   chatMessages             ChatMessage[]
   whatsappConversations    WhatsAppConversation[]  @relation("ConversationAgent")
+  emailConversations       EmailConversation[]     @relation("EmailConversationAgent")
   brokerMeetings           BrokerMeeting[]
   managedBrokers           Broker[]                @relation("SourcingManager")
   assignmentFrom           LeadAssignmentHistory[] @relation("AssignmentFrom")
@@ -962,6 +963,7 @@ model Lead {
   followUps             FollowUp[]
   callRecords           CallRecord[]
   whatsappConversations WhatsAppConversation[]
+  emailConversations    EmailConversation[]
   siteVisits            SiteVisit[]
   negotiations          Negotiation[]
   notes                 Note[]                  @relation("LeadNotes")
@@ -2270,6 +2272,7 @@ model Customer {
   notes                 Note[]                 @relation("CustomerNotes")
   activities            ActivityTimeline[]     @relation("CustomerActivities")
   whatsappConversations WhatsAppConversation[]
+  emailConversations    EmailConversation[]
 
   @@index([phone])
   @@index([leadId])
@@ -2545,6 +2548,7 @@ model Broker {
   notes                 Note[]                    @relation("BrokerNotes")
   activities            ActivityTimeline[]        @relation("BrokerActivities")
   whatsappConversations WhatsAppConversation[]
+  emailConversations    EmailConversation[]
   leads                 Lead[]
   campaignRecipients    CampaignRecipient[]
 
@@ -3145,6 +3149,7 @@ model MarketingCampaign {
   recipients     CampaignRecipient[]
   senderPools    CampaignSenderPool[]
   trackingEvents EmailTrackingEvent[]
+  emailConversations EmailConversation[]
 
   @@index([status])
   @@index([channel])
@@ -3368,6 +3373,91 @@ model EmailInboundMessage {
   @@index([matchedRecipientId])
   @@index([matchedCampaignId])
   @@map("email_inbound_message")
+}
+
+model EmailConversation {
+  id                  String    @id @default(uuid())
+  contactEmail        String
+  contactName         String?
+  subject             String?
+
+  leadId              String?
+  lead                Lead?     @relation(fields: [leadId], references: [id])
+  customerId          String?
+  customer            Customer? @relation(fields: [customerId], references: [id])
+  brokerId            String?
+  broker              Broker?   @relation(fields: [brokerId], references: [id])
+
+  agentUserId         String?
+  agent               User?     @relation("EmailConversationAgent", fields: [agentUserId], references: [id])
+
+  status              String    @default("open") // "open" | "pending" | "closed"
+  lastMessageText     String?   @db.Text
+  lastMessageAt       DateTime?
+  unreadCount         Int       @default(0)
+  aiAutoReplyDisabled Boolean   @default(false)
+  aiReplyCount        Int       @default(0)
+
+  // Dedicated Provider & Domain thread continuity
+  assignedProvider    String    @default("SYSTEM_DEFAULT") // "SENDGRID" | "AWS_SES" | "BREVO" | "MAILCHIMP" | "SYSTEM_DEFAULT"
+  assignedSenderEmail String?   // e.g. "deals@skyline-towers.ae"
+  assignedSenderName  String?   // e.g. "Skyline Sales Team"
+  campaignId          String?
+  campaign            MarketingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  recipientId         String?
+
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  messages            EmailMessage[]
+
+  @@index([contactEmail])
+  @@index([status])
+  @@index([leadId])
+  @@index([customerId])
+  @@index([brokerId])
+  @@index([agentUserId])
+  @@index([lastMessageAt])
+  @@map("email_conversation")
+}
+
+model EmailMessage {
+  id             String            @id @default(uuid())
+  conversationId String
+  conversation   EmailConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  direction      String            // "INBOUND" | "OUTBOUND"
+  senderType     String            @default("agent") // "agent" | "bot" | "contact"
+  senderName     String?
+  fromEmail      String
+  toEmail        String
+  subject        String?
+  bodyText       String?           @db.Text
+  bodyHtml       String?           @db.Text
+
+  status         String            @default("SENT") // "PENDING" | "SENT" | "DELIVERED" | "OPENED" | "CLICKED" | "FAILED"
+  provider       String?           // "SENDGRID" | "AWS_SES" | "BREVO" | "MAILCHIMP" | "SIMULATOR"
+  providerMsgId  String?           @unique
+  inReplyTo      String?
+
+  attachments    Json?             // Array of { name: string, url: string, size?: number, contentType?: string }
+  isAiGenerated  Boolean           @default(false)
+
+  sentAt         DateTime?
+  deliveredAt    DateTime?
+  openedAt       DateTime?
+  failedAt       DateTime?
+  failureReason  String?
+
+  createdAt      DateTime          @default(now())
+
+  @@index([conversationId])
+  @@index([direction])
+  @@index([status])
+  @@index([providerMsgId])
+  @@index([createdAt])
+  @@map("email_message")
 }
 
 model EmailAiConfig {
