@@ -33,6 +33,7 @@ import {
   Tag as TagIcon,
   ShieldCheck,
   Building2,
+  Inbox,
 } from "lucide-react";
 import { InstagramIcon } from "@/components/ui/InstagramIcon";
 
@@ -48,6 +49,7 @@ export function getRoleNavLinks(userRole: string, pathname: string): NavLinkItem
   if (pathname.startsWith("/dashboard/marketing/email")) {
     return [
       { name: "Email Overview", href: "/dashboard/marketing/email", icon: LayoutDashboard, roles: ["MARKETING", "ADMIN"] },
+      { name: "Live Inbox", href: "/dashboard/marketing/email/inbox", icon: Inbox, roles: ["MARKETING", "ADMIN"] },
       { name: "New Broadcast", href: "/dashboard/marketing/email/campaigns/new", icon: Send, roles: ["MARKETING", "ADMIN"] },
       { name: "Interactive Flows", href: "/dashboard/marketing/email/flows", icon: Workflow, roles: ["MARKETING", "ADMIN"] },
       { name: "Settings", href: "/dashboard/marketing/email/settings", icon: Settings, roles: ["MARKETING", "ADMIN"] },
@@ -233,7 +235,9 @@ export function getRoleNavLinks(userRole: string, pathname: string): NavLinkItem
     if (isEmailSub) {
       return [
         { name: "Email Overview", href: "/dashboard/marketing/email", icon: LayoutDashboard, roles: ["MARKETING"] },
+        { name: "Live Inbox", href: "/dashboard/marketing/email/inbox", icon: Inbox, roles: ["MARKETING"] },
         { name: "New Campaign", href: "/dashboard/marketing/email/campaigns/new", icon: Star, roles: ["MARKETING"] },
+        { name: "Interactive Flows", href: "/dashboard/marketing/email/flows", icon: Workflow, roles: ["MARKETING"] },
         { name: "Email Settings", href: "/dashboard/marketing/email/settings", icon: Settings, roles: ["MARKETING"] },
       ];
     }
