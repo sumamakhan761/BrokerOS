@@ -9,9 +9,10 @@ import {
 import type {
   AudienceFilterDto,
   AudienceSourceType,
+  CampaignSmsSenderPoolConfig,
   CsvLeadRow,
-  SmsProviderType,
   MarketingChannel,
+  SmsProviderType,
 } from '@brokeros/types';
 
 export class CreateSmsCampaignDto {
@@ -77,6 +78,14 @@ export class CreateSmsCampaignDto {
   @IsOptional()
   @IsNumber()
   currentStep?: number;
+
+  @IsOptional()
+  @IsString()
+  allocationMode?: 'AUTO_EVEN' | 'CUSTOM_PERCENTAGE';
+
+  @IsOptional()
+  @IsArray()
+  senderPools?: CampaignSmsSenderPoolConfig[];
 }
 
 export class SaveDraftSmsCampaignDto {
@@ -143,6 +152,14 @@ export class SaveDraftSmsCampaignDto {
   @IsOptional()
   @IsNumber()
   currentStep?: number;
+
+  @IsOptional()
+  @IsString()
+  allocationMode?: 'AUTO_EVEN' | 'CUSTOM_PERCENTAGE';
+
+  @IsOptional()
+  @IsArray()
+  senderPools?: CampaignSmsSenderPoolConfig[];
 }
 
 export class PreviewSmsAudienceDto {
@@ -178,11 +195,11 @@ export class SendTestSmsDto {
 
   @IsOptional()
   @IsString()
-  messageContent?: string;
+  fromSender?: string;
 
   @IsOptional()
   @IsString()
-  fromSender?: string;
+  messageContent?: string;
 
   @IsOptional()
   @IsString()
@@ -252,4 +269,95 @@ export class ConnectSmsIntegrationDto {
   @IsOptional()
   @IsString()
   fromSender?: string;
+}
+
+export class CreateSmsTemplateDto {
+  @IsString()
+  name!: string;
+
+  @IsString()
+  category!: string;
+
+  @IsString()
+  textContent!: string;
+
+  @IsOptional()
+  @IsString()
+  dltTemplateId?: string;
+}
+
+export class AddSenderNumberDto {
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  senderId?: string;
+
+  @IsOptional()
+  @IsString()
+  provider?: string;
+
+  @IsOptional()
+  @IsNumber()
+  dailyQuota?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isVerified?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class UpdateSenderNumberDto {
+  @IsOptional()
+  @IsString()
+  senderId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  dailyQuota?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class CalculateSmsCostEstimateDto {
+  @IsArray()
+  senderPools!: CampaignSmsSenderPoolConfig[];
+
+  @IsNumber()
+  totalRecipients!: number;
+
+  @IsOptional()
+  @IsString()
+  messageContent?: string;
+}
+
+export class BulkAssignSmsLeadsDto {
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  campaignIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  recipientIds?: string[];
+}
+
+export class ExportSmsLeadsDto {
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  campaignIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  recipientIds?: string[];
 }
