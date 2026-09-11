@@ -22,18 +22,17 @@ import { DashboardPageWrapper } from "@/components/dashboard/DashboardPageWrappe
 import { Button } from "@/components/ui/Button";
 import { ProviderConfigCard, IntegrationRecord } from "@/features/marketing/components/ProviderConfigCard";
 import { EmailAiConfigCard } from "@/features/marketing/email/components/settings/EmailAiConfigCard";
-import { EmailQuickRepliesManager } from "@/features/marketing/email/components/settings/EmailQuickRepliesManager";
 import { EmailTagsManager } from "@/features/marketing/email/components/settings/EmailTagsManager";
 import { EmailWebhookDiagnostics } from "@/features/marketing/email/components/settings/EmailWebhookDiagnostics";
 
-type EmailSettingsTab = "providers" | "ai" | "quick-replies" | "tags" | "webhook";
+type EmailSettingsTab = "providers" | "ai" | "tags" | "webhook";
 
 function EmailSettingsInner() {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
   const searchParams = useSearchParams();
   const router = useRouter();
   const tabParam = searchParams.get("tab") as EmailSettingsTab | null;
-  const validTabs: EmailSettingsTab[] = ["providers", "ai", "quick-replies", "tags", "webhook"];
+  const validTabs: EmailSettingsTab[] = ["providers", "ai", "tags", "webhook"];
   const initialTab: EmailSettingsTab = tabParam && validTabs.includes(tabParam) ? tabParam : "providers";
 
   const [activeTab, setActiveTab] = useState<EmailSettingsTab>(initialTab);
@@ -62,11 +61,6 @@ function EmailSettingsInner() {
       id: "ai",
       label: "AI Concierge & Prompts",
       icon: <Sparkles className="w-4 h-4" />,
-    },
-    {
-      id: "quick-replies",
-      label: "Quick Replies (/)",
-      icon: <Zap className="w-4 h-4" />,
     },
     {
       id: "tags",
@@ -186,7 +180,7 @@ function EmailSettingsInner() {
       loading={false}
       error={error}
       title="Email Engine Configuration & Tools"
-      subtitle="Manage your enterprise email providers, Groq AI autoreply concierges, team canned shortcuts, lead tags, and inbound mail webhooks."
+      subtitle="Manage your enterprise email providers, Groq AI autoreply concierges, lead tags, and inbound mail webhooks."
       headerRight={
         <div className="flex items-center gap-2">
           <Link href="/dashboard/marketing/email/inbox">
@@ -241,8 +235,6 @@ function EmailSettingsInner() {
           )}
 
           {activeTab === "ai" && <EmailAiConfigCard />}
-
-          {activeTab === "quick-replies" && <EmailQuickRepliesManager />}
 
           {activeTab === "tags" && <EmailTagsManager />}
 
