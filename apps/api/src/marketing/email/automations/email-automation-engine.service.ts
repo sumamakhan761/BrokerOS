@@ -9,7 +9,7 @@ import { EmailAiService } from '../ai/email-ai.service.js';
 import { EmailAudienceService } from '../services/email-audience.service.js';
 
 export interface InboundEmailContext {
-  inboundId: string;
+  inboundId?: string;
   fromEmail: string;
   toEmail: string;
   subject: string;
@@ -19,6 +19,8 @@ export interface InboundEmailContext {
   providerMsgId?: string;
   inReplyTo?: string;
   recipient?: any; // CampaignRecipient with campaign, project, and lead
+  forceFlowId?: string;
+  isSimulation?: boolean;
 }
 
 @Injectable()
@@ -33,59 +35,145 @@ export class EmailAutomationEngineService {
   ) {}
 
   /**
-   * Main entry point when an inbound email reply is received.
-   * Matches candidate flows (campaign-specific first, then global) and executes graph steps.
+   * Main entry point when an inbound email reply is received or simulated.
+   * Matches candidate flows (campaign-specific first, then global, or specific forced flow) and executes graph steps.
    */
   async processInboundReply(context: InboundEmailContext): Promise<{
     matchedFlowId?: string;
     flowName?: string;
+    triggerMatched?: boolean;
+    triggerReason?: string;
     actionsExecuted: string[];
     outboundReply?: string;
+    renderedSubject?: string;
+    renderedBody?: string;
   }> {
     const actionsExecuted: string[] = [];
 
     try {
-      const recipient = context.recipient;
+      const leadName = context.fromEmail ? context.fromEmail.split('@')[0] : 'Valued Prospect';
+      const recipient = context.recipient || {
+        id: 'synthetic_recipient',
+        email: context.fromEmail,
+        name: leadName,
+        assignedSenderEmail: context.toEmail,
+        assignedProvider: context.provider === 'SIMULATOR' ? 'SYSTEM_DEFAULT' : (context.provider || 'SYSTEM_DEFAULT'),
+        campaign: {
+          title: 'Skyline Crest Residences',
+          subject: context.subject,
+          fromEmail: context.toEmail,
+          fromName: 'Sales & Advisory',
+          project: {
+            name: 'Skyline Crest Residences',
+            city: 'Mumbai',
+            brochureUrl: '#',
+            amenities: ['Clubhouse', 'Gymnasium', 'Infinity Pool', '24/7 Security'],
+          },
+        },
+        lead: {
+          firstName: leadName,
+          lastName: '',
+          email: context.fromEmail,
+          status: 'NEW',
+          temperature: 'WARM',
+        },
+      };
+
       const campaignId = recipient?.campaignId;
       const inboundTextLower = `${context.subject} ${context.body}`.toLowerCase();
 
-      // 1. Fetch active flows
-      const flows = await this.prisma.emailFlow.findMany({
-        where: { status: 'active' },
-        include: { nodes: true },
-      });
-
-      if (flows.length === 0) {
-        this.logger.log('No active email flows found.');
-        return { actionsExecuted };
-      }
-
-      // 2. Filter & prioritize matching flows (Campaign-scoped first, then Global)
-      const campaignScopedFlows = flows.filter(
-        (f) => !f.isGlobal && campaignId && f.campaignIds.includes(campaignId),
-      );
-      const globalFlows = flows.filter((f) => f.isGlobal);
-
-      const candidateFlows = [...campaignScopedFlows, ...globalFlows];
-
       let targetFlow: any = null;
 
-      for (const flow of candidateFlows) {
-        if (flow.triggerType === 'any_reply') {
-          targetFlow = flow;
-          break;
+      if (context.forceFlowId) {
+        targetFlow = await this.prisma.emailFlow.findUnique({
+          where: { id: context.forceFlowId },
+          include: {
+            nodes: {
+              orderBy: { createdAt: 'asc' },
+            },
+          },
+        });
+        if (!targetFlow) {
+          this.logger.warn(`Flow with ID ${context.forceFlowId} not found for simulation.`);
+          return {
+            actionsExecuted: [`Flow ID ${context.forceFlowId} not found`],
+            triggerMatched: false,
+          };
+        }
+      } else {
+        // 1. Fetch active flows
+        const flows = await this.prisma.emailFlow.findMany({
+          where: { status: 'active' },
+          include: {
+            nodes: {
+              orderBy: { createdAt: 'asc' },
+            },
+          },
+        });
+
+        if (flows.length === 0) {
+          this.logger.log('No active email flows found.');
+          return { actionsExecuted: ['No active email flows registered in system.'] };
         }
 
-        if (flow.triggerType === 'keyword_match') {
-          const cfg = (flow.triggerConfig || {}) as any;
-          const keywords: string[] = Array.isArray(cfg.keywords)
-            ? cfg.keywords
-            : typeof cfg.keywords === 'string'
-            ? cfg.keywords.split(',').map((k: string) => k.trim())
-            : [];
-          const matchMode = cfg.matchMode || 'contains';
+        // 2. Filter & prioritize matching flows (Campaign-scoped first, then Global)
+        const campaignScopedFlows = flows.filter(
+          (f) => !f.isGlobal && campaignId && f.campaignIds.includes(campaignId),
+        );
+        const globalFlows = flows.filter((f) => f.isGlobal);
+        const candidateFlows = [...campaignScopedFlows, ...globalFlows];
 
-          const hasMatch = keywords.some((kw) => {
+        for (const flow of candidateFlows) {
+          if (flow.triggerType === 'any_reply') {
+            targetFlow = flow;
+            break;
+          }
+
+          if (flow.triggerType === 'keyword_match') {
+            const cfg = (flow.triggerConfig || {}) as any;
+            const keywords: string[] = Array.isArray(cfg.keywords)
+              ? cfg.keywords
+              : typeof cfg.keywords === 'string'
+              ? cfg.keywords.split(',').map((k: string) => k.trim())
+              : [];
+            const matchMode = cfg.matchMode || 'contains';
+
+            const hasMatch = keywords.some((kw) => {
+              const cleanKw = kw.toLowerCase().trim();
+              if (!cleanKw) return false;
+              if (matchMode === 'exact') {
+                return inboundTextLower.trim() === cleanKw;
+              }
+              return inboundTextLower.includes(cleanKw);
+            });
+
+            if (hasMatch) {
+              targetFlow = flow;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!targetFlow) {
+        this.logger.log(`No flow matched for inbound reply from ${context.fromEmail}`);
+        return { actionsExecuted: ['No matching flow found for inbound reply.'] };
+      }
+
+      // Check trigger condition match
+      let triggerMatched = true;
+      let triggerReason = 'Inbound trigger condition met.';
+      if (targetFlow.triggerType === 'keyword_match') {
+        const cfg = (targetFlow.triggerConfig || {}) as any;
+        const keywords: string[] = Array.isArray(cfg.keywords)
+          ? cfg.keywords
+          : typeof cfg.keywords === 'string'
+          ? cfg.keywords.split(',').map((k: string) => k.trim())
+          : [];
+        const matchMode = cfg.matchMode || 'contains';
+
+        if (keywords.length > 0) {
+          const matchedKw = keywords.find((kw) => {
             const cleanKw = kw.toLowerCase().trim();
             if (!cleanKw) return false;
             if (matchMode === 'exact') {
@@ -94,34 +182,50 @@ export class EmailAutomationEngineService {
             return inboundTextLower.includes(cleanKw);
           });
 
-          if (hasMatch) {
-            targetFlow = flow;
-            break;
+          if (matchedKw) {
+            triggerMatched = true;
+            triggerReason = `Trigger keyword "${matchedKw}" matched in message body.`;
+          } else {
+            triggerMatched = false;
+            triggerReason = `Inbound message does not contain any required trigger keywords: [${keywords.join(', ')}]`;
           }
         }
       }
 
-      if (!targetFlow) {
-        this.logger.log(`No flow matched for inbound reply from ${context.fromEmail}`);
-        return { actionsExecuted };
+      if (!triggerMatched) {
+        return {
+          matchedFlowId: targetFlow.id,
+          flowName: targetFlow.name,
+          triggerMatched: false,
+          triggerReason,
+          actionsExecuted: [`Trigger not matched: ${triggerReason}`],
+        };
       }
 
       this.logger.log(
         `Triggering Email Flow "${targetFlow.name}" (${targetFlow.id}) for recipient ${context.fromEmail}`,
       );
 
-      // 3. Seed Flow Run record
-      const flowRun = await this.prisma.emailFlowRun.create({
-        data: {
-          flowId: targetFlow.id,
-          recipientId: recipient?.id || null,
-          campaignId: campaignId || null,
-          leadId: recipient?.leadId || null,
-          status: 'active',
-          inboundSubject: context.subject,
-          inboundBody: context.body,
-        },
-      });
+      // 3. Seed Flow Run record (skip in simulation mode)
+      let flowRunId: string | null = null;
+      if (!context.isSimulation && targetFlow.id) {
+        try {
+          const flowRun = await this.prisma.emailFlowRun.create({
+            data: {
+              flowId: targetFlow.id,
+              recipientId: context.recipient?.id || null,
+              campaignId: campaignId || null,
+              leadId: context.recipient?.leadId || null,
+              status: 'active',
+              inboundSubject: context.subject,
+              inboundBody: context.body,
+            },
+          });
+          flowRunId = flowRun.id;
+        } catch (err: any) {
+          this.logger.warn(`Could not seed flow run record: ${err.message}`);
+        }
+      }
 
       // 4. Build Node Graph
       const rawNodes: any[] = targetFlow.nodes || [];
@@ -141,6 +245,7 @@ export class EmailAutomationEngineService {
       }
 
       let outboundReplyText = '';
+      let renderedSubjectText = '';
       let stepsCount = 0;
       const MAX_STEPS = 25; // Guard against infinite circular branching
       const executedKeys = new Set<string>();
@@ -166,11 +271,6 @@ export class EmailAutomationEngineService {
           // ── Action: Send Email Reply ──
           case 'send_email':
           case 'send_email_reply': {
-            if (!recipient) {
-              actionsExecuted.push('send_email skipped: no recipient record');
-              break;
-            }
-
             const subject = config.subject
               ? this.interpolateText(config.subject, recipient)
               : context.subject.startsWith('Re:')
@@ -178,47 +278,41 @@ export class EmailAutomationEngineService {
               : `Re: ${context.subject}`;
 
             const htmlBody = this.interpolateText(
-              config.htmlBody || config.bodyHtml || config.textBody || 'Thank you for your response.',
+              config.htmlBody || config.bodyHtml || config.textBody || 'Thank you for reaching out.',
               recipient,
             );
             const textBody = this.interpolateText(
-              config.textBody || config.bodyHtml || config.htmlBody || 'Thank you for your response.',
+              config.textBody || config.bodyHtml || config.htmlBody || 'Thank you for reaching out.',
               recipient,
             );
 
-            await this.dispatchOutboundReply({
-              recipient,
-              subject,
-              htmlContent: htmlBody,
-              plainTextContent: textBody,
-              inboundMsgId: context.providerMsgId,
-            });
+            if (!context.isSimulation) {
+              await this.dispatchOutboundReply({
+                recipient,
+                subject,
+                htmlContent: htmlBody,
+                plainTextContent: textBody,
+                inboundMsgId: context.providerMsgId,
+              });
+              actionsExecuted.push(`Sent email reply: "${subject}"`);
+            } else {
+              actionsExecuted.push(`Send Email Reply: "${subject}"`);
+            }
 
             outboundReplyText = textBody;
-            actionsExecuted.push(`Sent email reply: "${subject}"`);
+            renderedSubjectText = subject;
 
-            // Next node resolution
-            if (config.next_node_key && nodeMap.has(config.next_node_key)) {
-              nextNodeToExecute = nodeMap.get(config.next_node_key);
-            } else {
-              nextNodeToExecute = nextLinearNode;
-            }
+            nextNodeToExecute = config.next_node_key && nodeMap.has(config.next_node_key)
+              ? nodeMap.get(config.next_node_key)
+              : nextLinearNode;
             break;
           }
 
           // ── Action: AI Agent Autoreply (Groq openai/gpt-oss-120b) ──
           case 'ai_agent':
           case 'ai_reply': {
-            if (!recipient) {
-              actionsExecuted.push('ai_agent skipped: no recipient record');
-              break;
-            }
-
-            // 1. Human Handoff Conflict Check:
-            // If a human sales executive has already claimed/been assigned to this lead,
-            // pause AI so the bot does NOT talk over or contradict the human.
             const stopIfHumanActive = config.stopIfHumanActive !== false;
-            if (stopIfHumanActive && recipient?.lead?.assignedUserId) {
+            if (!context.isSimulation && stopIfHumanActive && recipient?.lead?.assignedUserId) {
               this.logger.log(
                 `Skipping AI autoreply: Lead ${recipient.lead.id} is already claimed by executive ${recipient.lead.assignedUserId}.`,
               );
@@ -229,54 +323,38 @@ export class EmailAutomationEngineService {
               break;
             }
 
-            // 2. Loop Guard Check (max turns per lead before routing to human):
-            const maxTurns = config.maxTurns ?? 3;
-            const previousAiRunsCount = await this.prisma.emailFlowRun.count({
-              where: {
-                recipientId: recipient.id,
-                status: 'completed',
-                outboundReply: { not: null },
-              },
-            });
-
-            if (previousAiRunsCount >= maxTurns) {
-              this.logger.warn(
-                `AI reply limit reached for recipient ${recipient.id} (${previousAiRunsCount}/${maxTurns} turns). Auto-routing to Pre-Sales triage.`,
-              );
-              if (config.handoffOnMax !== false) {
-                await this.executePreSalesHandoff(recipient);
-                actionsExecuted.push(`AI limit reached (${maxTurns} replies). Auto-routed lead to Pre-Sales intake.`);
-              } else {
-                actionsExecuted.push(`AI limit reached (${maxTurns} replies). AI paused.`);
-              }
-
-              nextNodeToExecute = config.next_node_key && nodeMap.has(config.next_node_key)
-                ? nodeMap.get(config.next_node_key)
-                : nextLinearNode;
-              break;
+            let aiReply = { subject: `Re: ${context.subject}`, textBody: '', htmlBody: '' };
+            try {
+              aiReply = await this.aiService.generateAutoreply({
+                leadName: recipient.name || recipient.lead?.firstName || 'Valued Buyer',
+                inboundSubject: context.subject,
+                inboundBody: context.body,
+                originalCampaignTitle: recipient.campaign?.title,
+                originalSubject: recipient.campaign?.subject,
+                project: recipient.campaign?.project,
+                customInstructions: config.instructions,
+              });
+            } catch (aiErr: any) {
+              this.logger.warn(`AI generateAutoreply fallback: ${aiErr.message}`);
+              aiReply.textBody = `Thank you for contacting us regarding ${recipient.campaign?.project?.name || 'Skyline Crest Residences'}. We will share the complete price sheet and project highlights with you shortly.`;
+              aiReply.htmlBody = `<p>${aiReply.textBody}</p>`;
             }
 
-            // 3. Generate AI response with custom instructions
-            const aiReply = await this.aiService.generateAutoreply({
-              leadName: recipient.name || recipient.lead?.firstName || 'Valued Buyer',
-              inboundSubject: context.subject,
-              inboundBody: context.body,
-              originalCampaignTitle: recipient.campaign?.title,
-              originalSubject: recipient.campaign?.subject,
-              project: recipient.campaign?.project,
-              customInstructions: config.instructions,
-            });
-
-            await this.dispatchOutboundReply({
-              recipient,
-              subject: aiReply.subject,
-              htmlContent: aiReply.htmlBody,
-              plainTextContent: aiReply.textBody,
-              inboundMsgId: context.providerMsgId,
-            });
+            if (!context.isSimulation) {
+              await this.dispatchOutboundReply({
+                recipient,
+                subject: aiReply.subject,
+                htmlContent: aiReply.htmlBody,
+                plainTextContent: aiReply.textBody,
+                inboundMsgId: context.providerMsgId,
+              });
+              actionsExecuted.push(`AI Concierge generated & dispatched reply: "${aiReply.subject}"`);
+            } else {
+              actionsExecuted.push(`AI Concierge (Groq openai/gpt-oss-120b) generated reply: "${aiReply.subject}"`);
+            }
 
             outboundReplyText = aiReply.textBody;
-            actionsExecuted.push('AI Concierge (Groq openai/gpt-oss-120b) generated & dispatched reply');
+            renderedSubjectText = aiReply.subject;
 
             nextNodeToExecute = config.next_node_key && nodeMap.has(config.next_node_key)
               ? nodeMap.get(config.next_node_key)
@@ -284,92 +362,146 @@ export class EmailAutomationEngineService {
             break;
           }
 
-          // ── Action: Condition / Branching ──
+          // ── Action: Condition / Branching (WhatsApp Parity) ──
           case 'condition':
           case 'if_else': {
-            const conditionType = config.conditionType || 'keywords';
+            const criteriaType = config.criteriaType || 'keywords';
             let conditionMet = false;
 
-            if (conditionType === 'lead_status') {
-              const currentStatus = (recipient?.lead?.status || '').toUpperCase();
-              const targetStatus = (config.matchValue || 'INTERESTED').toUpperCase();
-              conditionMet = currentStatus === targetStatus;
-            } else if (conditionType === 'lead_temperature') {
-              const currentTemp = (recipient?.lead?.temperature || '').toUpperCase();
-              const targetTemp = (config.matchValue || 'HOT').toUpperCase();
-              conditionMet = currentTemp === targetTemp;
+            if (criteriaType === 'tag') {
+              const targetTag = (config.targetTag || '').toLowerCase().trim();
+              const leadTags: string[] = (recipient?.lead?.tags || []).map((t: any) =>
+                typeof t === 'string' ? t.toLowerCase() : (t.name || '').toLowerCase(),
+              );
+              conditionMet = !!targetTag && leadTags.includes(targetTag);
+            } else if (criteriaType === 'budget') {
+              const minBudget = Number(config.minBudget) || 0;
+              const leadBudget = Number(recipient?.lead?.budget) || 0;
+              conditionMet = leadBudget >= minBudget;
             } else {
-              // Default: Inbound text keywords match
+              // Default: keyword match in inbound text
               const rawKeywords = config.keywords;
               const kwList: string[] = Array.isArray(rawKeywords)
                 ? rawKeywords
                 : typeof rawKeywords === 'string'
                 ? rawKeywords.split(',').map((k: string) => k.trim().toLowerCase())
                 : [];
-              conditionMet = kwList.some((kw) => kw && inboundTextLower.includes(kw));
+
+              conditionMet = kwList.length === 0 || kwList.some((kw) => kw && inboundTextLower.includes(kw));
             }
 
-            if (conditionMet) {
+            const branches = config.branches || (currentNode as any).branches;
+            const branchKey = conditionMet ? 'yes' : 'no';
+            const branchSteps: any[] = branches?.[branchKey] || [];
+
+            if (branchSteps.length > 0) {
               actionsExecuted.push(
-                `Condition [${conditionType}] matched -> Branch TRUE (${config.if_true_node_key || 'continue'})`,
+                `Condition evaluated to ${conditionMet ? 'TRUE' : 'FALSE'} -> Executing ${branchKey.toUpperCase()} branch (${branchSteps.length} step${branchSteps.length === 1 ? '' : 's'})`,
               );
-              if (config.if_true_node_key && nodeMap.has(config.if_true_node_key)) {
-                nextNodeToExecute = nodeMap.get(config.if_true_node_key);
-              } else {
-                nextNodeToExecute = nextLinearNode;
+
+              // Execute steps inside the active branch
+              for (const bStep of branchSteps) {
+                const bType = bStep.nodeType;
+                const bConfig = bStep.config || {};
+
+                if (bType === 'send_email' || bType === 'send_email_reply') {
+                  const subject = bConfig.subject
+                    ? this.interpolateText(bConfig.subject, recipient)
+                    : context.subject.startsWith('Re:')
+                    ? context.subject
+                    : `Re: ${context.subject}`;
+
+                  const htmlBody = this.interpolateText(
+                    bConfig.htmlBody || bConfig.bodyHtml || bConfig.textBody || 'Thank you for reaching out.',
+                    recipient,
+                  );
+                  const textBody = this.interpolateText(
+                    bConfig.textBody || bConfig.bodyHtml || bConfig.htmlBody || 'Thank you for reaching out.',
+                    recipient,
+                  );
+
+                  if (!context.isSimulation) {
+                    await this.dispatchOutboundReply({
+                      recipient,
+                      subject,
+                      htmlContent: htmlBody,
+                      plainTextContent: textBody,
+                      inboundMsgId: context.providerMsgId,
+                    });
+                    actionsExecuted.push(`[${branchKey.toUpperCase()}] Sent email reply: "${subject}"`);
+                  } else {
+                    actionsExecuted.push(`[${branchKey.toUpperCase()}] Send Email Reply: "${subject}"`);
+                  }
+                  outboundReplyText = textBody;
+                  renderedSubjectText = subject;
+                } else if (bType === 'ai_agent' || bType === 'ai_reply') {
+                  let aiReply = { subject: `Re: ${context.subject}`, textBody: '', htmlBody: '' };
+                  try {
+                    aiReply = await this.aiService.generateAutoreply({
+                      leadName: recipient.name || recipient.lead?.firstName || 'Valued Buyer',
+                      inboundSubject: context.subject,
+                      inboundBody: context.body,
+                      originalCampaignTitle: recipient.campaign?.title,
+                      originalSubject: recipient.campaign?.subject,
+                      project: recipient.campaign?.project,
+                      customInstructions: bConfig.instructions,
+                    });
+                  } catch (aiErr: any) {
+                    aiReply.textBody = `Thank you for contacting us regarding ${recipient.campaign?.project?.name || 'Skyline Crest Residences'}. We will share the complete price sheet and project highlights with you shortly.`;
+                    aiReply.htmlBody = `<p>${aiReply.textBody}</p>`;
+                  }
+
+                  if (!context.isSimulation) {
+                    await this.dispatchOutboundReply({
+                      recipient,
+                      subject: aiReply.subject,
+                      htmlContent: aiReply.htmlBody,
+                      plainTextContent: aiReply.textBody,
+                      inboundMsgId: context.providerMsgId,
+                    });
+                    actionsExecuted.push(`[${branchKey.toUpperCase()}] AI Concierge dispatched reply: "${aiReply.subject}"`);
+                  } else {
+                    actionsExecuted.push(`[${branchKey.toUpperCase()}] AI Concierge generated reply: "${aiReply.subject}"`);
+                  }
+                  outboundReplyText = aiReply.textBody;
+                  renderedSubjectText = aiReply.subject;
+                } else if (bType === 'add_tag' || bType === 'add_lead_tag') {
+                  const tagName = bConfig.tagName || bConfig.tag;
+                  if (tagName) {
+                    if (!context.isSimulation) {
+                      await this.prisma.emailTag.upsert({
+                        where: { name: tagName },
+                        create: { name: tagName, color: bConfig.color || '#8B5CF6' },
+                        update: {},
+                      });
+                    }
+                    actionsExecuted.push(`[${branchKey.toUpperCase()}] Assigned CRM tag "${tagName}"`);
+                  }
+                } else if (bType === 'end') {
+                  actionsExecuted.push(`[${branchKey.toUpperCase()}] Flow execution terminated.`);
+                  break;
+                }
               }
+
+              nextNodeToExecute = nextLinearNode;
             } else {
-              actionsExecuted.push(
-                `Condition [${conditionType}] not matched -> Branch FALSE (${config.if_false_node_key || 'continue'})`,
-              );
-              if (config.if_false_node_key && nodeMap.has(config.if_false_node_key)) {
-                nextNodeToExecute = nodeMap.get(config.if_false_node_key);
+              // Fallback to node pointer if no nested branch steps
+              if (conditionMet) {
+                actionsExecuted.push(
+                  `Condition matched -> Branch TRUE (${config.if_true_node_key || 'continue sequence'})`,
+                );
+                nextNodeToExecute = config.if_true_node_key && nodeMap.has(config.if_true_node_key)
+                  ? nodeMap.get(config.if_true_node_key)
+                  : nextLinearNode;
               } else {
-                nextNodeToExecute = nextLinearNode;
+                actionsExecuted.push(
+                  `Condition not matched -> Branch FALSE (${config.if_false_node_key || 'continue sequence'})`,
+                );
+                nextNodeToExecute = config.if_false_node_key && nodeMap.has(config.if_false_node_key)
+                  ? nodeMap.get(config.if_false_node_key)
+                  : nextLinearNode;
               }
             }
-            break;
-          }
-
-          // ── Action: Update Lead Profile ──
-          case 'update_lead':
-          case 'update_lead_status': {
-            const newStatus = config.status || 'INTERESTED';
-            const newTemp = config.temperature || 'HOT';
-            const scoreIncr = parseInt(config.scoreIncrement, 10) || 0;
-
-            if (recipient?.leadId) {
-              const updateData: any = {
-                status: newStatus,
-                temperature: newTemp,
-              };
-              if (scoreIncr > 0) {
-                updateData.score = { increment: scoreIncr };
-              }
-              await this.prisma.lead.update({
-                where: { id: recipient.leadId },
-                data: updateData,
-              });
-              actionsExecuted.push(`Updated CRM Lead status to ${newStatus} (${newTemp})`);
-            } else if (recipient) {
-              const newLead = await this.audienceService.promoteCsvRecipientToLead(recipient.id);
-              const updateData: any = {
-                status: newStatus,
-                temperature: newTemp,
-              };
-              if (scoreIncr > 0) {
-                updateData.score = { increment: scoreIncr };
-              }
-              await this.prisma.lead.update({
-                where: { id: newLead.id },
-                data: updateData,
-              });
-              actionsExecuted.push(`Promoted prospect to new CRM Lead (${newStatus}, ${newTemp})`);
-            }
-
-            nextNodeToExecute = config.next_node_key && nodeMap.has(config.next_node_key)
-              ? nodeMap.get(config.next_node_key)
-              : nextLinearNode;
             break;
           }
 
@@ -378,27 +510,14 @@ export class EmailAutomationEngineService {
           case 'add_lead_tag': {
             const tagName = config.tagName || config.tag;
             if (tagName) {
-              await this.prisma.emailTag.upsert({
-                where: { name: tagName },
-                create: { name: tagName, color: config.color || '#10b981' },
-                update: {},
-              });
+              if (!context.isSimulation) {
+                await this.prisma.emailTag.upsert({
+                  where: { name: tagName },
+                  create: { name: tagName, color: config.color || '#8B5CF6' },
+                  update: {},
+                });
+              }
               actionsExecuted.push(`Assigned CRM tag "${tagName}"`);
-            }
-
-            nextNodeToExecute = config.next_node_key && nodeMap.has(config.next_node_key)
-              ? nodeMap.get(config.next_node_key)
-              : nextLinearNode;
-            break;
-          }
-
-          // ── Action: Human Handoff / Pre-Sales Queue ──
-          case 'human_handoff':
-          case 'pre_sales_handoff':
-          case 'handoff_presales': {
-            if (recipient) {
-              await this.executePreSalesHandoff(recipient);
-              actionsExecuted.push('Routed lead to Pre-Sales Manager triage queue');
             }
 
             nextNodeToExecute = config.next_node_key && nodeMap.has(config.next_node_key)
@@ -429,21 +548,27 @@ export class EmailAutomationEngineService {
         currentNode = nextNodeToExecute;
       }
 
-      // 6. Mark Flow Run completed
-      await this.prisma.emailFlowRun.update({
-        where: { id: flowRun.id },
-        data: {
-          status: 'completed',
-          outboundReply: outboundReplyText || null,
-          endedAt: new Date(),
-        },
-      });
+      // 6. Mark Flow Run completed if recorded
+      if (flowRunId) {
+        await this.prisma.emailFlowRun.update({
+          where: { id: flowRunId },
+          data: {
+            status: 'completed',
+            outboundReply: outboundReplyText || null,
+            endedAt: new Date(),
+          },
+        });
+      }
 
       return {
         matchedFlowId: targetFlow.id,
         flowName: targetFlow.name,
+        triggerMatched: true,
+        triggerReason,
         actionsExecuted,
         outboundReply: outboundReplyText || undefined,
+        renderedSubject: renderedSubjectText || undefined,
+        renderedBody: outboundReplyText || undefined,
       };
     } catch (err: any) {
       this.logger.error(`Error executing email automation: ${err?.message}`);

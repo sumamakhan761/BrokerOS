@@ -6,18 +6,14 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
   Delete,
   Param,
   Body,
-  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../lib/database/prisma.service.js';
 import { EmailAiService } from '../ai/email-ai.service.js';
 import {
   SaveEmailAiConfigDto,
-  CreateEmailQuickReplyDto,
-  UpdateEmailQuickReplyDto,
   CreateEmailTagDto,
 } from '../dto/email-flows.dto.js';
 
@@ -38,63 +34,6 @@ export class EmailSettingsToolsController {
   @Post('ai/config')
   async saveAiConfig(@Body() dto: SaveEmailAiConfigDto) {
     return this.aiService.saveAiConfig(dto);
-  }
-
-  // ── Quick Replies (Canned Shortcuts) ──
-
-  @Get('quick-replies')
-  async getQuickReplies() {
-    return this.prisma.emailQuickReply.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  @Post('quick-replies')
-  async createQuickReply(@Body() dto: CreateEmailQuickReplyDto) {
-    const formatted = dto.shortcut.startsWith('/')
-      ? dto.shortcut.trim()
-      : `/${dto.shortcut.trim()}`;
-
-    return this.prisma.emailQuickReply.create({
-      data: {
-        shortcut: formatted,
-        title: dto.title,
-        subject: dto.subject,
-        contentHtml: dto.contentHtml,
-        category: dto.category || 'General',
-      },
-    });
-  }
-
-  @Patch('quick-replies/:id')
-  async updateQuickReply(
-    @Param('id') id: string,
-    @Body() dto: UpdateEmailQuickReplyDto,
-  ) {
-    const formatted = dto.shortcut
-      ? dto.shortcut.startsWith('/')
-        ? dto.shortcut.trim()
-        : `/${dto.shortcut.trim()}`
-      : undefined;
-
-    return this.prisma.emailQuickReply.update({
-      where: { id },
-      data: {
-        shortcut: formatted,
-        title: dto.title,
-        subject: dto.subject,
-        contentHtml: dto.contentHtml,
-        category: dto.category,
-        isActive: dto.isActive,
-      },
-    });
-  }
-
-  @Delete('quick-replies/:id')
-  async deleteQuickReply(@Param('id') id: string) {
-    return this.prisma.emailQuickReply.delete({
-      where: { id },
-    });
   }
 
   // ── Email Tags ──
