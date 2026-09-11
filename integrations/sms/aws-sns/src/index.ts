@@ -1,4 +1,6 @@
 import type {
+  DiscoveredSenderNumber,
+  InboundSmsPayload,
   ISmsMarketingProvider,
   SendSmsOptions,
   SendSmsResult,
@@ -42,8 +44,10 @@ export class AwsSnsSmsClient {
   private senderId?: string;
 
   constructor(credentials?: SmsProviderCredentials) {
-    this.accessKeyId = credentials?.awsAccessKeyId || process.env.AWS_SNS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID || '';
-    this.secretKey = credentials?.awsSecretKey || process.env.AWS_SNS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY || '';
+    this.accessKeyId =
+      credentials?.awsAccessKeyId || process.env.AWS_SNS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID || '';
+    this.secretKey =
+      credentials?.awsSecretKey || process.env.AWS_SNS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY || '';
     this.region = credentials?.awsRegion || process.env.AWS_SNS_REGION || process.env.AWS_REGION || 'ap-south-1';
     this.senderId = credentials?.senderId || process.env.AWS_SNS_SENDER_ID;
   }
@@ -53,6 +57,17 @@ export class AwsSnsSmsClient {
     const isValidKeyId = /^[A-Z0-9]{16,32}$/.test(this.accessKeyId);
     const isValidSecret = this.secretKey.length >= 20;
     return isValidKeyId && isValidSecret;
+  }
+
+  async listSenderNumbers(): Promise<DiscoveredSenderNumber[]> {
+    const discovered: DiscoveredSenderNumber[] = [];
+    const sid = this.senderId || 'SKYLIN';
+    discovered.push({
+      senderId: sid,
+      provider: 'AWS_SNS',
+      isVerified: true,
+    });
+    return discovered;
   }
 
   async send(options: SendSmsOptions): Promise<SendSmsResult> {
@@ -144,6 +159,37 @@ export class AwsSnsWebhookParser {
 
     return events;
   }
+
+  static parseInbound(headers: Record<string, any>, rawPayload: any): InboundSmsPayload | null {
+    try {
+      let payload: any = rawPayload;
+      if (rawPayload?.Type === 'Notification' && rawPayload?.Message) {
+        try {
+          payload = JSON.parse(rawPayload.Message);
+        } catch {
+          payload = rawPayload;
+        }
+      }
+
+      const fromPhone = payload?.originationNumber || payload?.from || payload?.From;
+      const toPhone = payload?.destinationNumber || payload?.to || payload?.To || '';
+      const textBody = payload?.messageBody || payload?.body || payload?.text || payload?.Message;
+      const providerMsgId = payload?.messageId || rawPayload?.MessageId;
+
+      if (!fromPhone || !textBody) return null;
+
+      return {
+        fromPhone,
+        toPhone,
+        textBody,
+        provider: 'AWS_SNS',
+        providerMsgId,
+        headers,
+      };
+    } catch {
+      return null;
+    }
+  }
 }
 
 // ============================================================================
@@ -163,7 +209,16 @@ export class AwsSnsSmsAdapter implements ISmsMarketingProvider {
     return client.send(options);
   }
 
+  async listSenderNumbers(credentials?: SmsProviderCredentials): Promise<DiscoveredSenderNumber[]> {
+    const client = new AwsSnsSmsClient(credentials);
+    return client.listSenderNumbers();
+  }
+
   parseWebhookEvent(headers: Record<string, any>, payload: any): SmsWebhookEvent[] {
     return AwsSnsWebhookParser.parse(headers, payload);
+  }
+
+  parseInboundMessage(headers: Record<string, any>, payload: any): InboundSmsPayload | null {
+    return AwsSnsWebhookParser.parseInbound(headers, payload);
   }
 }
