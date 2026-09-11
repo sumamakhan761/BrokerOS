@@ -591,6 +591,7 @@ model User {
   chatMessages             ChatMessage[]
   whatsappConversations    WhatsAppConversation[]  @relation("ConversationAgent")
   emailConversations       EmailConversation[]     @relation("EmailConversationAgent")
+  smsConversations         SmsConversation[]       @relation("SmsConversationAgent")
   brokerMeetings           BrokerMeeting[]
   managedBrokers           Broker[]                @relation("SourcingManager")
   assignmentFrom           LeadAssignmentHistory[] @relation("AssignmentFrom")
@@ -964,6 +965,7 @@ model Lead {
   callRecords           CallRecord[]
   whatsappConversations WhatsAppConversation[]
   emailConversations    EmailConversation[]
+  smsConversations      SmsConversation[]
   siteVisits            SiteVisit[]
   negotiations          Negotiation[]
   notes                 Note[]                  @relation("LeadNotes")
@@ -1861,6 +1863,7 @@ model Project {
   smsCampaigns         SmsCampaign[]
   voiceCampaigns       VoiceCampaign[]
   emailFlows           EmailFlow[]
+  smsFlows             SmsFlow[]
 
   @@index([builderId])
   @@index([status])
@@ -2273,6 +2276,7 @@ model Customer {
   activities            ActivityTimeline[]     @relation("CustomerActivities")
   whatsappConversations WhatsAppConversation[]
   emailConversations    EmailConversation[]
+  smsConversations      SmsConversation[]
 
   @@index([phone])
   @@index([leadId])
@@ -2549,8 +2553,10 @@ model Broker {
   activities            ActivityTimeline[]        @relation("BrokerActivities")
   whatsappConversations WhatsAppConversation[]
   emailConversations    EmailConversation[]
+  smsConversations      SmsConversation[]
   leads                 Lead[]
   campaignRecipients    CampaignRecipient[]
+  smsRecipients         SmsRecipient[]
 
   invoices Invoice[]
 
@@ -3468,6 +3474,11 @@ enum SmsProviderType {
   AWS_SNS
   SINCH
   GUPSHUP
+  MULTI_PROVIDER
+  INFOBIP
+  VONAGE
+  TELNYX
+  PLIVO
 }
 
 model SmsIntegration {
@@ -3493,11 +3504,38 @@ model SmsIntegration {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  campaigns SmsCampaign[]
+  campaigns     SmsCampaign[]
+  senderNumbers SmsSenderNumber[]
 
   @@index([provider])
   @@index([isActive])
   @@map("sms_integration")
+}
+
+model SmsSenderNumber {
+  id            String         @id @default(uuid())
+  integrationId String
+  integration   SmsIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  phoneNumber String? // E.164 phone number e.g. "+14155550199"
+  senderId    String? // Alphanumeric sender ID / DLT Header e.g. "SKYLIN"
+  provider    String? // "TWILIO" | "AWS_SNS" | "SINCH" | "GUPSHUP"
+
+  dailyQuota Int     @default(5000)
+  sentToday  Int     @default(0)
+  isVerified Boolean @default(true)
+  isActive   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campaignPools CampaignSmsSenderPool[]
+
+  @@unique([integrationId, phoneNumber])
+  @@index([integrationId, isActive])
+  @@index([phoneNumber])
+  @@index([senderId])
+  @@map("sms_sender_number")
 }
 
 model SmsTemplate {
@@ -3524,9 +3562,10 @@ model SmsCampaign {
   audienceSource AudienceSourceType @default(CRM_DATABASE)
 
   // Scope: Brokerage vs Channel Partner
-  isCpCampaign Boolean  @default(false)
-  projectId    String?
-  project      Project? @relation(fields: [projectId], references: [id])
+  isCpCampaign   Boolean  @default(false)
+  allocationMode String   @default("AUTO_EVEN")
+  projectId      String?
+  project        Project? @relation(fields: [projectId], references: [id])
 
   integrationId String?
   integration   SmsIntegration? @relation(fields: [integrationId], references: [id])
@@ -3555,9 +3594,11 @@ model SmsCampaign {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  recipients     SmsRecipient[]
-  shortLinks     SmsShortLink[]
-  trackingEvents SmsTrackingEvent[]
+  recipients       SmsRecipient[]
+  senderPools      CampaignSmsSenderPool[]
+  shortLinks       SmsShortLink[]
+  trackingEvents   SmsTrackingEvent[]
+  smsConversations SmsConversation[]
 
   @@index([status])
   @@index([channel])
@@ -3567,13 +3608,50 @@ model SmsCampaign {
   @@map("sms_campaign")
 }
 
+model CampaignSmsSenderPool {
+  id         String      @id @default(uuid())
+  campaignId String
+  campaign   SmsCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  senderNumberId String?
+  senderNumber   SmsSenderNumber? @relation(fields: [senderNumberId], references: [id], onDelete: SetNull)
+
+  phoneNumber String?
+  senderId    String?
+  provider    String?
+
+  weight              Int    @default(1)
+  allocatedRecipients Int    @default(0)
+  sentCount           Int    @default(0)
+  deliveredCount      Int    @default(0)
+  failedCount         Int    @default(0)
+  status              String @default("QUEUED") // "QUEUED" | "STREAMING" | "COMPLETED" | "FAILED"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recipients SmsRecipient[]
+
+  @@index([campaignId, senderNumberId])
+  @@index([campaignId, status])
+  @@map("campaign_sms_sender_pool")
+}
+
 model SmsRecipient {
   id         String      @id @default(uuid())
   campaignId String
   campaign   SmsCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
+  senderPoolId        String?
+  senderPool          CampaignSmsSenderPool? @relation(fields: [senderPoolId], references: [id], onDelete: SetNull)
+  assignedSenderPhone String?
+  assignedProvider    String?
+
   leadId String?
   lead   Lead?   @relation(fields: [leadId], references: [id])
+
+  brokerId String?
+  broker   Broker? @relation(fields: [brokerId], references: [id])
 
   phone         String
   name          String?
@@ -3594,8 +3672,10 @@ model SmsRecipient {
   updatedAt DateTime @updatedAt
 
   @@index([campaignId, status])
+  @@index([senderPoolId])
   @@index([phone])
   @@index([leadId])
+  @@index([brokerId])
   @@map("sms_recipient")
 }
 
@@ -3629,6 +3709,198 @@ model SmsTrackingEvent {
   @@index([campaignId, eventType])
   @@index([recipientId])
   @@map("sms_tracking_event")
+}
+
+// ─────────────────────────────────────────────
+// 15b. SMS FLOWS, INBOUND REPLIES & AI CONCIERGE
+// ─────────────────────────────────────────────
+
+model SmsFlow {
+  id            String        @id @default(uuid())
+  name          String
+  description   String?
+  status        String        @default("draft") // "draft" | "active" | "archived"
+  triggerType   String        @default("keyword_match") // "keyword_match" | "any_reply" | "campaign_reply"
+  triggerConfig Json?         // { keywords: ["visit", "price"], matchMode: "contains" | "exact" }
+  isGlobal      Boolean       @default(true)
+  campaignIds   String[]      // Array of specific campaign IDs if not global
+  projectId     String?
+  project       Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  nodes         SmsFlowNode[]
+  runs          SmsFlowRun[]
+
+  @@index([status])
+  @@index([projectId])
+  @@map("sms_flow")
+}
+
+model SmsFlowNode {
+  id        String   @id @default(uuid())
+  flowId    String
+  flow      SmsFlow  @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  nodeKey   String
+  nodeType  String   // "start" | "send_sms_reply" | "ai_agent" | "update_lead_status" | "add_tag" | "remove_tag" | "handoff_presales" | "condition" | "wait_delay" | "end"
+  config    Json
+  positionX Float?
+  positionY Float?
+  createdAt DateTime @default(now())
+
+  @@unique([flowId, nodeKey])
+  @@index([flowId])
+  @@map("sms_flow_node")
+}
+
+model SmsFlowRun {
+  id             String    @id @default(uuid())
+  flowId         String
+  flow           SmsFlow   @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  recipientId    String?
+  campaignId     String?
+  leadId         String?
+  status         String    @default("active") // "active" | "completed" | "failed"
+  currentNodeKey String?
+  inboundPhone   String?
+  inboundBody    String?   @db.Text
+  outboundReply  String?   @db.Text
+  vars           Json?
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+
+  @@index([flowId])
+  @@index([recipientId])
+  @@index([campaignId])
+  @@index([status])
+  @@map("sms_flow_run")
+}
+
+model SmsTag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  color     String   @default("#10B981")
+  createdAt DateTime @default(now())
+
+  @@map("sms_tag")
+}
+
+model SmsInboundMessage {
+  id                 String   @id @default(uuid())
+  fromPhone          String
+  toPhone            String
+  textBody           String?  @db.Text
+  headers            Json?
+  provider           String   // "TWILIO" | "AWS_SNS" | "SINCH" | "GUPSHUP" | "SIMULATOR"
+  providerMsgId      String?
+  matchedRecipientId String?
+  matchedCampaignId  String?
+  matchedLeadId      String?
+  status             String   @default("PROCESSED") // "RECEIVED" | "PROCESSED" | "UNMATCHED"
+  createdAt          DateTime @default(now())
+
+  @@index([fromPhone])
+  @@index([toPhone])
+  @@index([matchedRecipientId])
+  @@index([matchedCampaignId])
+  @@map("sms_inbound_message")
+}
+
+model SmsConversation {
+  id                  String    @id @default(uuid())
+  contactPhone        String
+  contactName         String?
+
+  leadId              String?
+  lead                Lead?     @relation(fields: [leadId], references: [id])
+  customerId          String?
+  customer            Customer? @relation(fields: [customerId], references: [id])
+  brokerId            String?
+  broker              Broker?   @relation(fields: [brokerId], references: [id])
+
+  agentUserId         String?
+  agent               User?     @relation("SmsConversationAgent", fields: [agentUserId], references: [id])
+
+  status              String    @default("open") // "open" | "pending" | "closed"
+  lastMessageText     String?   @db.Text
+  lastMessageAt       DateTime?
+  unreadCount         Int       @default(0)
+  aiAutoReplyDisabled Boolean   @default(false)
+  aiReplyCount        Int       @default(0)
+
+  // Dedicated Provider & Phone thread continuity invariant
+  assignedProvider    String    @default("TWILIO") // "TWILIO" | "AWS_SNS" | "SINCH" | "GUPSHUP"
+  assignedSenderPhone String?   // e.g. "+14155550199" or "SKYLIN"
+  assignedSenderId    String?
+  campaignId          String?
+  campaign            SmsCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  recipientId         String?
+
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  messages            SmsMessage[]
+
+  @@index([contactPhone])
+  @@index([status])
+  @@index([leadId])
+  @@index([customerId])
+  @@index([brokerId])
+  @@index([agentUserId])
+  @@index([lastMessageAt])
+  @@map("sms_conversation")
+}
+
+model SmsMessage {
+  id             String          @id @default(uuid())
+  conversationId String
+  conversation   SmsConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  direction      String          // "INBOUND" | "OUTBOUND"
+  senderType     String          @default("agent") // "agent" | "bot" | "contact"
+  senderName     String?
+  fromPhone      String
+  toPhone        String
+  bodyText       String          @db.Text
+  segmentsCount  Int             @default(1)
+
+  status         String          @default("SENT") // "PENDING" | "SENT" | "DELIVERED" | "FAILED"
+  provider       String?         // "TWILIO" | "AWS_SNS" | "SINCH" | "GUPSHUP" | "SIMULATOR"
+  providerMsgId  String?         @unique
+
+  isAiGenerated  Boolean         @default(false)
+
+  sentAt         DateTime?
+  deliveredAt    DateTime?
+  failedAt       DateTime?
+  failureReason  String?
+
+  createdAt      DateTime        @default(now())
+
+  @@index([conversationId])
+  @@index([direction])
+  @@index([status])
+  @@index([providerMsgId])
+  @@index([createdAt])
+  @@map("sms_message")
+}
+
+model SmsAiConfig {
+  id                  String   @id @default(uuid())
+  provider            String   @default("groq") // "groq" | "openai"
+  model               String   @default("openai/gpt-oss-120b")
+  apiKey              String?  // AES-256 encrypted
+  systemPrompt        String?  @db.Text
+  isActive            Boolean  @default(true)
+  autoReplyEnabled    Boolean  @default(false)
+  autoReplyMaxPerLead Int      @default(3)
+  maxCharacters       Int      @default(160)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("sms_ai_config")
 }
 
 // ─────────────────────────────────────────────
