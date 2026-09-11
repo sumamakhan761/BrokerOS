@@ -109,6 +109,7 @@ export function EmailCampaignListTable({ campaigns, isLoading }: EmailCampaignLi
       const res = await fetch(`${baseUrl}/api/marketing/campaigns/leads/export-data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ campaignIds: Array.from(selectedCampaignIds) }),
       });
 
@@ -205,6 +206,7 @@ export function EmailCampaignListTable({ campaigns, isLoading }: EmailCampaignLi
       const res = await fetch(`${baseUrl}/api/marketing/campaigns/leads/bulk-assign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ campaignIds: Array.from(selectedCampaignIds) }),
       });
 
@@ -254,11 +256,10 @@ export function EmailCampaignListTable({ campaigns, isLoading }: EmailCampaignLi
             <button
               key={st}
               onClick={() => handleStatusFilterChange(st)}
-              className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition-all ${
-                statusFilter === st
-                  ? "bg-white text-[var(--text-primary)] shadow-xs"
-                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-              }`}
+              className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition-all ${statusFilter === st
+                ? "bg-white text-[var(--text-primary)] shadow-xs"
+                : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                }`}
             >
               {st === "ALL" ? "All Campaigns" : st}
             </button>
@@ -371,9 +372,8 @@ export function EmailCampaignListTable({ campaigns, isLoading }: EmailCampaignLi
                   return (
                     <tr
                       key={camp.id}
-                      className={`hover:bg-slate-50/70 transition-colors group ${
-                        isSelected ? "bg-purple-50/40" : ""
-                      }`}
+                      className={`hover:bg-slate-50/70 transition-colors group ${isSelected ? "bg-purple-50/40" : ""
+                        }`}
                     >
                       <td className="py-4 px-4 text-center">
                         <input
