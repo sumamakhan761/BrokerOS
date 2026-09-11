@@ -15,7 +15,9 @@ interface FlowNodeCardProps {
   node: EmailFlowNode;
   index: number;
   totalNodes: number;
+  allNodes?: EmailFlowNode[];
   allNodeKeys: string[];
+  existingTags?: { id: string; name: string; color: string }[];
   updateNodeConfig: (nodeKey: string, cfgPatch: Record<string, any>) => void;
   removeNode: (nodeKey: string) => void;
   moveNode: (index: number, direction: 'up' | 'down') => void;
@@ -25,7 +27,9 @@ export const FlowNodeCard: React.FC<FlowNodeCardProps> = ({
   node,
   index,
   totalNodes,
+  allNodes,
   allNodeKeys,
+  existingTags,
   updateNodeConfig,
   removeNode,
   moveNode,
@@ -105,7 +109,9 @@ export const FlowNodeCard: React.FC<FlowNodeCardProps> = ({
       {/* ── Card Body Configuration ── */}
       <FlowNodeConfigEditor
         node={node}
+        allNodes={allNodes}
         allNodeKeys={allNodeKeys}
+        existingTags={existingTags}
         updateNodeConfig={updateNodeConfig}
       />
     </div>
