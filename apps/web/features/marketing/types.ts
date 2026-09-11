@@ -317,7 +317,17 @@ export interface EmailFlowNode {
   id?: string;
   flowId?: string;
   nodeKey: string;
-  nodeType: 'send_email' | 'ai_reply' | 'update_lead' | 'add_tag' | 'pre_sales_handoff' | 'condition';
+  nodeType:
+    | 'start'
+    | 'send_email'
+    | 'ai_reply'
+    | 'ai_agent'
+    | 'condition'
+    | 'update_lead'
+    | 'add_tag'
+    | 'pre_sales_handoff'
+    | 'human_handoff'
+    | 'end';
   config: Record<string, any>;
   positionX?: number;
   positionY?: number;
