@@ -55,6 +55,7 @@ export function EmailFlowBuilderView({ id }: EmailFlowBuilderViewProps) {
   const [isGlobal, setIsGlobal] = useState(true);
   const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
   const [nodes, setNodes] = useState<EmailFlowNode[]>([]);
+  const [existingTags, setExistingTags] = useState<{ id: string; name: string; color: string }[]>([]);
 
   // Simulation test state
   const [testModalOpen, setTestModalOpen] = useState(false);
@@ -83,23 +84,30 @@ export function EmailFlowBuilderView({ id }: EmailFlowBuilderViewProps) {
         setIsGlobal(data.isGlobal ?? true);
         setSelectedCampaignIds(data.campaignIds || []);
 
-        // Normalize legacy nodeType aliases to current standard types
+        // Normalize and prune legacy nodeType aliases to current standard types
         const rawNodes: any[] = data.nodes || [];
-        const normalizedNodes: EmailFlowNode[] = rawNodes.map((n, idx) => {
-          let nodeType = n.nodeType as EmailFlowNodeType;
-          if (n.nodeType === 'ai_reply') nodeType = 'ai_agent';
-          else if (n.nodeType === 'pre_sales_handoff') nodeType = 'human_handoff';
-          else if (!EMAIL_NODE_TYPES_META[nodeType]) nodeType = 'send_email';
+        const normalizedNodes: EmailFlowNode[] = rawNodes
+          .filter(
+            (n) =>
+              n.nodeType !== 'update_lead' &&
+              n.nodeType !== 'human_handoff' &&
+              n.nodeType !== 'pre_sales_handoff',
+          )
+          .map((n, idx) => {
+            let nodeType = n.nodeType as EmailFlowNodeType;
+            if (n.nodeType === 'ai_reply') nodeType = 'ai_agent';
+            else if (!EMAIL_NODE_TYPES_META[nodeType]) nodeType = 'send_email';
 
-          return {
-            id: n.id,
-            nodeKey: n.nodeKey || `node_${Date.now().toString(36)}_${idx}`,
-            nodeType,
-            config: n.config || {},
-            positionX: n.positionX ?? 100,
-            positionY: n.positionY ?? (idx + 1) * 120,
-          };
-        });
+            return {
+              id: n.id,
+              nodeKey: n.nodeKey || `node_${Date.now().toString(36)}_${idx}`,
+              nodeType,
+              config: n.config || {},
+              branches: n.branches || n.config?.branches || (nodeType === 'condition' ? { yes: [], no: [] } : undefined),
+              positionX: n.positionX ?? 100,
+              positionY: n.positionY ?? (idx + 1) * 120,
+            };
+          });
         setNodes(normalizedNodes);
 
         // Load active campaigns for scoping
@@ -109,6 +117,15 @@ export function EmailFlowBuilderView({ id }: EmailFlowBuilderViewProps) {
         if (campRes.ok) {
           const campData = await campRes.json();
           setCampaigns(campData.items || []);
+        }
+
+        // Load CRM Tags from settings
+        const tagsRes = await fetch(`${baseUrl}/api/marketing/email/tags`, {
+          credentials: 'include',
+        });
+        if (tagsRes.ok) {
+          const tagsData = await tagsRes.json();
+          if (Array.isArray(tagsData)) setExistingTags(tagsData);
         }
       } catch (err: any) {
         toast.error(err.message || 'Error loading flow details');
@@ -143,14 +160,14 @@ export function EmailFlowBuilderView({ id }: EmailFlowBuilderViewProps) {
       case 'send_email':
         defaultConfig = {
           subject: 'Re: Your inquiry regarding {{project_name}}',
-          bodyHtml: '<p>Hello {{lead_name}},</p><p>Thank you for getting in touch. Here are the requested details...</p>',
+          bodyHtml: '<p>Hello {{lead_name}},</p><p>Thank you for reaching out. Here are the requested property details and pricing highlights...</p>',
         };
         break;
       case 'ai_agent':
         defaultConfig = {
           provider: 'groq',
           model: 'openai/gpt-oss-120b',
-          instructions: 'Respond courteously, answering real estate pricing or scheduling questions, and recommend booking an on-site visit.',
+          instructions: 'Respond courteously, answering real estate pricing or scheduling questions, and recommend booking an on-site flat tour.',
           maxTurns: 3,
           stopIfHumanActive: true,
           handoffOnMax: true,
@@ -158,29 +175,15 @@ export function EmailFlowBuilderView({ id }: EmailFlowBuilderViewProps) {
         break;
       case 'condition':
         defaultConfig = {
-          conditionType: 'keywords',
-          keywords: 'visit, tour, see flat, schedule',
-          if_true_node_key: '',
-          if_false_node_key: '',
-        };
-        break;
-      case 'update_lead':
-        defaultConfig = {
-          status: 'INTERESTED',
-          temperature: 'HOT',
-          scoreIncrement: 20,
+          criteriaType: 'keywords',
+          keywords: 'visit, price, flat, tour, brochure',
+          branches: { yes: [], no: [] },
         };
         break;
       case 'add_tag':
         defaultConfig = {
-          tagName: 'SITE_VISIT_REQ',
-          color: '#10b981',
-        };
-        break;
-      case 'human_handoff':
-        defaultConfig = {
-          priority: 'URGENT',
-          note: 'Lead requested direct sales advisor contact via email flow',
+          tagName: existingTags[0]?.name || 'SITE_VISIT_REQ',
+          color: existingTags[0]?.color || '#8B5CF6',
         };
         break;
       case 'end':
@@ -192,6 +195,7 @@ export function EmailFlowBuilderView({ id }: EmailFlowBuilderViewProps) {
       nodeKey: key,
       nodeType: type,
       config: defaultConfig,
+      branches: type === 'condition' ? { yes: [], no: [] } : undefined,
       positionX: 100,
       positionY: (nodes.length + 1) * 120,
     };
@@ -202,7 +206,16 @@ export function EmailFlowBuilderView({ id }: EmailFlowBuilderViewProps) {
 
   const handleUpdateNodeConfig = (nodeKey: string, configPatch: Record<string, any>) => {
     setNodes((prev) =>
-      prev.map((n) => (n.nodeKey === nodeKey ? { ...n, config: { ...n.config, ...configPatch } } : n)),
+      prev.map((n) => {
+        if (n.nodeKey !== nodeKey) return n;
+        const updatedConfig = { ...n.config, ...configPatch };
+        const updatedBranches = configPatch.branches !== undefined ? configPatch.branches : n.branches;
+        return {
+          ...n,
+          config: updatedConfig,
+          branches: updatedBranches,
+        };
+      }),
     );
   };
 
@@ -252,7 +265,10 @@ export function EmailFlowBuilderView({ id }: EmailFlowBuilderViewProps) {
           nodes: nodes.map((n, idx) => ({
             nodeKey: n.nodeKey,
             nodeType: n.nodeType,
-            config: n.config,
+            config: {
+              ...n.config,
+              branches: n.branches || n.config?.branches || undefined,
+            },
             positionX: 100,
             positionY: (idx + 1) * 120,
           })),
@@ -276,21 +292,54 @@ export function EmailFlowBuilderView({ id }: EmailFlowBuilderViewProps) {
     try {
       setTesting(true);
       setTestResult(null);
+
+      // Save flow state first so simulation executes latest canvas nodes
+      await fetch(`${baseUrl}/api/marketing/email/flows/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name,
+          description,
+          status,
+          triggerType,
+          triggerConfig: {
+            keywords,
+            matchMode: 'contains',
+          },
+          isGlobal,
+          campaignIds: isGlobal ? [] : selectedCampaignIds,
+          nodes: nodes.map((n, idx) => ({
+            nodeKey: n.nodeKey,
+            nodeType: n.nodeType,
+            config: {
+              ...n.config,
+              branches: n.branches || n.config?.branches || undefined,
+            },
+            positionX: 100,
+            positionY: (idx + 1) * 120,
+          })),
+        }),
+      });
+
       const res = await fetch(`${baseUrl}/api/marketing/email/inbound/simulate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
+          flowId: id,
           leadEmail: 'prospect-tester@example.com',
-          senderEmail: 'sales@instance.sale',
+          senderEmail: 'sales@brokeros.com',
           subject: 'Inquiry regarding property and visit',
           bodyText: testInput,
         }),
       });
       const data = await res.json();
       setTestResult(data);
-      if (data.matchedFlowId) {
-        toast.success(`Matched flow "${data.flowName}"!`);
+      if (data.matchedFlowId && data.triggerMatched !== false) {
+        toast.success(`Matched flow "${data.flowName || name}"!`);
+      } else if (data.triggerMatched === false) {
+        toast.info(data.triggerReason || 'Trigger keywords did not match.');
       } else {
         toast.info('No flow matched this input text.');
       }
@@ -566,7 +615,9 @@ export function EmailFlowBuilderView({ id }: EmailFlowBuilderViewProps) {
                 node={node}
                 index={index}
                 totalNodes={nodes.length}
+                allNodes={nodes}
                 allNodeKeys={allNodeKeys}
+                existingTags={existingTags}
                 updateNodeConfig={handleUpdateNodeConfig}
                 removeNode={handleRemoveNode}
                 moveNode={handleMoveNode}
@@ -662,42 +713,58 @@ export function EmailFlowBuilderView({ id }: EmailFlowBuilderViewProps) {
               </Button>
 
               {testResult && (
-                <div className="p-3.5 rounded-xl bg-bg-subtle border border-border-default space-y-2 text-xs">
+                <div className="p-3.5 rounded-xl bg-bg-subtle border border-border-default space-y-3 text-xs">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-text-primary">Simulation Result:</span>
                     <span
                       className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                        testResult.matchedFlowId
+                        testResult.matchedFlowId && testResult.triggerMatched !== false
                           ? 'bg-emerald-500/10 text-emerald-600'
                           : 'bg-amber-500/10 text-amber-600'
                       }`}
                     >
-                      {testResult.matchedFlowId ? 'Flow Matched' : 'No Flow Matched'}
+                      {testResult.matchedFlowId && testResult.triggerMatched !== false ? 'Flow Matched & Executed' : 'Trigger Not Matched'}
                     </span>
                   </div>
 
                   {testResult.flowName && (
                     <p className="text-[11px] text-text-secondary">
-                      <strong>Matched Flow:</strong> {testResult.flowName}
+                      <strong>Target Flow:</strong> {testResult.flowName}
                     </p>
+                  )}
+
+                  {testResult.triggerReason && (
+                    <div className="p-2 rounded-lg bg-bg-surface border border-border-subtle text-[11px] text-text-secondary">
+                      <strong>Trigger Status:</strong> {testResult.triggerReason}
+                    </div>
                   )}
 
                   {testResult.actionsExecuted && testResult.actionsExecuted.length > 0 && (
                     <div>
-                      <p className="text-[11px] font-semibold text-text-secondary mb-1">Executed Actions:</p>
-                      <ul className="list-disc list-inside space-y-0.5 text-[11px] text-text-primary">
+                      <p className="text-[11px] font-semibold text-text-secondary mb-1">Execution Steps Timeline:</p>
+                      <div className="space-y-1">
                         {testResult.actionsExecuted.map((act: string, i: number) => (
-                          <li key={i}>{act}</li>
+                          <div key={i} className="flex items-start gap-1.5 text-[11px] text-text-primary bg-bg-surface p-1.5 rounded-lg border border-border-subtle">
+                            <span className="font-bold text-brand-600">✓</span>
+                            <span>{act}</span>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
                   )}
 
-                  {testResult.outboundReply && (
-                    <div className="mt-2 pt-2 border-t border-border-subtle">
-                      <p className="text-[11px] font-semibold text-brand-600 mb-1">Generated Response:</p>
-                      <div className="p-2 rounded bg-bg-surface border border-border-subtle text-[11px] whitespace-pre-wrap font-sans">
-                        {testResult.outboundReply}
+                  {(testResult.renderedSubject || testResult.outboundReply || testResult.renderedBody) && (
+                    <div className="mt-2 pt-2 border-t border-border-subtle space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-bold text-brand-600">Generated Email Response Preview:</p>
+                        {testResult.renderedSubject && (
+                          <span className="text-[10px] font-mono text-text-secondary bg-bg-surface px-1.5 py-0.5 rounded border border-border-subtle">
+                            Subject: {testResult.renderedSubject}
+                          </span>
+                        )}
+                      </div>
+                      <div className="p-3 rounded-xl bg-bg-surface border border-border-subtle text-xs whitespace-pre-wrap font-sans text-text-primary shadow-2xs">
+                        {testResult.outboundReply || testResult.renderedBody}
                       </div>
                     </div>
                   )}

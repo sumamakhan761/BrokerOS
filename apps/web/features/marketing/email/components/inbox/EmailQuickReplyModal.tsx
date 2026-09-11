@@ -1,10 +1,12 @@
 // ============================================================================
-// BrokerOS — Email Quick Replies Picker & Manager Modal
+// BrokerOS — Email Quick Replies Picker & Manager Modal (Client-side & Offline-first)
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
-import { Search, X, Zap, Plus, Trash2, Loader2 } from 'lucide-react';
-import type { EmailQuickReplyItem } from '../../types/inbox';
+import { Search, X, Zap, Plus, Trash2, RotateCcw } from 'lucide-react';
+import { EmailQuickReplyItem, DEFAULT_EMAIL_QUICK_REPLIES } from '../../types/inbox';
+
+const STORAGE_KEY = 'brokeros_email_quick_replies';
 
 interface EmailQuickReplyModalProps {
   isOpen: boolean;
@@ -17,79 +19,55 @@ export const EmailQuickReplyModal: React.FC<EmailQuickReplyModalProps> = ({
   onClose,
   onSelect,
 }) => {
-  const [replies, setReplies] = useState<EmailQuickReplyItem[]>([]);
+  const [replies, setReplies] = useState<EmailQuickReplyItem[]>(DEFAULT_EMAIL_QUICK_REPLIES);
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(false);
   const [newShortcut, setNewShortcut] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
-  // Built-in default quick replies if database table is empty
-  const defaultReplies: EmailQuickReplyItem[] = [
-    {
-      id: 'qr-1',
-      shortcut: '/site-visit',
-      title: 'Site Visit Confirmation',
-      contentHtml: 'We would be delighted to host you for a private site inspection this weekend. Our luxury concierge will meet you at the reception. What time works best for you?',
-    },
-    {
-      id: 'qr-2',
-      shortcut: '/pricing',
-      title: 'Payment Plan & Pricing',
-      contentHtml: 'Attached please find the comprehensive payment milestone schedule and current inventory availability with flexible 20/80 developer payment options.',
-    },
-    {
-      id: 'qr-3',
-      shortcut: '/brochure',
-      title: 'Project Brochure Download',
-      contentHtml: 'Here is the high-resolution architectural brochure including full floor plans, penthouse specs, and world-class amenities overview.',
-    },
-    {
-      id: 'qr-4',
-      shortcut: '/followup',
-      title: 'Gentle Follow-up',
-      contentHtml: 'Following up on our recent conversation regarding the residences. Have you had a chance to review the floor layout options?',
-    },
-  ];
-
+  // Load from localStorage or seed with defaults
   useEffect(() => {
     if (!isOpen) return;
 
-    async function fetchReplies() {
+    if (typeof window !== 'undefined') {
       try {
-        setLoading(true);
-        const res = await fetch(`${baseUrl}/api/marketing/email/settings/quick-replies`, {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            setReplies(data);
-          } else {
-            setReplies(defaultReplies);
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setReplies(parsed);
+            return;
           }
-        } else {
-          setReplies(defaultReplies);
         }
-      } catch (err) {
-        setReplies(defaultReplies);
-      } finally {
-        setLoading(false);
+      } catch {
+        // use defaults
       }
     }
-
-    fetchReplies();
-  }, [isOpen, baseUrl]);
+    setReplies(DEFAULT_EMAIL_QUICK_REPLIES);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleCreate = async () => {
+  const persistReplies = (updated: EmailQuickReplyItem[]) => {
+    setReplies(updated);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        window.dispatchEvent(new Event('brokeros_email_quick_replies_changed'));
+      } catch (e) {
+        console.warn('Failed to persist quick reply to localStorage', e);
+      }
+    }
+  };
+
+  const handleCreate = () => {
     if (!newShortcut.trim() || !newContent.trim()) return;
 
-    const formattedShortcut = newShortcut.startsWith('/') ? newShortcut : `/${newShortcut}`;
+    const formattedShortcut = newShortcut.trim().startsWith('/')
+      ? newShortcut.trim()
+      : `/${newShortcut.trim()}`;
+
     const newReply: EmailQuickReplyItem = {
       id: `custom-${Date.now()}`,
       shortcut: formattedShortcut,
@@ -97,19 +75,21 @@ export const EmailQuickReplyModal: React.FC<EmailQuickReplyModalProps> = ({
       contentHtml: newContent.trim(),
     };
 
-    setReplies((prev) => [newReply, ...prev]);
+    persistReplies([newReply, ...replies]);
     setNewShortcut('');
     setNewTitle('');
     setNewContent('');
     setIsCreating(false);
+  };
 
-    // Save to backend if endpoint available
-    fetch(`${baseUrl}/api/marketing/email/settings/quick-replies`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(newReply),
-    }).catch(() => null);
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const updated = replies.filter((r) => r.id !== id);
+    persistReplies(updated);
+  };
+
+  const handleResetDefaults = () => {
+    persistReplies(DEFAULT_EMAIL_QUICK_REPLIES);
   };
 
   const filtered = replies.filter(
@@ -147,7 +127,7 @@ export const EmailQuickReplyModal: React.FC<EmailQuickReplyModalProps> = ({
             <Search className="w-4 h-4 text-text-tertiary absolute left-3 top-2.5" />
             <input
               type="text"
-              placeholder="Search shortcut or content..."
+              placeholder="Search shortcut, title, or content..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 bg-bg-base border border-border-default rounded-xl text-xs text-text-primary focus:outline-hidden focus:border-brand-500"
@@ -159,6 +139,13 @@ export const EmailQuickReplyModal: React.FC<EmailQuickReplyModalProps> = ({
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{isCreating ? 'Cancel' : 'New Reply'}</span>
+          </button>
+          <button
+            onClick={handleResetDefaults}
+            title="Reset to default templates"
+            className="p-1.5 text-text-tertiary hover:text-text-primary rounded-xl border border-border-default hover:bg-bg-subtle transition-colors shrink-0"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -188,7 +175,13 @@ export const EmailQuickReplyModal: React.FC<EmailQuickReplyModalProps> = ({
               onChange={(e) => setNewContent(e.target.value)}
               className="w-full px-3 py-1.5 bg-bg-surface border border-border-default rounded-xl text-xs text-text-primary resize-none"
             />
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setIsCreating(false)}
+                className="px-3 py-1.5 text-text-secondary hover:text-text-primary rounded-xl text-xs font-semibold"
+              >
+                Cancel
+              </button>
               <button
                 onClick={handleCreate}
                 disabled={!newShortcut.trim() || !newContent.trim()}
@@ -221,9 +214,19 @@ export const EmailQuickReplyModal: React.FC<EmailQuickReplyModalProps> = ({
                     </span>
                     <span className="text-xs font-semibold text-text-primary">{item.title}</span>
                   </div>
-                  <span className="text-[10px] text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity">
-                    Click to insert ↵
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity">
+                      Click to insert ↵
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDelete(e, item.id)}
+                      className="p-1 text-text-tertiary hover:text-rose-500 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                      title="Delete quick reply"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed">{item.contentHtml}</p>
               </div>

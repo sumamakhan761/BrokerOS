@@ -18,9 +18,7 @@ export type EmailFlowNodeType =
   | 'send_email'
   | 'ai_agent'
   | 'condition'
-  | 'update_lead'
   | 'add_tag'
-  | 'human_handoff'
   | 'end';
 
 export interface EmailFlowNode {
@@ -28,6 +26,10 @@ export interface EmailFlowNode {
   nodeKey: string;
   nodeType: EmailFlowNodeType;
   config: Record<string, any>;
+  branches?: {
+    yes: EmailFlowNode[];
+    no: EmailFlowNode[];
+  };
   positionX?: number;
   positionY?: number;
 }
@@ -75,25 +77,13 @@ export const EMAIL_NODE_TYPES_META: Record<
     label: 'If / Else Branch',
     icon: GitFork,
     color: 'text-fuchsia-500 bg-fuchsia-500/10 border-l-fuchsia-500',
-    desc: 'Branch based on inquiry keywords, status, or temperature',
-  },
-  update_lead: {
-    label: 'Update Lead Profile',
-    icon: UserCheck,
-    color: 'text-amber-500 bg-amber-500/10 border-l-amber-500',
-    desc: 'Change lead status (INTERESTED) and temperature (HOT)',
+    desc: 'Branch based on inquiry keywords or intent',
   },
   add_tag: {
     label: 'Assign CRM Tag',
     icon: Tag,
     color: 'text-pink-500 bg-pink-500/10 border-l-pink-500',
-    desc: 'Tag prospect (e.g. SITE_VISIT_REQ, PRICE_INQUIRY)',
-  },
-  human_handoff: {
-    label: 'Human Agent Handoff',
-    icon: UserPlus,
-    color: 'text-red-500 bg-red-500/10 border-l-red-500',
-    desc: 'Pause AI & route to Pre-Sales triage queue',
+    desc: 'Tag prospect using existing CRM tags from Settings',
   },
   end: {
     label: 'End Flow',

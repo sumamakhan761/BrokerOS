@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { EmailQuickReplyModal } from './EmailQuickReplyModal';
 import { EmailTemplatePickerModal } from './EmailTemplatePickerModal';
-import type { EmailQuickReplyItem } from '../../types/inbox';
+import { EmailQuickReplyItem, DEFAULT_EMAIL_QUICK_REPLIES } from '../../types/inbox';
 
 interface EmailMessageComposerProps {
   onSendMessage: (payload: {
@@ -52,43 +52,41 @@ export const EmailMessageComposer: React.FC<EmailMessageComposerProps> = ({
   const [attachments, setAttachments] = useState<Array<{ name: string; url: string; size?: number }>>([]);
 
   // Slash command autocomplete state
-  const [allQuickReplies, setAllQuickReplies] = useState<EmailQuickReplyItem[]>([]);
+  const [allQuickReplies, setAllQuickReplies] = useState<EmailQuickReplyItem[]>(DEFAULT_EMAIL_QUICK_REPLIES);
   const [slashQuery, setSlashQuery] = useState<string | null>(null);
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
-  // Fetch quick replies for slash completion
+  // Quick replies for slash completion (synced with localStorage & default library)
   useEffect(() => {
-    async function loadQuickReplies() {
-      try {
-        const res = await fetch(`${baseUrl}/api/marketing/email/settings/quick-replies`, {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            setAllQuickReplies(data);
-          } else {
-            setAllQuickReplies([
-              { id: '1', shortcut: '/site-visit', title: 'Site Visit', contentHtml: 'We would be delighted to host you for a private site inspection this weekend.' },
-              { id: '2', shortcut: '/pricing', title: 'Pricing Sheet', contentHtml: 'Attached please find the comprehensive payment milestone schedule.' },
-              { id: '3', shortcut: '/brochure', title: 'Brochure', contentHtml: 'Here is the high-resolution architectural brochure.' },
-            ]);
+    function loadQuickReplies() {
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('brokeros_email_quick_replies');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setAllQuickReplies(parsed);
+              return;
+            }
           }
+        } catch {
+          // fallback
         }
-      } catch (err) {
-        setAllQuickReplies([
-          { id: '1', shortcut: '/site-visit', title: 'Site Visit', contentHtml: 'We would be delighted to host you for a private site inspection this weekend.' },
-          { id: '2', shortcut: '/pricing', title: 'Pricing Sheet', contentHtml: 'Attached please find the comprehensive payment milestone schedule.' },
-        ]);
       }
+      setAllQuickReplies(DEFAULT_EMAIL_QUICK_REPLIES);
     }
+
     loadQuickReplies();
-  }, [baseUrl]);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('brokeros_email_quick_replies_changed', loadQuickReplies);
+      return () => {
+        window.removeEventListener('brokeros_email_quick_replies_changed', loadQuickReplies);
+      };
+    }
+  }, []);
 
   // Check if text triggers slash autocomplete
   useEffect(() => {
