@@ -4,14 +4,24 @@ import type {
   ISmsMarketingProvider,
   SmsAudienceEstimationResult,
   SmsCampaignAnalyticsSummary,
+  SmsPreFlightCostSummary,
   SmsWebhookEvent,
 } from '@brokeros/types';
+import {
+  SMS_PROVIDER_PRICING_ESTIMATES,
+  calculateSmsSegments,
+} from '@brokeros/constants';
 import {
   CreateSmsCampaignDto,
   SaveDraftSmsCampaignDto,
   PreviewSmsAudienceDto,
   SendTestSmsDto,
   ConnectSmsIntegrationDto,
+  AddSenderNumberDto,
+  UpdateSenderNumberDto,
+  CalculateSmsCostEstimateDto,
+  BulkAssignSmsLeadsDto,
+  ExportSmsLeadsDto,
 } from './dto/sms.dto.js';
 import { SmsAudienceService } from './services/sms-audience.service.js';
 import { SmsAnalyticsService } from './services/sms-analytics.service.js';
@@ -26,7 +36,7 @@ export class SmsService {
     private readonly analyticsService: SmsAnalyticsService,
     private readonly integrationsService: SmsIntegrationsService,
     private readonly trackingService: SmsTrackingService,
-  ) {}
+  ) { }
 
   // ── FACADE DELEGATIONS ──
 
@@ -44,6 +54,14 @@ export class SmsService {
     return this.audienceService.promoteCsvRecipientToLead(recipientId, userId);
   }
 
+  async bulkAssignRecipientsToCrm(dto: BulkAssignSmsLeadsDto, userId?: string) {
+    return this.audienceService.bulkAssignRecipientsToCrm(dto, userId);
+  }
+
+  async getExportLeadsData(dto: ExportSmsLeadsDto) {
+    return this.audienceService.getExportLeadsData(dto);
+  }
+
   async getCampaignAnalytics(
     campaignId: string,
   ): Promise<SmsCampaignAnalyticsSummary> {
@@ -52,7 +70,14 @@ export class SmsService {
 
   async getCampaignRecipients(
     campaignId: string,
-    query?: { page?: number; limit?: number; status?: string; search?: string },
+    query?: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      search?: string;
+      engagement?: string;
+      crmStatus?: string;
+    },
   ) {
     return this.analyticsService.getCampaignRecipients(campaignId, query);
   }
@@ -71,6 +96,26 @@ export class SmsService {
 
   async deleteIntegration(id: string) {
     return this.integrationsService.deleteIntegration(id);
+  }
+
+  async syncNumbersForIntegration(integrationId: string) {
+    return this.integrationsService.syncNumbersForIntegration(integrationId);
+  }
+
+  async addSenderNumber(integrationId: string, dto: AddSenderNumberDto) {
+    return this.integrationsService.addSenderNumber(integrationId, dto);
+  }
+
+  async updateSenderNumber(numberId: string, dto: UpdateSenderNumberDto) {
+    return this.integrationsService.updateSenderNumber(numberId, dto);
+  }
+
+  async deleteSenderNumber(numberId: string) {
+    return this.integrationsService.deleteSenderNumber(numberId);
+  }
+
+  async listAllActiveSenderNumbers() {
+    return this.integrationsService.listAllActiveSenderNumbers();
   }
 
   async resolveShortLink(
@@ -103,7 +148,11 @@ export class SmsService {
   }
 
   private async resolveForeignKeys(
-    dto: { projectId?: string; integrationId?: string; providerType?: string },
+    dto: {
+      projectId?: string;
+      integrationId?: string;
+      providerType?: string;
+    },
     userId?: string,
   ) {
     let validProjectId: string | null = null;
@@ -123,12 +172,12 @@ export class SmsService {
       });
       if (exists) validIntegrationId = exists.id;
     } else if (dto.providerType) {
-      const defaultInt = await this.prisma.smsIntegration.findFirst({
+      const defaultIntegration = await this.prisma.smsIntegration.findFirst({
         where: { provider: dto.providerType as any, isActive: true },
         orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
         select: { id: true },
       });
-      if (defaultInt) validIntegrationId = defaultInt.id;
+      if (defaultIntegration) validIntegrationId = defaultIntegration.id;
     }
 
     let validUserId: string | null = null;
@@ -154,70 +203,156 @@ export class SmsService {
       userId: validUserId,
     } = await this.resolveForeignKeys(dto, userId);
 
+    const hasMultiplePools = dto.senderPools && dto.senderPools.length > 1;
+    const providerType = hasMultiplePools
+      ? 'MULTI_PROVIDER'
+      : (dto.senderPools?.[0]?.provider || dto.providerType || 'TWILIO');
+
+    let savedCampaign: any;
+
     if (dto.campaignId) {
       const existing = await this.prisma.smsCampaign.findUnique({
         where: { id: dto.campaignId },
       });
 
       if (existing) {
-        return this.prisma.smsCampaign.update({
+        savedCampaign = await this.prisma.smsCampaign.update({
           where: { id: dto.campaignId },
           data: {
             title: dto.title !== undefined ? dto.title : existing.title,
             channel: dto.channel ?? existing.channel,
-            providerType: dto.providerType ?? existing.providerType,
+            providerType: (providerType as any) ?? existing.providerType,
+            allocationMode: dto.allocationMode ?? existing.allocationMode,
             audienceSource: dto.audienceSource ?? existing.audienceSource,
             isCpCampaign: dto.isCpCampaign ?? existing.isCpCampaign,
-            projectId:
-              dto.projectId !== undefined ? projectId : existing.projectId,
-            integrationId:
-              dto.integrationId !== undefined
-                ? integrationId
-                : existing.integrationId,
-            fromSender:
-              dto.fromSender !== undefined
-                ? dto.fromSender
-                : existing.fromSender,
-            messageContent:
-              dto.messageContent !== undefined
-                ? dto.messageContent
-                : existing.messageContent,
-            dltTemplateId:
-              dto.dltTemplateId !== undefined
-                ? dto.dltTemplateId
-                : existing.dltTemplateId,
-            audienceFilters: dto.audienceFilters
-              ? (dto.audienceFilters as any)
-              : existing.audienceFilters,
-            scheduledAt: dto.scheduledAt
-              ? new Date(dto.scheduledAt)
-              : existing.scheduledAt,
+            projectId: dto.projectId !== undefined ? projectId : existing.projectId,
+            integrationId: dto.integrationId !== undefined ? integrationId : existing.integrationId,
+            fromSender: dto.fromSender !== undefined ? (dto.fromSender || 'BrokerOS') : existing.fromSender,
+            messageContent: dto.messageContent !== undefined ? dto.messageContent : existing.messageContent,
+            dltTemplateId: dto.dltTemplateId !== undefined ? dto.dltTemplateId : existing.dltTemplateId,
+            audienceFilters: dto.audienceFilters !== undefined ? (dto.audienceFilters as any) : existing.audienceFilters,
           },
         });
       }
     }
 
-    return this.prisma.smsCampaign.create({
-      data: {
-        title: dto.title?.trim() || 'Untitled Draft SMS Campaign',
-        channel: dto.channel || 'SMS',
-        status: 'DRAFT',
-        providerType: dto.providerType || 'TWILIO',
-        audienceSource: dto.audienceSource || 'CRM_DATABASE',
-        isCpCampaign: dto.isCpCampaign || false,
-        projectId,
-        integrationId,
-        fromSender: dto.fromSender || 'BrokerOS',
-        messageContent: dto.messageContent || '',
-        dltTemplateId: dto.dltTemplateId || null,
-        audienceFilters: dto.audienceFilters
-          ? (dto.audienceFilters as any)
-          : undefined,
-        totalRecipients: 0,
-        scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
-        createdById: validUserId,
+    if (!savedCampaign) {
+      savedCampaign = await this.prisma.smsCampaign.create({
+        data: {
+          title: dto.title?.trim() ? dto.title : `SMS Draft — ${new Date().toLocaleDateString()}`,
+          channel: dto.channel ?? 'SMS',
+          providerType: providerType as any,
+          allocationMode: dto.allocationMode || 'AUTO_EVEN',
+          audienceSource: dto.audienceSource ?? 'CRM_DATABASE',
+          isCpCampaign: dto.isCpCampaign ?? false,
+          status: 'DRAFT',
+          projectId,
+          integrationId,
+          fromSender: dto.fromSender || 'BrokerOS',
+          messageContent: dto.messageContent || '',
+          dltTemplateId: dto.dltTemplateId,
+          audienceFilters: dto.audienceFilters ? (dto.audienceFilters as any) : undefined,
+          createdById: validUserId,
+        },
+      });
+    }
+
+    // Save sender pool configs if provided
+    if (dto.senderPools && dto.senderPools.length > 0) {
+      await this.prisma.campaignSmsSenderPool.deleteMany({
+        where: { campaignId: savedCampaign.id },
+      });
+
+      await Promise.all(
+        dto.senderPools.map(async (poolCfg) => {
+          return this.prisma.campaignSmsSenderPool.create({
+            data: {
+              campaignId: savedCampaign.id,
+              senderNumberId: poolCfg.senderNumberId || null,
+              phoneNumber: poolCfg.phoneNumber || null,
+              senderId: poolCfg.senderId || null,
+              provider: poolCfg.provider || null,
+              weight: Math.round(poolCfg.allocationPercentage || (100 / dto.senderPools!.length)),
+              allocatedRecipients: poolCfg.allocatedLeads || 0,
+              status: 'QUEUED',
+            },
+          });
+        }),
+      );
+    }
+
+    return savedCampaign;
+  }
+
+  async findAllCampaigns(query?: any) {
+    return this.listCampaigns(query);
+  }
+
+  async findOneCampaign(id: string) {
+    return this.getCampaign(id);
+  }
+
+  async listCampaigns(query?: { status?: string; isCpCampaign?: boolean }) {
+    const where: any = {};
+    if (query?.status) where.status = query.status;
+    if (query?.isCpCampaign !== undefined)
+      where.isCpCampaign = query.isCpCampaign;
+
+    return this.prisma.smsCampaign.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        project: {
+          select: { id: true, name: true, city: true, isCpProject: true },
+        },
+        integration: { select: { id: true, name: true, provider: true } },
+        createdBy: { select: { id: true, name: true, email: true } },
+        senderPools: {
+          include: {
+            senderNumber: true,
+          },
+        },
+        _count: {
+          select: {
+            recipients: true,
+            shortLinks: true,
+          },
+        },
       },
     });
+  }
+
+  async getCampaign(id: string) {
+    const campaign = await this.prisma.smsCampaign.findUnique({
+      where: { id },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            city: true,
+            isCpProject: true,
+            brochureUrl: true,
+          },
+        },
+        integration: true,
+        createdBy: { select: { id: true, name: true, email: true } },
+        senderPools: {
+          include: {
+            senderNumber: true,
+          },
+        },
+        _count: {
+          select: {
+            recipients: true,
+            shortLinks: true,
+          },
+        },
+      },
+    });
+
+    if (!campaign) throw new NotFoundException('SMS Campaign not found');
+    return campaign;
   }
 
   async createCampaign(dto: CreateSmsCampaignDto, userId?: string) {
@@ -227,51 +362,36 @@ export class SmsService {
       userId: validUserId,
     } = await this.resolveForeignKeys(dto, userId);
 
-    const audienceResult = await this.previewAudience({
-      audienceSource: dto.audienceSource || 'CRM_DATABASE',
-      audienceFilters: dto.audienceFilters,
-      csvRecipients: dto.csvRecipients,
-      isCpCampaign: dto.isCpCampaign,
-      projectId: projectId || undefined,
-    });
+    const hasMultiplePools = dto.senderPools && dto.senderPools.length > 1;
+    const providerType = hasMultiplePools
+      ? 'MULTI_PROVIDER'
+      : (dto.senderPools?.[0]?.provider || dto.providerType || 'TWILIO');
 
     let campaign: any;
-
     if (dto.campaignId) {
       const existing = await this.prisma.smsCampaign.findUnique({
         where: { id: dto.campaignId },
       });
+
       if (existing) {
         campaign = await this.prisma.smsCampaign.update({
           where: { id: dto.campaignId },
           data: {
             title: dto.title,
             channel: dto.channel || 'SMS',
-            status: dto.scheduledAt ? 'SCHEDULED' : 'PROCESSING',
-            providerType: dto.providerType || 'TWILIO',
+            providerType: providerType as any,
+            allocationMode: dto.allocationMode || 'AUTO_EVEN',
             audienceSource: dto.audienceSource || 'CRM_DATABASE',
-            isCpCampaign: dto.isCpCampaign || false,
+            isCpCampaign: dto.isCpCampaign ?? false,
+            status: dto.scheduledAt ? 'SCHEDULED' : 'PROCESSING',
             projectId,
             integrationId,
-            fromSender:
-              dto.fromSender !== undefined
-                ? dto.fromSender
-                : existing.fromSender,
-            messageContent:
-              dto.messageContent !== undefined
-                ? dto.messageContent
-                : existing.messageContent,
-            dltTemplateId:
-              dto.dltTemplateId !== undefined
-                ? dto.dltTemplateId || null
-                : existing.dltTemplateId,
-            audienceFilters: dto.audienceFilters as any,
-            totalRecipients: audienceResult.finalAudienceCount,
+            fromSender: dto.fromSender || 'BrokerOS',
+            messageContent: dto.messageContent || '',
+            dltTemplateId: dto.dltTemplateId,
+            audienceFilters: dto.audienceFilters ? (dto.audienceFilters as any) : undefined,
             scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
           },
-        });
-        await this.prisma.smsRecipient.deleteMany({
-          where: { campaignId: campaign.id },
         });
       }
     }
@@ -281,70 +401,71 @@ export class SmsService {
         data: {
           title: dto.title,
           channel: dto.channel || 'SMS',
-          status: dto.scheduledAt ? 'SCHEDULED' : 'PROCESSING',
-          providerType: dto.providerType || 'TWILIO',
+          providerType: providerType as any,
+          allocationMode: dto.allocationMode || 'AUTO_EVEN',
           audienceSource: dto.audienceSource || 'CRM_DATABASE',
-          isCpCampaign: dto.isCpCampaign || false,
+          isCpCampaign: dto.isCpCampaign ?? false,
+          status: dto.scheduledAt ? 'SCHEDULED' : 'PROCESSING',
           projectId,
           integrationId,
           fromSender: dto.fromSender || 'BrokerOS',
           messageContent: dto.messageContent || '',
-          dltTemplateId: dto.dltTemplateId || null,
-          audienceFilters: dto.audienceFilters as any,
-          totalRecipients: audienceResult.finalAudienceCount,
+          dltTemplateId: dto.dltTemplateId,
+          audienceFilters: dto.audienceFilters ? (dto.audienceFilters as any) : undefined,
           scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
           createdById: validUserId,
         },
       });
     }
 
-    // Populate Recipients
+    // Populate Audience
+    await this.prisma.smsRecipient.deleteMany({
+      where: { campaignId: campaign.id },
+    });
+
+    const normalizeRecipientPhone = (raw: string): string => {
+      if (!raw) return '';
+      let str = String(raw).trim();
+      if (/[eE]\+?[0-9]+/.test(str)) {
+        const num = Number(str);
+        if (!isNaN(num) && isFinite(num)) {
+          str = num.toLocaleString('fullwide', { useGrouping: false });
+        }
+      }
+      str = str.replace(/[^\d+]/g, '');
+      if (!str.startsWith('+')) {
+        if (str.length === 10) {
+          str = `+91${str}`;
+        } else if (str.length === 12 && str.startsWith('91')) {
+          str = `+${str}`;
+        } else if (str.length === 11 && str.startsWith('1')) {
+          str = `+${str}`;
+        } else if (str.length > 0) {
+          str = `+${str}`;
+        }
+      }
+      return str;
+    };
+
+    const rawRecipients: any[] = [];
+
     if (dto.audienceSource === 'CSV_UPLOAD' && dto.csvRecipients?.length) {
-      const seenPhones = new Set<string>();
-      const recipientData: any[] = [];
-      const crmLeadsToCreate: any[] = [];
-
       for (const row of dto.csvRecipients) {
-        const phone = row.phone?.replace(/[^\d+]/g, '');
-        if (!phone || phone.length < 8 || seenPhones.has(phone)) continue;
-        seenPhones.add(phone);
-
-        recipientData.push({
+        if (!row.phone) continue;
+        const normalized = normalizeRecipientPhone(row.phone);
+        if (!normalized || normalized.length < 8) continue;
+        rawRecipients.push({
           campaignId: campaign.id,
-          phone,
-          name: row.name || 'Prospect',
+          phone: normalized,
+          name: row.name?.trim() || 'Prospect',
           status: 'QUEUED',
           source: 'CSV_UPLOAD',
           mergeData: {
-            city: row.city,
+            name: row.name,
             budget: row.budget,
-            interestedProject: row.interestedProject,
-            temperature: row.temperature,
+            city: row.city,
+            projectName: (row as any).projectName || row.interestedProject,
           },
-        });
-
-        if (dto.saveCsvAsCrmLeads) {
-          crmLeadsToCreate.push({
-            firstName: row.name?.split(' ')[0] || 'Prospect',
-            lastName: row.name?.split(' ').slice(1).join(' ') || '',
-            phone,
-            email: row.email || null,
-            temperature: row.temperature || 'WARM',
-            interestedProjectId: projectId,
-            budget: row.budget ? Number(row.budget) : null,
-            createdById: validUserId,
-          });
-        }
-      }
-
-      if (recipientData.length > 0) {
-        await this.prisma.smsRecipient.createMany({ data: recipientData });
-      }
-
-      if (crmLeadsToCreate.length > 0) {
-        await this.prisma.lead.createMany({
-          data: crmLeadsToCreate,
-          skipDuplicates: true,
         });
       }
     } else {
@@ -353,7 +474,8 @@ export class SmsService {
         dto.isCpCampaign,
         dto.projectId,
       );
-      const leads: any[] = await this.prisma.lead.findMany({
+
+      const leads = await this.prisma.lead.findMany({
         where: whereClause,
         include: {
           interestedProject: { select: { name: true } },
@@ -362,15 +484,14 @@ export class SmsService {
       });
 
       const seenPhones = new Set<string>();
-      const recipientData: any[] = [];
 
       for (const lead of leads) {
         if (!lead.phone) continue;
-        const phone = lead.phone.replace(/[^\d+]/g, '');
-        if (phone.length < 8 || seenPhones.has(phone)) continue;
+        const phone = normalizeRecipientPhone(lead.phone);
+        if (!phone || phone.length < 8 || seenPhones.has(phone)) continue;
         seenPhones.add(phone);
 
-        recipientData.push({
+        rawRecipients.push({
           campaignId: campaign.id,
           leadId: lead.id,
           phone,
@@ -386,11 +507,71 @@ export class SmsService {
           },
         });
       }
+    }
 
-      if (recipientData.length > 0) {
-        await this.prisma.smsRecipient.createMany({ data: recipientData });
+    if (rawRecipients.length > 0) {
+      if (dto.senderPools && dto.senderPools.length > 0) {
+        const partitionResult = this.audienceService.partitionAudienceAcrossPools(
+          rawRecipients,
+          dto.senderPools,
+          dto.allocationMode || 'AUTO_EVEN',
+        );
+
+        await this.prisma.campaignSmsSenderPool.deleteMany({
+          where: { campaignId: campaign.id },
+        });
+
+        const createdPools = await Promise.all(
+          dto.senderPools.map(async (poolCfg, idx) => {
+            const alloc = partitionResult.allocations[idx];
+
+            return this.prisma.campaignSmsSenderPool.create({
+              data: {
+                campaignId: campaign.id,
+                senderNumberId: poolCfg.senderNumberId || null,
+                phoneNumber: poolCfg.phoneNumber || null,
+                senderId: poolCfg.senderId || null,
+                provider: poolCfg.provider || null,
+                weight: Math.round(alloc?.weight ?? poolCfg.allocationPercentage ?? (100 / dto.senderPools!.length)),
+                allocatedRecipients: alloc?.count ?? 0,
+                status: 'QUEUED',
+              },
+            });
+          }),
+        );
+
+        const poolIdMap = new Map<number, string>();
+        createdPools.forEach((cp, idx) => {
+          poolIdMap.set(idx, cp.id);
+        });
+
+        const finalRecipients = partitionResult.partitionedRecipients.map((rec) => ({
+          campaignId: rec.campaignId,
+          leadId: rec.leadId || null,
+          phone: rec.phone,
+          name: rec.name,
+          status: rec.status,
+          source: rec.source,
+          mergeData: rec.mergeData,
+          senderPoolId: rec.poolIndex !== undefined ? poolIdMap.get(rec.poolIndex) || null : null,
+          assignedSenderPhone: rec.assignedSenderPhone || null,
+          assignedProvider: rec.assignedProvider || null,
+        }));
+
+        await this.prisma.smsRecipient.createMany({
+          data: finalRecipients,
+        });
+      } else {
+        await this.prisma.smsRecipient.createMany({
+          data: rawRecipients,
+        });
       }
     }
+
+    await this.prisma.smsCampaign.update({
+      where: { id: campaign.id },
+      data: { totalRecipients: rawRecipients.length },
+    });
 
     if (!dto.scheduledAt) {
       this.triggerWorkerDispatch(campaign.id);
@@ -405,7 +586,7 @@ export class SmsService {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ campaignId }),
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   async dispatchCampaign(id: string) {
@@ -423,91 +604,67 @@ export class SmsService {
     return { success: true, message: `Dispatched SMS campaign ${id}` };
   }
 
-  async findAllCampaigns(query?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    search?: string;
-    includeDrafts?: string | boolean;
-  }) {
-    const page = Number(query?.page) || 1;
-    const limit = Number(query?.limit) || 20;
-    const skip = (page - 1) * limit;
+  calculateCostEstimate(dto: CalculateSmsCostEstimateDto): SmsPreFlightCostSummary {
+    const totalRecipients = Number(dto.totalRecipients) || 0;
+    const pools = dto.senderPools || [];
+    const messageContent = dto.messageContent || '';
 
-    const where: any = {};
-    if (query?.status) {
-      if (query.status !== 'ALL') {
-        where.status = query.status;
-      } else if (
-        query?.includeDrafts !== 'true' &&
-        query?.includeDrafts !== true
-      ) {
-        where.status = { not: 'DRAFT' };
-      }
-    } else if (
-      query?.includeDrafts !== 'true' &&
-      query?.includeDrafts !== true
-    ) {
-      where.status = { not: 'DRAFT' };
+    const { segments } = calculateSmsSegments(messageContent);
+    const totalSegments = totalRecipients * segments;
+
+    if (totalRecipients === 0 || pools.length === 0) {
+      return {
+        totalLeads: totalRecipients,
+        totalSegments,
+        totalCostUSD: 0,
+        totalCostINR: 0,
+        lineItems: [],
+      };
     }
 
-    if (query?.search) {
-      where.OR = [
-        { title: { contains: query.search, mode: 'insensitive' } },
-        { messageContent: { contains: query.search, mode: 'insensitive' } },
-      ];
-    }
+    let totalCostUSD = 0;
+    let totalCostINR = 0;
 
-    const [total, items] = await Promise.all([
-      this.prisma.smsCampaign.count({ where }),
-      this.prisma.smsCampaign.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          project: { select: { id: true, name: true } },
-          integration: { select: { id: true, name: true, provider: true } },
-          createdBy: { select: { id: true, name: true, email: true } },
-        },
-      }),
-    ]);
+    const lineItems = pools.map((p) => {
+      const percentage = p.allocationPercentage || 100 / pools.length;
+      const allocatedLeads = Math.round((totalRecipients * percentage) / 100);
+      const allocatedSegments = allocatedLeads * segments;
+      const provider = p.provider || 'TWILIO';
+      const pricing =
+        SMS_PROVIDER_PRICING_ESTIMATES[
+        provider as keyof typeof SMS_PROVIDER_PRICING_ESTIMATES
+        ] || SMS_PROVIDER_PRICING_ESTIMATES.TWILIO;
+
+      const costUSD = allocatedSegments * pricing.costPerSegmentUSD;
+      const costINR = allocatedSegments * pricing.costPerSegmentINR;
+
+      totalCostUSD += costUSD;
+      totalCostINR += costINR;
+
+      return {
+        provider: provider as any,
+        providerName: pricing.label,
+        phoneNumber: p.phoneNumber,
+        senderId: p.senderId,
+        allocatedLeads,
+        percentage,
+        estimatedSegments: allocatedSegments,
+        costPerSegmentUSD: pricing.costPerSegmentUSD,
+        costUSD: Number(costUSD.toFixed(4)),
+        costINR: Number(costINR.toFixed(2)),
+      };
+    });
 
     return {
-      items,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      totalLeads: totalRecipients,
+      totalSegments,
+      totalCostUSD: Number(totalCostUSD.toFixed(4)),
+      totalCostINR: Number(totalCostINR.toFixed(2)),
+      lineItems,
     };
   }
 
-  async findOneCampaign(id: string) {
-    const campaign = await this.prisma.smsCampaign.findUnique({
-      where: { id },
-      include: {
-        project: true,
-        integration: true,
-        createdBy: { select: { id: true, name: true, email: true } },
-      },
-    });
-
-    if (!campaign) throw new NotFoundException('SMS Campaign not found');
-    return campaign;
-  }
-
   async deleteCampaign(id: string) {
-    const campaign = await this.prisma.smsCampaign.findUnique({
-      where: { id },
-    });
-    if (!campaign) throw new NotFoundException('SMS Campaign not found');
-
-    await this.prisma.smsTrackingEvent.deleteMany({
-      where: { campaignId: id },
-    });
-    await this.prisma.smsRecipient.deleteMany({ where: { campaignId: id } });
-    await this.prisma.smsCampaign.delete({ where: { id } });
-
-    return { success: true, message: `Deleted SMS campaign ${id}` };
+    return this.prisma.smsCampaign.delete({ where: { id } });
   }
 }
