@@ -1,41 +1,36 @@
 // ============================================================================
-// BrokerOS — Email Flow Automation Templates Registry
+// BrokerOS — SMS Flow Automation Templates Registry
 // ============================================================================
 
-import type { EmailFlowNode } from '@/features/marketing/types';
+import type { SmsFlowNode } from '../builder/types';
 
-export interface EmailFlowTemplate {
+export interface SmsFlowTemplate {
   id: string;
   name: string;
   description: string;
   badge: string;
   triggerType: 'keyword_match' | 'any_reply' | 'campaign_reply';
   triggerConfig: Record<string, any>;
-  nodes: EmailFlowNode[];
+  nodes: SmsFlowNode[];
 }
 
-export const EMAIL_FLOW_TEMPLATES: EmailFlowTemplate[] = [
+export const SMS_FLOW_TEMPLATES: SmsFlowTemplate[] = [
   {
-    id: 'site-visit-booking',
-    name: 'Site Visit Booking Auto-responder',
-    description: 'Instantly detects site visit intent, delivers calendar scheduling details, and applies CRM tracking tag.',
+    id: 'site-visit-pass',
+    name: 'VIP Site Visit Pass Auto-Responder',
+    description: 'Instantly detects site visit or tour intent, sends booking confirmation SMS with showroom hours, and applies CRM tracking tag.',
     badge: 'High Conversion',
     triggerType: 'keyword_match',
     triggerConfig: {
-      keywords: ['visit', 'tour', 'schedule', 'see property', 'book visit', 'timing', 'location'],
+      keywords: ['visit', 'tour', 'site visit', 'schedule', 'location', 'timing', 'see flat'],
       matchType: 'contains',
     },
     nodes: [
       {
         nodeKey: 'reply_site_visit',
-        nodeType: 'send_email',
+        nodeType: 'send_sms',
         config: {
-          subject: 'Confirming your site visit to {{project_name}}',
-          bodyHtml: `<p>Hello {{lead_name}},</p>
-<p>We would be thrilled to host you for an exclusive private site visit at <strong>{{project_name}}</strong>!</p>
-<p>Our sales experience gallery is open daily from <strong>10:00 AM to 7:00 PM</strong>. You will be able to tour the designer show homes, explore the master floor plans, and review inventory availability.</p>
-<p>A dedicated senior sales advisor has been notified and will call you shortly to confirm your preferred timing and arrange complimentary valet parking.</p>
-<p>Warm regards,<br><strong>{{project_name}} Sales & Advisory Team</strong></p>`,
+          text: 'Hi {{firstName}}! We would love to host you for a private tour at {{projectName}}. Experience gallery open daily 10AM-7PM. Our sales advisor will call shortly with directions & parking pass.',
         },
         positionX: 100,
         positionY: 100,
@@ -61,7 +56,7 @@ export const EMAIL_FLOW_TEMPLATES: EmailFlowTemplate[] = [
   },
   {
     id: 'pricing-autoresponder',
-    name: 'Pricing & Payment Plan Auto-responder',
+    name: 'Instant Pricing & Payment Plan Auto-Responder',
     description: 'Catches inquiries for cost sheets, brochure downloads, or payment plans and delivers immediate structured details.',
     badge: 'Popular',
     triggerType: 'keyword_match',
@@ -72,19 +67,9 @@ export const EMAIL_FLOW_TEMPLATES: EmailFlowTemplate[] = [
     nodes: [
       {
         nodeKey: 'reply_pricing',
-        nodeType: 'send_email',
+        nodeType: 'send_sms',
         config: {
-          subject: 'Official Pricing & Payment Schedule — {{project_name}}',
-          bodyHtml: `<p>Hello {{lead_name}},</p>
-<p>Thank you for inquiring about pricing for <strong>{{project_name}}</strong>.</p>
-<p>Here is an overview of our current release pricing:</p>
-<ul>
-  <li><strong>2 BHK Luxury Suites:</strong> Starting from ₹85 Lakhs onwards</li>
-  <li><strong>3 BHK Signature Residences:</strong> Starting from ₹1.25 Cr onwards</li>
-  <li><strong>Special Construction-Linked 20:80 Payment Plan</strong> with zero pre-EMI options available this month.</li>
-</ul>
-<p>Would you like us to email you the complete itemized cost sheet and architectural floor plans?</p>
-<p>Best regards,<br><strong>Sales Desk</strong></p>`,
+          text: 'Hi {{firstName}}, luxury residences at {{projectName}} start from {{startingPrice}} with special 20:80 bank plans. View floor plans & cost sheet: {{brochureUrl}}',
         },
         positionX: 100,
         positionY: 100,
@@ -111,7 +96,7 @@ export const EMAIL_FLOW_TEMPLATES: EmailFlowTemplate[] = [
   {
     id: 'autonomous-ai-concierge',
     name: 'Autonomous AI Concierge (Groq LPU)',
-    description: 'Answers any incoming prospect question using Groq openai/gpt-oss-120b with real-time property knowledge injection.',
+    description: 'Answers incoming prospect questions using Groq openai/gpt-oss-120b in 160 characters or less with project knowledge injection.',
     badge: 'AI Powered',
     triggerType: 'any_reply',
     triggerConfig: {},
@@ -122,7 +107,10 @@ export const EMAIL_FLOW_TEMPLATES: EmailFlowTemplate[] = [
         config: {
           provider: 'groq',
           model: 'openai/gpt-oss-120b',
-          instructions: 'Greet the prospect by name, answer their specific property questions with confidence, and invite them for an on-site visit.',
+          instructions: 'Greet the buyer by name, answer pricing or amenities succinctly (under 160 chars), and invite them for an on-site sample flat tour.',
+          maxTurns: 3,
+          stopIfHumanActive: true,
+          handoffOnMax: true,
         },
         positionX: 100,
         positionY: 100,
@@ -148,21 +136,20 @@ export const EMAIL_FLOW_TEMPLATES: EmailFlowTemplate[] = [
   },
   {
     id: 'optout-handler',
-    name: 'Opt-Out & Unsubscribe Handler',
-    description: 'Complies with email anti-spam laws by recognizing unsubscribe requests and applying CRM tag.',
+    name: 'Opt-Out & STOP Compliance Handler',
+    description: 'Complies with SMS carrier regulations by recognizing unsubscribe keywords, tagging prospect as UNSUBSCRIBED, and halting outreach.',
     badge: 'Compliance',
     triggerType: 'keyword_match',
     triggerConfig: {
-      keywords: ['stop', 'unsubscribe', 'remove', 'do not email', 'not interested', 'cancel'],
+      keywords: ['stop', 'unsubscribe', 'cancel', 'remove', 'quit', 'end'],
       matchType: 'contains',
     },
     nodes: [
       {
         nodeKey: 'reply_unsub',
-        nodeType: 'send_email',
+        nodeType: 'send_sms',
         config: {
-          subject: 'You have been unsubscribed',
-          bodyHtml: `<p>Hello,</p><p>You have been successfully removed from our email communications list for this project. We apologize for any inconvenience.</p>`,
+          text: 'You have been successfully unsubscribed from {{projectName}} updates. Reply START at any time to opt back in.',
         },
         positionX: 100,
         positionY: 100,
