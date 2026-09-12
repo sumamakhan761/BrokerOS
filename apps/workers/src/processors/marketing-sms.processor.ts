@@ -102,7 +102,6 @@ export class MarketingSmsProcessor implements OnModuleInit, OnModuleDestroy {
     if (!rawPhone) return '';
     let str = String(rawPhone).trim();
 
-    // 1. Un-exponential scientific notation from Excel (e.g. "9.19892E+11" -> "919892407542")
     if (/[eE]\+?[0-9]+/.test(str)) {
       const num = Number(str);
       if (!isNaN(num) && isFinite(num)) {
