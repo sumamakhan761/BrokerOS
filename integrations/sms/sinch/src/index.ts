@@ -103,6 +103,55 @@ export class SinchSmsClient {
     return discovered;
   }
 
+  async verifySenderNumber(
+    phoneOrSenderId: string,
+  ): Promise<{ isVerified: boolean; formattedNumber?: string; reason?: string }> {
+    const clean = phoneOrSenderId.trim();
+    if (!this.servicePlanId || !this.apiKey) {
+      return { isVerified: false, reason: 'Missing Sinch credentials' };
+    }
+
+    if (!clean.startsWith('+') && !/^\d+$/.test(clean)) {
+      if (clean.length > 11) {
+        return { isVerified: false, reason: 'Sender ID cannot exceed 11 characters' };
+      }
+      return { isVerified: true, formattedNumber: clean };
+    }
+
+    const normalizedPhone = clean.startsWith('+') ? clean : `+${clean}`;
+    if (!/^\+[1-9]\d{6,14}$/.test(normalizedPhone)) {
+      return { isVerified: false, reason: 'Invalid international E.164 phone format' };
+    }
+
+    try {
+      const res = await fetch(
+        `https://numbers.api.sinch.com/v1/projects/${this.servicePlanId}/activePhoneNumbers`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+        },
+      );
+
+      if (res.status === 200) {
+        const data = (await res.json()) as any;
+        const numbers = data?.activeNumbers || [];
+        const match = numbers.find((n: any) => n.phoneNumber === normalizedPhone);
+        if (match) {
+          return { isVerified: true, formattedNumber: normalizedPhone };
+        }
+        return {
+          isVerified: false,
+          reason: `Phone number ${normalizedPhone} was not found in active numbers for Sinch project ${this.servicePlanId}`,
+        };
+      }
+      // If endpoint returned other status, fallback format validation
+      return { isVerified: true, formattedNumber: normalizedPhone };
+    } catch {
+      return { isVerified: true, formattedNumber: normalizedPhone };
+    }
+  }
+
   async send(options: SendSmsOptions): Promise<SendSmsResult> {
     try {
       if (!this.servicePlanId || !this.apiKey) {
@@ -248,6 +297,14 @@ export class SinchSmsAdapter implements ISmsMarketingProvider {
   async listSenderNumbers(credentials?: SmsProviderCredentials): Promise<DiscoveredSenderNumber[]> {
     const client = new SinchSmsClient(credentials);
     return client.listSenderNumbers();
+  }
+
+  async verifySenderNumber(
+    phoneOrSenderId: string,
+    credentials?: SmsProviderCredentials,
+  ): Promise<{ isVerified: boolean; formattedNumber?: string; reason?: string }> {
+    const client = new SinchSmsClient(credentials);
+    return client.verifySenderNumber(phoneOrSenderId);
   }
 
   parseWebhookEvent(headers: Record<string, any>, payload: any): SmsWebhookEvent[] {
