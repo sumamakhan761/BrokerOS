@@ -8,7 +8,6 @@ import {
   Sparkles,
   GitFork,
   Tag,
-  UserCheck,
   Flag,
 } from 'lucide-react';
 
@@ -18,7 +17,6 @@ export type SmsFlowNodeType =
   | 'ai_agent'
   | 'condition'
   | 'add_tag'
-  | 'update_lead'
   | 'end';
 
 export interface SmsFlowNode {
@@ -86,12 +84,6 @@ export const SMS_NODE_TYPES_META: Record<
     icon: Tag,
     color: 'text-pink-500 bg-pink-500/10 border-l-pink-500',
     desc: 'Tag prospect using CRM tags from SMS Settings',
-  },
-  update_lead: {
-    label: 'Update Lead Pipeline',
-    icon: UserCheck,
-    color: 'text-blue-500 bg-blue-500/10 border-l-blue-500',
-    desc: 'Update lead temperature (HOT/WARM/COLD) or assign agent',
   },
   end: {
     label: 'End Flow',
