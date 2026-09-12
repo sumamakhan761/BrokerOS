@@ -37,10 +37,17 @@ export const SmsWebhookDiagnostics: React.FC = () => {
   const [simulating, setSimulating] = useState(false);
   const [simResult, setSimResult] = useState<any>(null);
 
+  const publicApiUrl = (
+    process.env.API_PUBLIC_URL ||
+    process.env.BACKEND_URL ||
+    ""
+  ).replace(/\/$/, "");
+
   const baseUrl =
-    typeof window !== "undefined"
+    publicApiUrl ||
+    (typeof window !== "undefined"
       ? window.location.origin
-      : process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+      : process.env.BACKEND_URL || "http://localhost:3000");
 
   const endpoints = [
     {
