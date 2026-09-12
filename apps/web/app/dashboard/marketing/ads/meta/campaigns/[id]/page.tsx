@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect, useCallback, use } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -34,8 +34,8 @@ interface PageProps {
 }
 
 export default function MetaCampaignDetailPage({ params }: PageProps) {
-  const resolvedParams = use(params);
-  const campaignId = resolvedParams.id;
+  const unwrappedParams = use(params);
+  const campaignId = unwrappedParams.id;
 
   const [campaign, setCampaign] = useState<MetaCampaignCacheItem | null>(null);
   const [acquiredLeads, setAcquiredLeads] = useState<MetaAcquiredLeadItem[]>([]);
@@ -45,29 +45,30 @@ export default function MetaCampaignDetailPage({ params }: PageProps) {
 
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
 
-  useEffect(() => {
-    async function loadCampaignDetails() {
-      try {
-        setLoading(true);
-        setError(null);
+  const loadCampaignDetails = useCallback(async () => {
+    if (!campaignId) return;
+    try {
+      setLoading(true);
+      setError(null);
 
-        const res = await fetch(`${baseUrl}/api/marketing/ads/meta/campaigns/${campaignId}`);
-        if (!res.ok) {
-          throw new Error(`Failed to load campaign details (${res.status})`);
-        }
-
-        const data = await res.json();
-        setCampaign(data.campaign);
-        setAcquiredLeads(data.acquiredLeads || []);
-      } catch (err: any) {
-        setError(err?.message || "Failed to load campaign");
-      } finally {
-        setLoading(false);
+      const res = await fetch(`${baseUrl}/api/marketing/ads/meta/campaigns/${campaignId}`);
+      if (!res.ok) {
+        throw new Error(`Failed to load campaign details (${res.status})`);
       }
-    }
 
-    loadCampaignDetails();
+      const data = await res.json();
+      setCampaign(data.campaign);
+      setAcquiredLeads(data.acquiredLeads || []);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load campaign");
+    } finally {
+      setLoading(false);
+    }
   }, [baseUrl, campaignId]);
+
+  useEffect(() => {
+    loadCampaignDetails();
+  }, [loadCampaignDetails]);
 
   const formatCurrency = (val: number, cur: string = "INR") => {
     if (cur === "INR") {
@@ -252,7 +253,12 @@ export default function MetaCampaignDetailPage({ params }: PageProps) {
         )}
 
         {activeTab === "LEADS" && (
-          <MetaAcquiredLeadsTable leads={acquiredLeads} campaignName={campaign?.name} />
+          <MetaAcquiredLeadsTable
+            leads={acquiredLeads}
+            campaignName={campaign?.name}
+            campaignId={campaignId}
+            onRefresh={loadCampaignDetails}
+          />
         )}
       </div>
     </DashboardPageWrapper>
