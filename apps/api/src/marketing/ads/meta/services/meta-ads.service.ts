@@ -8,6 +8,7 @@ import { MetaGraphApiClient } from '@brokeros/int-ads-meta';
 import {
   ConnectMetaIntegrationDto,
   TestMetaTokenDto,
+  BulkAssignMetaLeadsDto,
 } from '../dto/meta-ads.dto.js';
 import { MetaSyncService } from './meta-sync.service.js';
 
@@ -287,4 +288,49 @@ export class MetaAdsService {
   async triggerSync(integrationId: string, datePreset?: string) {
     return this.syncService.syncIntegration(integrationId, datePreset);
   }
+
+  /**
+   * Bulk push/route campaign leads to Pre-Sales Manager unassigned intake queue (/dashboard/pre-sales-manager/new-leads).
+   */
+  async bulkAssignLeadsToPreSales(dto: BulkAssignMetaLeadsDto) {
+    let targetLeadIds: string[] = [];
+
+    if (dto.leadIds && dto.leadIds.length > 0) {
+      targetLeadIds = dto.leadIds;
+    } else if (dto.campaignId) {
+      const logs = await this.prisma.metaLeadWebhookLog.findMany({
+        where: { campaignId: dto.campaignId, leadId: { not: null } },
+        select: { leadId: true },
+      });
+      targetLeadIds = logs.map((l) => l.leadId!).filter(Boolean);
+    } else {
+      throw new BadRequestException('Must provide either leadIds or campaignId');
+    }
+
+    if (targetLeadIds.length === 0) {
+      return {
+        success: true,
+        totalProcessed: 0,
+        assignedCount: 0,
+      };
+    }
+
+    const updateResult = await this.prisma.lead.updateMany({
+      where: {
+        id: { in: targetLeadIds },
+      },
+      data: {
+        assignedUserId: null, // Routes directly to Pre-Sales Manager unassigned queue
+        status: 'NEW',
+        subStatus: 'PENDING',
+      },
+    });
+
+    return {
+      success: true,
+      totalProcessed: targetLeadIds.length,
+      assignedCount: updateResult.count,
+    };
+  }
 }
+

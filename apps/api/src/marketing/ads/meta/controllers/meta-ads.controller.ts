@@ -12,6 +12,7 @@ import {
   ConnectMetaIntegrationDto,
   TestMetaTokenDto,
   SyncMetaCampaignsDto,
+  BulkAssignMetaLeadsDto,
 } from '../dto/meta-ads.dto.js';
 
 @Controller('api/marketing/ads/meta')
@@ -54,5 +55,21 @@ export class MetaAdsController {
   @Get('campaigns/:id')
   async getCampaignDetails(@Param('id') id: string) {
     return this.metaAdsService.getCampaignDetails(id);
+  }
+
+  @Post('leads/bulk-assign')
+  async bulkAssignLeads(@Body() dto: BulkAssignMetaLeadsDto) {
+    return this.metaAdsService.bulkAssignLeadsToPreSales(dto);
+  }
+
+  @Post('campaigns/:id/leads/bulk-assign')
+  async bulkAssignCampaignLeads(
+    @Param('id') id: string,
+    @Body() dto: BulkAssignMetaLeadsDto,
+  ) {
+    return this.metaAdsService.bulkAssignLeadsToPreSales({
+      ...dto,
+      campaignId: id,
+    });
   }
 }
