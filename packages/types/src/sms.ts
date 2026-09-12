@@ -179,6 +179,10 @@ export interface ISmsMarketingProvider {
   sendBatch(options: SendSmsOptions, credentials?: SmsProviderCredentials): Promise<SendSmsResult>;
   parseWebhookEvent(headers: Record<string, any>, payload: any): SmsWebhookEvent[];
   listSenderNumbers?(credentials?: SmsProviderCredentials): Promise<DiscoveredSenderNumber[]>;
+  verifySenderNumber?(
+    phoneOrSenderId: string,
+    credentials?: SmsProviderCredentials,
+  ): Promise<{ isVerified: boolean; formattedNumber?: string; reason?: string }>;
   parseInboundMessage?(headers: Record<string, any>, payload: any): InboundSmsPayload | null;
 }
 
