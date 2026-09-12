@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import type { WhatsAppTemplate, WhatsAppContact } from '../../../types';
 import type { TagItem, CustomFieldItem, CsvRecipient, VariableMapping } from './steps/types';
 import { Step1TemplateSelect } from './steps/Step1TemplateSelect';
-import { Step2AudienceSelect } from './steps/Step2AudienceSelect';
+import { Step2AudienceSelect, type WhatsAppCrmFilters } from './steps/Step2AudienceSelect';
 import { Step3Personalize } from './steps/Step3Personalize';
 import { Step4ReviewLaunch } from './steps/Step4ReviewLaunch';
 
@@ -43,13 +43,24 @@ export const WhatsAppBroadcastWizard: React.FC<WhatsAppBroadcastWizardProps> = (
   const [loadingTemplates, setLoadingTemplates] = useState(false);
 
   // Audience State
-  const [audienceType, setAudienceType] = useState<'all' | 'tags' | 'custom_field' | 'csv'>('all');
+  const [audienceType, setAudienceType] = useState<
+    'all' | 'tags' | 'crm_leads' | 'csv' | 'custom_field'
+  >('crm_leads');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [allTags, setAllTags] = useState<TagItem[]>([]);
   const [customFields, setCustomFields] = useState<CustomFieldItem[]>([]);
   const [contacts, setContacts] = useState<WhatsAppContact[]>([]);
   const [csvRecipients, setCsvRecipients] = useState<CsvRecipient[]>([]);
   const [csvFileName, setCsvFileName] = useState('');
+
+  // CRM Segmentation State
+  const [crmFilters, setCrmFilters] = useState<WhatsAppCrmFilters>({
+    temperatures: ['HOT', 'WARM'],
+    statuses: ['ALL'],
+  });
+  const [crmLeadCount, setCrmLeadCount] = useState<number>(0);
+  const [isEstimating, setIsEstimating] = useState<boolean>(false);
+  const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
 
   // Personalize (Variables Mapping)
   const [variableMappings, setVariableMappings] = useState<VariableMapping>({});
@@ -63,7 +74,7 @@ export const WhatsAppBroadcastWizard: React.FC<WhatsAppBroadcastWizardProps> = (
 
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
-  // 1. Load approved templates, tags, custom fields, and contacts
+  // 1. Load approved templates, tags, custom fields, contacts, and projects
   useEffect(() => {
     async function loadResources() {
       try {
@@ -72,11 +83,14 @@ export const WhatsAppBroadcastWizard: React.FC<WhatsAppBroadcastWizardProps> = (
         if (accountId) q.set('accountId', accountId);
         q.set('limit', '100');
 
-        const [tRes, tagRes, cfRes, cRes] = await Promise.all([
+        const [tRes, tagRes, cfRes, cRes, pRes] = await Promise.all([
           fetch(`${baseUrl}/api/marketing/whatsapp/templates?${q.toString()}`),
           fetch(`${baseUrl}/api/marketing/whatsapp/tags`).catch(() => null),
           fetch(`${baseUrl}/api/marketing/whatsapp/custom-fields`).catch(() => null),
           fetch(`${baseUrl}/api/marketing/whatsapp/contacts?limit=1000`).catch(() => null),
+          fetch(`${baseUrl}/api/marketing/whatsapp/broadcasts/projects`).catch(() =>
+            fetch(`${baseUrl}/api/marketing/sms/projects`).catch(() => null)
+          ),
         ]);
 
         if (tRes.ok) {
@@ -103,6 +117,11 @@ export const WhatsAppBroadcastWizard: React.FC<WhatsAppBroadcastWizardProps> = (
           const cData = await cRes.json();
           setContacts(Array.isArray(cData) ? cData : cData.items || []);
         }
+
+        if (pRes?.ok) {
+          const pData = await pRes.json();
+          if (Array.isArray(pData)) setProjects(pData);
+        }
       } catch (err) {
         console.error('Error loading resources:', err);
       } finally {
@@ -112,6 +131,37 @@ export const WhatsAppBroadcastWizard: React.FC<WhatsAppBroadcastWizardProps> = (
 
     loadResources();
   }, [accountId, baseUrl]);
+
+  // 2. Fetch live CRM lead audience count preview
+  useEffect(() => {
+    let isMounted = true;
+    setIsEstimating(true);
+
+    fetch(`${baseUrl}/api/marketing/whatsapp/broadcasts/audience-preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        audienceSource: 'CRM_DATABASE',
+        audienceFilters: crmFilters,
+      }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (isMounted && d && typeof d.finalAudienceCount === 'number') {
+          setCrmLeadCount(d.finalAudienceCount);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setCrmLeadCount(0);
+      })
+      .finally(() => {
+        if (isMounted) setIsEstimating(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [crmFilters, baseUrl]);
 
   // Extract variables like {{1}}, {{2}} from template body
   const detectedVariables = useMemo<string[]>(() => {
@@ -153,6 +203,7 @@ export const WhatsAppBroadcastWizard: React.FC<WhatsAppBroadcastWizardProps> = (
   const filteredContacts = useMemo(() => {
     if (audienceType === 'all') return contacts;
     if (audienceType === 'csv') return [];
+    if (audienceType === 'crm_leads') return [];
     if (audienceType === 'tags') {
       if (selectedTagIds.length === 0) return contacts;
       return contacts.filter((c: any) =>
@@ -163,7 +214,11 @@ export const WhatsAppBroadcastWizard: React.FC<WhatsAppBroadcastWizardProps> = (
   }, [audienceType, contacts, selectedTagIds]);
 
   const totalAudienceCount =
-    audienceType === 'csv' ? csvRecipients.length : filteredContacts.length;
+    audienceType === 'csv'
+      ? csvRecipients.length
+      : audienceType === 'crm_leads'
+      ? crmLeadCount
+      : filteredContacts.length;
 
   // Substitute variables for preview
   const previewBodyText = useMemo(() => {
@@ -201,44 +256,58 @@ export const WhatsAppBroadcastWizard: React.FC<WhatsAppBroadcastWizardProps> = (
     setError(null);
 
     try {
-      const payloadRecipients =
-        audienceType === 'csv'
-          ? csvRecipients.map((r) => ({
-            phone: r.phone,
-            parameters: r.params || [],
-          }))
-          : filteredContacts.map((c) => {
-            const params: string[] = [];
-            for (const v of detectedVariables) {
-              const m = variableMappings[v];
-              if (m?.type === 'field') {
-                params.push((c as any)[m.value] || '');
-              } else if (m?.type === 'static') {
-                params.push(m.value || '');
-              } else {
-                params.push('');
-              }
+      let payloadBody: any = {
+        accountId,
+        name: campaignName.trim(),
+        templateName: selectedTemplate.name,
+        templateLanguage: selectedTemplate.language || 'en_US',
+        scheduledAt: isScheduled && scheduleTime ? new Date(scheduleTime).toISOString() : undefined,
+      };
+
+      if (audienceType === 'crm_leads') {
+        payloadBody = {
+          ...payloadBody,
+          audienceType: 'crm_filter',
+          crmFilter: crmFilters,
+        };
+      } else if (audienceType === 'csv') {
+        payloadBody = {
+          ...payloadBody,
+          audienceType: 'csv',
+          csvRows: csvRecipients,
+        };
+      } else {
+        const payloadRecipients = filteredContacts.map((c) => {
+          const params: string[] = [];
+          for (const v of detectedVariables) {
+            const m = variableMappings[v];
+            if (m?.type === 'field') {
+              params.push((c as any)[m.value] || '');
+            } else if (m?.type === 'static') {
+              params.push(m.value || '');
+            } else {
+              params.push('');
             }
-            return {
-              phone: c.phone,
-              contactId: c.id,
-              parameters: params,
-            };
-          });
+          }
+          return {
+            phone: c.phone,
+            contactId: c.id,
+            parameters: params,
+          };
+        });
+
+        payloadBody = {
+          ...payloadBody,
+          audienceType: audienceType === 'tags' ? 'tag' : 'all',
+          recipients: payloadRecipients,
+          contactIds: filteredContacts.map((c) => c.id),
+        };
+      }
 
       const res = await fetch(`${baseUrl}/api/marketing/whatsapp/broadcasts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          accountId,
-          name: campaignName.trim(),
-          templateName: selectedTemplate.name,
-          templateLanguage: selectedTemplate.language || 'en_US',
-          scheduledAt: isScheduled && scheduleTime ? new Date(scheduleTime).toISOString() : undefined,
-          recipients: payloadRecipients,
-          contactIds: audienceType === 'csv' ? undefined : filteredContacts.map((c) => c.id),
-          csvRows: audienceType === 'csv' ? csvRecipients : undefined,
-        }),
+        body: JSON.stringify(payloadBody),
       });
 
       if (!res.ok) {
@@ -247,7 +316,9 @@ export const WhatsAppBroadcastWizard: React.FC<WhatsAppBroadcastWizardProps> = (
       }
 
       const created = await res.json();
-      toast.success(isScheduled ? 'Broadcast scheduled successfully' : 'Broadcast launched successfully');
+      toast.success(
+        isScheduled ? 'Broadcast scheduled successfully' : 'Broadcast launched successfully',
+      );
       router.push(`/dashboard/marketing/whatsapp/broadcasts/${created.id}`);
     } catch (err: any) {
       setError(err.message || 'Error submitting broadcast');
@@ -284,7 +355,7 @@ export const WhatsAppBroadcastWizard: React.FC<WhatsAppBroadcastWizardProps> = (
                   className={cn(
                     'w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs transition-all',
                     isActive
-                      ? 'bg-brand-600 text-white shadow-xs'
+                      ? 'bg-emerald-600 text-white shadow-xs'
                       : isDone
                         ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
                         : 'bg-bg-subtle text-text-muted border border-border-default',
@@ -336,9 +407,13 @@ export const WhatsAppBroadcastWizard: React.FC<WhatsAppBroadcastWizardProps> = (
           allTags={allTags}
           selectedTagIds={selectedTagIds}
           setSelectedTagIds={setSelectedTagIds}
+          crmFilters={crmFilters}
+          setCrmFilters={setCrmFilters}
+          projects={projects}
           csvFileName={csvFileName}
           handleCsvUpload={handleCsvUpload}
           totalAudienceCount={totalAudienceCount}
+          isEstimating={isEstimating}
           onBack={() => setStep(1)}
           onNext={() => setStep(3)}
         />
