@@ -167,6 +167,10 @@ export interface IEmailMarketingProvider {
   sendBatch(options: SendEmailOptions, credentials?: ProviderCredentials): Promise<SendEmailResult>;
   parseWebhookEvent(headers: Record<string, any>, payload: any): EmailWebhookEvent[];
   listVerifiedSenders?(credentials?: ProviderCredentials): Promise<DiscoveredSenderIdentity[]>;
+  verifySenderIdentity?(
+    emailOrDomain: string,
+    credentials?: ProviderCredentials,
+  ): Promise<{ isVerified: boolean; fromEmail?: string; domain?: string; reason?: string }>;
 }
 
 export interface CampaignAnalyticsSummary {
