@@ -20,6 +20,31 @@ import type {
 } from '../dto/sms-inbox.dto.js';
 import type { SmsProviderCredentials } from '@brokeros/types';
 
+const SMS_CONVERSATION_INCLUDE = {
+  agent: {
+    select: { id: true, name: true, email: true },
+  },
+  lead: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phone: true,
+      status: true,
+      temperature: true,
+      budget: true,
+      score: true,
+      interestedProject: {
+        select: { id: true, name: true },
+      },
+    },
+  },
+  campaign: {
+    select: { id: true, title: true },
+  },
+};
+
 @Injectable()
 export class SmsInboxService {
   private readonly logger = new Logger(SmsInboxService.name);
@@ -60,26 +85,7 @@ export class SmsInboxService {
     const [items, total] = await Promise.all([
       this.prisma.smsConversation.findMany({
         where,
-        include: {
-          agent: {
-            select: { id: true, name: true, email: true },
-          },
-          lead: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
-              status: true,
-              temperature: true,
-              budget: true,
-            },
-          },
-          campaign: {
-            select: { id: true, title: true },
-          },
-        },
+        include: SMS_CONVERSATION_INCLUDE,
         orderBy: [{ lastMessageAt: 'desc' }, { updatedAt: 'desc' }],
         skip,
         take: limit,
@@ -102,26 +108,7 @@ export class SmsInboxService {
   async getConversation(id: string) {
     const conv = await this.prisma.smsConversation.findUnique({
       where: { id },
-      include: {
-        agent: {
-          select: { id: true, name: true, email: true },
-        },
-        lead: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-            status: true,
-            temperature: true,
-            budget: true,
-          },
-        },
-        campaign: {
-          select: { id: true, title: true },
-        },
-      },
+      include: SMS_CONVERSATION_INCLUDE,
     });
 
     if (!conv) {
@@ -196,20 +183,23 @@ export class SmsInboxService {
     }
 
     // Resolve default provider and sender number if not specified
-    let provider = dto.assignedProvider || 'TWILIO';
+    let provider = dto.assignedProvider;
     let senderPhone = dto.assignedSenderPhone || dto.assignedSenderId;
 
-    if (!senderPhone) {
+    if (!senderPhone || !provider) {
       const activeIntegration = await this.prisma.smsIntegration.findFirst({
         where: { isActive: true },
+        include: { senderNumbers: { where: { isVerified: true }, orderBy: { createdAt: 'asc' } } },
         orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
       });
       if (activeIntegration) {
-        provider = activeIntegration.provider;
-        senderPhone = activeIntegration.fromSender;
-      } else {
-        senderPhone = '+14155550199';
+        provider = provider || activeIntegration.provider;
+        senderPhone = senderPhone || activeIntegration.senderNumbers[0]?.phoneNumber || activeIntegration.senderNumbers[0]?.senderId || activeIntegration.fromSender;
       }
+    }
+
+    if (!provider || !senderPhone) {
+      throw new BadRequestException('No active SMS integration with verified sender number found. Please configure an SMS gateway in Settings.');
     }
 
     const created = await this.prisma.smsConversation.create({
@@ -265,8 +255,25 @@ export class SmsInboxService {
       throw new BadRequestException('Message text cannot be empty');
     }
 
-    const provider = conv.assignedProvider || 'TWILIO';
-    const fromPhone = conv.assignedSenderPhone || '+14155550199';
+    const provider = conv.assignedProvider;
+    let fromPhone: string | null | undefined = conv.assignedSenderPhone;
+
+    if (!fromPhone) {
+      const activeIntegration = await this.prisma.smsIntegration.findFirst({
+        where: { ...(provider ? { provider: provider as any } : {}), isActive: true },
+        include: { senderNumbers: { where: { isVerified: true }, orderBy: { createdAt: 'asc' } } },
+        orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+      });
+      fromPhone =
+        activeIntegration?.senderNumbers[0]?.phoneNumber ||
+        activeIntegration?.senderNumbers[0]?.senderId ||
+        activeIntegration?.fromSender ||
+        null;
+    }
+
+    if (!fromPhone || !provider) {
+      throw new BadRequestException(`No active verified sender phone found for SMS gateway ${provider || 'UNKNOWN'}.`);
+    }
     const fromName = senderUser?.name || 'Sales Team';
 
     const { segments } = calculateSmsSegments(textContent);
@@ -351,6 +358,7 @@ export class SmsInboxService {
     return this.prisma.smsConversation.update({
       where: { id },
       data: { status },
+      include: SMS_CONVERSATION_INCLUDE,
     });
   }
 
@@ -358,9 +366,7 @@ export class SmsInboxService {
     return this.prisma.smsConversation.update({
       where: { id },
       data: { agentUserId },
-      include: {
-        agent: { select: { id: true, name: true, email: true } },
-      },
+      include: SMS_CONVERSATION_INCLUDE,
     });
   }
 
@@ -368,6 +374,7 @@ export class SmsInboxService {
     return this.prisma.smsConversation.update({
       where: { id },
       data: { aiAutoReplyDisabled: disabled },
+      include: SMS_CONVERSATION_INCLUDE,
     });
   }
 

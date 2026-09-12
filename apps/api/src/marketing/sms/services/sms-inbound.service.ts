@@ -94,6 +94,19 @@ export class SmsInboundService {
           : null) ||
         fromPhone;
 
+      let resolvedSenderPhone = toPhone || matchedRecipient?.assignedSenderPhone;
+      let resolvedProvider = matchedRecipient?.assignedProvider || provider;
+
+      if (!resolvedSenderPhone) {
+        const activeIntegration = await this.prisma.smsIntegration.findFirst({
+          where: { isActive: true },
+          include: { senderNumbers: { where: { isVerified: true }, orderBy: { createdAt: 'asc' } } },
+          orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+        });
+        resolvedProvider = resolvedProvider || activeIntegration?.provider || 'TWILIO';
+        resolvedSenderPhone = activeIntegration?.senderNumbers[0]?.phoneNumber || activeIntegration?.senderNumbers[0]?.senderId || activeIntegration?.fromSender || '';
+      }
+
       if (!conversation) {
         conversation = await this.prisma.smsConversation.create({
           data: {
@@ -102,8 +115,8 @@ export class SmsInboundService {
             leadId: matchedRecipient?.leadId || null,
             campaignId: matchedRecipient?.campaignId || null,
             recipientId: matchedRecipient?.id || null,
-            assignedProvider: matchedRecipient?.assignedProvider || provider || 'TWILIO',
-            assignedSenderPhone: toPhone || matchedRecipient?.assignedSenderPhone || '+14155550199',
+            assignedProvider: resolvedProvider,
+            assignedSenderPhone: resolvedSenderPhone,
             status: 'open',
             unreadCount: 1,
             lastMessageText: body.slice(0, 160) || 'New inbound SMS',
@@ -172,8 +185,17 @@ export class SmsInboundService {
    */
   async simulateInboundReply(dto: SimulateInboundSmsReplyDto) {
     const leadPhone = this.cleanPhone(dto.leadPhone);
-    const senderPhone = this.cleanPhone(dto.senderPhone);
+    let senderPhone = this.cleanPhone(dto.senderPhone);
     const body = dto.bodyText.trim();
+
+    if (!senderPhone) {
+      const activeIntegration = await this.prisma.smsIntegration.findFirst({
+        where: { isActive: true },
+        include: { senderNumbers: { where: { isVerified: true }, orderBy: { createdAt: 'asc' } } },
+        orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+      });
+      senderPhone = activeIntegration?.senderNumbers[0]?.phoneNumber || activeIntegration?.senderNumbers[0]?.senderId || activeIntegration?.fromSender || '';
+    }
 
     const matchedRecipient = await this.prisma.smsRecipient.findFirst({
       where: { phone: leadPhone },
