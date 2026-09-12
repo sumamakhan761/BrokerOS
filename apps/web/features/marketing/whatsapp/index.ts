@@ -23,6 +23,7 @@ export * from './components/contacts/ContactFormModal';
 export * from './components/contacts/ImportContactsModal';
 export * from './components/contacts/ContactDetailDrawer';
 export * from './components/broadcasts/WhatsAppBroadcastsTable';
+export * from './components/broadcasts/WhatsAppPreFlightModal';
 export * from './components/broadcasts/wizard/WhatsAppBroadcastWizard';
 export * from './components/templates/WhatsAppTemplatesTable';
 export * from './components/automations/WhatsAppAutomationsTable';
