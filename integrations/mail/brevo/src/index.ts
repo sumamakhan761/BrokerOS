@@ -211,6 +211,89 @@ export class BrevoClient {
       return [];
     }
   }
+
+  async verifySenderIdentity(
+    emailOrDomain: string,
+  ): Promise<{ isVerified: boolean; fromEmail?: string; domain?: string; reason?: string }> {
+    const clean = (emailOrDomain || '').trim().toLowerCase();
+    if (!this.apiKey) {
+      return { isVerified: false, reason: 'Missing Brevo API Key' };
+    }
+
+    if (!clean) {
+      return { isVerified: false, reason: 'Email or domain is required' };
+    }
+
+    const isEmail = clean.includes('@');
+    const domain = isEmail ? clean.split('@')[1] : clean;
+
+    try {
+      // 1. Check senders list
+      const res = await fetch('https://api.brevo.com/v3/senders', {
+        method: 'GET',
+        headers: {
+          'api-key': this.apiKey,
+          Accept: 'application/json',
+        },
+      });
+
+      if (res.status === 200) {
+        const data: any = await res.json().catch(() => ({}));
+        const senders = data?.senders || (Array.isArray(data) ? data : []);
+        if (Array.isArray(senders)) {
+          const match = senders.find((s: any) => {
+            const senderEmail = (s.email || '').toLowerCase().trim();
+            return senderEmail === clean && Boolean(s.active !== false);
+          });
+          if (match) {
+            return {
+              isVerified: true,
+              fromEmail: clean,
+              domain: domain,
+            };
+          }
+        }
+      }
+
+      // 2. Check authenticated domains
+      const domainRes = await fetch('https://api.brevo.com/v3/senders/domains', {
+        method: 'GET',
+        headers: {
+          'api-key': this.apiKey,
+          Accept: 'application/json',
+        },
+      });
+
+      if (domainRes.status === 200) {
+        const domainData: any = await domainRes.json().catch(() => ({}));
+        const domains = domainData?.domains || (Array.isArray(domainData) ? domainData : []);
+        if (Array.isArray(domains)) {
+          const matchedDomain = domains.find(
+            (d: any) =>
+              (d.domain_name || d.name || '').toLowerCase().trim() === domain &&
+              Boolean(d.authenticated !== false),
+          );
+          if (matchedDomain) {
+            return {
+              isVerified: true,
+              fromEmail: clean,
+              domain: domain,
+            };
+          }
+        }
+      }
+
+      return {
+        isVerified: false,
+        reason: `Sender email or domain "${clean}" is not verified or active in your Brevo account. Please add and verify it in Brevo Senders & IPs dashboard.`,
+      };
+    } catch (err: any) {
+      return {
+        isVerified: false,
+        reason: err?.message || 'Failed to verify sender identity with Brevo API',
+      };
+    }
+  }
 }
 
 // ============================================================================
@@ -331,6 +414,14 @@ export class BrevoAdapter implements IEmailMarketingProvider {
   async listVerifiedSenders(credentials?: ProviderCredentials): Promise<DiscoveredSenderIdentity[]> {
     const client = new BrevoClient(credentials);
     return client.listVerifiedSenders();
+  }
+
+  async verifySenderIdentity(
+    emailOrDomain: string,
+    credentials?: ProviderCredentials,
+  ): Promise<{ isVerified: boolean; fromEmail?: string; domain?: string; reason?: string }> {
+    const client = new BrevoClient(credentials);
+    return client.verifySenderIdentity(emailOrDomain);
   }
 
   parseWebhookEvent(headers: Record<string, any>, payload: any): EmailWebhookEvent[] {
