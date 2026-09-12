@@ -116,6 +116,91 @@ export class TwilioSmsClient {
     return discovered;
   }
 
+  async verifySenderNumber(
+    phoneOrSenderId: string,
+  ): Promise<{ isVerified: boolean; formattedNumber?: string; reason?: string }> {
+    const clean = phoneOrSenderId.trim();
+    if (!this.accountSid || !this.authToken) {
+      return { isVerified: false, reason: 'Missing Twilio credentials' };
+    }
+
+    // If alphanumeric ID (e.g. SKYLIN)
+    if (!clean.startsWith('+') && !/^\d+$/.test(clean)) {
+      if (clean.length > 11) {
+        return { isVerified: false, reason: 'Alphanumeric sender ID cannot exceed 11 characters' };
+      }
+      return { isVerified: true, formattedNumber: clean };
+    }
+
+    const authHeader = Buffer.from(`${this.accountSid}:${this.authToken}`).toString('base64');
+    const normalizedPhone = clean.startsWith('+') ? clean : `+${clean}`;
+
+    try {
+      // 1. Check if the number is an active IncomingPhoneNumber on the account
+      const res = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${this.accountSid}/IncomingPhoneNumbers.json?PhoneNumber=${encodeURIComponent(normalizedPhone)}`,
+        {
+          headers: { Authorization: `Basic ${authHeader}` },
+        },
+      );
+
+      if (res.status === 200) {
+        const data = (await res.json()) as any;
+        if (data.incoming_phone_numbers && data.incoming_phone_numbers.length > 0) {
+          const matched = data.incoming_phone_numbers[0];
+          return {
+            isVerified: true,
+            formattedNumber: matched.phone_number || normalizedPhone,
+          };
+        }
+      }
+
+      // 2. Check if verified OutgoingCallerId
+      const callerIdRes = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${this.accountSid}/OutgoingCallerIds.json?PhoneNumber=${encodeURIComponent(normalizedPhone)}`,
+        {
+          headers: { Authorization: `Basic ${authHeader}` },
+        },
+      );
+
+      if (callerIdRes.status === 200) {
+        const cidData = (await callerIdRes.json()) as any;
+        if (cidData.outgoing_caller_ids && cidData.outgoing_caller_ids.length > 0) {
+          return {
+            isVerified: true,
+            formattedNumber: cidData.outgoing_caller_ids[0].phone_number || normalizedPhone,
+          };
+        }
+      }
+
+      // 3. Check via Twilio Lookup API
+      const lookupRes = await fetch(
+        `https://lookups.twilio.com/v1/PhoneNumbers/${encodeURIComponent(normalizedPhone)}`,
+        {
+          headers: { Authorization: `Basic ${authHeader}` },
+        },
+      );
+
+      if (lookupRes.status === 200) {
+        const lookupData = (await lookupRes.json()) as any;
+        return {
+          isVerified: true,
+          formattedNumber: lookupData.phone_number || normalizedPhone,
+        };
+      }
+
+      return {
+        isVerified: false,
+        reason: `Phone number ${normalizedPhone} was not found or verified in your Twilio account`,
+      };
+    } catch (err: any) {
+      if (/^\+[1-9]\d{6,14}$/.test(normalizedPhone)) {
+        return { isVerified: true, formattedNumber: normalizedPhone };
+      }
+      return { isVerified: false, reason: err?.message || 'Carrier verification failed' };
+    }
+  }
+
   async send(options: SendSmsOptions): Promise<SendSmsResult> {
     try {
       if (!this.accountSid || !this.authToken) {
@@ -283,6 +368,14 @@ export class TwilioSmsAdapter implements ISmsMarketingProvider {
   async listSenderNumbers(credentials?: SmsProviderCredentials): Promise<DiscoveredSenderNumber[]> {
     const client = new TwilioSmsClient(credentials);
     return client.listSenderNumbers();
+  }
+
+  async verifySenderNumber(
+    phoneOrSenderId: string,
+    credentials?: SmsProviderCredentials,
+  ): Promise<{ isVerified: boolean; formattedNumber?: string; reason?: string }> {
+    const client = new TwilioSmsClient(credentials);
+    return client.verifySenderNumber(phoneOrSenderId);
   }
 
   parseWebhookEvent(headers: Record<string, any>, payload: any): SmsWebhookEvent[] {
