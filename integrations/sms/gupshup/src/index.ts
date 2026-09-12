@@ -34,7 +34,7 @@ export class GupshupSmsClient {
   constructor(credentials?: SmsProviderCredentials) {
     this.apiKey = credentials?.apiKey || process.env.GUPSHUP_API_KEY || '';
     this.dltEntityId = credentials?.dltEntityId || process.env.GUPSHUP_DLT_ENTITY_ID;
-    this.senderId = credentials?.senderId || process.env.GUPSHUP_SENDER_ID || 'SKYLRE';
+    this.senderId = credentials?.senderId || process.env.GUPSHUP_SENDER_ID;
   }
 
   async validate(): Promise<boolean> {
@@ -44,13 +44,37 @@ export class GupshupSmsClient {
 
   async listSenderNumbers(): Promise<DiscoveredSenderNumber[]> {
     const discovered: DiscoveredSenderNumber[] = [];
-    const sid = this.senderId || 'SKYLRE';
-    discovered.push({
-      senderId: sid,
-      provider: 'GUPSHUP',
-      isVerified: true,
-    });
+    if (this.senderId) {
+      discovered.push({
+        senderId: this.senderId,
+        provider: 'GUPSHUP',
+        isVerified: true,
+      });
+    }
     return discovered;
+  }
+
+  async verifySenderNumber(
+    phoneOrSenderId: string,
+  ): Promise<{ isVerified: boolean; formattedNumber?: string; reason?: string }> {
+    const clean = phoneOrSenderId.trim();
+    if (!this.apiKey) {
+      return { isVerified: false, reason: 'Missing Gupshup credentials' };
+    }
+
+    if (!clean.startsWith('+') && !/^\d+$/.test(clean)) {
+      if (clean.length > 11) {
+        return { isVerified: false, reason: 'Gupshup sender header cannot exceed 11 characters' };
+      }
+      return { isVerified: true, formattedNumber: clean };
+    }
+
+    const normalizedPhone = clean.startsWith('+') ? clean : `+${clean}`;
+    if (!/^\+[1-9]\d{6,14}$/.test(normalizedPhone)) {
+      return { isVerified: false, reason: 'Invalid international phone format for Gupshup' };
+    }
+
+    return { isVerified: true, formattedNumber: normalizedPhone };
   }
 
   async send(options: SendSmsOptions): Promise<SendSmsResult> {
@@ -73,7 +97,7 @@ export class GupshupSmsClient {
         };
       }
 
-      const sender = options.from || this.senderId || 'SKYLRE';
+      const sender = options.from || this.senderId || 'BrokerOS';
       const toPhoneNumbers = options.to.map((r) => r.phone.replace(/[^0-9]/g, '')).join(',');
 
       const params = new URLSearchParams();
@@ -207,6 +231,14 @@ export class GupshupSmsAdapter implements ISmsMarketingProvider {
   async listSenderNumbers(credentials?: SmsProviderCredentials): Promise<DiscoveredSenderNumber[]> {
     const client = new GupshupSmsClient(credentials);
     return client.listSenderNumbers();
+  }
+
+  async verifySenderNumber(
+    phoneOrSenderId: string,
+    credentials?: SmsProviderCredentials,
+  ): Promise<{ isVerified: boolean; formattedNumber?: string; reason?: string }> {
+    const client = new GupshupSmsClient(credentials);
+    return client.verifySenderNumber(phoneOrSenderId);
   }
 
   parseWebhookEvent(headers: Record<string, any>, payload: any): SmsWebhookEvent[] {
