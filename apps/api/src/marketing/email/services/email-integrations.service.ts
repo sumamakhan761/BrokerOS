@@ -311,13 +311,25 @@ export class EmailIntegrationsService {
         where: { integrationId, fromEmail: defaultEmail },
       });
       if (!exists) {
+        let isDefaultVerified = discovered.some(
+          (d: any) => (d.fromEmail || '').toLowerCase().trim() === defaultEmail,
+        );
+        if (!isDefaultVerified && typeof (adapter as any).verifySenderIdentity === 'function') {
+          try {
+            const v = await (adapter as any).verifySenderIdentity(defaultEmail, credentials);
+            isDefaultVerified = Boolean(v.isVerified);
+          } catch {
+            isDefaultVerified = true;
+          }
+        }
+
         await this.prisma.marketingSenderDomain.create({
           data: {
             integrationId,
             fromEmail: defaultEmail,
             fromName: integration.fromName || 'Sales Team',
             domain: defaultEmail.split('@')[1] || '',
-            isVerified: true,
+            isVerified: isDefaultVerified,
             isActive: true,
             dailyQuota: 500,
             isWarmupMode: false,
@@ -355,6 +367,37 @@ export class EmailIntegrationsService {
       );
     }
 
+    // Call provider adapter to verify the sender email/domain on the provider account
+    const credentials: ProviderCredentials = {
+      apiKey: integration.apiKey || undefined,
+      awsAccessKeyId: integration.awsAccessKeyId || undefined,
+      awsSecretKey: integration.awsSecretKey || undefined,
+      awsRegion: integration.awsRegion || undefined,
+      mailchimpServer: integration.mailchimpServer || undefined,
+      fromEmail: integration.fromEmail,
+      fromName: integration.fromName,
+    };
+
+    const adapter = this.getAdapter(integration.provider);
+    let isProviderVerified = true;
+
+    if (typeof (adapter as any).verifySenderIdentity === 'function') {
+      try {
+        const verifyRes = await (adapter as any).verifySenderIdentity(email, credentials);
+        if (!verifyRes.isVerified) {
+          throw new BadRequestException(
+            verifyRes.reason ||
+              `Email provider ${integration.provider} could not verify identity "${email}" on this account`,
+          );
+        }
+        isProviderVerified = true;
+      } catch (err: any) {
+        if (err instanceof BadRequestException) throw err;
+        // Non-fatal if provider endpoint was temporarily unreachable but email is syntactically valid
+        isProviderVerified = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      }
+    }
+
     return this.prisma.marketingSenderDomain.create({
       data: {
         integrationId,
@@ -364,7 +407,7 @@ export class EmailIntegrationsService {
         replyTo: dto.replyTo || integration.replyTo,
         dailyQuota: dto.dailyQuota ?? 500,
         isWarmupMode: dto.isWarmupMode ?? false,
-        isVerified: dto.isVerified ?? true,
+        isVerified: isProviderVerified,
         isActive: true,
       },
     });
