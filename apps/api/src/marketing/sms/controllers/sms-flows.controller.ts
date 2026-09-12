@@ -74,7 +74,7 @@ export class SmsFlowsController {
     return this.inboundService.simulateInboundReply({
       flowId: id,
       leadPhone: dto.leadPhone || '+15552345678',
-      senderPhone: dto.senderPhone || '+14155550199',
+      senderPhone: dto.senderPhone || '',
       bodyText: dto.bodyText || 'Tell me about pricing and site visits',
     });
   }
