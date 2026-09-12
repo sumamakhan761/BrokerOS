@@ -104,6 +104,94 @@ export class MailchimpClient {
     }
   }
 
+  async verifySenderIdentity(
+    emailOrDomain: string,
+  ): Promise<{ isVerified: boolean; fromEmail?: string; domain?: string; reason?: string }> {
+    const clean = (emailOrDomain || '').trim().toLowerCase();
+    if (!this.apiKey) {
+      return { isVerified: false, reason: 'Missing Mailchimp / Mandrill API Key' };
+    }
+
+    if (!clean) {
+      return { isVerified: false, reason: 'Email or domain is required' };
+    }
+
+    const isEmail = clean.includes('@');
+    const domain = isEmail ? clean.split('@')[1] : clean;
+
+    try {
+      // 1. Check specific sender address info
+      if (isEmail) {
+        const res = await fetch('https://mandrillapp.com/api/1.0/senders/info.json', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: this.apiKey, address: clean }),
+        });
+
+        if (res.ok) {
+          const data: any = await res.json().catch(() => ({}));
+          if (data && data.address && !data.status) {
+            return {
+              isVerified: true,
+              fromEmail: clean,
+              domain,
+            };
+          }
+        }
+      }
+
+      // 2. Check sending domains
+      const domainRes = await fetch('https://mandrillapp.com/api/1.0/senders/domains.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: this.apiKey }),
+      });
+
+      if (domainRes.ok) {
+        const domains = await domainRes.json().catch(() => []);
+        if (Array.isArray(domains)) {
+          const matched = domains.find(
+            (d: any) =>
+              (d.domain || '').toLowerCase().trim() === domain &&
+              Boolean(d.verified_at || d.valid_signing),
+          );
+          if (matched) {
+            return {
+              isVerified: true,
+              fromEmail: clean,
+              domain,
+            };
+          }
+        }
+      }
+
+      // 3. Fallback: check against listVerifiedSenders
+      const list = await this.listVerifiedSenders();
+      const match = list.find(
+        (item) =>
+          item.fromEmail?.toLowerCase().trim() === clean ||
+          item.domain?.toLowerCase().trim() === domain,
+      );
+      if (match && match.isVerified) {
+        return {
+          isVerified: true,
+          fromEmail: clean,
+          domain,
+        };
+      }
+
+      return {
+        isVerified: false,
+        reason: `Sender identity "${clean}" is not verified in your Mailchimp/Mandrill account. Please verify the sending domain in Mandrill settings.`,
+      };
+    } catch (err: any) {
+      return {
+        isVerified: false,
+        reason: err?.message || 'Failed to verify sender identity with Mailchimp/Mandrill API',
+      };
+    }
+  }
+
   async send(options: SendEmailOptions): Promise<SendEmailResult> {
     try {
       if (!this.apiKey) {
@@ -269,6 +357,14 @@ export class MailchimpAdapter implements IEmailMarketingProvider {
   async listVerifiedSenders(credentials?: ProviderCredentials): Promise<DiscoveredSenderIdentity[]> {
     const client = new MailchimpClient(credentials);
     return client.listVerifiedSenders();
+  }
+
+  async verifySenderIdentity(
+    emailOrDomain: string,
+    credentials?: ProviderCredentials,
+  ): Promise<{ isVerified: boolean; fromEmail?: string; domain?: string; reason?: string }> {
+    const client = new MailchimpClient(credentials);
+    return client.verifySenderIdentity(emailOrDomain);
   }
 
   async sendBatch(options: SendEmailOptions, credentials?: ProviderCredentials): Promise<SendEmailResult> {
