@@ -45,7 +45,7 @@ export default function NewSmsCampaignPage() {
   const [projectId, setProjectId] = useState("");
   const [isCpCampaign, setIsCpCampaign] = useState(false);
   const [providerType, setProviderType] = useState<SmsProviderType>("TWILIO");
-  const [fromSender, setFromSender] = useState("SKYLIN");
+  const [fromSender, setFromSender] = useState("");
   const [dltTemplateId, setDltTemplateId] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
 
@@ -59,6 +59,7 @@ export default function NewSmsCampaignPage() {
   }>({ statuses: [], temperatures: [], projectId: undefined, minBudget: undefined });
   const [csvRecipients, setCsvRecipients] = useState<CsvLeadRow[]>([]);
   const [saveCsvAsCrmLeads, setSaveCsvAsCrmLeads] = useState(true);
+  const [totalAudienceCount, setTotalAudienceCount] = useState<number>(0);
 
   // Form State: Step 3 (Message Copy)
   const [messageContent, setMessageContent] = useState<string>(DEFAULT_SMS_TEMPLATES[0].message);
@@ -118,12 +119,15 @@ export default function NewSmsCampaignPage() {
           const list = Array.isArray(intData) ? intData : [];
           setIntegrations(list);
 
-          // If fromSender is empty or legacy default, initialize to active provider's sender
-          const twilioInt = list.find((i: any) => i.provider === "TWILIO" && i.isActive);
-          if (twilioInt) {
+          // Initialize fromSender from any active integration's verified number
+          const defaultInt = list.find((i: any) => i.isActive && i.isDefault) || list.find((i: any) => i.isActive);
+          if (defaultInt) {
+            setProviderType(defaultInt.provider);
             const verified =
-              twilioInt.senderNumbers?.find((n: any) => n.phoneNumber?.startsWith("+"))?.phoneNumber ||
-              twilioInt.fromSender;
+              defaultInt.senderNumbers?.find((n: any) => n.phoneNumber?.startsWith("+") && n.isVerified)?.phoneNumber ||
+              defaultInt.senderNumbers?.find((n: any) => n.isVerified)?.phoneNumber ||
+              defaultInt.senderNumbers?.[0]?.phoneNumber ||
+              defaultInt.fromSender;
             if (verified) {
               setFromSender(verified);
             }
@@ -148,13 +152,16 @@ export default function NewSmsCampaignPage() {
         if (draft.projectId) setProjectId(draft.projectId);
         if (draft.isCpCampaign !== undefined) setIsCpCampaign(draft.isCpCampaign);
         if (draft.providerType) setProviderType(draft.providerType);
-        if (draft.fromSender) setFromSender(draft.fromSender);
+        if (draft.fromSender && draft.fromSender !== "SKYLIN" && draft.fromSender !== "SKYLRE") {
+          setFromSender(draft.fromSender);
+        }
         if (draft.dltTemplateId) setDltTemplateId(draft.dltTemplateId);
         if (draft.scheduledAt) setScheduledAt(draft.scheduledAt);
         if (draft.audienceSource) setAudienceSource(draft.audienceSource);
         if (draft.filters) setFilters(draft.filters);
         if (draft.csvRecipients) setCsvRecipients(draft.csvRecipients);
         if (draft.saveCsvAsCrmLeads !== undefined) setSaveCsvAsCrmLeads(draft.saveCsvAsCrmLeads);
+        if (draft.totalAudienceCount !== undefined) setTotalAudienceCount(draft.totalAudienceCount);
         if (draft.messageContent) setMessageContent(draft.messageContent);
         if (draft.draftCampaignId) setDraftCampaignId(draft.draftCampaignId);
         if (draft.currentStep) setCurrentStep(draft.currentStep);
@@ -185,6 +192,7 @@ export default function NewSmsCampaignPage() {
         audienceFilters: audienceSource === "CRM_DATABASE" ? filters : undefined,
         csvRecipients: audienceSource === "CSV_UPLOAD" ? csvRecipients : undefined,
         saveCsvAsCrmLeads,
+        totalAudienceCount: audienceSource === "CSV_UPLOAD" ? csvRecipients.length : totalAudienceCount,
         messageContent,
         currentStep,
       };
@@ -261,7 +269,7 @@ export default function NewSmsCampaignPage() {
       setProjectId("");
       setIsCpCampaign(false);
       setProviderType("TWILIO");
-      setFromSender("SKYLIN");
+      setFromSender("");
       setDltTemplateId("");
       setScheduledAt("");
       setAudienceSource("CRM_DATABASE");
@@ -293,7 +301,7 @@ export default function NewSmsCampaignPage() {
           recipientPhone: testPhone,
           toPhone: testPhone,
           messageContent: messageContent || "Test SMS Preview from BrokerOS",
-          fromSender: fromSender || "SKYLIN",
+          fromSender: fromSender || senderPools[0]?.phoneNumber || senderPools[0]?.senderId || undefined,
           providerType,
           dltTemplateId: dltTemplateId || undefined,
         }),
@@ -333,7 +341,7 @@ export default function NewSmsCampaignPage() {
         title,
         projectId: projectId || undefined,
         isCpCampaign,
-        fromSender: fromSender || "SKYLIN",
+        fromSender: fromSender || senderPools[0]?.phoneNumber || senderPools[0]?.senderId || undefined,
         providerType: senderPools.length > 1 ? "MULTI_PROVIDER" : providerType,
         senderPools: senderPools.length > 0 ? senderPools : undefined,
         allocationMode,
@@ -475,6 +483,7 @@ export default function NewSmsCampaignPage() {
           onSaveCsvAsCrmLeadsChange={setSaveCsvAsCrmLeads}
           projects={projects}
           apiBaseUrl={baseUrl}
+          onAudienceCountChange={setTotalAudienceCount}
           onBack={() => setCurrentStep(1)}
           onNext={() => setCurrentStep(3)}
         />
@@ -499,6 +508,7 @@ export default function NewSmsCampaignPage() {
         <SmsStep4ReviewLaunch
           audienceSource={audienceSource}
           csvRecipients={csvRecipients}
+          totalAudienceCount={audienceSource === "CSV_UPLOAD" ? csvRecipients.length : totalAudienceCount}
           fromSender={fromSender}
           providerType={providerType}
           projectName={selectedProjectObj?.name}

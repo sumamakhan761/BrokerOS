@@ -25,6 +25,7 @@ export interface AudienceSelectorProps {
   projects?: Array<{ id: string; name: string }>;
   apiBaseUrl?: string;
   channel?: 'EMAIL' | 'SMS' | 'VOICE';
+  onAudienceCountChange?: (count: number) => void;
 }
 
 export function AudienceSelector({
@@ -39,6 +40,7 @@ export function AudienceSelector({
   projects = [],
   apiBaseUrl = '',
   channel = 'EMAIL',
+  onAudienceCountChange,
 }: AudienceSelectorProps) {
   const [csvFileName, setCsvFileName] = useState<string | null>(null);
 
@@ -98,27 +100,20 @@ export function AudienceSelector({
       .then((data) => {
         if (isMounted && data?.finalAudienceCount !== undefined) {
           setEstimation(data);
+          onAudienceCountChange?.(data.finalAudienceCount);
         }
       })
       .catch(() => {
         if (isMounted) {
-          if (audienceSource === 'CSV_UPLOAD') {
-            setEstimation({
-              totalCount: csvRecipients.length,
-              validEmailCount: csvRecipients.length,
-              duplicateCount: 0,
-              unsubscribedCount: 0,
-              finalAudienceCount: csvRecipients.length,
-            });
-          } else {
-            setEstimation({
-              totalCount: 0,
-              validEmailCount: 0,
-              duplicateCount: 0,
-              unsubscribedCount: 0,
-              finalAudienceCount: 0,
-            });
-          }
+          const fallbackCount = audienceSource === 'CSV_UPLOAD' ? csvRecipients.length : 0;
+          setEstimation({
+            totalCount: fallbackCount,
+            validEmailCount: fallbackCount,
+            duplicateCount: 0,
+            unsubscribedCount: 0,
+            finalAudienceCount: fallbackCount,
+          });
+          onAudienceCountChange?.(fallbackCount);
         }
       })
       .finally(() => {
@@ -190,6 +185,7 @@ export function AudienceSelector({
       }
 
       onCsvRecipientsChange(rows);
+      onAudienceCountChange?.(rows.length);
     };
 
     reader.readAsText(file);

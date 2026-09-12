@@ -22,6 +22,7 @@ export interface SmsStep2AudienceProps {
   onSaveCsvAsCrmLeadsChange: (val: boolean) => void;
   projects: Array<{ id: string; name: string }>;
   apiBaseUrl: string;
+  onAudienceCountChange?: (count: number) => void;
   onBack: () => void;
   onNext: () => void;
 }
@@ -37,6 +38,7 @@ export function SmsStep2Audience({
   onSaveCsvAsCrmLeadsChange,
   projects,
   apiBaseUrl,
+  onAudienceCountChange,
   onBack,
   onNext,
 }: SmsStep2AudienceProps) {
@@ -54,6 +56,7 @@ export function SmsStep2Audience({
         projects={projects}
         apiBaseUrl={apiBaseUrl}
         channel="SMS"
+        onAudienceCountChange={onAudienceCountChange}
       />
 
       {/* Navigation Footer */}
