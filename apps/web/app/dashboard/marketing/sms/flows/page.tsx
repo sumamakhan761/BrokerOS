@@ -16,7 +16,7 @@ export default function SmsFlowsPage() {
     <DashboardPageWrapper
       loading={false}
       title="2-Way SMS Automation Flows"
-      subtitle="Configure keyword auto-responders, Groq AI SMS concierge, lead pipeline updates, and Pre-Sales handoff sequences."
+      subtitle="Configure keyword auto-responders, Groq AI SMS concierge, CRM tags, and automated reply sequences."
       headerRight={
         <div className="flex items-center gap-2">
           <Link href="/dashboard/marketing/sms/inbox">
