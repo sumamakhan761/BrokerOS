@@ -350,32 +350,72 @@ export class SmsIntegrationsService {
     });
     if (!integration) throw new NotFoundException('SMS Integration not found');
 
-    const phone = dto.phoneNumber ? dto.phoneNumber.trim() : null;
-    const senderId = dto.senderId ? dto.senderId.trim() : null;
-
-    if (!phone && !senderId) {
+    const input = (dto.phoneNumber || dto.senderId || '').trim();
+    if (!input) {
       throw new BadRequestException('Either a phone number or sender ID is required');
+    }
+
+    const isPhone = input.startsWith('+') || /^\d{8,15}$/.test(input.replace(/[^0-9]/g, ''));
+    let cleanPhone = isPhone ? (input.startsWith('+') ? input : `+${input.replace(/[^0-9]/g, '')}`) : null;
+    let cleanSenderId = !isPhone ? input : (dto.senderId?.trim() || null);
+
+    // Call carrier adapter to verify the number on the carrier account
+    const credentials: SmsProviderCredentials = {
+      accountSid: integration.accountSid || undefined,
+      authToken: integration.authToken || undefined,
+      messagingServiceSid: integration.messagingServiceSid || undefined,
+      apiKey: integration.apiKey || undefined,
+      servicePlanId: integration.servicePlanId || undefined,
+      awsAccessKeyId: integration.awsAccessKeyId || undefined,
+      awsSecretKey: integration.awsSecretKey || undefined,
+      awsRegion: integration.awsRegion || undefined,
+      dltEntityId: integration.dltEntityId || undefined,
+      fromNumber: integration.fromSender,
+      senderId: integration.fromSender,
+    };
+
+    const adapter = this.getAdapter(integration.provider);
+    let isCarrierVerified = true;
+
+    if (typeof (adapter as any).verifySenderNumber === 'function') {
+      try {
+        const verifyRes = await (adapter as any).verifySenderNumber(cleanPhone || cleanSenderId, credentials);
+        if (!verifyRes.isVerified) {
+          throw new BadRequestException(
+            verifyRes.reason || `Carrier ${integration.provider} could not verify identity "${cleanPhone || cleanSenderId}" on this account`,
+          );
+        }
+        if (verifyRes.formattedNumber) {
+          if (isPhone) cleanPhone = verifyRes.formattedNumber;
+          else cleanSenderId = verifyRes.formattedNumber;
+        }
+        isCarrierVerified = true;
+      } catch (err: any) {
+        if (err instanceof BadRequestException) throw err;
+        // Non-fatal if carrier endpoint was temporarily unreachable but phone is valid E.164
+        isCarrierVerified = isPhone ? /^\+[1-9]\d{7,14}$/.test(cleanPhone || '') : true;
+      }
     }
 
     const existing = await this.prisma.smsSenderNumber.findFirst({
       where: {
         integrationId,
-        ...(phone ? { phoneNumber: phone } : { senderId }),
+        ...(cleanPhone ? { phoneNumber: cleanPhone } : { senderId: cleanSenderId }),
       },
     });
 
     if (existing) {
-      throw new BadRequestException('This sender number or header is already registered');
+      throw new BadRequestException('This sender number or header is already registered under this gateway');
     }
 
     return this.prisma.smsSenderNumber.create({
       data: {
         integrationId,
-        phoneNumber: phone,
-        senderId,
+        phoneNumber: cleanPhone,
+        senderId: cleanSenderId,
         provider: dto.provider || integration.provider,
         dailyQuota: dto.dailyQuota ?? 5000,
-        isVerified: dto.isVerified ?? true,
+        isVerified: isCarrierVerified,
         isActive: dto.isActive ?? true,
       },
     });
