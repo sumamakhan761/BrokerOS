@@ -15,8 +15,7 @@ import {
   ChevronDown,
   MessageSquare,
   Sparkles,
-  Tag as TagIcon,
-  UserCheck,
+  Tag,
   Flag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -63,8 +62,7 @@ export const BranchStepsList: React.FC<BranchStepsListProps> = ({
     : 'bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300';
   const branchIcon = isYes ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <CircleSlash className="w-4 h-4 text-rose-600" />;
   const branchTitle = isYes ? 'IF TRUE / YES BRANCH' : 'IF FALSE / NO BRANCH';
-
-  const addableTypes: SmsFlowNodeType[] = ['send_sms', 'ai_agent', 'add_tag', 'update_lead', 'end'];
+  const addableTypes: SmsFlowNodeType[] = ['send_sms', 'ai_agent', 'add_tag', 'end'];
 
   return (
     <div className={cn('rounded-xl border-2 p-3.5 space-y-3', branchBorder, branchBg)}>
@@ -186,67 +184,50 @@ export const BranchStepsList: React.FC<BranchStepsListProps> = ({
 
                     {/* 3. ASSIGN TAG */}
                     {step.nodeType === 'add_tag' && (
-                      <div className="space-y-1.5">
-                        <label className="font-semibold text-text-secondary text-[11px]">Select CRM Tag:</label>
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-semibold text-text-secondary block mb-1">
+                          Assign CRM Tag:
+                        </label>
                         <select
-                          value={step.config?.tagName || ''}
-                          onChange={(e) => onUpdateStep(idx, { tagName: e.target.value })}
-                          className="w-full text-xs rounded-lg border border-border-default bg-bg-surface p-2"
+                          value={step.config?.tagName || step.config?.tag || ''}
+                          onChange={(e) => {
+                            const name = e.target.value;
+                            const matched = existingTags.find((t) => t.name === name);
+                            onUpdateStep(idx, {
+                              tagName: name,
+                              tag: name,
+                              color: matched?.color || '#8B5CF6',
+                            });
+                          }}
+                          className="w-full rounded-lg border border-border-default bg-bg-surface px-2.5 py-1.5 text-xs text-text-primary"
                         >
-                          <option value="">Select or type a tag...</option>
+                          <option value="">-- Choose tag --</option>
                           {existingTags.map((t) => (
-                            <option key={t.id} value={t.name}>
+                            <option key={t.id || t.name} value={t.name}>
                               {t.name}
                             </option>
                           ))}
-                          <option value="Hot Lead">Hot Lead</option>
-                          <option value="Site Visit Requested">Site Visit Requested</option>
-                          <option value="Price Inquiry">Price Inquiry</option>
                         </select>
+                        {(step.config?.tagName || step.config?.tag) && (
+                          <div className="flex items-center gap-1.5 pt-1">
+                            <Tag className="w-3 h-3 text-text-tertiary" />
+                            <span
+                              className="px-2 py-0.5 rounded text-[10px] font-mono font-bold text-white shadow-2xs"
+                              style={{ backgroundColor: step.config?.color || '#8B5CF6' }}
+                            >
+                              {step.config?.tagName || step.config?.tag}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 
-                    {/* 4. UPDATE LEAD PIPELINE */}
-                    {step.nodeType === 'update_lead' && (
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="font-semibold text-text-secondary text-[11px] block mb-1">
-                            Lead Temperature:
-                          </label>
-                          <select
-                            value={step.config?.temperature || ''}
-                            onChange={(e) => onUpdateStep(idx, { temperature: e.target.value })}
-                            className="w-full text-xs rounded-lg border border-border-default bg-bg-surface p-2"
-                          >
-                            <option value="">No change</option>
-                            <option value="HOT">🔥 HOT</option>
-                            <option value="WARM">⚡ WARM</option>
-                            <option value="COLD">❄️ COLD</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="font-semibold text-text-secondary text-[11px] block mb-1">
-                            Lead Status:
-                          </label>
-                          <select
-                            value={step.config?.status || ''}
-                            onChange={(e) => onUpdateStep(idx, { status: e.target.value })}
-                            className="w-full text-xs rounded-lg border border-border-default bg-bg-surface p-2"
-                          >
-                            <option value="">No change</option>
-                            <option value="ATTEMPTED_CONTACT">Attempted Contact</option>
-                            <option value="CONNECTED">Connected</option>
-                            <option value="SITE_VISIT_REQUESTED">Site Visit Requested</option>
-                          </select>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 5. END FLOW */}
+                    {/* 4. END FLOW */}
                     {step.nodeType === 'end' && (
-                      <p className="text-[11px] text-text-tertiary">
-                        Execution stops here. No further SMS actions will be dispatched for this inbound message.
-                      </p>
+                      <div className="p-2 bg-zinc-500/10 rounded-lg text-[11px] text-text-secondary flex items-center gap-1.5">
+                        <Flag className="w-3.5 h-3.5 text-text-tertiary shrink-0" />
+                        <span>Flow execution terminates at this step.</span>
+                      </div>
                     )}
                   </div>
                 )}

@@ -10,7 +10,6 @@ import {
   Sparkles,
   GitFork,
   Tag,
-  UserCheck,
   Flag,
   PlayCircle,
   HelpCircle,
@@ -161,25 +160,64 @@ export const FlowNodeConfigEditor: React.FC<FlowNodeConfigEditorProps> = ({
 
       {/* ── 3. GROQ AI CONCIERGE ── */}
       {node.nodeType === 'ai_agent' && (
-        <div className="p-3 bg-purple-50/50 border border-purple-200/80 rounded-xl space-y-2 text-xs">
+        <div className="p-3 bg-purple-50/50 border border-purple-200/80 rounded-xl space-y-3 text-xs">
           <div className="flex items-center gap-2 text-purple-900 font-bold">
             <Sparkles className="w-4 h-4 text-purple-600" />
-            <span>Groq LPU AI Autoreply (openai/gpt-oss-120b)</span>
+            <span>Groq LPU AI Concierge (openai/gpt-oss-120b)</span>
           </div>
           <p className="text-[11px] text-purple-700/90 font-medium">
             AI automatically analyzes the inbound SMS text, consults the project brochure details, and replies succinctly in 160 characters or less.
           </p>
-          <div className="space-y-1 pt-1">
+          <div className="space-y-1">
             <label className="text-[11px] font-bold text-purple-900">
               Custom Prompt Instructions (Optional):
             </label>
             <Textarea
               rows={2}
-              value={cfg.customPrompt || ''}
-              onChange={(e) => updateNodeConfig(node.nodeKey, { customPrompt: e.target.value })}
+              value={cfg.customPrompt || cfg.instructions || ''}
+              onChange={(e) => updateNodeConfig(node.nodeKey, { instructions: e.target.value, customPrompt: e.target.value })}
               placeholder="Highlight our flexible 10:90 payment plan and encourage them to reply with VISIT to schedule."
               className="text-xs bg-white"
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-purple-200/50">
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-purple-900 flex items-center justify-between">
+                <span>Max Autonomous Turns:</span>
+                <span className="font-mono bg-purple-100 px-1.5 py-0.5 rounded text-purple-800">{cfg.maxTurns ?? 3}</span>
+              </label>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                value={cfg.maxTurns ?? 3}
+                onChange={(e) => updateNodeConfig(node.nodeKey, { maxTurns: Number(e.target.value) })}
+                className="w-full accent-purple-600"
+              />
+              <p className="text-[10px] text-purple-700">Auto-escalates after {cfg.maxTurns ?? 3} back-and-forth SMS exchanges.</p>
+            </div>
+
+            <div className="space-y-1.5 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={cfg.stopIfHumanActive !== false}
+                  onChange={(e) => updateNodeConfig(node.nodeKey, { stopIfHumanActive: e.target.checked })}
+                  className="rounded accent-purple-600"
+                />
+                <span className="text-[11px] font-bold text-purple-900">Pause if Sales Exec Active</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={cfg.handoffOnMax !== false}
+                  onChange={(e) => updateNodeConfig(node.nodeKey, { handoffOnMax: e.target.checked })}
+                  className="rounded accent-purple-600"
+                />
+                <span className="text-[11px] font-bold text-purple-900">Auto-Handoff to Pre-Sales</span>
+              </label>
+            </div>
           </div>
         </div>
       )}
@@ -191,35 +229,101 @@ export const FlowNodeConfigEditor: React.FC<FlowNodeConfigEditorProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-fuchsia-950 flex items-center gap-1.5">
                 <GitFork className="w-3.5 h-3.5 text-fuchsia-600" />
-                <span>Condition Trigger Match</span>
+                <span>Condition Evaluation Criteria</span>
               </span>
               <select
-                value={cfg.matchType || 'contains'}
-                onChange={(e) => updateNodeConfig(node.nodeKey, { matchType: e.target.value })}
+                value={cfg.criteriaType || 'keywords'}
+                onChange={(e) => updateNodeConfig(node.nodeKey, { criteriaType: e.target.value })}
                 className="text-[11px] font-bold rounded-lg border border-fuchsia-200 bg-white px-2 py-1 text-fuchsia-900"
               >
-                <option value="contains">Contains Any Keyword</option>
-                <option value="exact">Exact Word Match</option>
-                <option value="starts_with">Starts With</option>
+                <option value="keywords">Inbound Keywords</option>
+                <option value="tag">CRM Lead Tag</option>
+                <option value="budget">Minimum Lead Budget</option>
               </select>
             </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-fuchsia-900 block mb-1">
-                Comma-separated Keywords:
-              </label>
-              <Input
-                type="text"
-                value={Array.isArray(cfg.keywords) ? cfg.keywords.join(', ') : cfg.keywords || ''}
-                onChange={(e) =>
-                  updateNodeConfig(node.nodeKey, {
-                    keywords: e.target.value.split(',').map((k) => k.trim()).filter(Boolean),
-                  })
-                }
-                placeholder="visit, price, cost, brochure, site visit, schedule"
-                className="text-xs bg-white"
-              />
-            </div>
+            {(!cfg.criteriaType || cfg.criteriaType === 'keywords') && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-fuchsia-900">
+                    Match Mode:
+                  </label>
+                  <select
+                    value={cfg.matchType || 'contains'}
+                    onChange={(e) => updateNodeConfig(node.nodeKey, { matchType: e.target.value })}
+                    className="text-[11px] font-bold rounded-lg border border-fuchsia-200 bg-white px-2 py-0.5 text-fuchsia-900"
+                  >
+                    <option value="contains">Contains Any Keyword</option>
+                    <option value="exact">Exact Word Match</option>
+                    <option value="starts_with">Starts With</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-fuchsia-900 block mb-1">
+                    Comma-separated Keywords:
+                  </label>
+                  <Input
+                    type="text"
+                    value={Array.isArray(cfg.keywords) ? cfg.keywords.join(', ') : cfg.keywords || ''}
+                    onChange={(e) =>
+                      updateNodeConfig(node.nodeKey, {
+                        keywords: e.target.value.split(',').map((k) => k.trim()).filter(Boolean),
+                      })
+                    }
+                    placeholder="visit, price, cost, brochure, schedule"
+                    className="text-xs bg-white"
+                  />
+                </div>
+              </div>
+            )}
+
+            {cfg.criteriaType === 'tag' && (
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-fuchsia-900 block">
+                  Prospect Must Have CRM Tag:
+                </label>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={cfg.tag || ''}
+                    onChange={(e) => updateNodeConfig(node.nodeKey, { tag: e.target.value })}
+                    className="flex-1 text-xs rounded-lg border border-fuchsia-200 bg-white p-1.5 font-bold text-fuchsia-900"
+                  >
+                    <option value="">Select a tag...</option>
+                    {existingTags.map((t) => (
+                      <option key={t.id} value={t.name}>
+                        {t.name}
+                      </option>
+                    ))}
+                    <option value="Hot Prospect">Hot Prospect</option>
+                    <option value="Site Visit Requested">Site Visit Requested</option>
+                    <option value="Price Sensitive">Price Sensitive</option>
+                  </select>
+                  <Input
+                    type="text"
+                    placeholder="Or type tag name..."
+                    value={cfg.tag || ''}
+                    onChange={(e) => updateNodeConfig(node.nodeKey, { tag: e.target.value })}
+                    className="text-xs w-40 bg-white"
+                  />
+                </div>
+              </div>
+            )}
+
+            {cfg.criteriaType === 'budget' && (
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-fuchsia-900 block">
+                  Minimum Lead Budget Threshold (INR ₹):
+                </label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 15000000 (1.5 Cr)"
+                  value={cfg.minBudget || ''}
+                  onChange={(e) => updateNodeConfig(node.nodeKey, { minBudget: Number(e.target.value) })}
+                  className="text-xs bg-white"
+                />
+                <p className="text-[10px] text-fuchsia-700">Branches to YES if the prospect lead budget is at or above this value.</p>
+              </div>
+            )}
           </div>
 
           {/* WhatsApp / Email Parity Dual Branch Columns */}
@@ -248,77 +352,68 @@ export const FlowNodeConfigEditor: React.FC<FlowNodeConfigEditorProps> = ({
 
       {/* ── 5. ASSIGN CRM TAG ── */}
       {node.nodeType === 'add_tag' && (
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-[var(--text-primary)]">Select or Create CRM Tag:</label>
-          <div className="flex items-center gap-2">
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-text-secondary block mb-1">
+              Select CRM Tag (Configured in SMS Settings):
+            </label>
             <select
-              value={cfg.tagName || ''}
-              onChange={(e) => updateNodeConfig(node.nodeKey, { tagName: e.target.value })}
-              className="flex-1 text-xs rounded-xl border border-border-default bg-bg-surface p-2 font-bold text-[var(--text-primary)]"
+              value={cfg.tagName || cfg.tag || ''}
+              onChange={(e) => {
+                const selectedName = e.target.value;
+                const matched = existingTags.find((t) => t.name === selectedName);
+                updateNodeConfig(node.nodeKey, {
+                  tagName: selectedName,
+                  tag: selectedName,
+                  color: matched?.color || '#8B5CF6',
+                });
+              }}
+              className="w-full rounded-lg border border-border-default bg-bg-surface px-3 py-2 text-xs text-text-primary"
             >
-              <option value="">Select an existing tag...</option>
+              <option value="">-- Select an existing tag --</option>
               {existingTags.map((t) => (
-                <option key={t.id} value={t.name}>
+                <option key={t.id || t.name} value={t.name}>
                   {t.name}
                 </option>
               ))}
-              <option value="Site Visit Requested">Site Visit Requested</option>
-              <option value="Price Sensitive">Price Sensitive</option>
-              <option value="Hot Prospect">Hot Prospect</option>
-              <option value="Broker Query">Broker Query</option>
             </select>
-            <Input
-              type="text"
-              placeholder="Or custom tag..."
-              value={cfg.tagName || ''}
-              onChange={(e) => updateNodeConfig(node.nodeKey, { tagName: e.target.value })}
-              className="text-xs w-44"
-            />
           </div>
+
+          {(cfg.tagName || cfg.tag) && (
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-bg-subtle border border-border-subtle text-xs">
+              <Tag className="w-3.5 h-3.5 text-text-tertiary" />
+              <span className="text-text-secondary">Assigned CRM Tag:</span>
+              <span
+                className="px-2 py-0.5 rounded-md font-mono font-bold text-white text-[11px] shadow-2xs"
+                style={{ backgroundColor: cfg.color || '#8B5CF6' }}
+              >
+                {cfg.tagName || cfg.tag}
+              </span>
+            </div>
+          )}
+
+          <p className="text-[11px] text-text-tertiary">
+            CRM tags are centrally created and managed in{' '}
+            <a
+              href="/dashboard/marketing/sms/settings"
+              target="_blank"
+              rel="noreferrer"
+              className="text-brand-600 underline font-semibold hover:text-brand-700"
+            >
+              SMS Settings → Tags
+            </a>{' '}
+            to avoid duplicate typos.
+          </p>
         </div>
       )}
 
-      {/* ── 6. UPDATE LEAD PIPELINE ── */}
-      {node.nodeType === 'update_lead' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-blue-50/50 border border-blue-200/80 rounded-xl">
-          <div>
-            <label className="text-[11px] font-bold text-blue-900 block mb-1">
-              Set Lead Temperature:
-            </label>
-            <select
-              value={cfg.temperature || ''}
-              onChange={(e) => updateNodeConfig(node.nodeKey, { temperature: e.target.value })}
-              className="w-full text-xs font-bold rounded-lg border border-blue-200 bg-white p-2"
-            >
-              <option value="">No change</option>
-              <option value="HOT">🔥 HOT (High Intent)</option>
-              <option value="WARM">⚡ WARM (Interested)</option>
-              <option value="COLD">❄️ COLD (Passive)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-[11px] font-bold text-blue-900 block mb-1">
-              Set Lead Status:
-            </label>
-            <select
-              value={cfg.status || ''}
-              onChange={(e) => updateNodeConfig(node.nodeKey, { status: e.target.value })}
-              className="w-full text-xs font-bold rounded-lg border border-blue-200 bg-white p-2"
-            >
-              <option value="">No change</option>
-              <option value="ATTEMPTED_CONTACT">Attempted Contact</option>
-              <option value="CONNECTED">Connected</option>
-              <option value="SITE_VISIT_REQUESTED">Site Visit Requested</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      {/* ── 7. END FLOW ── */}
+      {/* ── 6. END FLOW ── */}
       {node.nodeType === 'end' && (
-        <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-xs text-zinc-600">
-          <span className="font-bold text-zinc-900">End Automation:</span> Inbound execution completes here. Conversation remains available in 2-Way Live Team Inbox for manual sales takeover.
+        <div className="p-3 bg-zinc-500/5 border border-zinc-500/20 rounded-xl text-xs text-text-secondary">
+          <p className="font-semibold text-text-primary">Terminal Step</p>
+          <p className="text-[11px] mt-0.5 opacity-90">
+            Execution terminates at this node. No further automated actions will be executed for this reply.
+          </p>
         </div>
       )}
     </div>
