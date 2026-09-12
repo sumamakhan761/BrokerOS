@@ -1,22 +1,30 @@
 // ============================================================================
-// BrokerOS — SMS Message Composer Component
+// BrokerOS — SMS Message Composer Bar (with Telemetry, AI, & Modals)
 // ============================================================================
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Send,
   Sparkles,
-  Loader2,
   Zap,
-  Bookmark,
-  Command,
+  FileText,
+  Loader2,
+  Server,
+  Lock,
+  Tag,
+  ChevronDown,
 } from 'lucide-react';
-import { calculateSmsSegments, DEFAULT_SMS_QUICK_REPLIES } from '@brokeros/constants';
+import { calculateSmsSegments, DEFAULT_SMS_QUICK_REPLIES, DEFAULT_SMS_MERGE_TAGS } from '@brokeros/constants';
+import { SmsQuickReplyModal } from './SmsQuickReplyModal';
+import { SmsTemplatePickerModal } from './SmsTemplatePickerModal';
+import type { SmsQuickReplyItem } from '../../types/inbox';
 import { toast } from 'sonner';
 
 interface SmsMessageComposerProps {
   onSendMessage: (payload: { text: string }) => Promise<any>;
   onDraftAi: () => Promise<{ text: string }>;
+  assignedProvider?: string;
+  assignedSenderPhone?: string | null;
   sending?: boolean;
   draftingAi?: boolean;
   disabled?: boolean;
@@ -25,29 +33,104 @@ interface SmsMessageComposerProps {
 export const SmsMessageComposer: React.FC<SmsMessageComposerProps> = ({
   onSendMessage,
   onDraftAi,
+  assignedProvider = 'TWILIO',
+  assignedSenderPhone,
   sending = false,
   draftingAi = false,
   disabled = false,
 }) => {
   const [text, setText] = useState('');
-  const [quickRepliesOpen, setQuickRepliesOpen] = useState(false);
+  const [isQuickReplyModalOpen, setIsQuickReplyModalOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [showMergeTags, setShowMergeTags] = useState(false);
+
+  // Slash command autocomplete state
+  const [allQuickReplies, setAllQuickReplies] = useState<SmsQuickReplyItem[]>(
+    DEFAULT_SMS_QUICK_REPLIES.map((r, i) => ({
+      id: `default-${i + 1}`,
+      shortcut: r.shortcut,
+      title: r.title,
+      text: r.text,
+    })),
+  );
+  const [slashQuery, setSlashQuery] = useState<string | null>(null);
+  const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
+
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const { segments, isUnicode, charCount, remainingInSegment } = calculateSmsSegments(text);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Ctrl+Enter or Cmd+Enter to send
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      handleSend();
-      return;
+  // Load quick replies from localStorage or defaults
+  useEffect(() => {
+    function loadQuickReplies() {
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('brokeros_sms_quick_replies');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setAllQuickReplies(parsed);
+              return;
+            }
+          }
+        } catch {
+          // fallback
+        }
+      }
+      setAllQuickReplies(
+        DEFAULT_SMS_QUICK_REPLIES.map((r, i) => ({
+          id: `default-${i + 1}`,
+          shortcut: r.shortcut,
+          title: r.title,
+          text: r.text,
+        })),
+      );
     }
 
-    // Trigger slash commands
-    if (e.key === '/' && text.trim() === '') {
-      setQuickRepliesOpen(true);
+    loadQuickReplies();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('brokeros_sms_quick_replies_changed', loadQuickReplies);
+      return () => {
+        window.removeEventListener('brokeros_sms_quick_replies_changed', loadQuickReplies);
+      };
+    }
+  }, []);
+
+  // Check if text triggers slash autocomplete
+  useEffect(() => {
+    const match = text.match(/(^|\s)\/([a-zA-Z0-9_-]*)$/);
+    if (match) {
+      setSlashQuery(match[2].toLowerCase());
+      setSlashSelectedIndex(0);
+    } else {
+      setSlashQuery(null);
+    }
+  }, [text]);
+
+  const matchingQuickReplies =
+    slashQuery !== null
+      ? allQuickReplies.filter(
+          (r) =>
+            r.shortcut.toLowerCase().includes(`/${slashQuery}`) ||
+            r.shortcut.toLowerCase().replace('/', '').includes(slashQuery) ||
+            r.text.toLowerCase().includes(slashQuery),
+        )
+      : [];
+
+  const insertQuickReply = (content: string) => {
+    const updated = text.replace(/(^|\s)\/([a-zA-Z0-9_-]*)$/, `$1${content} `);
+    setText(updated);
+    setSlashQuery(null);
+    if (textareaRef.current) {
+      textareaRef.current.focus();
     }
   };
+
+  const insertMergeTag = (tag: string) => {
+    setText((prev) => (prev ? `${prev} ${tag}` : tag));
+    setShowMergeTags(false);
+    textareaRef.current?.focus();
+  };
+
+  const { segments, isUnicode, charCount, remainingInSegment } = calculateSmsSegments(text);
 
   const handleSend = async () => {
     const trimmed = text.trim();
@@ -56,24 +139,58 @@ export const SmsMessageComposer: React.FC<SmsMessageComposerProps> = ({
     try {
       await onSendMessage({ text: trimmed });
       setText('');
-      setQuickRepliesOpen(false);
+      setSlashQuery(null);
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
     } catch (err: any) {
       toast.error(err.message || 'Failed to send SMS reply');
     }
   };
 
-  const handleApplyQuickReply = (qrText: string) => {
-    setText(qrText);
-    setQuickRepliesOpen(false);
-    textareaRef.current?.focus();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (slashQuery !== null && matchingQuickReplies.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSlashSelectedIndex((prev) => (prev + 1) % matchingQuickReplies.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSlashSelectedIndex((prev) => (prev - 1 + matchingQuickReplies.length) % matchingQuickReplies.length);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        const selected = matchingQuickReplies[slashSelectedIndex];
+        if (selected) {
+          insertQuickReply(selected.text);
+        }
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setSlashQuery(null);
+        return;
+      }
+    }
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
-  const handleTriggerAiDraft = async () => {
+  const handleAiDraft = async () => {
+    if (draftingAi || disabled) return;
     try {
       const draft = await onDraftAi();
       if (draft?.text) {
         setText(draft.text);
-        toast.success('Groq AI generated draft reply');
+        toast.success('Groq AI generated draft response');
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
       }
     } catch (err: any) {
       toast.error(err.message || 'Failed to generate AI draft');
@@ -81,110 +198,196 @@ export const SmsMessageComposer: React.FC<SmsMessageComposerProps> = ({
   };
 
   return (
-    <div className="p-4 bg-white border-t border-slate-200 space-y-2.5 relative">
-      {/* Quick Replies Popup Menu */}
-      {quickRepliesOpen && (
-        <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-2xl border border-slate-200 shadow-xl p-2 z-20 animate-enter max-h-56 overflow-y-auto">
-          <div className="flex items-center justify-between px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1">
-            <span>Canned Quick Replies (/ shortcuts)</span>
-            <button
-              type="button"
-              onClick={() => setQuickRepliesOpen(false)}
-              className="text-slate-400 hover:text-slate-900"
-            >
-              ✕
-            </button>
-          </div>
-          <div className="space-y-1">
-            {DEFAULT_SMS_QUICK_REPLIES.map((qr) => (
-              <button
-                key={qr.shortcut}
-                type="button"
-                onClick={() => handleApplyQuickReply(qr.text)}
-                className="w-full text-left p-2 rounded-xl hover:bg-amber-50 text-xs transition-colors flex items-center justify-between group"
-              >
-                <div>
-                  <div className="font-extrabold text-slate-900 group-hover:text-amber-700">
-                    {qr.shortcut} — {qr.title}
-                  </div>
-                  <div className="text-[11px] text-slate-500 truncate max-w-md">{qr.text}</div>
-                </div>
-                <span className="text-[10px] text-amber-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                  Use &rarr;
-                </span>
-              </button>
-            ))}
-          </div>
+    <div className="p-3 bg-bg-surface border-t border-border-default space-y-2">
+      {/* Thread Continuity Identity Banner */}
+      <div className="flex items-center justify-between gap-2 px-1 text-[11px] text-text-tertiary">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Server className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+          <span className="truncate">
+            Sending from:{' '}
+            <strong className="text-text-primary font-mono font-medium">
+              {assignedSenderPhone || 'Provider Gateway'}
+            </strong>{' '}
+            via{' '}
+            <span className="font-mono text-amber-600 dark:text-amber-400 font-bold uppercase">
+              {assignedProvider.replace('_', ' ')}
+            </span>
+          </span>
         </div>
-      )}
 
-      {/* Composer Textarea */}
-      <div className="relative">
-        <textarea
-          ref={textareaRef}
-          rows={3}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled || sending}
-          placeholder="Type an SMS reply... (Type '/' for quick replies, Ctrl+Enter to send)"
-          className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition-all resize-none font-medium"
-        />
+        {/* Real-time Character & Segment Counter Pill */}
+        <div className="flex items-center gap-1.5 font-mono text-[10px] text-text-tertiary bg-bg-base px-2 py-0.5 rounded-md border border-border-subtle shrink-0">
+          <span className="font-bold text-text-primary">{charCount}</span>
+          <span>chars</span>
+          <span>•</span>
+          <span className="font-bold text-amber-600 dark:text-amber-400">
+            {segments} seg{segments > 1 ? 's' : ''}
+          </span>
+          <span className="text-[9px] opacity-75">
+            ({remainingInSegment} left{isUnicode ? ' • UCS-2' : ' • GSM-7'})
+          </span>
+        </div>
       </div>
 
-      {/* Footer Controls & Telemetry */}
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* AI Drafting Button */}
+      {/* Action Bar Above Input */}
+      <div className="flex items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Quick Replies Button */}
           <button
             type="button"
-            onClick={handleTriggerAiDraft}
-            disabled={draftingAi || disabled}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs font-extrabold transition-all shadow-2xs"
+            onClick={() => setIsQuickReplyModalOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-subtle transition-colors"
+            title="Open Canned Quick Replies (or type / in message)"
           >
-            {draftingAi ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600" />
-            ) : (
-              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-            )}
-            <span>{draftingAi ? 'Drafting...' : 'Draft with Groq AI'}</span>
-          </button>
-
-          {/* Quick Replies Toggle */}
-          <button
-            type="button"
-            onClick={() => setQuickRepliesOpen(!quickRepliesOpen)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 text-xs font-bold transition-colors"
-          >
-            <Bookmark className="w-3.5 h-3.5 text-slate-500" />
+            <Zap className="w-3.5 h-3.5 text-amber-500" />
             <span>Quick Replies</span>
           </button>
 
-          {/* Character and Segment Counter */}
-          <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500 px-2 py-1 bg-slate-100 rounded-lg">
-            <span className="font-bold text-slate-900">{charCount}</span>
-            <span>chars</span>
-            <span>•</span>
-            <span className="font-bold text-amber-700">
-              {segments} seg{segments > 1 ? 's' : ''}
-            </span>
-            <span className="text-[9px] text-slate-400 font-sans">
-              ({remainingInSegment} left in seg)
-            </span>
+          {/* Template Picker Button */}
+          <button
+            type="button"
+            onClick={() => setIsTemplateModalOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-subtle transition-colors"
+            title="Insert Curated DLT Real-Estate SMS Template"
+          >
+            <FileText className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Templates</span>
+          </button>
+
+          {/* Merge Tags Dropdown Trigger */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowMergeTags(!showMergeTags)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-subtle transition-colors"
+              title="Insert Personalization Merge Tag"
+            >
+              <Tag className="w-3.5 h-3.5 text-blue-500" />
+              <span>Tags</span>
+              <ChevronDown className="w-3 h-3 text-text-tertiary" />
+            </button>
+
+            {showMergeTags && (
+              <div className="absolute bottom-full left-0 mb-1 w-48 bg-bg-surface border border-border-default rounded-xl shadow-xl p-1 z-30 animate-in fade-in">
+                <div className="px-2 py-1 text-[10px] font-bold text-text-tertiary uppercase tracking-wider border-b border-border-subtle mb-1">
+                  Insert Merge Tag
+                </div>
+                <div className="max-h-48 overflow-y-auto space-y-0.5">
+                  {DEFAULT_SMS_MERGE_TAGS.map((t) => (
+                    <button
+                      key={t.tag}
+                      type="button"
+                      onClick={() => insertMergeTag(t.tag)}
+                      className="w-full text-left px-2 py-1 rounded-lg hover:bg-bg-subtle text-xs flex items-center justify-between group"
+                    >
+                      <span className="font-mono text-amber-600 dark:text-amber-400 font-medium text-[11px]">
+                        {t.tag}
+                      </span>
+                      <span className="text-[10px] text-text-tertiary">{t.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Send Button */}
+        {/* AI Draft Assistant Button */}
+        <button
+          type="button"
+          onClick={handleAiDraft}
+          disabled={draftingAi || disabled}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 transition-all shadow-2xs disabled:opacity-50"
+        >
+          {draftingAi ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+          )}
+          <span>{draftingAi ? 'Drafting...' : 'Draft with AI'}</span>
+        </button>
+      </div>
+
+      {/* Slash Command Autocomplete Popover */}
+      {slashQuery !== null && matchingQuickReplies.length > 0 && (
+        <div className="p-1.5 bg-bg-surface border border-border-default rounded-xl shadow-xl max-h-48 overflow-y-auto space-y-1 animate-in fade-in slide-in-from-bottom-2 duration-100">
+          <div className="px-2 py-1 text-[10px] font-semibold tracking-wider text-text-tertiary uppercase flex items-center justify-between">
+            <span>Quick Replies (/{slashQuery})</span>
+            <span>↑↓ to navigate · ↵ to insert · Esc to dismiss</span>
+          </div>
+          {matchingQuickReplies.map((item, idx) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => insertQuickReply(item.text)}
+              onMouseEnter={() => setSlashSelectedIndex(idx)}
+              className={`w-full text-left px-3 py-2 rounded-lg text-xs flex items-center justify-between transition-colors ${
+                idx === slashSelectedIndex
+                  ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium'
+                  : 'text-text-primary hover:bg-bg-subtle'
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-mono text-amber-600 dark:text-amber-400 font-bold shrink-0">
+                  {item.shortcut}
+                </span>
+                <span className="truncate text-text-secondary">{item.text}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Textarea Input + Send Button */}
+      <div className="flex items-end gap-2 bg-bg-base border border-border-default rounded-2xl p-1.5 focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500/20 transition-all">
+        <textarea
+          ref={textareaRef}
+          rows={2}
+          value={text}
+          disabled={disabled || sending}
+          onChange={(e) => {
+            setText(e.target.value);
+            e.target.style.height = 'auto';
+            e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder={
+            disabled
+              ? 'Select an SMS thread to reply...'
+              : 'Write SMS reply... (Type / for quick replies, Enter to send)'
+          }
+          className="flex-1 bg-transparent resize-none border-none outline-hidden px-3 py-2 text-sm text-text-primary placeholder:text-text-muted max-h-40 leading-relaxed font-medium"
+        />
+
         <button
           type="button"
           onClick={handleSend}
           disabled={!text.trim() || sending || disabled}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 rounded-xl text-xs font-extrabold shadow-sm transition-all"
+          className="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold disabled:opacity-40 transition-colors shrink-0 shadow-sm"
+          title="Send SMS Reply (Enter)"
         >
-          {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-          <span>{sending ? 'Sending...' : 'Send SMS'}</span>
+          {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </button>
       </div>
+
+      {/* Modals */}
+      <SmsQuickReplyModal
+        isOpen={isQuickReplyModalOpen}
+        onClose={() => setIsQuickReplyModalOpen(false)}
+        onSelect={(content) => {
+          setText((prev) => (prev ? `${prev} ${content}` : content));
+          if (textareaRef.current) textareaRef.current.focus();
+        }}
+      />
+
+      <SmsTemplatePickerModal
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        onSelectTemplate={(content) => {
+          setText((prev) => (prev ? `${prev}\n\n${content}` : content));
+          if (textareaRef.current) textareaRef.current.focus();
+        }}
+      />
     </div>
   );
 };
