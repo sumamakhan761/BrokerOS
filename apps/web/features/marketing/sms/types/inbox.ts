@@ -30,8 +30,13 @@ export interface SmsConversation {
     email?: string | null;
     phone?: string | null;
     status?: string | null;
-    temperature?: string | null;
+    temperature?: 'HOT' | 'WARM' | 'COLD' | string | null;
     budget?: number | null;
+    score?: number | null;
+    interestedProject?: {
+      id: string;
+      name: string;
+    } | null;
   } | null;
 
   campaignId?: string | null;
@@ -69,5 +74,13 @@ export interface SmsQuickReplyItem {
   shortcut: string;
   title: string;
   text: string;
-  category?: string;
+  category?: string | null;
+}
+
+export interface SmsTemplateItem {
+  id: string;
+  name: string;
+  category: string;
+  dltTemplateId?: string;
+  content: string;
 }

@@ -5,7 +5,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Search, Phone, Loader2, User, Building, Send } from 'lucide-react';
+import { X, Search, Phone, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import type { SmsConversation } from '../../types/inbox';
 
@@ -141,131 +141,114 @@ export const StartNewSmsModal: React.FC<StartNewSmsModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-enter">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+      <div className="bg-bg-surface border border-border-default rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-950 to-slate-900 p-5 text-white flex items-center justify-between">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border-default">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
               <Phone className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-extrabold">Start New SMS Conversation</h3>
-              <p className="text-[11px] text-amber-200/80">
-                Direct mobile outreach to CRM leads or any mobile number.
-              </p>
+              <h3 className="font-semibold text-text-primary text-sm">Start New SMS Conversation</h3>
+              <p className="text-xs text-text-tertiary">Select a CRM lead or text any prospect mobile number</p>
             </div>
           </div>
           <button
-            type="button"
             onClick={onClose}
-            className="p-1 rounded-full text-white/70 hover:text-white"
+            className="p-1.5 text-text-tertiary hover:text-text-primary rounded-lg hover:bg-bg-subtle transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
-          {/* Option A: Search Existing CRM Lead */}
-          <div className="space-y-2">
-            <span className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
-              Option A: Select from CRM Leads
-            </span>
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+        {/* Content */}
+        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+          {/* Option A: Direct Mobile Input */}
+          <form onSubmit={handleStartWithManualPhone} className="p-4 rounded-xl bg-bg-base border border-border-default space-y-3">
+            <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">Direct Mobile Contact</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="tel"
+                required
+                placeholder="Mobile number (e.g. +1... or +91...)"
+                value={manualPhone}
+                onChange={(e) => setManualPhone(e.target.value)}
+                className="w-full px-3 py-2 bg-bg-surface border border-border-default rounded-xl text-xs font-mono text-text-primary focus:outline-hidden focus:border-amber-500"
+              />
               <input
                 type="text"
-                placeholder="Search CRM leads by name or phone..."
+                placeholder="Prospect name (optional)"
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                className="w-full px-3 py-2 bg-bg-surface border border-border-default rounded-xl text-xs text-text-primary focus:outline-hidden focus:border-amber-500"
+              />
+            </div>
+            <textarea
+              rows={2}
+              placeholder="Initial SMS text (optional — will dispatch immediately)..."
+              value={initialMessage}
+              onChange={(e) => setInitialMessage(e.target.value)}
+              className="w-full px-3 py-2 bg-bg-surface border border-border-default rounded-xl text-xs text-text-primary focus:outline-hidden focus:border-amber-500 resize-none"
+            />
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={starting || !manualPhone.trim()}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs shadow-xs disabled:opacity-50 transition-colors flex items-center gap-1.5"
+              >
+                {starting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                <span>Open SMS Thread</span>
+              </button>
+            </div>
+          </form>
+
+          {/* Option B: Choose from CRM Leads */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">Or Select CRM Lead</h4>
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-text-tertiary absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="Search leads by name or phone..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold"
+                className="w-full pl-8.5 pr-3 py-1.5 bg-bg-base border border-border-default rounded-xl text-xs text-text-primary focus:outline-hidden focus:border-amber-500"
               />
             </div>
 
-            <div className="max-h-36 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-xl bg-slate-50/50">
+            <div className="divide-y divide-border-subtle max-h-56 overflow-y-auto border border-border-default rounded-xl bg-bg-surface">
               {loading ? (
-                <div className="p-4 text-center text-slate-400">Loading leads...</div>
+                <div className="p-6 text-center text-xs text-text-tertiary">Loading CRM leads...</div>
               ) : filteredLeads.length === 0 ? (
-                <div className="p-4 text-center text-slate-400">No leads matching search.</div>
+                <div className="p-6 text-center text-xs text-text-tertiary">No matching leads found</div>
               ) : (
-                filteredLeads.map((lead) => (
-                  <button
-                    key={lead.id}
-                    type="button"
-                    onClick={() => handleStartWithLead(lead)}
-                    disabled={starting}
-                    className="w-full p-2 text-left hover:bg-amber-50 flex items-center justify-between transition-colors"
-                  >
-                    <div>
-                      <div className="font-extrabold text-slate-900">
-                        {lead.firstName} {lead.lastName || ''}
+                filteredLeads.map((lead) => {
+                  const name = `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'Unnamed Prospect';
+                  return (
+                    <div
+                      key={lead.id}
+                      onClick={() => handleStartWithLead(lead)}
+                      className="p-3 flex items-center justify-between hover:bg-bg-subtle cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xs shrink-0">
+                          {name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-text-primary truncate">{name}</p>
+                          <p className="text-[11px] font-mono text-text-secondary truncate">{lead.phone || 'No phone'}</p>
+                        </div>
                       </div>
-                      <div className="text-[10px] text-slate-500 font-mono">{lead.phone || 'No phone'}</div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-bg-subtle border border-border-default text-text-tertiary font-medium">
+                        {lead.status || 'NEW'}
+                      </span>
                     </div>
-                    <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">
-                      Start Thread &rarr;
-                    </span>
-                  </button>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
-
-          <div className="relative flex items-center justify-center my-2">
-            <span className="bg-white px-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider relative z-10">
-              Or Manual Input
-            </span>
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
-            </div>
-          </div>
-
-          {/* Option B: Enter Manual Phone */}
-          <form onSubmit={handleStartWithManualPhone} className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Mobile Phone *:</label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="+14155550199 or +91..."
-                  value={manualPhone}
-                  onChange={(e) => setManualPhone(e.target.value)}
-                  className="w-full p-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-mono font-bold"
-                />
-              </div>
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Contact Name:</label>
-                <input
-                  type="text"
-                  placeholder="e.g. John Doe"
-                  value={manualName}
-                  onChange={(e) => setManualName(e.target.value)}
-                  className="w-full p-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Initial SMS Message (Optional):</label>
-              <textarea
-                rows={2}
-                placeholder="Type first outbound SMS..."
-                value={initialMessage}
-                onChange={(e) => setInitialMessage(e.target.value)}
-                className="w-full p-2 rounded-xl border border-slate-200 bg-slate-50 text-xs"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={starting || !manualPhone}
-              className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition-colors"
-            >
-              {starting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              <span>{starting ? 'Initiating Thread...' : 'Start SMS Conversation'}</span>
-            </button>
-          </form>
         </div>
       </div>
     </div>
