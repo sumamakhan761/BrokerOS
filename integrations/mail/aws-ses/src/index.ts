@@ -235,6 +235,113 @@ export class SesClient {
     }
   }
 
+  async verifySenderIdentity(
+    emailOrDomain: string,
+  ): Promise<{ isVerified: boolean; fromEmail?: string; domain?: string; reason?: string }> {
+    const clean = (emailOrDomain || '').trim().toLowerCase();
+    if (!this.accessKeyId || !this.secretKey) {
+      return { isVerified: false, reason: 'Missing AWS SES Credentials (Access Key or Secret Key)' };
+    }
+
+    if (!clean) {
+      return { isVerified: false, reason: 'Email or domain is required' };
+    }
+
+    const isEmail = clean.includes('@');
+    const domain = isEmail ? clean.split('@')[1] : clean;
+
+    try {
+      // 1. Check exact identity (email or domain) via SES v2 GET /v2/email/identities/{EmailIdentity}
+      const signed = signAwsRequest(
+        'GET',
+        `/v2/email/identities/${encodeURIComponent(clean)}`,
+        '',
+        'ses',
+        this.region,
+        this.accessKeyId,
+        this.secretKey,
+      );
+
+      const res = await fetch(signed.url, {
+        method: 'GET',
+        headers: signed.headers,
+      });
+
+      if (res.status === 200) {
+        const data: any = await res.json().catch(() => ({}));
+        const isVerified =
+          data.VerifiedForSendingStatus === true ||
+          data.VerificationStatus === 'SUCCESS' ||
+          data.DkimAttributes?.Status === 'SUCCESS';
+        if (isVerified) {
+          return {
+            isVerified: true,
+            fromEmail: clean,
+            domain,
+          };
+        }
+      }
+
+      // 2. If it's an email address, check if the parent domain is verified
+      if (isEmail && domain) {
+        const domainSigned = signAwsRequest(
+          'GET',
+          `/v2/email/identities/${encodeURIComponent(domain)}`,
+          '',
+          'ses',
+          this.region,
+          this.accessKeyId,
+          this.secretKey,
+        );
+
+        const domainRes = await fetch(domainSigned.url, {
+          method: 'GET',
+          headers: domainSigned.headers,
+        });
+
+        if (domainRes.status === 200) {
+          const domainData: any = await domainRes.json().catch(() => ({}));
+          const isDomainVerified =
+            domainData.VerifiedForSendingStatus === true ||
+            domainData.VerificationStatus === 'SUCCESS' ||
+            domainData.DkimAttributes?.Status === 'SUCCESS';
+          if (isDomainVerified) {
+            return {
+              isVerified: true,
+              fromEmail: clean,
+              domain,
+            };
+          }
+        }
+      }
+
+      // 3. Fallback: check against listVerifiedSenders
+      const verifiedList = await this.listVerifiedSenders();
+      const matched = verifiedList.find(
+        (v) =>
+          v.fromEmail?.toLowerCase().trim() === clean ||
+          v.domain?.toLowerCase().trim() === domain,
+      );
+      if (matched && matched.isVerified) {
+        return {
+          isVerified: true,
+          fromEmail: clean,
+          domain,
+        };
+      }
+
+      return {
+        isVerified: false,
+        reason: `Identity "${clean}" is not verified in AWS SES region ${this.region}. Please verify the email identity or domain in AWS SES console.`,
+      };
+    } catch (err: any) {
+      return {
+        isVerified: false,
+        reason: err?.message || 'Failed to verify sender identity with AWS SES API',
+      };
+    }
+  }
+
   async send(options: SendEmailOptions): Promise<SendEmailResult> {
     try {
       if (!this.accessKeyId || !this.secretKey) {
@@ -467,6 +574,14 @@ export class SesAdapter implements IEmailMarketingProvider {
   async listVerifiedSenders(credentials?: ProviderCredentials): Promise<DiscoveredSenderIdentity[]> {
     const client = new SesClient(credentials);
     return client.listVerifiedSenders();
+  }
+
+  async verifySenderIdentity(
+    emailOrDomain: string,
+    credentials?: ProviderCredentials,
+  ): Promise<{ isVerified: boolean; fromEmail?: string; domain?: string; reason?: string }> {
+    const client = new SesClient(credentials);
+    return client.verifySenderIdentity(emailOrDomain);
   }
 
   async sendBatch(options: SendEmailOptions, credentials?: ProviderCredentials): Promise<SendEmailResult> {
