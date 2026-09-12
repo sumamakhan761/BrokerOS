@@ -28,7 +28,15 @@ export const WhatsAppWebhookDiagnostics: React.FC<WhatsAppWebhookDiagnosticsProp
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [copiedToken, setCopiedToken] = useState(false);
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.com';
+  const publicApiUrl = (
+    process.env.API_PUBLIC_URL ||
+    process.env.BACKEND_URL ||
+    ''
+  ).replace(/\/$/, '');
+
+  const baseUrl =
+    publicApiUrl ||
+    (typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.com');
   const webhookUrl = `${baseUrl}/api/marketing/whatsapp/webhook`;
 
   const handleCopy = (text: string, setCopied: (v: boolean) => void) => {
