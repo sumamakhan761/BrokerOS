@@ -1,5 +1,5 @@
 // ============================================================================
-// BrokerOS — SMS Flow Canvas Builder View (Full WhatsApp & Email Visual Parity)
+// BrokerOS — SMS Flow Canvas Builder View (Full WhatsApp & Email Parity)
 // ============================================================================
 
 'use client';
@@ -17,8 +17,6 @@ import {
   Radio,
   Globe,
   History,
-  CheckCircle2,
-  X,
   Smartphone,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -32,7 +30,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import type { SmsFlowNodeType, SmsFlowNode } from './builder/types';
+import type { SmsFlowData, SmsFlowNodeType, SmsFlowNode } from './builder/types';
 import { SMS_NODE_TYPES_META } from './builder/types';
 import { FlowNodeCard } from './builder/FlowNodeCard';
 
@@ -42,7 +40,7 @@ interface SmsFlowBuilderViewProps {
 
 export function SmsFlowBuilderView({ id }: SmsFlowBuilderViewProps) {
   const router = useRouter();
-  const [flow, setFlow] = useState<any>(null);
+  const [flow, setFlow] = useState<SmsFlowData | null>(null);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -51,7 +49,7 @@ export function SmsFlowBuilderView({ id }: SmsFlowBuilderViewProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'draft' | 'active'>('draft');
-  const [triggerType, setTriggerType] = useState<'keyword_match' | 'any_reply' | 'campaign_reply'>('keyword_match');
+  const [triggerType, setTriggerType] = useState<'keyword_match' | 'any_reply'>('keyword_match');
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState('');
   const [isGlobal, setIsGlobal] = useState(true);
@@ -77,29 +75,40 @@ export function SmsFlowBuilderView({ id }: SmsFlowBuilderViewProps) {
           credentials: 'include',
         });
         if (!res.ok) throw new Error('SMS Flow not found');
-        const data = await res.json();
+        const data: SmsFlowData = await res.json();
         setFlow(data);
         setName(data.name || '');
         setDescription(data.description || '');
         setStatus((data.status as any) || 'draft');
-        setTriggerType(data.triggerType === 'any_reply' ? 'any_reply' : data.triggerType === 'campaign_reply' ? 'campaign_reply' : 'keyword_match');
+        setTriggerType(data.triggerType === 'any_reply' ? 'any_reply' : 'keyword_match');
         setKeywords(data.triggerConfig?.keywords || ['visit', 'price']);
         setIsGlobal(data.isGlobal ?? true);
         setSelectedCampaignIds(data.campaignIds || []);
 
+        // Normalize and prune legacy nodeType aliases to current standard types (purge update_lead)
         const rawNodes: any[] = data.nodes || [];
-        const normalizedNodes: SmsFlowNode[] = rawNodes.map((n, idx) => {
-          const nodeType = (n.nodeType as SmsFlowNodeType) || 'send_sms';
-          return {
-            id: n.id,
-            nodeKey: n.nodeKey || `node_${Date.now().toString(36)}_${idx}`,
-            nodeType,
-            config: n.config || {},
-            branches: n.branches || n.config?.branches || (nodeType === 'condition' ? { yes: [], no: [] } : undefined),
-            positionX: n.positionX ?? 100,
-            positionY: n.positionY ?? (idx + 1) * 120,
-          };
-        });
+        const normalizedNodes: SmsFlowNode[] = rawNodes
+          .filter(
+            (n) =>
+              n.nodeType !== 'update_lead' &&
+              n.nodeType !== 'human_handoff' &&
+              n.nodeType !== 'pre_sales_handoff',
+          )
+          .map((n, idx) => {
+            let nodeType = n.nodeType as SmsFlowNodeType;
+            if (n.nodeType === 'ai_reply') nodeType = 'ai_agent';
+            else if (!SMS_NODE_TYPES_META[nodeType]) nodeType = 'send_sms';
+
+            return {
+              id: n.id,
+              nodeKey: n.nodeKey || `node_${Date.now().toString(36)}_${idx}`,
+              nodeType,
+              config: n.config || {},
+              branches: n.branches || n.config?.branches || (nodeType === 'condition' ? { yes: [], no: [] } : undefined),
+              positionX: n.positionX ?? 100,
+              positionY: n.positionY ?? (idx + 1) * 120,
+            };
+          });
         setNodes(normalizedNodes);
 
         // Load active campaigns for scoping
@@ -130,11 +139,11 @@ export function SmsFlowBuilderView({ id }: SmsFlowBuilderViewProps) {
 
   const handleAddKeyword = (e: React.KeyboardEvent | React.MouseEvent) => {
     if ('key' in e && e.key !== 'Enter') return;
+    e.preventDefault();
     const clean = newKeyword.trim().toLowerCase();
-    if (clean && !keywords.includes(clean)) {
-      setKeywords([...keywords, clean]);
-      setNewKeyword('');
-    }
+    if (!clean || keywords.includes(clean)) return;
+    setKeywords([...keywords, clean]);
+    setNewKeyword('');
   };
 
   const handleRemoveKeyword = (kw: string) => {
@@ -142,106 +151,176 @@ export function SmsFlowBuilderView({ id }: SmsFlowBuilderViewProps) {
   };
 
   const handleAddNode = (type: SmsFlowNodeType) => {
-    const newNodeKey = `step_${Date.now().toString(36)}_${nodes.length + 1}`;
+    const key = `${type}_${Date.now().toString(36).slice(-4)}`;
+    let defaultConfig: Record<string, any> = {};
+
+    switch (type) {
+      case 'start':
+        defaultConfig = {};
+        break;
+      case 'send_sms':
+        defaultConfig = {
+          text: 'Hi {{firstName}}, thank you for inquiring about {{projectName}}! Would you like a brochure or price sheet sent over?',
+        };
+        break;
+      case 'ai_agent':
+        defaultConfig = {
+          provider: 'groq',
+          model: 'openai/gpt-oss-120b',
+          instructions: 'Respond courteously in 160 characters or less, answering property pricing or scheduling queries, and recommend booking an on-site flat tour.',
+          maxTurns: 3,
+          stopIfHumanActive: true,
+          handoffOnMax: true,
+        };
+        break;
+      case 'condition':
+        defaultConfig = {
+          criteriaType: 'keywords',
+          keywords: 'visit, price, flat, tour, brochure',
+          branches: { yes: [], no: [] },
+        };
+        break;
+      case 'add_tag':
+        defaultConfig = {
+          tagName: existingTags[0]?.name || 'SITE_VISIT_REQ',
+          color: existingTags[0]?.color || '#8B5CF6',
+        };
+        break;
+      case 'end':
+        defaultConfig = {};
+        break;
+    }
+
     const newNode: SmsFlowNode = {
-      nodeKey: newNodeKey,
+      nodeKey: key,
       nodeType: type,
-      config:
-        type === 'send_sms'
-          ? { text: 'Thank you for your reply! Would you like a brochure sent over?' }
-          : type === 'condition'
-          ? { keywords: ['visit', 'price'], matchType: 'contains' }
-          : {},
+      config: defaultConfig,
       branches: type === 'condition' ? { yes: [], no: [] } : undefined,
+      positionX: 100,
+      positionY: (nodes.length + 1) * 120,
     };
+
     setNodes([...nodes, newNode]);
+    toast.success(`Added ${SMS_NODE_TYPES_META[type]?.label || type} step`);
   };
 
-  const handleUpdateNodeConfig = (nodeKey: string, cfgPatch: Record<string, any>) => {
+  const handleUpdateNodeConfig = (nodeKey: string, configPatch: Record<string, any>) => {
     setNodes((prev) =>
       prev.map((n) => {
-        if (n.nodeKey === nodeKey) {
-          return {
-            ...n,
-            config: { ...n.config, ...cfgPatch },
-            ...(cfgPatch.branches ? { branches: cfgPatch.branches } : {}),
-          };
-        }
-        return n;
+        if (n.nodeKey !== nodeKey) return n;
+        const updatedConfig = { ...n.config, ...configPatch };
+        const updatedBranches = configPatch.branches !== undefined ? configPatch.branches : n.branches;
+        return {
+          ...n,
+          config: updatedConfig,
+          branches: updatedBranches,
+        };
       }),
     );
   };
 
   const handleRemoveNode = (nodeKey: string) => {
     setNodes((prev) => prev.filter((n) => n.nodeKey !== nodeKey));
+    toast.success('Action step removed');
   };
 
   const handleMoveNode = (index: number, direction: 'up' | 'down') => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= nodes.length) return;
-    const newNodes = [...nodes];
-    const temp = newNodes[index];
-    newNodes[index] = newNodes[targetIndex];
-    newNodes[targetIndex] = temp;
-    setNodes(newNodes);
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === nodes.length - 1) return;
+    const target = direction === 'up' ? index - 1 : index + 1;
+    const updated = [...nodes];
+    const temp = updated[index];
+    updated[index] = updated[target];
+    updated[target] = temp;
+    setNodes(updated);
   };
 
-  const handleSaveFlow = async () => {
+  const handleSave = async () => {
     if (!name.trim()) {
-      toast.error('Please provide a name for this automation flow');
+      toast.error('Flow name is required');
+      return;
+    }
+    if (triggerType === 'keyword_match' && keywords.length === 0) {
+      toast.error('Please add at least one trigger keyword');
       return;
     }
 
     try {
       setSaving(true);
-      const payload = {
-        name,
-        description,
-        status,
-        triggerType,
-        triggerConfig: {
-          keywords,
-          matchType: 'contains',
-        },
-        isGlobal,
-        campaignIds: selectedCampaignIds,
-        nodes: nodes.map((n, idx) => ({
-          nodeKey: n.nodeKey,
-          nodeType: n.nodeType,
-          config: {
-            ...n.config,
-            ...(n.branches ? { branches: n.branches } : {}),
-          },
-          positionX: n.positionX ?? 100,
-          positionY: n.positionY ?? (idx + 1) * 120,
-        })),
-      };
-
       const res = await fetch(`${baseUrl}/api/marketing/sms/flows/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          name,
+          description,
+          status,
+          triggerType,
+          triggerConfig: {
+            keywords,
+            matchMode: 'contains',
+          },
+          isGlobal,
+          campaignIds: isGlobal ? [] : selectedCampaignIds,
+          nodes: nodes.map((n, idx) => ({
+            nodeKey: n.nodeKey,
+            nodeType: n.nodeType,
+            config: {
+              ...n.config,
+              branches: n.branches || n.config?.branches || undefined,
+            },
+            positionX: 100,
+            positionY: (idx + 1) * 120,
+          })),
+        }),
       });
 
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         throw new Error(err.message || 'Failed to save SMS flow');
       }
 
-      toast.success('SMS Flow successfully saved and updated!');
+      toast.success('SMS Flow saved successfully!');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save SMS flow');
+      toast.error(err.message || 'Error saving flow');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleRunSimulation = async () => {
-    if (!testInput.trim()) return;
+  const handleRunTest = async () => {
     try {
       setTesting(true);
       setTestResult(null);
+
+      // Save flow state first so simulation executes latest canvas nodes
+      await fetch(`${baseUrl}/api/marketing/sms/flows/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name,
+          description,
+          status,
+          triggerType,
+          triggerConfig: {
+            keywords,
+            matchMode: 'contains',
+          },
+          isGlobal,
+          campaignIds: isGlobal ? [] : selectedCampaignIds,
+          nodes: nodes.map((n, idx) => ({
+            nodeKey: n.nodeKey,
+            nodeType: n.nodeType,
+            config: {
+              ...n.config,
+              branches: n.branches || n.config?.branches || undefined,
+            },
+            positionX: 100,
+            positionY: (idx + 1) * 120,
+          })),
+        }),
+      });
 
       const res = await fetch(`${baseUrl}/api/marketing/sms/flows/${id}/simulate`, {
         method: 'POST',
@@ -249,20 +328,20 @@ export function SmsFlowBuilderView({ id }: SmsFlowBuilderViewProps) {
         credentials: 'include',
         body: JSON.stringify({
           leadPhone: testLeadPhone,
-          senderPhone: '+14155550199',
           bodyText: testInput,
         }),
       });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || 'Simulation test failed');
+      const data = await res.json();
+      setTestResult(data);
+      if (data.matchedFlowId && data.triggerMatched !== false) {
+        toast.success(`Matched flow "${data.flowName || name}"!`);
+      } else if (data.triggerMatched === false) {
+        toast.info(data.triggerReason || 'Trigger keywords did not match.');
+      } else {
+        toast.info('No flow matched this input text.');
       }
-
-      const result = await res.json();
-      setTestResult(result);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to execute test simulation');
+      toast.error(err.message || 'Test simulation error');
     } finally {
       setTesting(false);
     }
@@ -270,318 +349,430 @@ export function SmsFlowBuilderView({ id }: SmsFlowBuilderViewProps) {
 
   if (loading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
+      <div className="flex flex-col items-center justify-center p-16">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-600 mb-2" />
+        <p className="text-xs text-text-tertiary">Loading SMS flow canvas...</p>
       </div>
     );
   }
 
+  const allNodeKeys = nodes.map((n) => n.nodeKey);
+
   return (
-    <div className="space-y-6 pb-20">
-      {/* ── Top Navigation Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
+    <div className="space-y-6 max-w-4xl mx-auto pb-16">
+      {/* ── Top Header (WhatsApp & Email Parity) ── */}
+      <header className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-border-default bg-bg-surface px-5 py-3.5 rounded-2xl shadow-xs">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <button
+            type="button"
             onClick={() => router.push('/dashboard/marketing/sms/flows')}
-            className="h-8 w-8 p-0 rounded-xl"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-default bg-bg-surface text-text-muted hover:bg-bg-subtle hover:text-text-primary transition-colors shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <div className="flex items-center gap-2">
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Flow Name (e.g. VIP Site Visit Autoresponder)"
-                className="font-extrabold text-sm h-8 px-2.5 w-72 bg-slate-50 border-slate-200"
-              />
-              <span
-                className={cn(
-                  'px-2 py-0.5 text-[10px] font-black rounded-full uppercase tracking-wider',
-                  status === 'active'
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : 'bg-slate-100 text-slate-700',
-                )}
-              >
-                {status}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-              Flow ID: <span className="font-mono text-slate-400">{id}</span>
+          </button>
+          <div className="flex-1 min-w-0">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Flow bot name..."
+              className="text-base font-bold text-text-primary bg-transparent focus:bg-bg-subtle rounded px-1.5 py-0.5 focus:outline-none w-full max-w-md"
+            />
+            <p className="text-[11px] text-text-tertiary px-1.5">
+              {nodes.length} automation step{nodes.length !== 1 ? 's' : ''} in sequence
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          {/* Active Switch */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50">
-            <span className="text-xs font-bold text-slate-700">Active Status</span>
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Run History Button */}
+          <button
+            type="button"
+            onClick={() => router.push(`/dashboard/marketing/sms/flows/${id}/runs`)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-brand-600 transition-colors px-2.5 py-1.5 rounded-lg border border-border-default bg-bg-surface"
+          >
+            <History className="h-3.5 w-3.5" />
+            <span>Run History</span>
+          </button>
+
+          {/* Active / Draft Switch */}
+          <div className="flex items-center gap-2 rounded-lg border border-border-default bg-bg-subtle px-3 py-1 text-xs font-semibold">
+            <span>{status === 'active' ? 'Active' : 'Draft'}</span>
             <Switch
               checked={status === 'active'}
-              onCheckedChange={(checked) => setStatus(checked ? 'active' : 'draft')}
+              onCheckedChange={(v) => setStatus(v ? 'active' : 'draft')}
             />
           </div>
 
+          {/* Test Flow Button */}
           <Button
+            onClick={() => setTestModalOpen(true)}
             variant="outline"
             size="sm"
-            onClick={() => setTestModalOpen(true)}
-            className="gap-1.5 text-xs font-bold text-purple-700 border-purple-200 hover:bg-purple-50"
+            className="gap-1.5 text-xs font-semibold h-8"
           >
-            <Play className="w-3.5 h-3.5" />
-            <span>Test Simulator</span>
+            <Play className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Test Flow</span>
           </Button>
 
+          {/* Save Button */}
           <Button
-            variant="default"
-            size="sm"
-            onClick={handleSaveFlow}
+            onClick={handleSave}
             disabled={saving}
-            className="gap-1.5 text-xs font-extrabold bg-amber-500 hover:bg-amber-600 text-slate-950 px-4"
+            size="sm"
+            className="bg-brand-600 text-white hover:bg-brand-700 text-xs h-8 font-semibold px-4"
           >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Save className="h-3.5 w-3.5 mr-1.5" />}
             <span>Save Flow</span>
           </Button>
         </div>
-      </div>
+      </header>
 
-      {/* ── Trigger Settings Card ── */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-          <div className="p-1.5 bg-amber-50 rounded-lg text-amber-600">
-            <Radio className="w-4 h-4" />
+      {/* ── Trigger & Scope Settings Card ── */}
+      <div className="rounded-2xl border border-brand-500/30 bg-bg-surface p-5 shadow-xs space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500/10 text-brand-600 shrink-0">
+            <Sparkles className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-              1. Inbound SMS Trigger Rule
+            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600">
+              Trigger & Scope Settings
+            </span>
+            <h3 className="text-xs font-bold text-text-primary">
+              Inbound Prospect SMS Reply Listener
             </h3>
-            <p className="text-[11px] text-slate-500 font-medium">
-              Define what activates this automation when a mobile lead replies.
+          </div>
+        </div>
+
+        {/* Global vs Campaign Scoping */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+          <div
+            onClick={() => setIsGlobal(true)}
+            className={cn(
+              'p-3.5 rounded-xl border cursor-pointer transition-all',
+              isGlobal
+                ? 'border-brand-600 bg-brand-500/5 ring-1 ring-brand-600/30'
+                : 'border-border-default bg-bg-surface hover:border-border-hover',
+            )}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-blue-500" />
+                <span>Global Scope (All Broadcasts)</span>
+              </span>
+              <input type="radio" checked={isGlobal} onChange={() => {}} className="text-brand-600" />
+            </div>
+            <p className="text-[11px] text-text-secondary">
+              Listens for carrier SMS replies across all present and future campaigns.
+            </p>
+          </div>
+
+          <div
+            onClick={() => setIsGlobal(false)}
+            className={cn(
+              'p-3.5 rounded-xl border cursor-pointer transition-all',
+              !isGlobal
+                ? 'border-purple-600 bg-purple-500/5 ring-1 ring-purple-600/30'
+                : 'border-border-default bg-bg-surface hover:border-border-hover',
+            )}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                <Radio className="w-3.5 h-3.5 text-purple-500" />
+                <span>Specific Campaigns Only</span>
+              </span>
+              <input type="radio" checked={!isGlobal} onChange={() => {}} className="text-purple-600" />
+            </div>
+            <p className="text-[11px] text-text-secondary">
+              Restrict this automation only to designated SMS marketing broadcasts.
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <button
-            type="button"
-            onClick={() => setTriggerType('keyword_match')}
-            className={cn(
-              'p-3.5 rounded-2xl border text-left transition-all',
-              triggerType === 'keyword_match'
-                ? 'bg-amber-50/70 border-amber-300 shadow-2xs'
-                : 'bg-slate-50/50 border-slate-200 hover:border-slate-300',
+        {/* Campaign Selection Checkboxes (if not global) */}
+        {!isGlobal && (
+          <div className="p-3.5 rounded-xl bg-bg-subtle border border-border-default space-y-2.5">
+            <label className="block text-xs font-semibold text-text-secondary">
+              Designated Campaigns ({selectedCampaignIds.length} selected):
+            </label>
+            {campaigns.length === 0 ? (
+              <p className="text-xs text-text-tertiary">No SMS campaigns found in database.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                {campaigns.map((c) => {
+                  const checked = selectedCampaignIds.includes(c.id);
+                  return (
+                    <label
+                      key={c.id}
+                      className="flex items-center gap-2 p-2 rounded-lg bg-bg-surface border border-border-subtle hover:border-border-default cursor-pointer text-xs"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedCampaignIds([...selectedCampaignIds, c.id]);
+                          } else {
+                            setSelectedCampaignIds(selectedCampaignIds.filter((id) => id !== c.id));
+                          }
+                        }}
+                        className="rounded text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="font-medium text-text-primary truncate">{c.title}</span>
+                    </label>
+                  );
+                })}
+              </div>
             )}
-          >
-            <div className="font-extrabold text-xs text-slate-900">Keyword Match</div>
-            <div className="text-[11px] text-slate-500 mt-0.5 font-medium">
-              Fires when the inbound SMS message contains specific keywords like &quot;VISIT&quot;, &quot;PRICE&quot;, etc.
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTriggerType('any_reply')}
-            className={cn(
-              'p-3.5 rounded-2xl border text-left transition-all',
-              triggerType === 'any_reply'
-                ? 'bg-amber-50/70 border-amber-300 shadow-2xs'
-                : 'bg-slate-50/50 border-slate-200 hover:border-slate-300',
-            )}
-          >
-            <div className="font-extrabold text-xs text-slate-900">Any Inbound Reply</div>
-            <div className="text-[11px] text-slate-500 mt-0.5 font-medium">
-              Fires unconditionally for any reply from an audience contact.
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTriggerType('campaign_reply')}
-            className={cn(
-              'p-3.5 rounded-2xl border text-left transition-all',
-              triggerType === 'campaign_reply'
-                ? 'bg-amber-50/70 border-amber-300 shadow-2xs'
-                : 'bg-slate-50/50 border-slate-200 hover:border-slate-300',
-            )}
-          >
-            <div className="font-extrabold text-xs text-slate-900">Specific Broadcast Only</div>
-            <div className="text-[11px] text-slate-500 mt-0.5 font-medium">
-              Scoped strictly to recipients belonging to selected SMS broadcasts.
-            </div>
-          </button>
-        </div>
-
-        {/* Keywords Input (when keyword_match) */}
-        {triggerType === 'keyword_match' && (
-          <div className="space-y-2 pt-1">
-            <label className="text-xs font-bold text-slate-700">Trigger Keywords:</label>
-            <div className="flex flex-wrap items-center gap-2 p-2 bg-slate-50 rounded-xl border border-slate-200">
-              {keywords.map((kw) => (
-                <span
-                  key={kw}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-800 shadow-2xs"
-                >
-                  <span>{kw}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveKeyword(kw)}
-                    className="text-slate-400 hover:text-rose-500"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-              <input
-                type="text"
-                placeholder="Type keyword and press Enter..."
-                value={newKeyword}
-                onChange={(e) => setNewKeyword(e.target.value)}
-                onKeyDown={handleAddKeyword}
-                className="flex-1 min-w-[180px] bg-transparent text-xs font-bold focus:outline-none p-1 placeholder:text-slate-400"
-              />
-            </div>
           </div>
         )}
-      </div>
 
-      {/* ── Flow Steps Canvas ── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
-              2. Automation Execution Sequence
-            </h2>
-            <span className="text-xs font-bold text-slate-400">
-              ({nodes.length} Step{nodes.length === 1 ? '' : 's'})
-            </span>
+        {/* Trigger Type Selection */}
+        <div className="space-y-2.5 pt-1 border-t border-border-subtle">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => setTriggerType('keyword_match')}
+              className={cn(
+                'p-2.5 rounded-xl border text-left text-xs transition-all',
+                triggerType === 'keyword_match'
+                  ? 'border-brand-600 bg-brand-500/5 font-semibold text-brand-700 dark:text-brand-400'
+                  : 'border-border-default text-text-secondary hover:border-border-hover',
+              )}
+            >
+              Keyword Match (Contains specific words)
+            </button>
+            <button
+              type="button"
+              onClick={() => setTriggerType('any_reply')}
+              className={cn(
+                'p-2.5 rounded-xl border text-left text-xs transition-all',
+                triggerType === 'any_reply'
+                  ? 'border-brand-600 bg-brand-500/5 font-semibold text-brand-700 dark:text-brand-400'
+                  : 'border-border-default text-text-secondary hover:border-border-hover',
+              )}
+            >
+              Any Inbound Reply (Catch-all)
+            </button>
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="default" size="sm" className="gap-1.5 text-xs font-extrabold bg-amber-500 hover:bg-amber-600 text-slate-950">
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Action Step</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 p-1">
-              {(
-                ['send_sms', 'ai_agent', 'condition', 'add_tag', 'update_lead', 'end'] as SmsFlowNodeType[]
-              ).map((type) => {
-                const meta = SMS_NODE_TYPES_META[type];
-                const Icon = meta.icon;
-                return (
-                  <DropdownMenuItem
-                    key={type}
-                    onClick={() => handleAddNode(type)}
-                    className="flex items-center gap-2.5 p-2 rounded-lg cursor-pointer"
+          {triggerType === 'keyword_match' && (
+            <div className="space-y-2 pt-1">
+              <label className="block text-xs font-semibold text-text-secondary">
+                Trigger Keywords (Type word & press Enter to add)
+              </label>
+              <div className="flex flex-wrap items-center gap-2 p-2 rounded-xl bg-bg-subtle border border-border-default min-h-[42px]">
+                {keywords.map((kw) => (
+                  <span
+                    key={kw}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 text-xs font-mono font-semibold"
                   >
-                    <div className={cn('p-1 rounded-md', meta.color.split(' ')[1], meta.color.split(' ')[0])}>
-                      <Icon className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold">{meta.label}</div>
-                      <div className="text-[10px] text-slate-500 font-medium">{meta.desc}</div>
-                    </div>
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                    <span>{kw}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveKeyword(kw)}
+                      className="hover:text-purple-800 text-sm leading-none"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                <input
+                  value={newKeyword}
+                  onChange={(e) => setNewKeyword(e.target.value)}
+                  onKeyDown={handleAddKeyword}
+                  placeholder="e.g. visit, price, brochure, tour..."
+                  className="bg-transparent border-none outline-none text-xs flex-1 min-w-[130px] text-text-primary px-1"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Action Nodes Canvas ── */}
+      <div className="space-y-3.5">
+        <div className="flex items-center justify-between px-1">
+          <h4 className="text-xs font-bold text-text-tertiary uppercase tracking-wider flex items-center gap-2">
+            <Layers className="w-4 h-4 text-brand-600" />
+            <span>Execution Action Steps ({nodes.length})</span>
+          </h4>
         </div>
 
-        {/* Steps List Cards */}
-        <div className="space-y-3">
-          {nodes.map((node, idx) => (
-            <FlowNodeCard
-              key={node.nodeKey}
-              node={node}
-              index={idx}
-              totalNodes={nodes.length}
-              allNodes={nodes}
-              allNodeKeys={nodes.map((n) => n.nodeKey)}
-              existingTags={existingTags}
-              updateNodeConfig={handleUpdateNodeConfig}
-              removeNode={handleRemoveNode}
-              moveNode={handleMoveNode}
-            />
-          ))}
+        {nodes.length === 0 ? (
+          <div className="text-center py-12 px-4 bg-bg-surface border border-dashed border-border-default rounded-2xl">
+            <p className="text-xs text-text-secondary font-medium">
+              No actions in this flow yet. Use the button below to add your first step!
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3.5">
+            {nodes.map((node, index) => (
+              <FlowNodeCard
+                key={node.nodeKey}
+                node={node}
+                index={index}
+                totalNodes={nodes.length}
+                allNodes={nodes}
+                allNodeKeys={allNodeKeys}
+                existingTags={existingTags}
+                updateNodeConfig={handleUpdateNodeConfig}
+                removeNode={handleRemoveNode}
+                moveNode={handleMoveNode}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* ── Add Node Dropdown (WhatsApp & Email Parity) ── */}
+        <div className="flex justify-center pt-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full border-dashed border-border-default text-xs font-semibold px-4 py-2 hover:border-brand-600 hover:text-brand-600 gap-1.5 shadow-2xs"
+              >
+                <Plus className="h-4 w-4 text-brand-600" />
+                <span>Add Flow Node</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-72 max-h-96 overflow-y-auto p-1.5">
+              {(Object.keys(SMS_NODE_TYPES_META) as SmsFlowNodeType[])
+                .filter((type) => type !== 'start')
+                .map((type) => {
+                  const m = SMS_NODE_TYPES_META[type];
+                  const Icon = m.icon;
+                  return (
+                    <DropdownMenuItem
+                      key={type}
+                      onClick={() => handleAddNode(type)}
+                      className="flex items-center gap-2.5 px-2.5 py-2 text-xs rounded-lg cursor-pointer hover:bg-bg-subtle"
+                    >
+                      <div
+                        className={cn(
+                          'flex h-7 w-7 items-center justify-center rounded-lg shrink-0',
+                          m.color.split(' ')[1],
+                          m.color.split(' ')[0],
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-text-primary">{m.label}</p>
+                        <p className="text-[10px] text-text-muted">{m.desc}</p>
+                      </div>
+                    </DropdownMenuItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       {/* ── Test Simulator Modal ── */}
       {testModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-enter">
-            <div className="bg-gradient-to-r from-amber-950 to-slate-900 p-5 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Smartphone className="w-5 h-5 text-amber-400" />
-                <div>
-                  <h3 className="text-sm font-extrabold">Inbound SMS Simulation Runner</h3>
-                  <p className="text-[11px] text-amber-200/80">
-                    Test flow triggers and If/Else branch routing in real time.
-                  </p>
-                </div>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-bg-surface border border-border-default rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+              <h3 className="text-sm font-bold text-text-primary flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-emerald-500" />
+                <span>Simulate Inbound SMS Carrier Reply</span>
+              </h3>
               <button
                 type="button"
                 onClick={() => setTestModalOpen(false)}
-                className="p-1 rounded-full text-white/70 hover:text-white"
+                className="text-text-tertiary hover:text-text-primary text-base font-bold"
               >
-                <X className="w-4 h-4" />
+                ×
               </button>
             </div>
 
-            <div className="p-5 space-y-4 text-xs">
+            <div className="space-y-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Simulated Lead Phone:</label>
+                <label className="block text-xs font-semibold text-text-secondary mb-1">
+                  Simulated Lead Phone:
+                </label>
                 <Input
                   value={testLeadPhone}
                   onChange={(e) => setTestLeadPhone(e.target.value)}
                   placeholder="+15552345678"
-                  className="text-xs font-mono"
+                  className="text-xs font-mono bg-bg-subtle"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Inbound SMS Reply Text:</label>
+                <label className="block text-xs font-semibold text-text-secondary mb-1">
+                  Inbound Reply Message Body:
+                </label>
                 <textarea
                   rows={3}
                   value={testInput}
                   onChange={(e) => setTestInput(e.target.value)}
-                  placeholder="Enter prospect message..."
-                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50 p-2.5"
+                  placeholder="e.g. Can you share the cost sheet and schedule a visit?"
+                  className="w-full px-3 py-2 text-xs bg-bg-subtle border border-border-default rounded-xl text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-500 font-sans"
                 />
               </div>
 
               <Button
-                variant="default"
-                size="sm"
-                onClick={handleRunSimulation}
+                onClick={handleRunTest}
                 disabled={testing || !testInput.trim()}
-                className="w-full gap-2 text-xs font-extrabold bg-amber-500 hover:bg-amber-600 text-slate-950"
+                className="w-full gap-2 text-xs font-semibold"
               >
-                {testing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                <span>{testing ? 'Evaluating Flow...' : 'Execute Simulation Test'}</span>
+                {testing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                <span>Execute Simulation Test</span>
               </Button>
 
-              {/* Simulation Result Output */}
               {testResult && (
-                <div className="p-3.5 rounded-2xl bg-slate-900 text-slate-100 space-y-2 font-mono text-[11px]">
-                  <div className="flex items-center justify-between text-emerald-400 font-bold">
-                    <span>✓ Simulation Complete</span>
-                    <span>Status: Evaluated</span>
+                <div className="p-3.5 rounded-xl bg-bg-subtle border border-border-default space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-text-primary">Simulation Result:</span>
+                    <span
+                      className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                        testResult.matchedFlowId && testResult.triggerMatched !== false
+                          ? 'bg-emerald-500/10 text-emerald-600'
+                          : 'bg-amber-500/10 text-amber-600'
+                      }`}
+                    >
+                      {testResult.matchedFlowId && testResult.triggerMatched !== false
+                        ? 'Flow Matched & Executed'
+                        : 'Trigger Not Matched'}
+                    </span>
                   </div>
-                  <div className="border-t border-slate-800 pt-2 space-y-1 text-slate-300">
-                    <div>Keywords Tested: {keywords.join(', ')}</div>
-                    <div>
-                      Evaluation:{' '}
-                      <span className="text-amber-400 font-bold">
-                        {JSON.stringify(testResult.flowResult || testResult, null, 2)}
-                      </span>
+
+                  {testResult.flowName && (
+                    <p className="text-[11px] text-text-secondary">
+                      <strong>Target Flow:</strong> {testResult.flowName}
+                    </p>
+                  )}
+
+                  {testResult.triggerReason && (
+                    <div className="p-2 rounded-lg bg-bg-surface border border-border-subtle text-[11px] text-text-secondary">
+                      <strong>Trigger Status:</strong> {testResult.triggerReason}
                     </div>
-                  </div>
+                  )}
+
+                  {testResult.actionsExecuted && testResult.actionsExecuted.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-semibold text-text-secondary mb-1">Execution Steps Timeline:</p>
+                      <div className="space-y-1">
+                        {testResult.actionsExecuted.map((act: string, i: number) => (
+                          <div key={i} className="flex items-start gap-1.5 text-[11px] text-text-primary bg-bg-surface p-1.5 rounded-lg border border-border-subtle">
+                            <span className="font-bold text-brand-600">✓</span>
+                            <span>{act}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(testResult.outboundReply || testResult.renderedBody) && (
+                    <div className="mt-2 pt-2 border-t border-border-subtle space-y-1.5">
+                      <p className="text-[11px] font-bold text-brand-600">Generated SMS Response Preview:</p>
+                      <div className="p-3 rounded-xl bg-bg-surface border border-border-subtle text-xs whitespace-pre-wrap font-sans text-text-primary shadow-2xs">
+                        {testResult.outboundReply || testResult.renderedBody}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
