@@ -6,6 +6,7 @@ import {
   RefreshCw,
   Plus,
   ArrowLeft,
+  Scale,
 } from 'lucide-react';
 import { DashboardPageWrapper } from '@/components/dashboard/DashboardPageWrapper';
 import { Button } from '@/components/ui/Button';
@@ -196,6 +197,16 @@ export default function MasterAdsOverviewPage() {
             <Button variant="outline" size="sm" className="gap-1.5 text-xs font-bold">
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Marketing Hub</span>
+            </Button>
+          </Link>
+          <Link href="/dashboard/marketing/ads/compare">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs font-bold text-purple-700 hover:text-purple-800 hover:bg-purple-50 border-purple-200"
+            >
+              <Scale className="w-3.5 h-3.5" />
+              <span>A/B Compare</span>
             </Button>
           </Link>
           <Button
