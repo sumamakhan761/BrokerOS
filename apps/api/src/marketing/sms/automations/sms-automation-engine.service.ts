@@ -285,6 +285,36 @@ export class SmsAutomationEngineService {
               break;
             }
 
+            const maxTurns = Number(config.maxTurns) || 3;
+            if (!context.isSimulation && recipient?.phone) {
+              const previousAiMsgs = await this.prisma.smsMessage.count({
+                where: {
+                  OR: [
+                    { toPhone: recipient.phone, senderType: 'bot' },
+                    { toPhone: recipient.phone, senderName: { contains: 'AI' } },
+                  ],
+                },
+              }).catch(() => 0);
+
+              if (previousAiMsgs >= maxTurns) {
+                this.logger.log(`AI Concierge reached max turns (${previousAiMsgs}/${maxTurns}) for ${recipient.phone}. Escalating prospect.`);
+                if (recipient.id && !recipient.leadId) {
+                  await this.audienceService.promoteCsvRecipientToLead(recipient.id).catch(() => {});
+                } else if (recipient.leadId) {
+                  await this.prisma.lead.update({
+                    where: { id: recipient.leadId },
+                    data: { status: 'QUALIFIED', subStatus: 'PENDING', assignedUserId: null },
+                  }).catch(() => {});
+                }
+                actionsExecuted.push(`AI Concierge reached max turns limit (${maxTurns}) → prospect escalated to Pre-Sales queue`);
+                nextNodeToExecute =
+                  config.next_node_key && nodeMap.has(config.next_node_key)
+                    ? nodeMap.get(config.next_node_key)
+                    : nextLinearNode;
+                break;
+              }
+            }
+
             let aiReplyText = '';
             try {
               const aiRes = await this.aiService.generateAutoreply({
@@ -328,6 +358,12 @@ export class SmsAutomationEngineService {
               const minBudget = Number(config.minBudget) || 0;
               const leadBudget = Number(recipient?.lead?.budget) || 0;
               conditionMet = leadBudget >= minBudget;
+            } else if (criteriaType === 'tag') {
+              const targetTag = (config.tag || config.tagName || '').trim().toLowerCase();
+              const leadTags: string[] = (recipient?.lead?.tags || []).map((t: any) =>
+                (typeof t === 'string' ? t : t?.name || '').toLowerCase()
+              );
+              conditionMet = !!targetTag && leadTags.includes(targetTag);
             } else {
               const rawKeywords = config.keywords;
               const kwList: string[] = Array.isArray(rawKeywords)
@@ -387,7 +423,15 @@ export class SmsAutomationEngineService {
                 } else if (bType === 'update_lead_status') {
                   actionsExecuted.push(`[${branchKey.toUpperCase()}] Updated CRM status to ${bConfig.status || 'INTERESTED'}`);
                 } else if (bType === 'add_tag') {
-                  actionsExecuted.push(`[${branchKey.toUpperCase()}] Applied tag "${bConfig.tag || 'SMS_ENGAGED'}"`);
+                  const bTag = (bConfig.tag || 'SMS_ENGAGED').trim();
+                  if (!context.isSimulation && bTag) {
+                    await this.prisma.smsTag.upsert({
+                      where: { name: bTag },
+                      create: { name: bTag, color: '#3B82F6' },
+                      update: {},
+                    }).catch(() => {});
+                  }
+                  actionsExecuted.push(`[${branchKey.toUpperCase()}] Applied tag "${bTag}"`);
                 }
               }
             } else {
@@ -419,7 +463,14 @@ export class SmsAutomationEngineService {
 
           // ── Action: Add Tag ──
           case 'add_tag': {
-            const tagName = config.tag || 'SMS_REPLIED';
+            const tagName = (config.tag || 'SMS_REPLIED').trim();
+            if (!context.isSimulation && tagName) {
+              await this.prisma.smsTag.upsert({
+                where: { name: tagName },
+                create: { name: tagName, color: '#3B82F6' },
+                update: {},
+              }).catch(() => {});
+            }
             actionsExecuted.push(`Applied CRM tag "${tagName}"`);
             nextNodeToExecute =
               config.next_node_key && nodeMap.has(config.next_node_key)
@@ -523,8 +574,27 @@ export class SmsAutomationEngineService {
     message: string;
   }): Promise<void> {
     const { recipient, message } = args;
-    const provider = recipient?.assignedProvider || 'TWILIO';
-    const fromPhone = recipient?.assignedSenderPhone || '+14155550199';
+    let provider = recipient?.assignedProvider;
+    let fromPhone = recipient?.assignedSenderPhone;
+
+    // Dynamically resolve provider and verified sender number if not set on recipient
+    if (!provider || !fromPhone) {
+      const activeIntegration = await this.prisma.smsIntegration.findFirst({
+        where: { isActive: true },
+        include: { senderNumbers: { where: { isVerified: true }, orderBy: { createdAt: 'asc' } } },
+        orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+      });
+
+      if (activeIntegration) {
+        provider = provider || activeIntegration.provider;
+        fromPhone = fromPhone || activeIntegration.senderNumbers[0]?.phoneNumber || activeIntegration.senderNumbers[0]?.senderId || activeIntegration.fromSender;
+      }
+    }
+
+    if (!fromPhone || !provider) {
+      this.logger.error(`Cannot dispatch outbound SMS reply: No verified sender number configured for recipient ${recipient?.phone || 'unknown'}`);
+      return;
+    }
 
     let credentials: SmsProviderCredentials | undefined;
     const integration = await this.prisma.smsIntegration.findFirst({
