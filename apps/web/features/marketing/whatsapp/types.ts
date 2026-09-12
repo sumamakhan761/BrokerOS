@@ -128,6 +128,7 @@ export interface WhatsAppBroadcast {
   name: string;
   templateName: string;
   templateLanguage: string;
+  templateCategory?: string;
   status: 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
   totalRecipients: number;
   sentCount: number;
