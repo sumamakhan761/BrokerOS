@@ -107,7 +107,7 @@ export function SmsStep4ReviewLaunch({
     if (audienceSource === "CSV_UPLOAD") {
       return csvRecipients.length;
     }
-    return totalAudienceCount || 1000;
+    return typeof totalAudienceCount === "number" ? totalAudienceCount : 0;
   }, [audienceSource, csvRecipients.length, totalAudienceCount]);
 
   const { segments, isUnicode, charCount } = useMemo(() => {
@@ -261,13 +261,73 @@ export function SmsStep4ReviewLaunch({
 
   const currentPools = senderPools.length > 0 ? senderPools : [
     {
-      phoneNumber: fromSender || "+14155550199",
-      senderId: fromSender || "BrokerOS",
-      provider: providerType,
+      phoneNumber: fromSender || availableNumbers[0]?.phoneNumber || "",
+      senderId: fromSender || availableNumbers[0]?.senderId || "BrokerOS",
+      provider: providerType || availableNumbers[0]?.provider || "TWILIO",
       allocationPercentage: 100,
       allocatedLeads: totalAudience,
     },
   ];
+
+  // Calculate exact integer distribution across pools using Hamilton-Hare Largest Remainder
+  const poolAllocations = useMemo(() => {
+    const pools = currentPools;
+    const n = pools.length;
+    if (n === 0 || totalAudience <= 0) {
+      return pools.map((p) => ({
+        ...p,
+        calculatedLeads: 0,
+        calculatedSegs: 0,
+      }));
+    }
+
+    let weights: number[];
+    if (allocationMode === "AUTO_EVEN") {
+      weights = pools.map(() => 1 / n);
+    } else {
+      const rawSum = pools.reduce((sum, p) => sum + (p.allocationPercentage || 0), 0);
+      weights = rawSum > 0 ? pools.map((p) => (p.allocationPercentage || 0) / rawSum) : pools.map(() => 1 / n);
+    }
+
+    const targetCounts = weights.map((w) => Math.floor(totalAudience * w));
+    const allocatedSum = targetCounts.reduce((acc, c) => acc + c, 0);
+    const remainder = totalAudience - allocatedSum;
+
+    const remainders = weights.map((w, idx) => ({
+      idx,
+      fractional: totalAudience * w - targetCounts[idx],
+    }));
+    remainders.sort((a, b) => b.fractional - a.fractional);
+
+    for (let i = 0; i < remainder; i++) {
+      targetCounts[remainders[i].idx]++;
+    }
+
+    return pools.map((p, idx) => {
+      const count = targetCounts[idx] ?? 0;
+      return {
+        ...p,
+        calculatedLeads: count,
+        calculatedSegs: count * segments,
+      };
+    });
+  }, [currentPools, totalAudience, allocationMode, segments]);
+
+  // Keep senderPools allocatedLeads in sync with totalAudience and Hamilton-Hare calculations
+  React.useEffect(() => {
+    if (senderPools.length > 0 && onSenderPoolsChange) {
+      const needsSync = senderPools.some(
+        (sp, idx) => sp.allocatedLeads !== poolAllocations[idx]?.calculatedLeads
+      );
+      if (needsSync) {
+        const updated = senderPools.map((sp, idx) => ({
+          ...sp,
+          allocatedLeads: poolAllocations[idx]?.calculatedLeads ?? 0,
+        }));
+        onSenderPoolsChange(updated);
+      }
+    }
+  }, [poolAllocations, senderPools, onSenderPoolsChange]);
 
   return (
     <div className="space-y-6 animate-enter">
@@ -372,7 +432,20 @@ export function SmsStep4ReviewLaunch({
         </div>
 
         {/* Candidate Phone Numbers Selector */}
-        {availableNumbers.length > 0 && (
+        {availableNumbers.length === 0 ? (
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 text-amber-900 font-bold">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>No verified sender phone numbers found. Please configure an SMS gateway in Settings before launching.</span>
+            </div>
+            <a
+              href="/dashboard/marketing/sms/settings"
+              className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs shrink-0 transition-colors"
+            >
+              Configure Gateway &rarr;
+            </a>
+          </div>
+        ) : (
           <div className="space-y-2">
             <label className="text-xs font-extrabold text-[var(--text-secondary)] block">
               Active Carrier Numbers & Routes:
@@ -428,11 +501,11 @@ export function SmsStep4ReviewLaunch({
 
         {/* Pool Allocation Sliders */}
         <div className="space-y-3 pt-2">
-          {currentPools.map((pool, idx) => {
+          {poolAllocations.map((pool, idx) => {
             const color = POOL_COLORS[idx % POOL_COLORS.length];
             const pct = pool.allocationPercentage || 0;
-            const leads = Math.round((totalAudience * pct) / 100);
-            const poolSegs = leads * segments;
+            const leads = pool.calculatedLeads;
+            const poolSegs = pool.calculatedSegs;
             const provPricing =
               (SMS_PROVIDER_PRICING_ESTIMATES as Record<string, any>)[pool.provider || "TWILIO"] ||
               SMS_PROVIDER_PRICING_ESTIMATES.TWILIO;
@@ -501,7 +574,7 @@ export function SmsStep4ReviewLaunch({
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <input
             type="tel"
-            placeholder="Enter mobile phone (e.g. +91 98765 43210 or +14155550199)"
+            placeholder="Enter mobile phone (e.g. +91 98765 43210 or +1 202 555 0123)"
             value={testPhone}
             onChange={(e) => onTestPhoneChange(e.target.value)}
             className="w-full sm:flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all shadow-xs"
