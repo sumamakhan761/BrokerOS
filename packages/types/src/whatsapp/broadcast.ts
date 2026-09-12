@@ -47,3 +47,20 @@ export interface WhatsAppBroadcastRecipientDto {
   errorMessage?: string | null;
   createdAt: string;
 }
+
+export interface WhatsAppPreFlightCostSummary {
+  totalAudience: number;
+  category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION' | 'SERVICE';
+  categoryName: string;
+  categoryColor: string;
+  rateINR: number;
+  rateUSD: number;
+  totalCostINR: number;
+  totalCostUSD: number;
+  exchangeRate: number; // 95
+  messagingTier?: string;
+  dailyLimit?: number;
+  isTierExceeded?: boolean;
+  accountPhoneNumber?: string;
+  accountName?: string;
+}
