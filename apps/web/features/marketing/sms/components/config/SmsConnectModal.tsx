@@ -19,7 +19,7 @@ export function SmsConnectModal({
 }: SmsConnectModalProps) {
   const [formData, setFormData] = useState({
     name: "",
-    fromSender: "SKYLIN",
+    fromSender: "",
     accountSid: "",
     authToken: "",
     messagingServiceSid: "",
@@ -37,7 +37,7 @@ export function SmsConnectModal({
     if (selectedProvider) {
       setFormData({
         name: `${SMS_PROVIDERS[selectedProvider]?.name || selectedProvider} Gateway`,
-        fromSender: selectedProvider === "TWILIO" ? "+14155550199" : "SKYLIN",
+        fromSender: "",
         accountSid: "",
         authToken: "",
         messagingServiceSid: "",
@@ -127,11 +127,11 @@ export function SmsConnectModal({
               required
               value={formData.fromSender}
               onChange={(e) => setFormData({ ...formData, fromSender: e.target.value })}
-              placeholder="e.g. +14155550199 or SKYLIN"
+              placeholder="e.g. +12025550123 (Verified Carrier Number) or 6-char Header"
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-500)] focus:bg-white transition-all shadow-xs"
             />
             <p className="text-[10px] text-[var(--text-muted)] mt-1">
-              Use E.164 phone number for US/CA or 6-char registered Sender Header for India/UK (e.g. SKYLIN).
+              Enter your verified E.164 phone number from your carrier console, or approved header. Verified automatically with the carrier.
             </p>
           </div>
 
