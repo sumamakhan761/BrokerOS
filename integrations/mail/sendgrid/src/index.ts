@@ -240,6 +240,85 @@ export class SendgridClient {
       return [];
     }
   }
+
+  async verifySenderIdentity(
+    emailOrDomain: string,
+  ): Promise<{ isVerified: boolean; fromEmail?: string; domain?: string; reason?: string }> {
+    const clean = (emailOrDomain || '').trim().toLowerCase();
+    if (!this.apiKey) {
+      return { isVerified: false, reason: 'Missing SendGrid API Key' };
+    }
+
+    if (!clean) {
+      return { isVerified: false, reason: 'Email or domain is required' };
+    }
+
+    const isEmail = clean.includes('@');
+    const domain = isEmail ? clean.split('@')[1] : clean;
+
+    try {
+      // 1. Check single verified senders
+      const res = await fetch('https://api.sendgrid.com/v3/verified_senders', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (res.status === 200) {
+        const data: any = await res.json().catch(() => ({}));
+        const results = data?.results || (Array.isArray(data) ? data : []);
+        if (Array.isArray(results)) {
+          const match = results.find((item: any) => {
+            const senderEmail = (item.from_email || item.email || '').toLowerCase().trim();
+            return senderEmail === clean && Boolean(item.verified);
+          });
+          if (match) {
+            return {
+              isVerified: true,
+              fromEmail: clean,
+              domain: domain,
+            };
+          }
+        }
+      }
+
+      // 2. Check authenticated domains (whitelabel domains)
+      const domainRes = await fetch('https://api.sendgrid.com/v3/whitelabel/domains', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+      });
+
+      if (domainRes.status === 200) {
+        const domains: any = await domainRes.json().catch(() => []);
+        if (Array.isArray(domains)) {
+          const matchedDomain = domains.find(
+            (d: any) => (d.domain || '').toLowerCase().trim() === domain && Boolean(d.valid)
+          );
+          if (matchedDomain) {
+            return {
+              isVerified: true,
+              fromEmail: clean,
+              domain: domain,
+            };
+          }
+        }
+      }
+
+      return {
+        isVerified: false,
+        reason: `Sender email or domain "${clean}" is not verified in your SendGrid account. Please verify it via Single Sender Verification or authenticate domain "${domain}" in SendGrid.`,
+      };
+    } catch (err: any) {
+      return {
+        isVerified: false,
+        reason: err?.message || 'Failed to verify sender identity with SendGrid API',
+      };
+    }
+  }
 }
 
 // ============================================================================
@@ -359,6 +438,14 @@ export class SendgridAdapter implements IEmailMarketingProvider {
   async listVerifiedSenders(credentials?: ProviderCredentials): Promise<DiscoveredSenderIdentity[]> {
     const client = new SendgridClient(credentials);
     return client.listVerifiedSenders();
+  }
+
+  async verifySenderIdentity(
+    emailOrDomain: string,
+    credentials?: ProviderCredentials,
+  ): Promise<{ isVerified: boolean; fromEmail?: string; domain?: string; reason?: string }> {
+    const client = new SendgridClient(credentials);
+    return client.verifySenderIdentity(emailOrDomain);
   }
 
   parseWebhookEvent(headers: Record<string, any>, payload: any): EmailWebhookEvent[] {
