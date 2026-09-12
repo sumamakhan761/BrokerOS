@@ -1,21 +1,27 @@
 // ============================================================================
-// BrokerOS — 2-Way Live SMS Team Inbox Master View
+// BrokerOS — SMS Unified Live Team Inbox Master View
 // ============================================================================
 
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { MessageSquare } from 'lucide-react';
 import { useSmsConversations } from '../../hooks/use-sms-conversations';
 import { useSmsMessages } from '../../hooks/use-sms-messages';
 import { SmsConversationList } from './SmsConversationList';
 import { SmsConversationHeader } from './SmsConversationHeader';
 import { SmsConversationThread } from './SmsConversationThread';
 import { SmsMessageComposer } from './SmsMessageComposer';
-import { SmsContactDrawer } from './SmsContactDrawer';
 import type { SmsConversation } from '../../types/inbox';
-import { MessageSquare, Phone } from 'lucide-react';
 
-export function SmsInboxView() {
+export const SmsInboxView: React.FC = () => {
+  const [activeConversation, setActiveConversation] = useState<SmsConversation | null>(null);
+
+  const searchParams = useSearchParams();
+  const deepLinkConvId = searchParams.get('conversationId') || searchParams.get('c');
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
   const {
     conversations,
     loading: conversationsLoading,
@@ -23,20 +29,11 @@ export function SmsInboxView() {
     setSearch,
     statusFilter,
     setStatusFilter,
+    handleLiveConversationUpdate,
     updateStatus,
-    toggleAiAutoReply,
+    assignAgent,
     markAsRead,
   } = useSmsConversations();
-
-  const [activeConversation, setActiveConversation] = useState<SmsConversation | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-
-  // Auto-select first conversation if none selected and available
-  useEffect(() => {
-    if (!activeConversation && conversations.length > 0) {
-      setActiveConversation(conversations[0]);
-    }
-  }, [conversations, activeConversation]);
 
   // Load messages for active conversation
   const {
@@ -48,21 +45,54 @@ export function SmsInboxView() {
     draftReplyWithAi,
   } = useSmsMessages(activeConversation?.id || null);
 
+  // Auto-select deep-linked conversation or first conversation if available
+  useEffect(() => {
+    if (conversations.length === 0) return;
+
+    if (deepLinkConvId) {
+      const target = conversations.find((c) => c.id === deepLinkConvId);
+      if (target) {
+        if (activeConversation?.id !== target.id) {
+          setActiveConversation(target);
+          if (target.unreadCount > 0) markAsRead(target.id);
+        }
+        return;
+      }
+    }
+
+    // Auto-select first conversation if none selected yet
+    if (!activeConversation && conversations.length > 0) {
+      setActiveConversation(conversations[0]);
+      if (conversations[0].unreadCount > 0) {
+        markAsRead(conversations[0].id);
+      }
+    }
+  }, [deepLinkConvId, conversations, activeConversation, markAsRead]);
+
+  // If deepLinkConvId is not in list, fetch directly
+  useEffect(() => {
+    if (!deepLinkConvId || activeConversation?.id === deepLinkConvId) return;
+    const exists = conversations.some((c) => c.id === deepLinkConvId);
+    if (!exists) {
+      fetch(`${baseUrl}/api/marketing/sms/inbox/conversations/${deepLinkConvId}`, {
+        credentials: 'include',
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) {
+            setActiveConversation(data);
+            handleLiveConversationUpdate(data);
+          }
+        })
+        .catch(() => null);
+    }
+  }, [deepLinkConvId, conversations, activeConversation?.id, baseUrl, handleLiveConversationUpdate]);
+
   const handleSelectConversation = (conv: SmsConversation) => {
     setActiveConversation(conv);
     if (conv.unreadCount > 0) {
       markAsRead(conv.id);
     }
-  };
-
-  const handleToggleAi = () => {
-    if (!activeConversation) return;
-    const nextState = !activeConversation.aiAutoReplyDisabled;
-    toggleAiAutoReply(activeConversation.id, nextState);
-    setActiveConversation({
-      ...activeConversation,
-      aiAutoReplyDisabled: nextState,
-    });
   };
 
   const handleStatusChange = (newStatus: 'open' | 'pending' | 'closed') => {
@@ -74,9 +104,14 @@ export function SmsInboxView() {
     });
   };
 
+  const handleAgentAssignment = (agentId: string | null) => {
+    if (!activeConversation) return;
+    assignAgent(activeConversation.id, agentId);
+  };
+
   return (
-    <div className="flex h-[calc(100vh-140px)] min-h-[550px] bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden animate-enter">
-      {/* ── PANE 1: Conversation List (Left) ── */}
+    <div className="flex h-[calc(100vh-8.5rem)] bg-bg-surface border border-border-default rounded-2xl overflow-hidden shadow-sm">
+      {/* 1. Left Panel: Conversations List */}
       <SmsConversationList
         conversations={conversations}
         activeConversationId={activeConversation?.id}
@@ -88,16 +123,14 @@ export function SmsInboxView() {
         loading={conversationsLoading}
       />
 
-      {/* ── PANE 2: Active Chat Thread (Center) ── */}
-      <div className="flex-1 flex flex-col h-full min-w-0 bg-white">
+      {/* 2. Right Panel: Conversation Thread & Message Composer */}
+      <div className="flex flex-col flex-1 h-full min-w-0 bg-bg-base/30">
         {activeConversation ? (
           <>
             <SmsConversationHeader
               conversation={activeConversation}
               onUpdateStatus={handleStatusChange}
-              onToggleAi={handleToggleAi}
-              isDrawerOpen={isDrawerOpen}
-              onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
+              onAssignAgent={handleAgentAssignment}
             />
 
             <SmsConversationThread
@@ -108,32 +141,26 @@ export function SmsInboxView() {
             <SmsMessageComposer
               onSendMessage={sendMessage}
               onDraftAi={draftReplyWithAi}
+              assignedProvider={activeConversation.assignedProvider}
+              assignedSenderPhone={activeConversation.assignedSenderPhone}
               sending={sending}
               draftingAi={draftingAi}
             />
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400 space-y-3">
-            <div className="w-14 h-14 rounded-3xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <MessageSquare className="w-7 h-7" />
+          <div className="flex flex-col items-center justify-center flex-1 text-center p-6 space-y-3">
+            <div className="w-16 h-16 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center">
+              <MessageSquare className="w-8 h-8" />
             </div>
-            <div>
-              <h3 className="text-sm font-extrabold text-slate-900">No Conversation Selected</h3>
-              <p className="text-xs text-slate-500 max-w-sm mt-1">
-                Select an SMS thread from the list or start a new conversation to communicate with leads.
-              </p>
-            </div>
+            <h3 className="font-semibold text-text-primary text-base">
+              Select an SMS thread to view messages
+            </h3>
+            <p className="text-xs text-text-secondary max-w-sm">
+              Connect with mobile prospects, review automated Groq AI responses, and manage 2-way text inquiries with carrier route continuity.
+            </p>
           </div>
         )}
       </div>
-
-      {/* ── PANE 3: Contact & CRM Drawer (Right) ── */}
-      {isDrawerOpen && activeConversation && (
-        <SmsContactDrawer
-          conversation={activeConversation}
-          onClose={() => setIsDrawerOpen(false)}
-        />
-      )}
     </div>
   );
-}
+};
