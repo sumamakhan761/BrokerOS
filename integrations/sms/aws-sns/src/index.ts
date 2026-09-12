@@ -61,13 +61,37 @@ export class AwsSnsSmsClient {
 
   async listSenderNumbers(): Promise<DiscoveredSenderNumber[]> {
     const discovered: DiscoveredSenderNumber[] = [];
-    const sid = this.senderId || 'SKYLIN';
-    discovered.push({
-      senderId: sid,
-      provider: 'AWS_SNS',
-      isVerified: true,
-    });
+    if (this.senderId) {
+      discovered.push({
+        senderId: this.senderId,
+        provider: 'AWS_SNS',
+        isVerified: true,
+      });
+    }
     return discovered;
+  }
+
+  async verifySenderNumber(
+    phoneOrSenderId: string,
+  ): Promise<{ isVerified: boolean; formattedNumber?: string; reason?: string }> {
+    const clean = phoneOrSenderId.trim();
+    if (!this.accessKeyId || !this.secretKey) {
+      return { isVerified: false, reason: 'Missing AWS SNS IAM credentials' };
+    }
+
+    if (!clean.startsWith('+') && !/^\d+$/.test(clean)) {
+      if (clean.length > 11) {
+        return { isVerified: false, reason: 'AWS SNS alphanumeric sender ID cannot exceed 11 characters' };
+      }
+      return { isVerified: true, formattedNumber: clean };
+    }
+
+    const normalizedPhone = clean.startsWith('+') ? clean : `+${clean}`;
+    if (!/^\+[1-9]\d{6,14}$/.test(normalizedPhone)) {
+      return { isVerified: false, reason: 'Invalid international E.164 phone format for AWS SNS' };
+    }
+
+    return { isVerified: true, formattedNumber: normalizedPhone };
   }
 
   async send(options: SendSmsOptions): Promise<SendSmsResult> {
@@ -212,6 +236,14 @@ export class AwsSnsSmsAdapter implements ISmsMarketingProvider {
   async listSenderNumbers(credentials?: SmsProviderCredentials): Promise<DiscoveredSenderNumber[]> {
     const client = new AwsSnsSmsClient(credentials);
     return client.listSenderNumbers();
+  }
+
+  async verifySenderNumber(
+    phoneOrSenderId: string,
+    credentials?: SmsProviderCredentials,
+  ): Promise<{ isVerified: boolean; formattedNumber?: string; reason?: string }> {
+    const client = new AwsSnsSmsClient(credentials);
+    return client.verifySenderNumber(phoneOrSenderId);
   }
 
   parseWebhookEvent(headers: Record<string, any>, payload: any): SmsWebhookEvent[] {
