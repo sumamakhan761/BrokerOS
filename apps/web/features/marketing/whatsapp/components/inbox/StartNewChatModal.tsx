@@ -174,7 +174,7 @@ export const StartNewChatModal: React.FC<StartNewChatModalProps> = ({
                   type="text"
                   value={manualPhone}
                   onChange={(e) => setManualPhone(e.target.value)}
-                  placeholder="e.g. 919892407542"
+                  placeholder="e.g. 144444444"
                   className="w-full pl-9 pr-3 py-1.5 bg-bg-base border border-border-default rounded-xl text-xs text-text-primary placeholder:text-text-muted focus:outline-hidden focus:border-brand-500"
                 />
               </div>
