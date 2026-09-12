@@ -37,6 +37,16 @@ export class WhatsAppBroadcastsController {
     return this.broadcastsService.createBroadcast(dto, userId);
   }
 
+  @Get('projects')
+  async getProjects() {
+    return this.broadcastsService.getProjects();
+  }
+
+  @Post('audience-preview')
+  async previewAudience(@Body() dto: any) {
+    return this.broadcastsService.previewAudience(dto);
+  }
+
   @Get(':id')
   async getBroadcast(@Param('id') id: string) {
     return this.broadcastsService.getBroadcast(id);
