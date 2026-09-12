@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React from 'react';
-import { Check, CheckCheck, Clock, AlertCircle, Sparkles } from 'lucide-react';
+import { Check, CheckCheck, Clock, AlertCircle, Sparkles, User, Bot } from 'lucide-react';
 import type { SmsMessage } from '../../types/inbox';
 
 interface SmsMessageBubbleProps {
@@ -12,6 +12,7 @@ interface SmsMessageBubbleProps {
 
 export const SmsMessageBubble: React.FC<SmsMessageBubbleProps> = ({ message }) => {
   const isOutbound = message.direction === 'OUTBOUND';
+  const isBot = message.senderType === 'bot' || message.isAiGenerated;
 
   const formatTime = (dateStr?: string | null) => {
     if (!dateStr) return '';
@@ -25,75 +26,108 @@ export const SmsMessageBubble: React.FC<SmsMessageBubbleProps> = ({ message }) =
     }
   };
 
+  const renderStatus = () => {
+    if (!isOutbound) return null;
+
+    switch (message.status) {
+      case 'DELIVERED':
+        return (
+          <span title="Delivered to handset">
+            <CheckCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+          </span>
+        );
+      case 'SENT':
+        return (
+          <span title="Dispatched from carrier gateway">
+            <Check className="w-3.5 h-3.5 opacity-80" />
+          </span>
+        );
+      case 'FAILED':
+        return (
+          <span title={message.failureReason || 'SMS delivery failed'}>
+            <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+          </span>
+        );
+      case 'PENDING':
+      default:
+        return <Clock className="w-3.5 h-3.5 opacity-60 animate-pulse" />;
+    }
+  };
+
   return (
-    <div className={`flex w-full ${isOutbound ? 'justify-end' : 'justify-start'} my-2`}>
+    <div className={`flex w-full my-2.5 ${isOutbound ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[85%] sm:max-w-[70%] rounded-2xl p-3.5 shadow-xs transition-all relative ${
+        className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 shadow-xs text-sm relative transition-all ${
           isOutbound
-            ? 'bg-slate-900 text-slate-100 rounded-tr-xs'
-            : 'bg-white border border-slate-200 text-slate-900 rounded-tl-xs'
+            ? isBot
+              ? 'bg-purple-600/90 text-white rounded-br-xs border border-purple-500/30'
+              : 'bg-amber-500 text-slate-950 font-medium rounded-br-xs border border-amber-400/40 shadow-sm'
+            : 'bg-bg-surface text-text-primary rounded-bl-xs border border-border-default'
         }`}
       >
-        {/* Header (Sender label & AI indicator) */}
-        <div className="flex items-center gap-2 mb-1">
-          {message.isAiGenerated && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-950/60 px-1.5 py-0.5 rounded border border-purple-500/30">
-              <Sparkles className="w-2.5 h-2.5" />
-              <span>AI Concierge</span>
-            </span>
-          )}
-          {message.senderName && (
-            <span
-              className={`text-[10px] font-bold ${
-                isOutbound ? 'text-slate-400' : 'text-slate-500'
-              }`}
-            >
-              {message.senderName}
-            </span>
-          )}
+        {/* Sender Attribution Header */}
+        <div className={`flex items-center justify-between gap-2 mb-1.5 pb-1 border-b ${
+          isOutbound
+            ? isBot
+              ? 'border-white/10'
+              : 'border-slate-950/10'
+            : 'border-border-subtle'
+        }`}>
+          <div className="flex items-center gap-1.5 text-[11px] font-bold">
+            {isOutbound ? (
+              isBot ? (
+                <>
+                  <Bot className="w-3.5 h-3.5 text-purple-200" />
+                  <span>AI Automated Reply</span>
+                </>
+              ) : (
+                <>
+                  <User className="w-3.5 h-3.5 text-slate-900/70" />
+                  <span>{message.senderName || 'Sales Agent'}</span>
+                </>
+              )
+            ) : (
+              <span className="text-text-primary font-semibold">{message.senderName || message.fromPhone}</span>
+            )}
+          </div>
+
+          <span className={`text-[10px] ${
+            isOutbound
+              ? isBot
+                ? 'text-white/70'
+                : 'text-slate-950/60 font-mono'
+              : 'text-text-tertiary'
+          }`}>
+            {formatTime(message.sentAt || message.createdAt)}
+          </span>
         </div>
 
         {/* Message Body */}
-        <p className="text-xs whitespace-pre-wrap leading-relaxed break-words font-medium">
+        <p className="text-xs whitespace-pre-wrap leading-relaxed break-words">
           {message.bodyText}
         </p>
 
-        {/* Footer (Timestamp, Segments, Delivery Status) */}
-        <div
-          className={`flex items-center justify-end gap-1.5 mt-2 text-[10px] ${
-            isOutbound ? 'text-slate-400' : 'text-slate-400'
-          }`}
-        >
+        {/* Telemetry & Outbound Status Receipts */}
+        <div className={`flex items-center justify-end gap-1.5 mt-2 text-[10px] ${
+          isOutbound
+            ? isBot
+              ? 'text-white/75'
+              : 'text-slate-950/70'
+            : 'text-text-tertiary'
+        }`}>
           {message.segmentsCount && message.segmentsCount > 0 && (
-            <span className="font-mono text-[9px] px-1 bg-white/10 rounded font-bold">
+            <span className={`font-mono text-[9px] px-1 py-0.5 rounded font-bold ${
+              isOutbound
+                ? isBot
+                  ? 'bg-black/20 text-white'
+                  : 'bg-black/10 text-slate-950'
+                : 'bg-bg-subtle text-text-secondary border border-border-subtle'
+            }`}>
               {message.segmentsCount} seg{message.segmentsCount > 1 ? 's' : ''}
             </span>
           )}
 
-          <span>{formatTime(message.createdAt)}</span>
-
-          {/* Delivery Status Indicator */}
-          {isOutbound && (
-            <span className="ml-0.5">
-              {message.status === 'DELIVERED' ? (
-                <span title="Delivered to handset">
-                  <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
-                </span>
-              ) : message.status === 'SENT' ? (
-                <span title="Dispatched from carrier gateway">
-                  <Check className="w-3.5 h-3.5 text-slate-300" />
-                </span>
-              ) : message.status === 'FAILED' ? (
-                <span title={message.failureReason || 'Failed'}>
-                  <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-                </span>
-              ) : (
-                <span title="Queued">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                </span>
-              )}
-            </span>
-          )}
+          {isOutbound && renderStatus()}
         </div>
       </div>
     </div>
