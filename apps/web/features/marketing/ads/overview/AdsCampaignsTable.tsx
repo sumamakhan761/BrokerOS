@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Globe, ArrowRight } from 'lucide-react';
+import { Globe, ArrowRight, Scale } from 'lucide-react';
 import { Instagram } from '@/components/ui/InstagramIcon';
 import { GoogleIcon } from '@/features/marketing/ads/google/components/GoogleIcon';
 import { YouTubeIcon } from '@/features/marketing/ads/youtube/components/YouTubeIcon';
@@ -28,6 +28,16 @@ export const AdsCampaignsTable: React.FC<AdsCampaignsTableProps> = ({
             Cross-platform performance feed with direct lead acquisition and spend metrics.
           </p>
         </div>
+        <Link href="/dashboard/marketing/ads/compare">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs font-bold text-purple-700 hover:text-purple-800 hover:bg-purple-50 border-purple-200"
+          >
+            <Scale className="w-3.5 h-3.5" />
+            <span>A/B Compare Campaigns</span>
+          </Button>
+        </Link>
       </div>
 
       <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-xs">
