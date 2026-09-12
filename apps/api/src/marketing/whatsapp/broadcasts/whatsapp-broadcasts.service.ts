@@ -123,6 +123,71 @@ export class WhatsAppBroadcastsService {
       }
     }
 
+    // Path D: CRM Leads segmentation (filtered by project, temperature, status, budget)
+    if (dto.crmFilter || dto.audienceType === 'crm_filter') {
+      const filters = dto.crmFilter || {};
+      const whereClause: any = {
+        deletedAt: null,
+        phone: { not: '' },
+      };
+
+      if (filters.statuses?.length && !filters.statuses.includes('ALL')) {
+        whereClause.status = { in: filters.statuses };
+      } else {
+        whereClause.status = {
+          in: ['NEW', 'CONTACTED', 'INTERESTED', 'QUALIFIED'],
+        };
+      }
+
+      if (filters.temperatures?.length) {
+        whereClause.temperature = { in: filters.temperatures };
+      }
+
+      if (filters.projectId && filters.projectId !== 'ALL') {
+        whereClause.interestedProjectId = filters.projectId;
+      }
+
+      if (filters.minBudget) {
+        whereClause.budget = { gte: Number(filters.minBudget) };
+      }
+
+      const leads = await this.prisma.lead.findMany({
+        where: whereClause,
+        select: { id: true, firstName: true, lastName: true, phone: true },
+        take: 10000,
+      });
+
+      for (const lead of leads) {
+        const cleanPhone = sanitizePhoneForMeta(lead.phone);
+        if (!cleanPhone || !isValidE164(cleanPhone)) continue;
+
+        const fullName = [lead.firstName, lead.lastName]
+          .filter(Boolean)
+          .join(' ');
+
+        const contact = await this.prisma.whatsAppContact.upsert({
+          where: { accountId_phone: { accountId, phone: cleanPhone } },
+          create: {
+            accountId,
+            phone: cleanPhone,
+            name: fullName || null,
+            leadId: lead.id,
+          },
+          update: {
+            name: fullName || undefined,
+            leadId: lead.id,
+            deletedAt: null,
+          },
+          select: { id: true },
+        });
+
+        recipientsToCreate.push({
+          contactId: contact.id,
+          phone: cleanPhone,
+        });
+      }
+    }
+
     // Deduplicate by phone
     const uniqueRecipients = Array.from(
       new Map(recipientsToCreate.map((r) => [r.phone, r])).values(),
@@ -350,5 +415,82 @@ export class WhatsAppBroadcastsService {
     });
 
     return { success: true, message: 'Broadcast deleted' };
+  }
+
+  /**
+   * Get active projects for CRM audience filtering.
+   */
+  async getProjects() {
+    return this.prisma.project.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, city: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  /**
+   * Estimate audience reach based on CRM filters or CSV upload.
+   */
+  async previewAudience(dto: {
+    audienceSource?: string;
+    audienceFilters?: any;
+    csvRecipients?: any[];
+  }) {
+    if (dto.audienceSource === 'CSV_UPLOAD' && dto.csvRecipients?.length) {
+      const seen = new Set<string>();
+      let valid = 0;
+      let dupes = 0;
+      for (const row of dto.csvRecipients) {
+        const clean = sanitizePhoneForMeta(row.phone || '');
+        if (!clean) continue;
+        if (seen.has(clean)) {
+          dupes++;
+        } else {
+          seen.add(clean);
+          valid++;
+        }
+      }
+      return {
+        totalCount: dto.csvRecipients.length,
+        validPhoneCount: valid,
+        duplicateCount: dupes,
+        finalAudienceCount: valid,
+      };
+    }
+
+    const filters = dto.audienceFilters || {};
+    const whereClause: any = {
+      deletedAt: null,
+      phone: { not: '' },
+    };
+
+    if (filters.statuses?.length && !filters.statuses.includes('ALL')) {
+      whereClause.status = { in: filters.statuses };
+    } else {
+      whereClause.status = {
+        in: ['NEW', 'CONTACTED', 'INTERESTED', 'QUALIFIED'],
+      };
+    }
+
+    if (filters.temperatures?.length) {
+      whereClause.temperature = { in: filters.temperatures };
+    }
+
+    if (filters.projectId && filters.projectId !== 'ALL') {
+      whereClause.interestedProjectId = filters.projectId;
+    }
+
+    if (filters.minBudget) {
+      whereClause.budget = { gte: Number(filters.minBudget) };
+    }
+
+    const totalCount = await this.prisma.lead.count({ where: whereClause });
+
+    return {
+      totalCount,
+      validPhoneCount: totalCount,
+      duplicateCount: 0,
+      finalAudienceCount: totalCount,
+    };
   }
 }
