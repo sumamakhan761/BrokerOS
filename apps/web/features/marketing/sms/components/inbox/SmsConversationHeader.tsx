@@ -4,37 +4,30 @@
 
 import React from 'react';
 import {
-  Phone,
-  User,
-  Sparkles,
-  Bot,
-  PanelRightOpen,
-  PanelRightClose,
-  Lock,
+  Server,
+  ShieldCheck,
+  ExternalLink,
+  UserCheck,
 } from 'lucide-react';
+import Link from 'next/link';
 import type { SmsConversation } from '../../types/inbox';
 import { SMS_PROVIDERS } from '@brokeros/constants';
 
 interface SmsConversationHeaderProps {
   conversation: SmsConversation;
   onUpdateStatus: (status: 'open' | 'pending' | 'closed') => void;
-  onAssignAgent?: () => void;
-  onToggleAi: () => void;
-  isDrawerOpen: boolean;
-  onToggleDrawer: () => void;
+  onAssignAgent?: (agentId: string | null) => void;
 }
 
 export const SmsConversationHeader: React.FC<SmsConversationHeaderProps> = ({
   conversation,
   onUpdateStatus,
-  onToggleAi,
-  isDrawerOpen,
-  onToggleDrawer,
+  onAssignAgent,
 }) => {
   const provMeta =
     (SMS_PROVIDERS as Record<string, any>)[conversation.assignedProvider] || SMS_PROVIDERS.TWILIO;
 
-  const contactName =
+  const contactDisplayName =
     conversation.contactName ||
     (conversation.lead
       ? `${conversation.lead.firstName || ''} ${conversation.lead.lastName || ''}`.trim()
@@ -42,75 +35,77 @@ export const SmsConversationHeader: React.FC<SmsConversationHeaderProps> = ({
     conversation.contactPhone;
 
   return (
-    <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-white shadow-2xs">
-      {/* Left: Contact Info & Thread Continuity Invariant Indicator */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-900 border border-amber-200 flex items-center justify-center font-extrabold text-xs shrink-0">
-          <Phone className="w-4 h-4" />
+    <div className="flex items-center justify-between px-6 py-3.5 bg-bg-surface border-b border-border-default shrink-0">
+      {/* Contact Profile & Quick Info */}
+      <div className="flex items-center gap-3.5">
+        <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-sm border border-amber-500/20 shrink-0">
+          {contactDisplayName.replace(/[^\w]/g, '').slice(0, 2).toUpperCase() || 'SM'}
         </div>
+
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-extrabold text-slate-900">{contactName}</h3>
+            <h3 className="font-semibold text-text-primary text-sm">
+              {contactDisplayName}
+            </h3>
+
+            {/* Linked CRM Lead Badge */}
             {conversation.lead && (
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
-                CRM Lead
-              </span>
+              <Link
+                href={`/dashboard/leads/${conversation.lead.id}`}
+                className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+                title="View linked CRM Lead"
+              >
+                <ShieldCheck className="w-3 h-3 text-amber-600" />
+                <span>Lead</span>
+                <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
+              </Link>
             )}
           </div>
-          <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
-            <span className="font-mono font-bold text-slate-700">{conversation.contactPhone}</span>
-            <span>•</span>
-            {/* Thread Continuity Indicator */}
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-              <Lock className="w-3 h-3 text-slate-400" />
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: provMeta.color }}
-              />
-              <span>Route: {provMeta.name}</span>
-              <span className="font-mono text-slate-500 font-normal">({conversation.assignedSenderPhone})</span>
-            </span>
+
+          <div className="flex items-center gap-2 text-xs text-text-tertiary">
+            <span className="font-mono text-text-secondary">{conversation.contactPhone}</span>
+            {conversation.lead?.email && (
+              <>
+                <span>•</span>
+                <span>{conversation.lead.email}</span>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Right: Actions */}
-      <div className="flex items-center gap-2">
-        {/* AI Autoreply Toggle */}
-        <button
-          type="button"
-          onClick={onToggleAi}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all ${
-            conversation.aiAutoReplyDisabled
-              ? 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'
-              : 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100 shadow-2xs'
-          }`}
-          title={conversation.aiAutoReplyDisabled ? 'AI Autoreply Disabled' : 'AI Autoreply Active'}
+      {/* Action Controls */}
+      <div className="flex items-center gap-2.5">
+        {/* Dedicated Thread Route Badge */}
+        <div
+          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-bg-subtle rounded-xl border border-border-default text-[11px] text-text-secondary"
+          title={`Outbound SMS routed via ${provMeta.name} sender ${conversation.assignedSenderPhone || ''}`}
         >
-          <Sparkles className={`w-3.5 h-3.5 ${conversation.aiAutoReplyDisabled ? 'text-slate-400' : 'text-purple-600'}`} />
-          <span>{conversation.aiAutoReplyDisabled ? 'AI Paused' : 'AI Concierge On'}</span>
-        </button>
+          <Server className="w-3 h-3 text-amber-500" />
+          <span className="font-semibold font-mono text-[10px] text-amber-600 dark:text-amber-400 uppercase">
+            {provMeta.name}
+          </span>
+          {conversation.assignedSenderPhone && (
+            <span className="font-mono text-[10px] text-text-tertiary">({conversation.assignedSenderPhone})</span>
+          )}
+        </div>
 
         {/* Status Dropdown */}
         <select
           value={conversation.status}
           onChange={(e) => onUpdateStatus(e.target.value as any)}
-          className="text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-800 capitalize cursor-pointer focus:outline-none focus:border-amber-500"
+          className="px-2.5 py-1.5 bg-bg-base border border-border-default rounded-xl text-xs font-medium text-text-secondary focus:outline-hidden focus:border-amber-500 cursor-pointer"
         >
-          <option value="open">Open</option>
-          <option value="pending">Pending</option>
-          <option value="closed">Closed</option>
+          <option value="open">🟢 Open</option>
+          <option value="pending">🟡 Pending</option>
+          <option value="closed">⚪ Closed</option>
         </select>
 
-        {/* Contact Drawer Toggle */}
-        <button
-          type="button"
-          onClick={onToggleDrawer}
-          className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-          title={isDrawerOpen ? 'Close CRM Drawer' : 'View CRM Contact Details'}
-        >
-          {isDrawerOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
-        </button>
+        {/* Assigned Agent Indicator */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-bg-subtle rounded-xl border border-border-default text-xs text-text-secondary">
+          <UserCheck className="w-3.5 h-3.5 text-text-tertiary" />
+          <span>{conversation.agent?.name || 'Unassigned'}</span>
+        </div>
       </div>
     </div>
   );
