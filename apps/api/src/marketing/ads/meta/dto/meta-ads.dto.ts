@@ -52,3 +52,15 @@ export class SyncMetaCampaignsDto {
   @IsOptional()
   datePreset?: string; // e.g. "maximum", "last_30d", "this_month"
 }
+
+export class BulkAssignMetaLeadsDto {
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  leadIds?: string[];
+
+  @IsString()
+  @IsOptional()
+  campaignId?: string;
+}
+
