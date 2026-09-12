@@ -40,7 +40,7 @@ export const EmailWebhookDiagnostics: React.FC = () => {
   const baseUrl =
     typeof window !== 'undefined'
       ? window.location.origin
-      : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      : process.env.BACKEND_URL || 'http://localhost:3000';
 
   const endpoints = [
     {
